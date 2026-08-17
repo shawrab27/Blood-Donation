@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BloodPulse - Emergency Search</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Georgia&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#c3ddff",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "surface-container-low": "#fff0f1",
+                        "surface-bright": "#fff8f7",
+                        "on-primary-fixed-variant": "#930016",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-surface-variant": "#5c3f3d",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#ffd1cd",
+                        "surface-variant": "#f3dde0",
+                        "primary-fixed": "#ffdad7",
+                        "surface-dim": "#ead5d7",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "secondary": "#5f5e5e",
+                        "on-surface": "#24191a",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#d1e4ff",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "on-secondary-container": "#656464",
+                        "tertiary": "#004b7e",
+                        "surface-container-highest": "#f3dde0",
+                        "surface-container": "#fee9eb",
+                        "on-tertiary-fixed": "#001d35",
+                        "outline-variant": "#e6bdba",
+                        "outline": "#916f6c",
+                        "inverse-primary": "#ffb3ae",
+                        "primary": "#960017",
+                        "secondary-container": "#e4e2e1",
+                        "surface-container-high": "#f8e3e5",
+                        "surface": "#fff8f7",
+                        "secondary-fixed": "#e4e2e1",
+                        "primary-container": "#c30121",
+                        "on-error-container": "#93000a",
+                        "background": "#fff8f7",
+                        "on-secondary-fixed-variant": "#474746",
+                        "inverse-surface": "#3a2d2f",
+                        "on-primary-fixed": "#410005",
+                        "inverse-on-surface": "#ffecee",
+                        "on-background": "#24191a",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-tint": "#c00020"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "margin-desktop": "64px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "label-lg": ["Inter"],
+                        "display-lg": ["Georgia"],
+                        "headline-sm": ["Georgia"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FDF3F3; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-[#FDF3F3] text-on-surface antialiased pb-32">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 dark:bg-background flex justify-between items-center px-margin-mobile h-16 shadow-[0_4px_12px_rgba(142,125,127,0.04)] bg-white"><div class="flex items-center gap-sm">
+<img alt="BloodPulse Logo" class="h-8 object-contain shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzlXW8JfvyctWZtJHwO_3W5bT_BeVepMv0wZaKymn6KdTpoXZH3U8GjxS3d4c2Ujox9RHa75tEN1gs7vMFjFmNu27j8Gq8ppu7You0wa-TsCf-WyQuYtoRx9e0c91TtyzdHv9U7TBIDOIQS6uqgYddqEI_xi-JcqI8ZeeB-YnRRsYLgGseg1xATlDd8uXLbJENypvs_1-9IOAWnmDBCqT6izuXrMGASUc32Fi0-pTdoaJFvWUpFLhxUyXbWUxlxGaWzk4jJ_442eI"/>
+<span class="font-headline-sm text-headline-sm text-[#C30121] tracking-tight" style="font-family: Georgia, serif; font-weight: 700;">BloodPulse</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/20 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[#C30121]">notifications</span>
+<span class="absolute top-1 right-1 bg-[#960017] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-background">3</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/20 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-secondary">more_vert</span>
+</button>
+</div></header>
+<main class="pt-24 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto flex flex-col gap-lg">
+<!-- Top Tab Toggle -->
+<div class="flex p-1 bg-white rounded-full shadow-[0_4px_12px_rgba(142,125,127,0.04)] w-full md:w-max mx-auto border border-outline-variant/30">
+<button class="flex-1 md:px-8 py-2.5 rounded-full bg-primary-container text-on-primary-container font-label-lg text-label-lg transition-all shadow-sm">
+                Search as Donor
+            </button>
+<button class="flex-1 md:px-8 py-2.5 rounded-full text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-variant/50 transition-all">
+                Request for Blood
+            </button>
+</div>
+<!-- Search Bar -->
+<div class="relative w-full max-w-2xl mx-auto">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full h-14 pl-12 pr-4 bg-white border border-outline-variant/30 rounded-full font-body-md text-body-md text-on-surface placeholder-outline focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container shadow-[0_4px_12px_rgba(142,125,127,0.04)] transition-all" placeholder="Search by Name, Campus, or Location..." type="text"/>
+</div>
+<!-- Horizontal Filter Chips -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-sm w-full">
+<button class="h-10 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-between shadow-sm">
+<span>Blood Group</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="h-10 px-4 rounded-lg bg-white border border-outline-variant/50 text-on-surface-variant font-label-md text-label-md flex items-center justify-between hover:bg-surface-variant/20 transition-colors shadow-sm">
+<span>Campus</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="h-10 px-4 rounded-lg bg-white border border-outline-variant/50 text-on-surface-variant font-label-md text-label-md flex items-center justify-between hover:bg-surface-variant/20 transition-colors shadow-sm">
+<span>Division</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="h-10 px-4 rounded-lg bg-white border border-outline-variant/50 text-on-surface-variant font-label-md text-label-md flex items-center justify-between hover:bg-surface-variant/20 transition-colors shadow-sm">
+<span>Zila</span>
+<span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</button>
+<button class="col-span-2 md:col-span-1 h-10 px-4 rounded-lg bg-primary/5 border border-primary/20 text-primary font-label-md text-label-md flex items-center justify-center gap-xs hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span>Advanced Filters</span>
+</button>
+</div>
+<!-- Search Results Header -->
+<div class="flex justify-between items-end mt-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Available Donors</h2>
+<span class="font-body-sm text-body-sm text-outline">124 found near you</span>
+</div>
+<!-- Search Result Cards (Bento Grid Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Card 1 -->
+<div class="bg-white rounded-[1rem] p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-white flex flex-col gap-md relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(142,125,127,0.08)] transition-all duration-300">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface">Zahir Raihan</h3>
+<span class="material-symbols-outlined text-primary text-[20px]" title="Verified Donor">verified</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">school</span>
+                            Dhaka Medical College
+                        </div>
+</div>
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-md text-label-md shrink-0">
+                        A+
+                    </div>
+</div>
+<div class="flex items-center gap-sm mt-auto z-10 bg-surface-bright rounded-lg p-3">
+<span class="material-symbols-outlined text-outline text-[20px]">history</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline">Last Donation</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">4 months ago</span>
+</div>
+</div>
+<button class="w-full h-12 bg-primary-container text-on-primary-container rounded-full font-button text-button hover:opacity-90 active:scale-[0.98] transition-all z-10 shadow-sm mt-xs">
+                    Request
+                </button>
+</div>
+<!-- Card 2 -->
+<div class="bg-white rounded-[1rem] p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-white flex flex-col gap-md relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(142,125,127,0.08)] transition-all duration-300">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface">Anika Tabassum</h3>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">school</span>
+                            BUET Campus
+                        </div>
+</div>
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-md text-label-md shrink-0">
+                        O-
+                    </div>
+</div>
+<div class="flex items-center gap-sm mt-auto z-10 bg-surface-bright rounded-lg p-3">
+<span class="material-symbols-outlined text-outline text-[20px]">history</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline">Last Donation</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">6 months ago</span>
+</div>
+</div>
+<button class="w-full h-12 bg-primary-container text-on-primary-container rounded-full font-button text-button hover:opacity-90 active:scale-[0.98] transition-all z-10 shadow-sm mt-xs">
+                    Request
+                </button>
+</div>
+<!-- Card 3 -->
+<div class="bg-white rounded-[1rem] p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-white flex flex-col gap-md relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(142,125,127,0.08)] transition-all duration-300">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex flex-col gap-xs">
+<div class="flex items-center gap-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface">Samiul Islam</h3>
+<span class="material-symbols-outlined text-primary text-[20px]" title="Verified Donor">verified</span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                            Mirpur, Dhaka
+                        </div>
+</div>
+<div class="bg-primary/10 text-primary px-3 py-1 rounded-full font-label-md text-label-md shrink-0">
+                        B+
+                    </div>
+</div>
+<div class="flex items-center gap-sm mt-auto z-10 bg-surface-bright rounded-lg p-3">
+<span class="material-symbols-outlined text-outline text-[20px]">history</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-outline">Last Donation</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">1 year ago</span>
+</div>
+</div>
+<button class="w-full h-12 bg-primary-container text-on-primary-container rounded-full font-button text-button hover:opacity-90 active:scale-[0.98] transition-all z-10 shadow-sm mt-xs">
+                    Request
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg bg-surface-container dark:bg-surface-container shadow-[0_-4px_12px_rgba(142,125,127,0.04)] flex justify-around items-center h-20 px-gutter md:hidden"><button class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-md font-label-md mt-1">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+<span class="text-label-md font-label-md mt-1">Blood Hub</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md font-label-md mt-1">Community</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="text-label-md font-label-md mt-1">Health</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md font-label-md mt-1">Profile</span>
+</button></nav>
+</body></html>

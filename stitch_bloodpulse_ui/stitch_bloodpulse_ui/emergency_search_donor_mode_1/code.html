@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Emergency Search &amp; Blood Request Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#410005",
+                        "secondary-fixed": "#e4e2e1",
+                        "tertiary-fixed": "#d1e4ff",
+                        "on-background": "#24191a",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#656464",
+                        "surface-bright": "#fff8f7",
+                        "secondary": "#5f5e5e",
+                        "background": "#fff8f7",
+                        "on-surface-variant": "#5c3f3d",
+                        "on-tertiary-container": "#c3ddff",
+                        "primary-container": "#c30121",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "surface": "#fff8f7",
+                        "surface-container-highest": "#f3dde0",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#e6bdba",
+                        "inverse-primary": "#ffb3ae",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#fee9eb",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#ffd1cd",
+                        "surface-container-low": "#fff0f1",
+                        "surface-dim": "#ead5d7",
+                        "outline": "#916f6c",
+                        "secondary-container": "#e4e2e1",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "tertiary": "#004b7e",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "inverse-on-surface": "#ffecee",
+                        "inverse-surface": "#3a2d2f",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary": "#960017",
+                        "surface-container-high": "#f8e3e5",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-tint": "#c00020",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#ffdad7",
+                        "on-surface": "#24191a",
+                        "surface-variant": "#f3dde0",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "margin-desktop": "64px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter", "sans-serif"],
+                        "headline-md": ["Georgia", "serif"],
+                        "headline-sm": ["Georgia", "serif"],
+                        "button": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "display-lg": ["Georgia", "serif"],
+                        "label-lg": ["Inter", "sans-serif"],
+                        "headline-lg": ["Georgia", "serif"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-[#fcf8f9] group/design-root overflow-x-hidden" style='font-family: "Public Sans", "Noto Sans", sans-serif;'>
+<!-- Shared Header, Nav, Search, and Filters -->
+<div class="flex gap-2 border-t border-[#f4e6e8] bg-[#fcf8f9] px-4 pb-3 pt-2 order-last sticky bottom-0 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#a14554]" href="#">
+<div class="text-[#a14554] flex h-8 items-center justify-center" data-icon="House" data-size="24px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 24px;">replace_image</span>
+</div>
+<p class="text-[#a14554] text-xs font-medium leading-normal tracking-[0.015em]">Home</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-[#1d0c0f]" href="#">
+<div class="text-[#1d0c0f] flex h-8 items-center justify-center" data-icon="MagnifyingGlass" data-size="24px" data-weight="fill">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 24px;">qr_code_2</span>
+</div>
+<p class="text-[#1d0c0f] text-xs font-medium leading-normal tracking-[0.015em]">Search</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#a14554]" href="#">
+<div class="text-[#a14554] flex h-8 items-center justify-center" data-icon="HandHeart" data-size="24px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 24px;">rotate_90_degrees_ccw</span>
+</div>
+<p class="text-[#a14554] text-xs font-medium leading-normal tracking-[0.015em]">Donations</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#a14554]" href="#">
+<div class="text-[#a14554] flex h-8 items-center justify-center" data-icon="User" data-size="24px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 24px;">shuffle</span>
+</div>
+<p class="text-[#a14554] text-xs font-medium leading-normal tracking-[0.015em]">Profile</p>
+</a>
+</div>
+<div class="flex items-center bg-[#fcf8f9] p-4 pb-2 justify-between">
+<h2 class="text-[#1d0c0f] text-lg font-bold leading-tight tracking-[-0.015em] flex-1">Emergency Search &amp; Blood Request Hub</h2>
+<div class="flex w-12 items-center justify-end">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 bg-transparent text-[#1d0c0f] gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+<div class="text-[#1d0c0f]" data-icon="Bell" data-size="24px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 24px;">arrows_outward</span>
+</div>
+</button>
+</div>
+</div>
+<div class="pb-3">
+<div class="flex border-b border-[#eacdd2] px-4 justify-between">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-[#c30121] text-[#1d0c0f] pb-[13px] pt-4 flex-1" href="#">
+<p class="text-[#1d0c0f] text-sm font-bold leading-normal tracking-[0.015em]">Search as Donor</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#a14554] pb-[13px] pt-4 flex-1" href="#">
+<p class="text-[#a14554] text-sm font-bold leading-normal tracking-[0.015em]">Request for Blood</p>
+</a>
+</div>
+</div>
+<div class="px-4 py-3">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+<div class="text-[#a14554] flex border-none bg-[#f4e6e8] items-center justify-center pl-4 rounded-l-xl border-r-0" data-icon="MagnifyingGlass" data-size="24px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 24px;">qr_code_2</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#1d0c0f] focus:outline-0 focus:ring-0 border-none bg-[#f4e6e8] focus:border-none h-full placeholder:text-[#a14554] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search by Name, Campus, or Location..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex gap-3 p-3 overflow-x-hidden">
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#f4e6e8] pl-4 pr-2">
+<p class="text-[#1d0c0f] text-sm font-medium leading-normal">Blood Group</p>
+<div class="text-[#1d0c0f]" data-icon="CaretDown" data-size="20px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 20px;">pixel_4_4xl_4a_5_5a_5g</span>
+</div>
+</button>
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#f4e6e8] pl-4 pr-2">
+<p class="text-[#1d0c0f] text-sm font-medium leading-normal">Campus</p>
+<div class="text-[#1d0c0f]" data-icon="CaretDown" data-size="20px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 20px;">pixel_4_4xl_4a_5_5a_5g</span>
+</div>
+</button>
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#f4e6e8] pl-4 pr-2">
+<p class="text-[#1d0c0f] text-sm font-medium leading-normal">Division</p>
+<div class="text-[#1d0c0f]" data-icon="CaretDown" data-size="20px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 20px;">pixel_4_4xl_4a_5_5a_5g</span>
+</div>
+</button>
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#f4e6e8] pl-4 pr-2">
+<p class="text-[#1d0c0f] text-sm font-medium leading-normal">Zila</p>
+<div class="text-[#1d0c0f]" data-icon="CaretDown" data-size="20px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 20px;">pixel_4_4xl_4a_5_5a_5g</span>
+</div>
+</button>
+<button class="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-[#f4e6e8] pl-4 pr-2">
+<p class="text-[#1d0c0f] text-sm font-medium leading-normal">Upazila</p>
+<div class="text-[#1d0c0f]" data-icon="CaretDown" data-size="20px" data-weight="regular">
+<span class="material-symbols-outlined" style="font-size: 20px;">pixel_4_4xl_4a_5_5a_5g</span>
+</div>
+</button>
+</div>
+<div class="h-5 bg-[#fcf8f9]"></div>
+<!-- Search Results Section -->
+<div class="flex-1 overflow-y-auto px-4 pb-24 space-y-4" style="font-family: 'Inter', sans-serif;">
+<!-- Result Card 1 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-5 shadow-sm border border-outline-variant/40 flex items-center justify-between transition-transform active:scale-[0.98]">
+<div class="flex flex-col gap-1.5">
+<h3 class="font-headline-sm text-on-surface text-xl">Rahim Uddin</h3>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-secondary">location_on</span>
+<span class="text-body-sm text-on-surface-variant bg-surface-variant/50 px-2.5 py-0.5 rounded-full border border-outline-variant/30">Dhaka Medical College</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[16px] text-secondary/80">history</span>
+<span class="text-xs font-medium text-secondary">Last donation: 4 months ago</span>
+</div>
+</div>
+<button class="bg-primary-container text-white px-6 py-2.5 rounded-full font-button text-sm flex items-center justify-center hover:bg-primary-fixed-variant transition-colors shadow-sm">
+                Request
+            </button>
+</div>
+<!-- Result Card 2 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-5 shadow-sm border border-outline-variant/40 flex items-center justify-between transition-transform active:scale-[0.98]">
+<div class="flex flex-col gap-1.5">
+<h3 class="font-headline-sm text-on-surface text-xl">Sarah Islam</h3>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-secondary">location_on</span>
+<span class="text-body-sm text-on-surface-variant bg-surface-variant/50 px-2.5 py-0.5 rounded-full border border-outline-variant/30">BUET Campus</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[16px] text-secondary/80">history</span>
+<span class="text-xs font-medium text-secondary">Last donation: 6 months ago</span>
+</div>
+</div>
+<button class="bg-primary-container text-white px-6 py-2.5 rounded-full font-button text-sm flex items-center justify-center hover:bg-primary-fixed-variant transition-colors shadow-sm">
+                Request
+            </button>
+</div>
+<!-- Result Card 3 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-5 shadow-sm border border-outline-variant/40 flex items-center justify-between transition-transform active:scale-[0.98]">
+<div class="flex flex-col gap-1.5">
+<h3 class="font-headline-sm text-on-surface text-xl">Tariq Hasan</h3>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-secondary">location_on</span>
+<span class="text-body-sm text-on-surface-variant bg-surface-variant/50 px-2.5 py-0.5 rounded-full border border-outline-variant/30">Mirpur, Dhaka</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[16px] text-secondary/80">history</span>
+<span class="text-xs font-medium text-secondary">Last donation: 1 year ago</span>
+</div>
+</div>
+<button class="bg-primary-container text-white px-6 py-2.5 rounded-full font-button text-sm flex items-center justify-center hover:bg-primary-fixed-variant transition-colors shadow-sm">
+                Request
+            </button>
+</div>
+<!-- Result Card 4 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-5 shadow-sm border border-outline-variant/40 flex items-center justify-between transition-transform active:scale-[0.98]">
+<div class="flex flex-col gap-1.5">
+<h3 class="font-headline-sm text-on-surface text-xl">Fatima Begum</h3>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-secondary">location_on</span>
+<span class="text-body-sm text-on-surface-variant bg-surface-variant/50 px-2.5 py-0.5 rounded-full border border-outline-variant/30">Sylhet Osmani Medical</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[16px] text-secondary/80">history</span>
+<span class="text-xs font-medium text-secondary">Last donation: 3 months ago</span>
+</div>
+</div>
+<button class="bg-primary-container text-white px-6 py-2.5 rounded-full font-button text-sm flex items-center justify-center hover:bg-primary-fixed-variant transition-colors shadow-sm">
+                Request
+            </button>
+</div>
+</div>
+</div>
+</body></html>

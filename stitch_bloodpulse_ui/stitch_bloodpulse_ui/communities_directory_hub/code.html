@@ -1,0 +1,426 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse | Communities</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Georgia:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "primary": "#960017",
+                      "surface-container-high": "#f8e3e5",
+                      "inverse-on-surface": "#ffecee",
+                      "tertiary-fixed": "#d1e4ff",
+                      "outline": "#916f6c",
+                      "secondary-fixed": "#e4e2e1",
+                      "error-container": "#ffdad6",
+                      "on-surface-variant": "#5c3f3d",
+                      "on-error": "#ffffff",
+                      "surface-container": "#fee9eb",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary-fixed-variant": "#930016",
+                      "inverse-surface": "#3a2d2f",
+                      "tertiary": "#004b7e",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-surface": "#24191a",
+                      "surface-container-low": "#fff0f1",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "on-tertiary-fixed": "#001d35",
+                      "tertiary-container": "#0063a4",
+                      "surface-tint": "#c00020",
+                      "on-tertiary": "#ffffff",
+                      "secondary-container": "#e4e2e1",
+                      "on-primary-container": "#ffd1cd",
+                      "surface-bright": "#fff8f7",
+                      "on-secondary-container": "#656464",
+                      "surface": "#fff8f7",
+                      "on-tertiary-container": "#c3ddff",
+                      "on-primary-fixed": "#410005",
+                      "primary-container": "#c30121",
+                      "background": "#fff8f7",
+                      "surface-container-highest": "#f3dde0",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#474746",
+                      "on-secondary": "#ffffff",
+                      "surface-variant": "#f3dde0",
+                      "outline-variant": "#e6bdba",
+                      "secondary": "#5f5e5e",
+                      "inverse-primary": "#ffb3ae",
+                      "on-background": "#24191a",
+                      "surface-dim": "#ead5d7",
+                      "primary-fixed": "#ffdad7",
+                      "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "xl": "32px",
+                      "unit": "4px",
+                      "md": "16px",
+                      "gutter": "16px",
+                      "margin-desktop": "64px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "headline-lg": ["Georgia"],
+                      "display-lg": ["Georgia"],
+                      "headline-md": ["Georgia"],
+                      "body-sm": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "headline-sm": ["Georgia"],
+                      "button": ["Inter"],
+                      "label-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                      "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #fff8f7; /* Surface */
+            color: #24191a; /* On Surface */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(142, 125, 127, 0.1);
+        }
+        .active-dot::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background-color: #960017;
+            border-radius: 50%;
+            border: 2px solid #fff8f7;
+        }
+    </style>
+</head>
+<body class="font-body-md antialiased overflow-x-hidden pb-24">
+<!-- Top AppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface shadow-sm"><div class="flex items-center gap-3"><img alt="BloodPulse Logo" class="h-[32px] w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgO1ixrVm4HiamtTwZFgWSHpk7QRRcZHcgnh4WPDUsua-WgqkIUCrKIYZ3HNYyqdK9n-zl6gYqO4IRYzL4JCs2dKEt-NCLhaAnY7ANvOj4quckpGjAF0wq7cfGG04xnvJ63YVa-wtx-uNnZzjjlU4fjiqwM589sOGrrDEjapB1jpkpweVAd2tf-8UmlVJaQFakuZ0HiKQG0IpNvLfQ_8HZJe6lhknY_h6tlTI2qH0R-iJmpRnpObO6ha1srckyC7YuNh-3bdvTALg"><h1 class="font-headline-sm text-headline-sm font-bold text-[#C30121]" style="font-family: Georgia;">BloodPulse</h1></div><div class="flex items-center gap-4"><button class="relative p-2 rounded-full hover:bg-surface-container transition-colors active:scale-95 duration-200"><span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span><span class="absolute -top-1 -right-1 w-5 h-5 bg-[#960017] text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-surface">3</span></button><button class="p-2 rounded-full hover:bg-surface-container transition-colors active:scale-95 duration-200"><span class="material-symbols-outlined text-secondary" data-icon="more_vert">more_vert</span></button></div></header>
+<main class="pt-20 px-margin-mobile md:max-w-7xl md:mx-auto">
+<!-- Major Club Networks Section -->
+<section class="mb-xl transition-all duration-700 opacity-0 translate-y-4">
+<div class="flex justify-between items-end mb-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Club Networks</h2>
+<button class="text-primary font-label-lg hover:underline transition-all">View All</button>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-margin-mobile px-margin-mobile snap-x">
+<!-- Card: Badhan -->
+<div class="min-w-[280px] md:min-w-[340px] snap-start bg-surface-container-lowest p-lg rounded-lg shadow-[0_4px_12px_rgba(142,125,127,0.06)] border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-4 mb-md">
+<div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="diversity_3" style="font-variation-settings: 'FILL' 1;">diversity_3</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm">Badhan</h3>
+<p class="text-secondary text-label-md">1.2M Members</p>
+</div>
+</div>
+<p class="text-body-sm text-secondary line-clamp-2 mb-lg italic">"A voluntary blood donors' organization. Join us to save lives through systematic donation."</p>
+</div>
+<button class="w-full py-3 bg-primary text-white rounded-full font-button hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95">Join Badhan</button>
+</div>
+<!-- Card: Sandhani -->
+<div class="min-w-[280px] md:min-w-[340px] snap-start bg-surface-container-lowest p-lg rounded-lg shadow-[0_4px_12px_rgba(142,125,127,0.06)] border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-4 mb-md">
+<div class="w-12 h-12 bg-tertiary rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="volunteer_activism" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm">Sandhani</h3>
+<p class="text-secondary text-label-md">850k Members</p>
+</div>
+</div>
+<p class="text-body-sm text-secondary line-clamp-2 mb-lg italic">"Serving humanity through blood donation and post-mortem eye donation across medical colleges."</p>
+</div>
+<button class="w-full py-3 bg-primary text-white rounded-full font-button hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95">Join Sandhani</button>
+</div>
+<!-- Card: Ashar Alo -->
+<div class="min-w-[280px] md:min-w-[340px] snap-start bg-surface-container-lowest p-lg rounded-lg shadow-[0_4px_12px_rgba(142,125,127,0.06)] border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-4 mb-md">
+<div class="w-12 h-12 bg-[#FFB347] rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="lightbulb" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm">Ashar Alo</h3>
+<p class="text-secondary text-label-md">420k Members</p>
+</div>
+</div>
+<p class="text-body-sm text-secondary line-clamp-2 mb-lg italic">"Illuminating lives in remote areas with urgent blood supply and emergency response units."</p>
+</div>
+<button class="w-full py-3 bg-primary text-white rounded-full font-button hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95">Join Ashar Alo</button>
+</div>
+</div>
+</section>
+<!-- Hospital Partners & Blood Banks -->
+<section class="mb-xl transition-all duration-700 opacity-0 translate-y-4">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-md">Verified Blood Banks</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Bank Card 1 -->
+<div class="bg-surface-container-lowest rounded-lg overflow-hidden border border-outline-variant transition-transform hover:scale-[1.01] duration-300">
+<div class="h-40 bg-cover bg-center" data-alt="A modern, high-tech hospital facade in Dhaka, Bangladesh. The building features clean glass surfaces and a prominent red cross symbol. Soft morning sunlight illuminates the structure, creating a professional and trustworthy atmosphere with the warm soft pink tones of the BloodPulse brand system." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDRh7NVkmnUbdc_PGFKgzh9TKucewYkRHT24dyaGOROsbhfpIFBzvsTp2QXLzqks63A-ZHMrbuwDpMHRo7mPwrice7F59vftB2-x4BH2ts6iAhqPpMewfhZG0901t9lxWt-s6EtrTCIMLkxVTBO6C0d1CeTeyoqrCLuaB6MrT6YtW0igr53A3Q2mLUzZM68A42hUGiVIuIYc81NGMvngEv-fnEaYE49t2T2FIuBvSBOc3bn5k205LdlpRpf7eyVueWZxB7Te8ejoTQ')"></div>
+<div class="p-md">
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-headline-sm text-headline-sm">Evercare Blood Center</h4>
+<div class="flex items-center gap-1 bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full text-[10px] font-bold">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified">verified</span>
+                                VERIFIED
+                            </div>
+</div>
+<div class="flex items-center gap-2 text-secondary mb-md">
+<span class="material-symbols-outlined text-body-sm" data-icon="location_on">location_on</span>
+<p class="text-label-md">Bashundhara R/A, Dhaka</p>
+</div>
+<div class="grid grid-cols-4 gap-2 mb-lg">
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">A+</span>
+<span class="text-[10px] text-secondary">High</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">B+</span>
+<span class="text-[10px] text-secondary">Low</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md border-2 border-primary">
+<span class="text-primary font-bold text-label-lg">O-</span>
+<span class="text-[10px] text-primary font-bold">URGENT</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">AB+</span>
+<span class="text-[10px] text-secondary">Med</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 flex items-center justify-center gap-2 py-2 border-2 border-primary text-primary rounded-full font-button hover:bg-primary-fixed-dim transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="call">call</span>
+                                Call
+                            </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-2 border-2 border-outline-variant text-secondary rounded-full font-button hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="map">map</span>
+                                Map
+                            </button>
+</div>
+</div>
+</div>
+<!-- Bank Card 2 -->
+<div class="bg-surface-container-lowest rounded-lg overflow-hidden border border-outline-variant transition-transform hover:scale-[1.01] duration-300">
+<div class="h-40 bg-cover bg-center" data-alt="An interior view of a clean, clinical blood donation facility with multiple reclining chairs and medical monitoring equipment. The lighting is bright yet soft, creating a calm and reassuring medical environment. Accents of deep red are visible in the signage and upholstery, aligning with the BloodPulse brand aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuArkE8QwctC1-adqlRBa2hUA3895P4oGZYuZGn8xoPLJ2DbM0QinslKWuQKmXmDkvPH1p-6ehcO72Rr064XEsdZh9GlRlt6Du7AqzCP38lgfehJKA821-TOmPuLu8C7pmsl74iNEmX6GGhsnI7bStILswic6I4iSHW07KZHZGrHKYdRceYChPmgVd9WW5CO2KWZ-Jp2lkdqds2Lr-WahgBJRzfvzf9wyYvcHic7iZuslakAOrVEEQeeuf_CQ7vnONA0Y1SNxZ8bSJ8')"></div>
+<div class="p-md">
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-headline-sm text-headline-sm">Quantum Lab</h4>
+<div class="flex items-center gap-1 bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full text-[10px] font-bold">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified">verified</span>
+                                VERIFIED
+                            </div>
+</div>
+<div class="flex items-center gap-2 text-secondary mb-md">
+<span class="material-symbols-outlined text-body-sm" data-icon="location_on">location_on</span>
+<p class="text-label-md">Dhanmondi, Dhaka</p>
+</div>
+<div class="grid grid-cols-4 gap-2 mb-lg">
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">A+</span>
+<span class="text-[10px] text-secondary">Med</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">B-</span>
+<span class="text-[10px] text-secondary">Low</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">O+</span>
+<span class="text-[10px] text-secondary">High</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-surface-container rounded-md">
+<span class="text-primary font-bold text-label-lg">O-</span>
+<span class="text-[10px] text-secondary">Med</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 flex items-center justify-center gap-2 py-2 border-2 border-primary text-primary rounded-full font-button hover:bg-primary-fixed-dim transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="call">call</span>
+                                Call
+                            </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-2 border-2 border-outline-variant text-secondary rounded-full font-button hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="map">map</span>
+                                Map
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 64-District Directory Section -->
+<section class="mb-xl transition-all duration-700 opacity-0 translate-y-4">
+<div class="bg-surface-container p-lg rounded-lg border border-outline-variant">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-sm">Local Directory</h2>
+<p class="text-body-sm text-secondary mb-lg">Find community leads and resources in your specific area.</p>
+<!-- Tiered Selectors -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md mb-xl">
+<div class="flex flex-col gap-2">
+<label class="text-label-md text-secondary ml-1">Division</label>
+<select class="bg-white border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-tertiary transition-all">
+<option>Dhaka</option>
+<option>Chattogram</option>
+<option>Rajshahi</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-label-md text-secondary ml-1">District</label>
+<select class="bg-white border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-tertiary transition-all">
+<option>Dhaka City</option>
+<option>Gazipur</option>
+<option>Narayanganj</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-label-md text-secondary ml-1">Upazila</label>
+<select class="bg-white border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-tertiary transition-all">
+<option>Uttara</option>
+<option>Mirpur</option>
+<option>Gulshan</option>
+</select>
+</div>
+</div>
+<!-- Local Leads List -->
+<div class="space-y-md">
+<h3 class="text-label-lg font-bold text-secondary uppercase tracking-wider">Area Representatives</h3>
+<!-- Lead 1 -->
+<div class="flex flex-col md:flex-row md:items-center justify-between p-md bg-white rounded-md border border-outline-variant gap-lg">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full border-2 border-primary p-0.5">
+<div class="w-full h-full rounded-full bg-cover bg-center" data-alt="Professional portrait of a middle-aged South Asian male doctor wearing a white lab coat and a kind smile. He is standing in a brightly lit medical hall, representing a local team lead. The photograph is clean and well-lit, emphasizing reliability and professional authority." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBi3ZwfvzLsj-b0LiKnznOu-DqSJRKkp4FYidp3kMhxCw5rS48g75nhdba4LrnZY1_yjrJtyXGLsg_Zoi6TujvPR1xT-XRM7D_on4P19i4aucEyOe9kl_yvpzxb8OkKtjOfX_kqAZrZ4Vw-cvoz_NggAPN1RlFNznH1KUQEvxDgPWQA_MDQSl54tdXD1SG931_H8GdfnmMHYvy7mujILp8tQR4tQQ-KOYdviVEB-3fcXIOILsLaZIbSX6qxoVkVruGgMG-QfOcWD-Q')"></div>
+</div>
+<div>
+<h4 class="font-body-lg font-bold">Dr. Rahman Kabir</h4>
+<p class="text-label-md text-primary">Chief Coordinator, Uttara Unit</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-white transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="call">call</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-white transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-white transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+</button>
+</div>
+</div>
+<!-- Lead 2 -->
+<div class="flex flex-col md:flex-row md:items-center justify-between p-md bg-white rounded-md border border-outline-variant gap-lg">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full border-2 border-primary p-0.5">
+<div class="w-full h-full rounded-full bg-cover bg-center" data-alt="Portrait of a young South Asian female volunteer lead in her late 20s, wearing a professional red polo shirt with a subtle blood donation logo. She has an approachable and energetic expression, set against a blurred background of a community center. High-quality editorial style lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDuW3KXrlaJfpVI5eyOWhpJelmmF9uSuCiDokMS36AFnIafvLvqhrWB5EcFYupIt2S62r0402l6PL4al8g_sie3rgfGlmWA8NDttFBccNYbXUPj4X4nbP9BOXGynB_qhPFC2siC1VtFbmhC3nH7k9dr4IukoMi0EZLs62UdQwKNLQBK8aUAltpnLZxAKaSUP4c28iAJK4hPvllO_zHYGLufy2jChppmr-RT47KXtVAH5C_3boFxTFP-G9Ur2zaYMAX0m7sf_03x-7c')"></div>
+</div>
+<div>
+<h4 class="font-body-lg font-bold">Ayesha Siddiqua</h4>
+<p class="text-label-md text-primary">Regional Lead, Sector 4</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-white transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="call">call</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-white transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+</button>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-white transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface shadow-[0_-1px_12px_rgba(142,125,127,0.1)] rounded-t-lg">
+<button class="flex flex-col items-center justify-center text-secondary px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-md font-label-md">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="emergency_share" style="font-variation-settings: 'FILL' 1;">emergency_share</span>
+<span class="text-label-md font-label-md">Blood Hub</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+<span class="text-label-md font-label-md">Health</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-5 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-label-md font-label-md">Profile</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for active button state
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.add('scale-95');
+                setTimeout(() => this.classList.remove('scale-95'), 150);
+            });
+        });
+
+        // Intersection observer for section appearance
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-4');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-4');
+            observer.observe(section);
+        });
+    </script>
+
+
+</body></html>

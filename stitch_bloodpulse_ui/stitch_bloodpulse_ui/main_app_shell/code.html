@@ -1,0 +1,276 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Georgia&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 1,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#3a2d2f",
+                        "surface-bright": "#fff8f7",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#e4e2e1",
+                        "surface-container-low": "#fff0f1",
+                        "on-tertiary-fixed": "#001d35",
+                        "inverse-primary": "#ffb3ae",
+                        "on-surface-variant": "#5c3f3d",
+                        "primary-fixed": "#ffdad7",
+                        "tertiary-container": "#0063a4",
+                        "primary-container": "#c30121",
+                        "surface-container": "#fee9eb",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#c3ddff",
+                        "on-background": "#24191a",
+                        "surface-variant": "#f3dde0",
+                        "surface-container-high": "#f8e3e5",
+                        "tertiary-fixed": "#d1e4ff",
+                        "surface-container-highest": "#f3dde0",
+                        "surface": "#fff8f7",
+                        "outline": "#916f6c",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#960017",
+                        "on-surface": "#24191a",
+                        "surface-dim": "#ead5d7",
+                        "inverse-on-surface": "#ffecee",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-primary-fixed": "#410005",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#004b7e",
+                        "secondary-container": "#e4e2e1",
+                        "outline-variant": "#e6bdba",
+                        "on-secondary-container": "#656464",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-container": "#ffd1cd",
+                        "secondary": "#5f5e5e",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "background": "#fff8f7",
+                        "surface-tint": "#c00020",
+                        "on-primary-fixed-variant": "#930016"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-desktop": "64px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Georgia"],
+                        "headline-lg": ["Georgia"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-md": ["Georgia"],
+                        "headline-sm": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#FDF3F3] text-on-background font-body-md min-h-screen pt-16 pb-20 md:pb-0 md:pt-20">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 md:h-20 bg-surface shadow-sm transition-colors">
+<div class="flex items-center gap-sm cursor-pointer active:scale-95 transition-transform"><img alt="BloodPulse Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRIovjJ_duPDTBqKc01E36rcYVtHH_VPibtxhQ99eerruBdeuLiv_XT4eT1cAALVVgoyRTh9x5GdZg9eqTjULxJELv3ojHUP-gguJ5QqR75YWPw-EOhKIYWQ42xKAEZf9BACCUcXmAdMagLoWjb3pJ7jLrFU16qU4lXhNGeu8_03oFSZFr-xWxQYQeocmRiM4vSFfSl2P3TxT50mIGG8CzdQpubmiblzBtefpG2kE_g6sMA4ncMhbaQ8F_L5KV5-42qfALWnFxvbA"><h1 class="font-headline-sm text-headline-sm font-bold text-primary">BloodPulse</h1></div>
+<div class="flex items-center gap-md">
+<button aria-label="Notifications" class="relative p-2 rounded-full hover:bg-surface-container-high transition-colors text-primary">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-container rounded-full border border-surface"></span>
+</button>
+<button aria-label="More options" class="p-2 rounded-full hover:bg-surface-container-high transition-colors text-secondary hidden md:block">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header><nav class="md:hidden sticky top-16 left-0 w-full z-40 flex justify-around items-center px-4 py-2 bg-surface border-t border-surface-variant transition-transform"><a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dynamic_feed" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dynamic_feed</span>
+<span class="font-label-md text-label-md mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-5 py-1 hover:bg-surface-container-high rounded-full active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bloodtype">bloodtype</span>
+<span class="font-label-md text-label-md mt-1">Blood Hub</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-5 py-1 hover:bg-surface-container-high rounded-full active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="health_and_safety">health_and_safety</span>
+<span class="font-label-md text-label-md mt-1">Health</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-5 py-1 hover:bg-surface-container-high rounded-full active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</a></nav>
+<!-- Main Content Canvas -->
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-12 gap-gutter md:gap-lg mt-md mt-1">
+<!-- Left Sidebar (Desktop only) -->
+<aside class="hidden md:block md:col-span-3">
+<nav class="sticky top-28 flex flex-col gap-sm">
+<a class="flex items-center gap-md px-4 py-3 rounded-full bg-primary-container text-on-primary-container font-button text-button transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">home</span>
+                    Feed
+                </a>
+<a class="flex items-center gap-md px-4 py-3 rounded-full text-secondary hover:bg-surface-container-high transition-colors font-button text-button" href="#">
+<span class="material-symbols-outlined" data-icon="emergency_share">emergency_share</span>
+                    Emergency
+                </a>
+<a class="flex items-center gap-md px-4 py-3 rounded-full text-secondary hover:bg-surface-container-high transition-colors font-button text-button" href="#">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+                    Health
+                </a>
+<a class="flex items-center gap-md px-4 py-3 rounded-full text-secondary hover:bg-surface-container-high transition-colors font-button text-button" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                    Profile
+                </a>
+</nav>
+</aside>
+<!-- Feed Center Column -->
+<section class="col-span-1 md:col-span-6 flex flex-col gap-md">
+<!-- Quick Action Card -->
+
+<!-- Urgent Request Card -->
+<article class="bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-primary/20 flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="local_hospital">local_hospital</span>
+</div>
+<div>
+<h3 class="font-button text-button text-on-surface">City General Hospital</h3>
+<p class="font-body-sm text-body-sm text-secondary">2 hours ago • Urgent</p>
+</div>
+</div>
+<span class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full font-label-md text-label-md">O- Needed</span>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant">
+                    Urgent requirement for O Negative blood at City General Hospital for a trauma surgery. If you are eligible, please donate immediately.
+                </div>
+<div class="flex gap-sm mt-sm">
+<button class="flex-1 bg-primary text-on-primary rounded-full py-2 font-button text-button hover:shadow-md transition-all active:scale-95">Respond</button>
+<button class="flex-1 bg-transparent border-2 border-primary text-primary rounded-full py-2 font-button text-button hover:bg-primary/5 transition-all active:scale-95">Share</button>
+</div>
+</article>
+<!-- Success Story Card -->
+<article class="bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="A portrait of a happy, diverse individual holding a small bandage on their arm in a modern, brightly lit clinical setting. The mood is optimistic and altruistic, highlighting a sense of community contribution. Soft pastel lighting with a modern corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5oTDZ9pJrfZkfr7H0_2P_y1XthivZ7MxBYJZwVH0c4i0aEFKGdDVls1rfSfDuMQY-BhmMJZtR4feiX_O2q2eV1_OyYV13yoqg63uAiXoCQ2K8aGr28meAcFHI95TPr7whc_dytD4GmBaqsQuK3LJmaYgV8VSBT2LaZVbEzUm6MbjFpUoDtPxRX37ZBkSM_rpe8LSEEVeaNe2hvBPm6Ifb9usSK0DtyRAAAaDsChNeq7Zai7s4_y7qaYv3KryHS2rQXQKV6IummQA">
+<div>
+<h3 class="font-button text-button text-on-surface">Sarah Jenkins</h3>
+<p class="font-body-sm text-body-sm text-secondary">Yesterday at 4:30 PM</p>
+</div>
+</div>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant">
+                    Just completed my 10th donation! 🩸 Feels great to give back. The staff at the Downtown Clinic were amazing as always. #DonateLife
+                </div>
+<img class="w-full h-48 object-cover rounded-DEFAULT mt-sm" data-alt="A close-up shot of a blood donation center resting chair with a modern, clean design. Soft, warm lighting accents the pristine white medical equipment, creating a calming, non-threatening atmosphere typical of a high-end wellness clinic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABwlzlIuZSW4VzDbxYRcjKq9L0kjTof9u7pL8RB7sG0II1RJJsrnWqIytcrleoVY7ObN4SBf480uodAEQEeUo_K8l-5Vh4JNgshV6cJCJTYTwr0eJuiUbA4lID-c1bOl7oSiqRGdcupLConaUyjHa-y6R7e_MZJOVLdJ_1LI5KD4laG1a0JbDV52ocnjry0N_tp09J7ONxhK59PRDm1_E7piTbWZmXFo_-Xg6x7_oSeJcc0CoyTj8Z4VMEX0hvjYGinXPl3FVlrpg">
+<div class="flex items-center gap-md text-secondary border-t border-surface-variant pt-sm mt-sm">
+<button class="flex items-center gap-xs hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+<span class="font-label-md text-label-md">124</span>
+</button>
+<button class="flex items-center gap-xs hover:text-tertiary transition-colors">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-label-md text-label-md">12</span>
+</button>
+</div>
+</article>
+<div class="bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] flex flex-col gap-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<button class="flex-1 text-left bg-surface-container-low hover:bg-surface-container transition-colors py-3 px-4 rounded-full text-secondary font-body-md border border-outline/30">
+                        Share a blood request or update...
+                    </button>
+</div>
+</div></section>
+<!-- Right Sidebar (Desktop only) -->
+<aside class="hidden md:block md:col-span-3">
+<div class="sticky top-28 bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)]">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Your Impact</h2>
+<div class="flex flex-col gap-sm mb-lg">
+<div class="flex justify-between items-center font-body-sm text-body-sm">
+<span class="text-secondary">Lives Saved (est.)</span>
+<span class="font-bold text-primary">15</span>
+</div>
+<div class="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-primary rounded-full"></div>
+</div>
+<p class="font-label-md text-label-md text-secondary text-right">2 donations until next milestone</p>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Upcoming Drives</h2>
+<ul class="flex flex-col gap-md">
+<li class="flex items-start gap-sm">
+<div class="bg-surface-container-high rounded-md p-2 text-center min-w-[50px]">
+<span class="block font-label-md text-label-md text-primary uppercase">Oct</span>
+<span class="block font-headline-sm text-headline-sm font-bold">14</span>
+</div>
+<div>
+<h4 class="font-button text-button text-on-surface">Community Center Drive</h4>
+<p class="font-body-sm text-body-sm text-secondary">2.5 miles away</p>
+</div>
+</li>
+</ul>
+</div>
+</aside>
+</main>
+<!-- BottomNavBar (Mobile only) -->
+
+<style>
+        /* Safe area padding for mobile devices with notches/home bars */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+        }
+    </style>
+
+
+
+
+
+
+</body></html>

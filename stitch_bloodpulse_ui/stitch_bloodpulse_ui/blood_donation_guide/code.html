@@ -1,0 +1,374 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Blood Donation Guide - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "on-background": "#24191a",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary": "#960017",
+                        "on-primary-fixed": "#410005",
+                        "surface-container-low": "#fff0f1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "surface-bright": "#fff8f7",
+                        "on-primary-container": "#ffd1cd",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#c30121",
+                        "inverse-on-surface": "#ffecee",
+                        "on-surface-variant": "#5c3f3d",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-surface": "#24191a",
+                        "primary-fixed": "#ffdad7",
+                        "tertiary": "#004b7e",
+                        "background": "#fff8f7",
+                        "surface-container-high": "#f8e3e5",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "on-secondary-container": "#656464",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#ffb3ae",
+                        "surface-container-highest": "#f3dde0",
+                        "outline-variant": "#e6bdba",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#fee9eb",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary-fixed": "#d1e4ff",
+                        "outline": "#916f6c",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fff8f7",
+                        "secondary": "#5f5e5e",
+                        "surface-dim": "#ead5d7",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-tint": "#c00020",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#e4e2e1",
+                        "surface-variant": "#f3dde0",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-tertiary-container": "#c3ddff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "margin-desktop": "64px",
+                        "lg": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "headline-md": ["Georgia", "serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "headline-lg": ["Georgia", "serif"],
+                        "label-lg": ["Inter", "sans-serif"],
+                        "button": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "headline-sm": ["Georgia", "serif"],
+                        "display-lg": ["Georgia", "serif"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    },
+                    "boxShadow": {
+                        "card": "0 12px 24px -4px rgba(142, 125, 127, 0.04)",
+                        "modal": "0 24px 48px -12px rgba(43, 43, 43, 0.08)"
+                    }
+                },
+            },
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-50 bg-surface shadow-sm"><div class="flex items-center justify-between px-margin-mobile md:px-margin-desktop py-sm w-full h-16">
+  <div class="flex items-center gap-4">
+    <button aria-label="Go back" class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+      
+    </button>
+    <div class="flex items-center gap-2">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK-DsKCR5wXaBaV6KeTZ_UURgWIWuiOy-P5pRs9cuHCOCGh3bvgPgLe0clsyV8qk8BcgI38cRS5kdDsmSVh_KnYzQdic0hA1LwVUSxgHSh2EkWK12fCYuS6jLaesPCpsYlLAc3vvsZvivPrPWvUdMz92Yeldkfooim0b_h13rkSvoCC2eGxnGiUqXQNPPkinY3HrlJhSMBJYQZDF2giwpe5zizFRlUt4VnmPBEdGqSsmTEaS85racFnFMx9kUA4fyfoB-Oso1SQZY" alt="BloodPulse Logo" class="h-8 w-8 object-contain">
+      <span class="font-headline-md text-headline-md font-bold text-primary" style="color: rgb(195, 1, 33); font-family: Georgia, serif;">BloodPulse</span>
+    </div>
+  </div>
+  
+  <nav class="hidden md:flex items-center gap-8">
+    <a class="text-on-surface-variant font-button text-button hover:text-primary transition-colors" href="#">Feed</a>
+    <a class="text-on-surface-variant font-button text-button hover:text-primary transition-colors" href="#">Blood Hub</a>
+    <a class="text-primary font-button text-button relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-full after:h-[2px] after:bg-primary" href="#">Health</a>
+    <a class="text-on-surface-variant font-button text-button hover:text-primary transition-colors" href="#">Profile</a>
+  </nav>
+
+  <div class="flex items-center gap-4">
+    <div class="relative">
+      <button class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+        <span class="material-symbols-outlined">notifications</span>
+      </button>
+      <span class="absolute -top-1 -right-1 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">3</span>
+    </div>
+    <button class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+      <span class="material-symbols-outlined">more_vert</span>
+    </button>
+    
+  </div>
+</div></header>
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg md:py-xl">
+<!-- Hero Section -->
+<section class="mb-xl text-center md:text-left">
+<h1 class="font-display-lg text-display-lg text-primary mb-sm">Your Guide to Giving Life</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto md:mx-0">
+                Everything you need to know before, during, and after your blood donation. Understand the process, check your eligibility, and separate facts from myths.
+            </p>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg">
+<!-- Main Content Area -->
+<div class="md:col-span-8 flex flex-col gap-lg">
+<!-- Eligibility Rules Bento Card -->
+<div class="bg-white rounded-xl p-lg shadow-card border border-outline-variant/10 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/20 rounded-bl-full -mr-16 -mt-16 z-0"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-md">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined fill">check_circle</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Eligibility Basics</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Ensure you meet these basic requirements before scheduling an appointment.</p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-md">
+<div class="bg-surface-container-low rounded-lg p-md text-center">
+<span class="material-symbols-outlined text-tertiary text-3xl mb-2">cake</span>
+<h3 class="font-label-lg text-label-lg text-on-surface mb-1">Age</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">17+ years old (16 with consent in some areas)</p>
+</div>
+<div class="bg-surface-container-low rounded-lg p-md text-center">
+<span class="material-symbols-outlined text-tertiary text-3xl mb-2">monitor_weight</span>
+<h3 class="font-label-lg text-label-lg text-on-surface mb-1">Weight</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">At least 110 lbs (50 kg)</p>
+</div>
+<div class="bg-surface-container-low rounded-lg p-md text-center">
+<span class="material-symbols-outlined text-tertiary text-3xl mb-2">favorite</span>
+<h3 class="font-label-lg text-label-lg text-on-surface mb-1">Health</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Generally in good health and feeling well</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Step-by-step Process -->
+<div class="bg-white rounded-xl p-lg shadow-card border border-outline-variant/10">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-lg">The Donation Journey</h2>
+<div class="relative">
+<!-- Connecting Line -->
+<div class="absolute left-6 top-8 bottom-8 w-1 bg-surface-container-highest rounded-full hidden md:block"></div>
+<div class="flex flex-col gap-6">
+<!-- Step 1 -->
+<div class="flex gap-4 relative">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 z-10 border-4 border-white">
+<span class="font-label-lg text-label-lg text-secondary">1</span>
+</div>
+<div class="pt-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Registration</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Sign in, show ID, and read required information. We'll verify your details to ensure accuracy.</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex gap-4 relative">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 z-10 border-4 border-white">
+<span class="font-label-lg text-label-lg text-secondary">2</span>
+</div>
+<div class="pt-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Health Check</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">A quick mini-physical checking your temperature, pulse, blood pressure, and hemoglobin levels.</p>
+</div>
+</div>
+<!-- Step 3 Active -->
+<div class="flex gap-4 relative">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0 z-10 border-4 border-white shadow-sm">
+<span class="font-label-lg text-label-lg text-on-primary">3</span>
+</div>
+<div class="pt-2">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-1">The Donation</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Relax while you donate approximately one pint of blood. This step usually only takes 8-10 minutes.</p>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="flex gap-4 relative">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 z-10 border-4 border-white">
+<span class="font-label-lg text-label-lg text-secondary">4</span>
+</div>
+<div class="pt-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Refresh &amp; Recover</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Enjoy snacks and drinks in our recovery area for 10-15 minutes before resuming your day.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Myths & Facts Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="bg-error-container/30 rounded-xl p-md border border-error/20 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-error">cancel</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Myth</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 italic">"Donating blood hurts a lot and takes all day."</p>
+</div>
+<div class="bg-white rounded-lg p-3">
+<span class="font-label-md text-label-md text-tertiary uppercase block mb-1">Fact</span>
+<p class="font-body-sm text-body-sm text-on-surface">You'll only feel a slight pinch. The donation itself takes about 10 minutes, and the whole process under an hour.</p>
+</div>
+</div>
+<div class="bg-error-container/30 rounded-xl p-md border border-error/20 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-error">cancel</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Myth</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 italic">"I can't donate if I have a tattoo or piercing."</p>
+</div>
+<div class="bg-white rounded-lg p-3">
+<span class="font-label-md text-label-md text-tertiary uppercase block mb-1">Fact</span>
+<p class="font-body-sm text-body-sm text-on-surface">If applied at a state-regulated facility, you can usually donate immediately. Otherwise, a 3-month wait applies.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar -->
+<div class="md:col-span-4 flex flex-col gap-lg">
+<!-- Tips Card -->
+<div class="bg-surface-container-low rounded-xl p-lg shadow-card border border-outline-variant/20">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Preparation Tips</h2>
+<div class="space-y-4">
+<div>
+<h3 class="font-label-lg text-label-lg text-tertiary flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[18px]">water_drop</span>
+                                Hydrate
+                            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Drink an extra 16 oz of water before your appointment.</p>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-tertiary flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[18px]">restaurant</span>
+                                Eat Well
+                            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Have a healthy, low-fat meal within two hours of donating.</p>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-tertiary flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[18px]">checkroom</span>
+                                Dress Comfortably
+                            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Wear clothing with sleeves that can be easily rolled up.</p>
+</div>
+<hr class="border-outline-variant/30 my-4">
+<h3 class="font-label-lg text-label-lg text-primary flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[18px]">medical_services</span>
+                                Aftercare
+                            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Keep the bandage on for a few hours. Avoid heavy lifting or strenuous exercise for the rest of the day.</p>
+</div>
+</div>
+<!-- Benefits Box -->
+<div class="bg-tertiary rounded-xl p-lg text-on-tertiary shadow-card relative overflow-hidden">
+<div class="absolute -bottom-8 -right-8 opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-[120px]">favorite</span>
+</div>
+<div class="relative z-10">
+<h2 class="font-headline-sm text-headline-sm mb-md">Why Donate?</h2>
+<ul class="space-y-3 font-body-sm text-body-sm">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] mt-0.5">check</span>
+                                One donation can save up to three lives.
+                            </li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] mt-0.5">check</span>
+                                Free mini health screening included.
+                            </li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] mt-0.5">check</span>
+                                Helps maintain healthy iron levels.
+                            </li>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] mt-0.5">check</span>
+                                Boosts emotional well-being and community connection.
+                            </li>
+</ul>
+<button class="mt-6 w-full py-2 px-4 bg-white text-tertiary rounded-full font-button text-button hover:bg-surface-bright transition-colors">
+                            Book Appointment
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full rounded-t-lg bg-surface-container dark:bg-surface-container-low border-t border-outline-variant/30 shadow-lg z-50"><div class="flex justify-around items-center px-4 py-2 pb-safe">
+  <a class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-high transition-colors active:scale-90 transition-transform w-16 h-14 rounded-xl" href="#">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-label-md text-label-md mt-1">Feed</span>
+  </a>
+  <a class="flex flex-col items-center justify-center bg-primary-container text-on-primary rounded-full px-6 py-1 active:scale-90 transition-transform h-14" href="#">
+    <span class="material-symbols-outlined fill">bloodtype</span>
+    <span class="font-label-md text-label-md mt-1">Blood Hub</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-high transition-colors active:scale-90 transition-transform w-16 h-14 rounded-xl" href="#">
+    <span class="material-symbols-outlined">group</span>
+    <span class="font-label-md text-label-md mt-1">Community</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-high transition-colors active:scale-90 transition-transform w-16 h-14 rounded-xl" href="#">
+    <span class="material-symbols-outlined">medical_services</span>
+    <span class="font-label-md text-label-md mt-1">Health</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-high transition-colors active:scale-90 transition-transform w-16 h-14 rounded-xl" href="#">
+    <span class="material-symbols-outlined">person</span>
+    <span class="font-label-md text-label-md mt-1">Profile</span>
+  </a>
+</div></nav>
+
+
+
+
+
+
+
+
+</body></html>

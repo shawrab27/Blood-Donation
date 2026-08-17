@@ -1,0 +1,296 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AI Blood Report Analyzer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "on-tertiary-container": "#c3ddff",
+                    "on-primary-container": "#ffd1cd",
+                    "surface": "#fff8f7",
+                    "inverse-surface": "#3a2d2f",
+                    "error-container": "#ffdad6",
+                    "primary-fixed": "#ffdad7",
+                    "secondary-container": "#e4e2e1",
+                    "on-tertiary-fixed": "#001d35",
+                    "primary-container": "#c30121",
+                    "surface-container": "#fee9eb",
+                    "surface-tint": "#c00020",
+                    "on-primary-fixed": "#410005",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#f8e3e5",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#930016",
+                    "surface-dim": "#ead5d7",
+                    "outline": "#916f6c",
+                    "on-background": "#24191a",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#fff8f7",
+                    "secondary-fixed": "#e4e2e1",
+                    "on-surface-variant": "#5c3f3d",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-surface": "#24191a",
+                    "tertiary-fixed-dim": "#9dcaff",
+                    "primary-fixed-dim": "#ffb3ae",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#e6bdba",
+                    "secondary": "#5f5e5e",
+                    "tertiary-container": "#0063a4",
+                    "inverse-on-surface": "#ffecee",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#d1e4ff",
+                    "on-secondary-fixed-variant": "#474746",
+                    "surface-variant": "#f3dde0",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#fff0f1",
+                    "background": "#fff8f7",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "tertiary": "#004b7e",
+                    "primary": "#960017",
+                    "on-secondary-container": "#656464",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "inverse-primary": "#ffb3ae",
+                    "surface-container-highest": "#f3dde0",
+                    "ai-accent": "#0D68AA"
+                },
+                borderRadius: {
+                    DEFAULT: "1rem",
+                    lg: "2rem",
+                    xl: "3rem",
+                    full: "9999px"
+                },
+                spacing: {
+                    xl: "32px",
+                    unit: "4px",
+                    xs: "4px",
+                    "margin-desktop": "64px",
+                    lg: "24px",
+                    gutter: "16px",
+                    "margin-mobile": "16px",
+                    sm: "8px",
+                    md: "16px"
+                },
+                fontFamily: {
+                    "body-md": ["Inter"],
+                    "button": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "display-lg": ["Georgia"],
+                    "headline-sm": ["Georgia"],
+                    "headline-lg": ["Georgia"],
+                    "headline-md": ["Georgia"],
+                    "body-lg": ["Inter"]
+                },
+                fontSize: {
+                    "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                    "button": ["16px", { lineHeight: "24px", fontWeight: "600" }],
+                    "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                    "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }],
+                    "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+                    "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                    "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "700" }],
+                    "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "700" }],
+                    "headline-md": ["24px", { lineHeight: "32px", fontWeight: "700" }],
+                    "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }]
+                }
+            }
+        }
+    }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 24px rgba(13, 104, 170, 0.05);
+        }
+        
+        .ai-gradient-text {
+            background: linear-gradient(135deg, #0D68AA, #004b7e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .scan-line {
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md antialiased pb-safe min-h-screen">
+<!-- Header (Task Focused Nav) -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-md h-16 bg-surface/90 backdrop-blur-md">
+<button class="p-2 -ml-2 text-primary hover:bg-surface-variant rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-ai-accent text-[20px]" style="font-variation-settings: 'FILL' 1;">psychology</span>
+            AI Report Analyzer
+        </h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</header>
+<main class="pt-[80px] px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto pb-[100px]">
+<!-- Intro -->
+<div class="mb-lg">
+<p class="font-body-md text-body-md text-on-surface-variant">Upload your recent blood report and let our AI instantly analyze key metrics, identify anomalies, and provide actionable health insights.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Upload Area -->
+<section class="glass-card rounded-[24px] p-lg border-2 border-dashed border-tertiary-fixed-dim bg-white/50 relative overflow-hidden group cursor-pointer hover:border-ai-accent transition-colors flex flex-col items-center justify-center min-h-[300px]">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent via-ai-accent/10 to-transparent h-1 scan-line pointer-events-none hidden" id="scan-animation"></div>
+<div class="flex flex-col items-center text-center space-y-md z-10" id="upload-state">
+<div class="w-16 h-16 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[32px]">cloud_upload</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm ai-gradient-text mb-sm">Upload Blood Report</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Drag &amp; drop or select a file</p>
+</div>
+<div class="flex gap-md w-full justify-center">
+<button class="flex items-center gap-xs px-md py-sm rounded-full border border-outline-variant text-on-surface hover:bg-surface-variant transition-colors font-button text-button">
+<span class="material-symbols-outlined text-[20px]">document_scanner</span>
+                            Camera
+                        </button>
+<button class="flex items-center gap-xs px-md py-sm rounded-full bg-on-tertiary-fixed text-on-tertiary hover:bg-tertiary transition-colors font-button text-button">
+<span class="material-symbols-outlined text-[20px]">description</span>
+                            PDF
+                        </button>
+</div>
+</div>
+<!-- Mock Processing State (Hidden by default, used for interaction) -->
+<div class="hidden flex-col items-center text-center space-y-md z-10" id="processing-state">
+<span class="material-symbols-outlined text-[48px] text-ai-accent animate-pulse">document_scanner</span>
+<p class="font-headline-sm text-headline-sm text-ai-accent">Processing OCR...</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Extracting clinical metrics</p>
+</div>
+</section>
+<!-- Results Preview -->
+<section class="space-y-lg">
+<!-- AI Summary -->
+<div class="glass-card rounded-[24px] p-lg border-l-4 border-l-ai-accent">
+<div class="flex items-start gap-sm mb-sm">
+<span class="material-symbols-outlined text-ai-accent text-[24px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">AI Summary</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Your hemoglobin is slightly low; iron-rich foods recommended. Other major indicators are within normal ranges.</p>
+</div>
+<!-- Key Metrics Bento -->
+<div class="grid grid-cols-2 gap-sm">
+<!-- Hemoglobin (Low) -->
+<div class="bg-surface-container-high rounded-[16px] p-md flex flex-col justify-between h-32 relative overflow-hidden">
+<div class="flex justify-between items-start">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Hemoglobin</span>
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-error">12.1 <span class="text-body-sm font-body-sm text-on-surface-variant">g/dL</span></div>
+<div class="inline-flex items-center gap-xs bg-error-container text-on-error-container px-2 py-1 rounded-full mt-xs">
+<span class="font-label-md text-label-md">Low</span>
+</div>
+</div>
+</div>
+<!-- RBC (Normal) -->
+<div class="bg-surface-container-high rounded-[16px] p-md flex flex-col justify-between h-32">
+<div class="flex justify-between items-start">
+<span class="font-label-lg text-label-lg text-on-surface-variant">RBC</span>
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">check_circle</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface">4.5<span class="text-body-sm font-body-sm text-on-surface-variant">M/µL</span></div>
+<div class="inline-flex items-center gap-xs bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-1 rounded-full mt-xs">
+<span class="font-label-md text-label-md">Normal</span>
+</div>
+</div>
+</div>
+<!-- Platelets (Normal) -->
+<div class="bg-surface-container-high rounded-[16px] p-md flex flex-col justify-between h-32 col-span-2 sm:col-span-1">
+<div class="flex justify-between items-start">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Platelets</span>
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">check_circle</span>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface">210<span class="text-body-sm font-body-sm text-on-surface-variant">k/µL</span></div>
+<div class="inline-flex items-center gap-xs bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-1 rounded-full mt-xs">
+<span class="font-label-md text-label-md">Normal</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recommendations -->
+<div class="glass-card rounded-[24px] p-lg">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary text-[24px]">lightbulb</span>
+                        Recommendations
+                    </h3>
+<ul class="space-y-sm">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-ai-accent text-[20px] mt-xs">check</span>
+<span class="font-body-md text-body-md text-on-surface">Increase Vitamin C intake to help iron absorption.</span>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-ai-accent text-[20px] mt-xs">check</span>
+<span class="font-body-md text-body-md text-on-surface">Incorporate leafy greens (spinach, kale) into daily diet.</span>
+</li>
+</ul>
+</div>
+<!-- Action -->
+<button class="w-full bg-[#0D68AA] hover:bg-[#004b7e] text-white font-button text-button py-md px-lg rounded-full flex items-center justify-center gap-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">download</span>
+                    Download Detailed AI Report
+                </button>
+</section>
+</div>
+<!-- Disclaimer -->
+<div class="mt-xl text-center border-t border-outline-variant/30 pt-md">
+<p class="font-label-md text-label-md text-on-surface-variant max-w-2xl mx-auto">
+<span class="material-symbols-outlined text-[16px] inline-block align-text-bottom mr-1">info</span>
+                Medical Disclaimer: This AI analysis is for informational purposes only and does not constitute medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+            </p>
+</div>
+</main>
+<script>
+        // Simple interaction script to demonstrate state change
+        const uploadSection = document.querySelector('.glass-card.group');
+        const uploadState = document.getElementById('upload-state');
+        const processingState = document.getElementById('processing-state');
+        const scanAnimation = document.getElementById('scan-animation');
+
+        if(uploadSection) {
+            uploadSection.addEventListener('click', () => {
+                uploadState.classList.add('hidden');
+                processingState.classList.remove('hidden');
+                processingState.classList.add('flex');
+                scanAnimation.classList.remove('hidden');
+
+                // Reset after 3 seconds
+                setTimeout(() => {
+                    processingState.classList.add('hidden');
+                    processingState.classList.remove('flex');
+                    uploadState.classList.remove('hidden');
+                    scanAnimation.classList.add('hidden');
+                }, 3000);
+            });
+        }
+    </script>
+</body></html>

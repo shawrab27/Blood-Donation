@@ -1,0 +1,328 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Recovery Tracker - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#c3ddff",
+                        "on-primary-container": "#ffd1cd",
+                        "surface": "#fff8f7",
+                        "inverse-surface": "#3a2d2f",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#ffdad7",
+                        "secondary-container": "#e4e2e1",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary-container": "#c30121",
+                        "surface-container": "#fee9eb",
+                        "surface-tint": "#c00020",
+                        "on-primary-fixed": "#410005",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#f8e3e5",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-dim": "#ead5d7",
+                        "outline": "#916f6c",
+                        "on-background": "#24191a",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fff8f7",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-surface-variant": "#5c3f3d",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-surface": "#24191a",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#e6bdba",
+                        "secondary": "#5f5e5e",
+                        "tertiary-container": "#0063a4",
+                        "inverse-on-surface": "#ffecee",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#d1e4ff",
+                        "on-secondary-fixed-variant": "#474746",
+                        "surface-variant": "#f3dde0",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#fff0f1",
+                        "background": "#fff8f7",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "tertiary": "#004b7e",
+                        "primary": "#960017",
+                        "on-secondary-container": "#656464",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "inverse-primary": "#ffb3ae",
+                        "surface-container-highest": "#f3dde0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "unit": "4px",
+                        "xs": "4px",
+                        "margin-desktop": "64px",
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "button": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "display-lg": ["Georgia"],
+                        "headline-sm": ["Georgia"],
+                        "headline-lg": ["Georgia"],
+                        "headline-md": ["Georgia"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Ambient Soft Shadows for Layering */
+        .shadow-level-1 { box-shadow: 0 12px 24px -4px rgba(142,125,127,0.08); }
+        .progress-track { stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 1s ease-out; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface docked full-width top-0 flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop h-16 z-40 relative">
+<div class="flex items-center gap-sm"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlm1SlBaD1W92NKa_XNI6zKMCrc_OtAQrzSpJnLfGxsmGI1QIoG5QBkiYIqniV0LSDqd2Lo8MtOFiKXPq13XdSloJMNM0A_v0jRVP7KYGcQ0PdvOwae-yF6GFMbFAuDqK9xb7eLC2vi45hKkcWksgddZJvOtZxi2u1dfgw6B-J9fk7hizdQ5OQa-dmLUbRUn8b8mvJjfxJu1mIpAHefmOKvWWqdq-ULc0Vn4rAeAVrLcKjJYsi9cYaswp4BJDCw4EgRgkdCQRUkEs" alt="BloodPulse Logo" class="h-8 w-auto"><span class="font-headline-md text-headline-md tracking-tight" style="font-family: Georgia; color: rgb(195, 1, 33);">BloodPulse</span></div>
+<!-- Desktop Navigation (Hidden on Mobile) -->
+<nav class="hidden md:flex items-center gap-lg">
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">rss_feed</span>
+                Feed
+            </a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">emergency</span>
+                Emergency
+            </a>
+<!-- Active State -->
+<a class="font-label-lg text-label-lg text-primary flex items-center gap-xs relative after:content-[''] after:absolute after:-bottom-2 after:left-0 after:w-full after:h-1 after:bg-primary after:rounded-t-lg" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                Health
+            </a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[20px]">person</span>
+                Profile
+            </a>
+</nav>
+<div class="flex items-center gap-md"><div class="relative flex items-center justify-center"><span class="material-symbols-outlined text-primary text-[24px]">notifications</span><span class="absolute -top-1 -right-1 bg-[#960017] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span></div><span class="material-symbols-outlined text-secondary text-[24px]">more_vert</span></div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg pb-32">
+<!-- Page Header -->
+<div class="mb-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Recovery &amp; Aftercare</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Track your post-donation journey to ensure a healthy recovery.</p>
+</div>
+<!-- Hero Progress -->
+<section class="bg-on-primary rounded-DEFAULT p-lg shadow-level-1 mb-xl flex flex-col md:flex-row items-center gap-xl relative overflow-hidden">
+<!-- Decorative Background Element -->
+<div class="absolute -top-12 -right-12 w-64 h-64 bg-surface-container-highest rounded-full opacity-20 blur-3xl pointer-events-none"></div>
+<div class="relative w-48 h-48 flex-shrink-0 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-secondary-container opacity-30" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="4"></path>
+<!-- 80% Progress -->
+<path class="text-primary progress-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="100, 100" stroke-dashoffset="20" stroke-linecap="round" stroke-width="4"></path>
+</svg>
+<div class="absolute flex flex-col items-center justify-center">
+<span class="font-display-lg text-display-lg text-on-surface">80<span class="font-headline-sm text-headline-sm">%</span></span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mt-1">Recovered</span>
+</div>
+</div>
+<div class="flex-grow">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-sm">You are doing great!</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-md">It has been 24 hours since your donation. Your fluid levels should be mostly restored. Keep resting and avoid heavy strain.</p>
+<div class="inline-flex items-center gap-sm bg-surface-container-high px-md py-sm rounded-full">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="font-label-lg text-label-lg text-on-surface">Hydration Goal: 2L / 3L</span>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-xl">
+<!-- Timeline Section -->
+<div class="lg:col-span-5">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-lg">Recovery Timeline</h3>
+<div class="relative pl-sm">
+<!-- Vertical Line -->
+<div class="absolute left-[23px] top-4 bottom-8 w-[2px] bg-secondary-container"></div>
+<!-- Active Fill Line (up to 24h) -->
+<div class="absolute left-[23px] top-4 h-[75%] w-[2px] bg-primary"></div>
+<!-- Step 1: Donation -->
+<div class="relative flex items-start gap-md mb-lg">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="pt-2">
+<h4 class="font-label-lg text-label-lg text-on-surface">Donation Completed</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">0h - 15 mins rest taken</p>
+</div>
+</div>
+<!-- Step 2: Drink Water -->
+<div class="relative flex items-start gap-md mb-lg">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="pt-2">
+<h4 class="font-label-lg text-label-lg text-on-surface">Rehydration Phase</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">2h - Extra fluids consumed</p>
+</div>
+</div>
+<!-- Step 3: Healthy Meal -->
+<div class="relative flex items-start gap-md mb-lg">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<div class="pt-2">
+<h4 class="font-label-lg text-label-lg text-on-surface">Nutrient Replenishment</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">6h - Iron-rich meal eaten</p>
+</div>
+</div>
+<!-- Step 4: Light Exercise (Current) -->
+<div class="relative flex items-start gap-md mb-lg">
+<div class="w-10 h-10 rounded-full bg-primary-container border-2 border-primary flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">directions_walk</span>
+</div>
+<div class="pt-2">
+<h4 class="font-label-lg text-label-lg text-primary">Light Activity Resumed</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">24h - Current status</p>
+</div>
+</div>
+<!-- Step 5: Full Recovery -->
+<div class="relative flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-surface border-2 border-outline-variant flex items-center justify-center z-10 flex-shrink-0">
+<span class="material-symbols-outlined text-outline text-[20px]">favorite</span>
+</div>
+<div class="pt-2">
+<h4 class="font-label-lg text-label-lg text-on-surface-variant">Full Recovery</h4>
+<p class="font-body-sm text-body-sm text-outline">48h - Heavy lifting safe</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Recommendations & Warnings -->
+<div class="lg:col-span-7 flex flex-col gap-lg">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Activity Guidelines</h3>
+<!-- Bento Grid for Guidelines -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<!-- Safe Now -->
+<div class="bg-on-primary rounded-DEFAULT p-md shadow-level-1 border-t-4 border-t-tertiary">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-lg text-label-lg text-on-surface">Safe Now</span>
+</div>
+<ul class="space-y-sm">
+<li class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">directions_walk</span> Walking
+                            </li>
+<li class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">self_improvement</span> Gentle Yoga
+                            </li>
+<li class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">work</span> Office Work
+                            </li>
+</ul>
+</div>
+<!-- Wait -->
+<div class="bg-on-primary rounded-DEFAULT p-md shadow-level-1 border-t-4 border-t-secondary">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">pending</span>
+<span class="font-label-lg text-label-lg text-on-surface">Wait 24h</span>
+</div>
+<ul class="space-y-sm">
+<li class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">directions_run</span> Running
+                            </li>
+<li class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">fitness_center</span> Light Gym
+                            </li>
+</ul>
+</div>
+<!-- Avoid -->
+<div class="bg-surface-container-low rounded-DEFAULT p-md shadow-level-1 border-t-4 border-t-error sm:col-span-2">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">cancel</span>
+<span class="font-label-lg text-label-lg text-error">Avoid until 48h</span>
+</div>
+<div class="flex flex-wrap gap-md">
+<div class="flex items-center gap-xs bg-error-container text-on-error-container px-sm py-xs rounded-full font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">sports_martial_arts</span> Contact Sports
+                            </div>
+<div class="flex items-center gap-xs bg-error-container text-on-error-container px-sm py-xs rounded-full font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">weight</span> Heavy Lifting
+                            </div>
+<div class="flex items-center gap-xs bg-error-container text-on-error-container px-sm py-xs rounded-full font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">flight_takeoff</span> Long Flights
+                            </div>
+</div>
+</div>
+</div>
+<!-- Warning Signs Card -->
+<div class="bg-surface-container-high rounded-DEFAULT p-md mt-sm flex items-start gap-md">
+<span class="material-symbols-outlined text-primary text-[24px] mt-1" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface mb-xs">When to seek medical help</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">If you experience continued fainting, severe dizziness, or bleeding at the donation site that doesn't stop after applying pressure, please contact a professional.</p>
+<button class="font-button text-button text-primary hover:opacity-80 transition-opacity">Contact Clinic Support</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only based on Shell Logic rules) -->
+<nav class="md:hidden bg-surface dark:bg-inverse-surface fixed bottom-0 w-full z-50 rounded-t-lg shadow-[0_-4px_12px_rgba(142,125,127,0.04)] shadow-lg flex justify-around items-center px-4 py-3 pb-safe"><a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform">rss_feed</span>
+<span class="font-label-md text-label-md">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform">bloodtype</span>
+<span class="font-label-md text-label-md">Blood Hub</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform">groups</span>
+<span class="font-label-md text-label-md">Community</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1.5 scale-95 transition-transform duration-150 group" href="#" style="background-color: rgb(195, 1, 33);">
+<span class="material-symbols-outlined mb-1 text-white" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-md text-label-md text-white">Health</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-90 transition-transform">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a></nav>
+
+
+
+
+
+
+</body></html>

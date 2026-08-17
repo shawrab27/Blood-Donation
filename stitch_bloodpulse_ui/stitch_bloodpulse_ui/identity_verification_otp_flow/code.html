@@ -1,0 +1,215 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Identity Verification | BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Georgia:wght@700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#f8e3e5",
+                    "tertiary-fixed-dim": "#9dcaff",
+                    "error-container": "#ffdad6",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#474746",
+                    "surface-tint": "#c00020",
+                    "outline": "#916f6c",
+                    "on-tertiary-container": "#c3ddff",
+                    "on-primary-fixed-variant": "#930016",
+                    "surface-container-highest": "#f3dde0",
+                    "surface-container": "#fee9eb",
+                    "outline-variant": "#e6bdba",
+                    "secondary-container": "#e4e2e1",
+                    "on-primary-fixed": "#410005",
+                    "surface-container-low": "#fff0f1",
+                    "error": "#ba1a1a",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#24191a",
+                    "on-error-container": "#93000a",
+                    "on-primary-container": "#ffd1cd",
+                    "inverse-surface": "#3a2d2f",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "on-tertiary-fixed": "#001d35",
+                    "on-secondary-container": "#656464",
+                    "on-secondary": "#ffffff",
+                    "on-background": "#24191a",
+                    "primary-fixed": "#ffdad7",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "secondary": "#5f5e5e",
+                    "tertiary-container": "#0063a4",
+                    "primary-container": "#c30121",
+                    "surface-bright": "#fff8f7",
+                    "inverse-primary": "#ffb3ae",
+                    "inverse-on-surface": "#ffecee",
+                    "tertiary-fixed": "#d1e4ff",
+                    "surface-dim": "#ead5d7",
+                    "background": "#fff8f7",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-variant": "#f3dde0",
+                    "primary": "#960017",
+                    "secondary-fixed": "#e4e2e1",
+                    "tertiary": "#004b7e",
+                    "on-surface-variant": "#5c3f3d",
+                    "surface": "#fff8f7",
+                    "primary-fixed-dim": "#ffb3ae",
+                    "on-secondary-fixed": "#1b1c1c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "margin-desktop": "64px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "xl": "32px",
+                    "unit": "4px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Georgia"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Georgia"],
+                    "headline-sm": ["Georgia"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Georgia"],
+                    "button": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fff8f7;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .otp-input:focus {
+            outline: none;
+            border-color: #004b7e;
+            box-shadow: 0 0 0 2px rgba(0, 75, 126, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(230, 189, 186, 0.3);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background flex justify-between items-center px-margin-mobile h-16 shadow-sm"><div class="flex items-center gap-2"><img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5XME_u-MXdYNIa0KCqzy7EBQ51tao22a9fzqrmIRgDEeD1AfWVHlwt0OsENVGLlfxbO_cd3vJliLIE_stLw2KKYhri15BwXU-WkBO5IJ_h5cXq0Nt-sP04Q1DiLZxTLcU-BVze9cMOgkXtYKV5n5zxqe_E14Lpyo8HhsB7ZdCFsxXMnT9pz84HlEtLJrh9TitPxZlv1f9ZT0yrdL8LdzAAQcCaAnt1z85xbzTBw9H-5NjeHty_HlKfnB7fnecxCK7syBhHNtUR68" alt="BloodPulse Logo" class="h-8 w-auto"><span class="font-headline-sm text-headline-sm" style="color: #C30121; font-family: Georgia;">BloodPulse</span></div><div class="flex items-center gap-md"><button class="relative p-2 rounded-full hover:bg-surface-variant/20 transition-colors"><span class="material-symbols-outlined text-on-surface-variant">notifications</span><span class="absolute top-1 right-1 bg-primary text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">3</span></button><button class="p-2 rounded-full hover:bg-surface-variant/20 transition-colors"><span class="material-symbols-outlined text-on-surface-variant">more_vert</span></button></div></header>
+<!-- Main Content -->
+<main class="flex-1 mt-16 mb-24 px-margin-mobile md:px-margin-desktop py-lg max-w-lg mx-auto w-full">
+<div class="space-y-xl">
+<!-- Header Section -->
+<div class="space-y-sm">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Identity Verification</h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                    To ensure patient safety, please verify your identity via OTP. This is required for users without a verified NID/Birth Certificate.
+                </p>
+</div>
+<!-- Verification Form -->
+<div class="space-y-lg">
+<!-- Mobile Number Input -->
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block ml-sm">Mobile Number</label>
+<div class="relative flex items-center">
+<input class="w-full h-14 px-md rounded-lg border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-tertiary focus:border-transparent transition-all font-body-md" placeholder="Enter mobile number" type="tel" value="+1 (555) 000-1234">
+<button class="absolute right-2 px-md py-sm bg-tertiary-fixed text-on-tertiary-fixed font-button text-button rounded-full hover:bg-tertiary-fixed-dim transition-colors">
+                            Send OTP
+                        </button>
+</div>
+</div>
+<!-- OTP Input -->
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block ml-sm text-center">Enter 6-Digit OTP</label>
+<div class="flex justify-between gap-sm">
+<input class="otp-input w-12 h-14 text-center text-headline-sm font-headline-sm rounded-lg border border-outline-variant bg-surface-container-lowest" maxlength="1" type="text" value="4">
+<input class="otp-input w-12 h-14 text-center text-headline-sm font-headline-sm rounded-lg border border-outline-variant bg-surface-container-lowest" maxlength="1" type="text" value="2">
+<input class="otp-input w-12 h-14 text-center text-headline-sm font-headline-sm rounded-lg border border-outline-variant bg-surface-container-lowest" maxlength="1" placeholder="·" type="text">
+<input class="otp-input w-12 h-14 text-center text-headline-sm font-headline-sm rounded-lg border border-outline-variant bg-surface-container-lowest" maxlength="1" placeholder="·" type="text">
+<input class="otp-input w-12 h-14 text-center text-headline-sm font-headline-sm rounded-lg border border-outline-variant bg-surface-container-lowest" maxlength="1" placeholder="·" type="text">
+<input class="otp-input w-12 h-14 text-center text-headline-sm font-headline-sm rounded-lg border border-outline-variant bg-surface-container-lowest" maxlength="1" placeholder="·" type="text">
+</div>
+<div class="text-center pt-sm">
+<button class="text-tertiary font-label-lg hover:underline transition-all">Resend code in 00:45</button>
+</div>
+</div>
+<!-- Action Button -->
+<div class="pt-md">
+<button class="w-full h-14 bg-primary-container text-white font-button text-button rounded-full shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-sm">
+                        Verify &amp; Submit Request
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Virtual Keypad (Visual Aid) -->
+<div class="glass-card rounded-lg p-md grid grid-cols-3 gap-md md:hidden">
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">1</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">2</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">3</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">4</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">5</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">6</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">7</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">8</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">9</button>
+<div class="h-12"></div>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors">0</button>
+<button class="h-12 flex items-center justify-center font-headline-sm rounded-full hover:bg-surface-variant/30 active:bg-surface-variant/50 transition-colors text-error">
+<span class="material-symbols-outlined" data-icon="backspace">backspace</span>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-container shadow-[0_-4px_12px_rgba(142,125,127,0.04)] rounded-t-lg flex justify-around items-center h-20 px-gutter w-full"><button class="flex flex-1 flex-col items-center justify-center text-on-surface-variant gap-1"><span class="material-symbols-outlined">home</span><span class="font-label-md text-label-md">Feed</span></button><button class="flex flex-1 flex-col items-center justify-center bg-primary text-white rounded-full h-12 mx-1 gap-1"><span class="material-symbols-outlined">opacity</span><span class="font-label-md text-label-md">Blood Hub</span></button><button class="flex flex-1 flex-col items-center justify-center text-on-surface-variant gap-1"><span class="material-symbols-outlined">groups</span><span class="font-label-md text-label-md">Community</span></button><button class="flex flex-1 flex-col items-center justify-center text-on-surface-variant gap-1"><span class="material-symbols-outlined">health_and_safety</span><span class="font-label-md text-label-md">Health</span></button><button class="flex flex-1 flex-col items-center justify-center text-on-surface-variant gap-1"><span class="material-symbols-outlined">person</span><span class="font-label-md text-label-md">Profile</span></button></nav>
+<script>
+        // Simple micro-interaction for OTP inputs
+        const inputs = document.querySelectorAll('.otp-input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('keyup', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+                if (e.key === 'Backspace' && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BloodPulse - Menu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Georgia:wght@700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary": "#5f5e5e",
+                  "on-error-container": "#93000a",
+                  "primary-container": "#c30121",
+                  "surface-tint": "#c00020",
+                  "on-error": "#ffffff",
+                  "on-tertiary-fixed": "#001d35",
+                  "on-secondary-fixed": "#1b1c1c",
+                  "tertiary-fixed-dim": "#9dcaff",
+                  "surface": "#fff8f7",
+                  "on-secondary-container": "#656464",
+                  "on-primary-container": "#ffd1cd",
+                  "surface-container-highest": "#f3dde0",
+                  "on-secondary-fixed-variant": "#474746",
+                  "secondary-container": "#e4e2e1",
+                  "error-container": "#ffdad6",
+                  "secondary-fixed-dim": "#c8c6c5",
+                  "outline": "#916f6c",
+                  "inverse-surface": "#3a2d2f",
+                  "background": "#fff8f7",
+                  "surface-container-low": "#fff0f1",
+                  "surface-container": "#fee9eb",
+                  "surface-container-lowest": "#ffffff",
+                  "on-tertiary": "#ffffff",
+                  "on-background": "#24191a",
+                  "surface-bright": "#fff8f7",
+                  "on-tertiary-container": "#c3ddff",
+                  "on-primary-fixed": "#410005",
+                  "on-surface": "#24191a",
+                  "primary-fixed-dim": "#ffb3ae",
+                  "tertiary-container": "#0063a4",
+                  "primary": "#960017",
+                  "inverse-on-surface": "#ffecee",
+                  "on-primary-fixed-variant": "#930016",
+                  "error": "#ba1a1a",
+                  "tertiary-fixed": "#d1e4ff",
+                  "surface-variant": "#f3dde0",
+                  "primary-fixed": "#ffdad7",
+                  "on-primary": "#ffffff",
+                  "tertiary": "#004b7e",
+                  "inverse-primary": "#ffb3ae",
+                  "surface-dim": "#ead5d7",
+                  "outline-variant": "#e6bdba",
+                  "on-surface-variant": "#5c3f3d",
+                  "surface-container-high": "#f8e3e5",
+                  "secondary-fixed": "#e4e2e1",
+                  "on-tertiary-fixed-variant": "#00497b",
+                  "on-secondary": "#ffffff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "1rem",
+                  "lg": "2rem",
+                  "xl": "3rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "xl": "32px",
+                  "margin-mobile": "16px",
+                  "gutter": "16px",
+                  "md": "16px",
+                  "sm": "8px",
+                  "margin-desktop": "64px",
+                  "xs": "4px",
+                  "unit": "4px",
+                  "lg": "24px"
+          },
+          "fontFamily": {
+                  "label-lg": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "headline-md": ["Georgia"],
+                  "headline-lg": ["Georgia"],
+                  "display-lg": ["Georgia"],
+                  "body-md": ["Inter"],
+                  "body-sm": ["Inter"],
+                  "label-md": ["Inter"],
+                  "button": ["Inter"],
+                  "headline-sm": ["Georgia"]
+          },
+          "fontSize": {
+                  "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                  "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                  "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                  "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                  "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    body {
+      background-color: #fff8f7;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-md">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-inverse-surface docked full-width top-0 flex justify-between items-center px-margin-mobile h-16 w-full sticky z-50">
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">arrow_back</span>
+</button>
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+</div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary dark:text-primary-fixed-dim">BloodPulse</h1>
+</div>
+</div>
+<div class="w-10"></div> <!-- Placeholder for balancing layout -->
+</header>
+<!-- Main Content -->
+<main class="flex-1 px-margin-mobile md:px-margin-desktop py-lg max-w-2xl mx-auto w-full">
+<!-- Profile Mini-Card (Contextual Addition) -->
+<div class="bg-surface-container-lowest p-lg rounded-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] flex items-center gap-md mb-xl">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border-2 border-primary-fixed">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a friendly medical professional with soft lighting. The background is a clean, minimalist warm white and soft pink gradient, reflecting a modern corporate healthcare brand. The lighting is high-key and empathetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnL7COiltCldSLT_1_tow6HpN_I1XGLGTeSKe19gXwjqHCVmUGdQoGJHPyc3LiRihNTfRMO-R9HcTM-ulRf4kJ2DBQjDiHv9iLPjvjiepBtA0u2tS3XH7o1JlM-rPKh-SnLDKiI4BgG47ca1nyhoZib64elHy2awTgRWmPMLTZBtJI4Gu0rnlnuRnAedPhO1-nEOtfjF82PrNhDmNIZf1nayKzPoIvh3u3pihCjD8u_9mUKWt079Gd414LGomrimIvOupbG9OZrQc"/>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Alex Thompson</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">O+ Donor • 12 Donations</p>
+</div>
+</div>
+<!-- Menu List -->
+<div class="bg-surface-container-lowest rounded-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] overflow-hidden">
+<!-- Learn More -->
+<a class="flex items-center justify-between p-lg hover:bg-surface-container-high transition-colors group active:scale-[0.99] transition-transform" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">info</span>
+<span class="font-body-md text-body-md text-on-surface">Learn More</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-[1px] bg-outline-variant/30 mx-lg"></div>
+<!-- Contact Us -->
+<a class="flex items-center justify-between p-lg hover:bg-surface-container-high transition-colors group active:scale-[0.99] transition-transform" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">support_agent</span>
+<span class="font-body-md text-body-md text-on-surface">Contact Us</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-[1px] bg-outline-variant/30 mx-lg"></div>
+<!-- About Us -->
+<a class="flex items-center justify-between p-lg hover:bg-surface-container-high transition-colors group active:scale-[0.99] transition-transform" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">corporate_fare</span>
+<span class="font-body-md text-body-md text-on-surface">About Us</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-[1px] bg-outline-variant/30 mx-lg"></div>
+<!-- Dark Mode -->
+<div class="flex items-center justify-between p-lg">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">dark_mode</span>
+<span class="font-body-md text-body-md text-on-surface">Dark Mode</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="darkModeToggle" onclick="document.documentElement.classList.toggle('dark')" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="h-[1px] bg-outline-variant/30 mx-lg"></div>
+<!-- Settings -->
+<a class="flex items-center justify-between p-lg hover:bg-surface-container-high transition-colors group active:scale-[0.99] transition-transform" href="#">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary">settings</span>
+<span class="font-body-md text-body-md text-on-surface">Settings</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-[1px] bg-outline-variant/30 mx-lg"></div>
+<!-- Log Out -->
+<button class="w-full flex items-center justify-between p-lg hover:bg-error-container/20 transition-colors group active:scale-[0.99] transition-transform text-left">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">logout</span>
+<span class="font-body-md text-body-md text-primary-container font-semibold">Log Out</span>
+</div>
+<span class="material-symbols-outlined text-primary-container/40 group-hover:text-primary-container transition-colors">chevron_right</span>
+</button>
+</div>
+<!-- App Version -->
+<div class="mt-xl text-center">
+<p class="font-label-md text-label-md text-outline">BloodPulse v2.4.0</p>
+<p class="font-label-md text-label-md text-outline mt-xs">Powered by Clinical Flow Design System</p>
+</div>
+</main>
+<!-- Spacer for BottomNavBar -->
+<div class="h-20"></div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(142,125,127,0.04)] rounded-t-lg">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-secondary-container dark:hover:bg-secondary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<!-- Donate -->
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-secondary-container dark:hover:bg-secondary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">bloodtype</span>
+<span class="font-label-md text-label-md">Donate</span>
+</a>
+<!-- Clinics -->
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-secondary-container dark:hover:bg-secondary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="font-label-md text-label-md">Clinics</span>
+</a>
+<!-- Menu (Active) -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu</span>
+<span class="font-label-md text-label-md">Menu</span>
+</a>
+</nav>
+<script>
+    // Logic for smooth ripples or micro-interactions could go here
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mousedown', () => {
+        el.classList.add('active:scale-95');
+      });
+    });
+  </script>
+</body></html>

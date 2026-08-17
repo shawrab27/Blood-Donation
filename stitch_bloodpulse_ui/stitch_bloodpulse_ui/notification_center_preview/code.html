@@ -1,0 +1,375 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Notification Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#0063a4",
+                        "tertiary-fixed": "#d1e4ff",
+                        "on-tertiary-container": "#c3ddff",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-primary-fixed": "#410005",
+                        "on-primary-container": "#ffd1cd",
+                        "primary-fixed": "#ffdad7",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary": "#004b7e",
+                        "surface-variant": "#f3dde0",
+                        "primary-container": "#c30121",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary": "#960017",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#ead5d7",
+                        "surface-container-low": "#fff0f1",
+                        "outline": "#916f6c",
+                        "error": "#ba1a1a",
+                        "secondary": "#5f5e5e",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#ffecee",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#656464",
+                        "outline-variant": "#e6bdba",
+                        "background": "#fff8f7",
+                        "surface-container": "#fee9eb",
+                        "surface-tint": "#c00020",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#e4e2e1",
+                        "on-surface-variant": "#5c3f3d",
+                        "surface": "#fff8f7",
+                        "on-background": "#24191a",
+                        "surface-container-high": "#f8e3e5",
+                        "on-primary-fixed-variant": "#930016",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "surface-container-highest": "#f3dde0",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-surface": "#24191a",
+                        "surface-bright": "#fff8f7",
+                        "inverse-primary": "#ffb3ae",
+                        "on-tertiary-fixed": "#001d35"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "margin-desktop": "64px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Georgia", "serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "label-lg": ["Inter", "sans-serif"],
+                        "display-lg": ["Georgia", "serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "headline-sm": ["Georgia", "serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "headline-lg": ["Georgia", "serif"],
+                        "button": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fff8f7; /* Custom warm surface background */
+            font-family: 'Inter', sans-serif;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04);
+        }
+        .modal-blur {
+            backdrop-filter: blur(8px);
+            background-color: rgba(36, 25, 26, 0.4);
+        }
+        .wallpaper-bg {
+            background: linear-gradient(180deg, rgba(195, 1, 33, 0.1) 0%, rgba(195, 1, 33, 0.4) 100%);
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm h-16 flex items-center justify-center px-margin-mobile md:px-margin-desktop">
+<div class="w-full max-w-7xl flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<img alt="BloodPulse Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7xexD-VUoVHYHp7PyGurG7OH5Um_yh0_5BgrYyssac5Jyd4NL3Phd-varrDUKXm3qWoj_lTIVsEBmS6s8hz5UDYickAyp2aBXfkOT3US0gYIyCzbWjLyIt_V5U2qMi3cW7dsZaNVRxtg8ApJB11Xu1R5yegK8St3uJ6wuXJdkqz5FlV4MIfpPlCPWDytBQ0TMFraptW_gP6zqTaBosN1H5FA73bXzqcJ4CPJerrixzZb4h-9iU7a_M-m8-zLEQux4VelhPV9T7Pw">
+<h1 class="font-headline-md text-headline-md text-primary-container">BloodPulse</h1>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative cursor-pointer hover:bg-surface-container-high p-2 rounded-full transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-1 right-1 w-3 h-3 bg-primary-container border-2 border-surface rounded-full"></span>
+</div>
+<div class="cursor-pointer hover:bg-surface-container-high p-2 rounded-full transition-colors active:opacity-80" onclick="toggleMenu()">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto min-h-screen">
+<div class="mb-lg">
+
+
+</div>
+<!-- Asymmetric Notification List (Bento-style Cards) -->
+<div class="bento-grid"><!-- Newsfeed Post Update -->
+<div class="group bg-surface-container-lowest card-shadow rounded-lg p-md border border-outline-variant/30 transition-all hover:scale-[1.02] active:scale-95">
+    <div class="flex items-start gap-sm mb-sm">
+        <div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-secondary">person</span>
+        </div>
+        <div class="flex-1">
+            <p class="font-body-md text-body-md text-on-surface">
+                <span class="font-label-lg">Sarah Jenkins</span> shared a new post: "Just completed my 10th donation!"
+            </p>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">5 mins ago</p>
+        </div>
+    </div>
+    <button class="w-full border border-outline-variant text-primary font-button text-button py-2 rounded-full hover:bg-primary-container/10 transition-all">
+        View Post
+    </button>
+</div>
+
+<!-- Request Message -->
+<div class="group bg-surface-container-lowest card-shadow rounded-lg p-md border border-outline-variant/30 transition-all hover:scale-[1.02] active:scale-95">
+    <div class="flex items-start gap-sm mb-sm">
+        <div class="w-10 h-10 rounded-full bg-primary-fixed-dim flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: &quot;FILL&quot; 1;">emergency</span>
+        </div>
+        <div class="flex-1">
+            <p class="font-body-md text-body-md text-on-surface">
+                <span class="font-label-lg text-error">Urgent:</span> City General Hospital needs O- Negative blood
+            </p>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">12 mins ago</p>
+        </div>
+    </div>
+    <div class="flex gap-sm">
+        <button class="flex-1 bg-primary text-on-primary font-button text-button py-2 rounded-full hover:shadow-lg transition-all">
+            Respond
+        </button>
+        <button class="flex-1 border border-outline-variant text-on-surface-variant font-button text-button py-2 rounded-full hover:bg-surface-container-high transition-all">
+            Message
+        </button>
+    </div>
+</div>
+
+<!-- Confirmation Alert -->
+<div class="group bg-surface-container-lowest card-shadow rounded-lg p-md border border-outline-variant/30 transition-all hover:scale-[1.02] active:scale-95">
+    <div class="flex items-start gap-sm mb-sm">
+        <div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-tertiary">event_available</span>
+        </div>
+        <div class="flex-1">
+            <p class="font-body-md text-body-md text-on-surface">
+                <span class="font-label-lg">Appointment Confirmed:</span> Your donation at Northside Clinic is scheduled for tomorrow at 10:00 AM.
+            </p>
+        </div>
+    </div>
+    <button class="w-full bg-secondary text-on-secondary font-button text-button py-2 rounded-full hover:bg-on-secondary-fixed-variant transition-all">
+        View Details
+    </button>
+</div>
+
+<!-- Community Update -->
+<div class="group bg-surface-container-lowest card-shadow rounded-lg p-md border border-outline-variant/30 transition-all hover:scale-[1.02] active:scale-95">
+    <div class="flex items-start gap-sm">
+        <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: &quot;FILL&quot; 1;">favorite</span>
+        </div>
+        <div class="flex-1">
+            <p class="font-body-md text-body-md text-on-surface">
+                <span class="font-label-lg">Alex Johnson</span> and 5 others liked your recent health milestone.
+            </p>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">2 hours ago</p>
+        </div>
+    </div>
+</div></div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 pb-safe bg-surface-container-lowest dark:bg-surface-container-low border-t border-outline-variant/30 z-50 shadow-lg md:hidden">
+<div class="flex flex-col items-center justify-center text-on-secondary-fixed-variant hover:bg-secondary-container/50 transition-all px-4 py-1 rounded-full cursor-pointer">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 transition-all active:scale-95 duration-150">
+<span class="material-symbols-outlined">opacity</span>
+<span class="font-label-md text-label-md">Requests</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-secondary-fixed-variant hover:bg-secondary-container/50 transition-all px-4 py-1 rounded-full cursor-pointer">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-label-md text-label-md">Messages</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-secondary-fixed-variant hover:bg-secondary-container/50 transition-all px-4 py-1 rounded-full cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</div>
+</nav>
+<!-- Modal Backdrop / Interaction Sheet -->
+<div class="fixed inset-0 z-[100] modal-blur transition-opacity duration-300 flex items-end md:items-center justify-center p-4 opacity-0 pointer-events-none" id="actionModal">
+<div class="relative w-full max-w-sm bg-surface rounded-xl overflow-hidden shadow-2xl transform transition-transform duration-500 ease-out translate-y-full" id="modalContent">
+<!-- "Phone Wallpaper" Background Preview Area -->
+<div class="h-96 relative wallpaper-bg flex flex-col justify-end p-lg">
+<!-- Close Button -->
+<button class="absolute top-4 right-4 bg-black/20 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/40 transition-colors" onclick="closeModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="absolute inset-0 z-0 overflow-hidden">
+<div class="w-full h-full bg-cover bg-center opacity-40" data-alt="A cinematic, soft-focus background of a peaceful medical center lobby with warm lighting and a high-end light-mode aesthetic, featuring hints of deep red medical equipment and clean white surfaces. The mood is calm and professional, with a sense of hope and community." style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuDPua7I28geOYvFEEeZALFt6RE8h9ZKoDs7uzDxs8O9Iy-vT326zLMn-VfmlFv-pypzkdZ_Rq2gujm3VdYR876Qgsud8yGz6EuIA97yTVpQG_1qvEM12GjaXZpCRCI6TBqS0GsQQsje8pn2PEy6d62NedBjYtyedkL1WTD-nUNCebTaVODTYElTKE9HN7Ve3xKiFlQJfg082Efq13wG4l84URNpAX6wBnQJA4PaUaLZ84IgnX8m-bXMm-8pd1VPiSP5SWGUUwLLRPY&quot;);"></div>
+</div>
+<div class="relative z-10 text-white">
+<div class="bg-primary-container/20 backdrop-blur-md p-md rounded-lg mb-xl border border-white/20">
+<h4 class="font-headline-sm text-headline-sm text-white" id="modalName">James Chen</h4>
+<div class="flex items-center gap-sm mt-xs">
+<span class="px-2 py-0.5 bg-white text-primary font-label-md text-label-md rounded" id="modalBlood">A+</span>
+<span class="font-body-sm text-body-sm text-white/90" id="modalLoc">General Medical Center</span>
+</div>
+</div>
+<div class="flex flex-col gap-md">
+<button class="flex items-center justify-center gap-sm bg-white text-primary font-button text-button h-14 rounded-full shadow-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">call</span>
+                            Call Now
+                        </button>
+<button class="flex items-center justify-center gap-sm bg-tertiary-container text-white font-button text-button h-14 rounded-full shadow-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined">chat_bubble</span>
+                            Message / Chat
+                        </button>
+</div>
+</div>
+</div>
+<div class="p-lg bg-surface border-t border-outline-variant/20">
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center">Your response could save a life today.</p>
+</div>
+</div>
+</div>
+<script>
+        function openModal(name, blood, loc, time) {
+            document.getElementById('modalName').innerText = name;
+            document.getElementById('modalBlood').innerText = blood;
+            document.getElementById('modalLoc').innerText = loc;
+            
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('modalContent');
+            
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('opacity-100');
+            content.classList.remove('translate-y-full');
+            content.classList.add('translate-y-0');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('actionModal');
+            const content = document.getElementById('modalContent');
+            
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.remove('translate-y-0');
+            content.classList.add('translate-y-full');
+        }
+
+        // Close on clicking backdrop
+        document.getElementById('actionModal').addEventListener('click', (e) => {
+            if (e.target.id === 'actionModal') closeModal();
+        });
+    </script>
+
+
+<!-- Menu Backdrop -->
+<div id="menuBackdrop" class="fixed inset-0 z-[60] hidden" onclick="toggleMenu()"></div>
+
+<!-- Floating Menu Panel -->
+<div id="overflowMenu" class="fixed top-16 right-margin-mobile md:right-margin-desktop w-64 bg-surface-container-lowest rounded-xl shadow-2xl border border-outline-variant/20 z-[70] hidden transform origin-top-right transition-all duration-200 scale-95 opacity-0">
+    <div class="p-2 flex flex-col gap-1">
+        <button class="flex items-center gap-md p-3 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface">
+            <span class="material-symbols-outlined text-primary">info</span>
+            <span class="font-label-lg">Learn more</span>
+        </button>
+        <button class="flex items-center gap-md p-3 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface">
+            <span class="material-symbols-outlined text-primary">mail</span>
+            <span class="font-label-lg">Contact us</span>
+        </button>
+        <div class="flex items-center justify-between p-3 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface cursor-pointer">
+            <div class="flex items-center gap-md">
+                <span class="material-symbols-outlined text-primary">dark_mode</span>
+                <span class="font-label-lg">Dark mode</span>
+            </div>
+            <div class="w-10 h-5 bg-outline-variant rounded-full relative">
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+            </div>
+        </div>
+        <button class="flex items-center gap-md p-3 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface">
+            <span class="material-symbols-outlined text-primary">settings</span>
+            <span class="font-label-lg">Settings</span>
+        </button>
+        <div class="h-px bg-outline-variant/20 my-1"></div>
+        <button class="flex items-center gap-md p-3 hover:bg-surface-container-high rounded-lg transition-colors text-error">
+            <span class="material-symbols-outlined">logout</span>
+            <span class="font-label-lg">Log out</span>
+        </button>
+    </div>
+</div><script class="">
+    function toggleMenu() {
+        const menu = document.getElementById('overflowMenu');
+        const backdrop = document.getElementById('menuBackdrop');
+        const isHidden = menu.classList.contains('hidden');
+
+        if (isHidden) {
+            menu.classList.remove('hidden');
+            backdrop.classList.remove('hidden');
+            // Trigger animation frame
+            requestAnimationFrame(() => {
+                menu.classList.remove('scale-95', 'opacity-0');
+                menu.classList.add('scale-100', 'opacity-100');
+            });
+        } else {
+            menu.classList.remove('scale-100', 'opacity-100');
+            menu.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                menu.classList.add('hidden');
+                backdrop.classList.add('hidden');
+            }, 200);
+        }
+    }
+</script></body></html>

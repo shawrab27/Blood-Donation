@@ -1,0 +1,73 @@
+# ==========================================
+# BloodPulse Monorepo Root .gitignore
+# ==========================================
+
+# ── Environment & Secrets ─────────────────
+.env
+.env.*
+!.env.example
+*.env
+local.properties
+key.properties
+*.jks
+*.keystore
+
+# ── Python / Django Backend ───────────────
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+*.db
+local_settings.py
+db.sqlite3
+/blood_pulse_backend/db.sqlite3
+media/
+staticfiles/
+
+# ── Flutter / Dart ────────────────────────
+blood_pulse/.dart_tool/
+blood_pulse/.flutter-plugins
+blood_pulse/.flutter-plugins-dependencies
+blood_pulse/.pub-cache/
+blood_pulse/.pub/
+blood_pulse/build/
+blood_pulse/coverage/
+blood_pulse/android/.gradle/
+blood_pulse/android/app/build/
+blood_pulse/ios/Pods/
+blood_pulse/ios/.symlinks/
+blood_pulse/ios/Flutter/Flutter.framework
+blood_pulse/ios/Flutter/Flutter.podspec
+blood_pulse/ios/Flutter/Generated.xcconfig
+blood_pulse/ios/Flutter/app.flx
+blood_pulse/ios/Flutter/app.zip
+blood_pulse/ios/Flutter/flutter_assets/
+blood_pulse/macos/Flutter/ephemeral/
+blood_pulse/windows/flutter/ephemeral/
+blood_pulse/linux/flutter/ephemeral/
+
+# ── IDEs & Operating Systems ──────────────
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ── Temporary, ZIP & Research Scrap files ──
+*.zip
+*.tar.gz
+*.rar
+*.log
+*.tmp
+*.bak
+blood_pulse/android/.kotlin/errors/
+stitch_bloodpulse_ui..zip

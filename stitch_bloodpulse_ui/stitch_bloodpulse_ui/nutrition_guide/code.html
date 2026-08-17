@@ -1,0 +1,343 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Nutrition Guide - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-container": "#c3ddff",
+                      "on-primary-container": "#ffd1cd",
+                      "surface": "#fff8f7",
+                      "inverse-surface": "#3a2d2f",
+                      "error-container": "#ffdad6",
+                      "primary-fixed": "#ffdad7",
+                      "secondary-container": "#e4e2e1",
+                      "on-tertiary-fixed": "#001d35",
+                      "primary-container": "#c30121",
+                      "surface-container": "#fee9eb",
+                      "surface-tint": "#c00020",
+                      "on-primary-fixed": "#410005",
+                      "on-primary": "#ffffff",
+                      "surface-container-high": "#f8e3e5",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-dim": "#ead5d7",
+                      "outline": "#916f6c",
+                      "on-background": "#24191a",
+                      "error": "#ba1a1a",
+                      "on-error-container": "#93000a",
+                      "surface-bright": "#fff8f7",
+                      "secondary-fixed": "#e4e2e1",
+                      "on-surface-variant": "#5c3f3d",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-surface": "#24191a",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-secondary": "#ffffff",
+                      "outline-variant": "#e6bdba",
+                      "secondary": "#5f5e5e",
+                      "tertiary-container": "#0063a4",
+                      "inverse-on-surface": "#ffecee",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed": "#d1e4ff",
+                      "on-secondary-fixed-variant": "#474746",
+                      "surface-variant": "#f3dde0",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-low": "#fff0f1",
+                      "background": "#fff8f7",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "tertiary": "#004b7e",
+                      "primary": "#960017",
+                      "on-secondary-container": "#656464",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "inverse-primary": "#ffb3ae",
+                      "surface-container-highest": "#f3dde0"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "unit": "4px",
+                      "xs": "4px",
+                      "margin-desktop": "64px",
+                      "lg": "24px",
+                      "gutter": "16px",
+                      "margin-mobile": "16px",
+                      "sm": "8px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Georgia"
+                      ],
+                      "headline-sm": [
+                              "Georgia"
+                      ],
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      }
+              }
+          },
+        }
+      </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+      </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col pt-16 pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-inverse-surface fixed full-width top-0 z-50 flex justify-between items-center w-full px-margin-mobile h-16 shadow-sm shadow-[#8E7D7F]/5">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary" style="font-variation-settings: 'FILL' 1;">biotech</span>
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim tracking-tight">BloodPulse</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img class="object-cover w-full h-full" data-alt="A realistic close-up portrait of a smiling user in a soft, bright healthcare environment. The lighting is warm and natural, reinforcing a modern, trustworthy, and empathetic UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPpL0IunyIGs9Lt3SZRKqCW_apGHuMowG4Ui1AicQMv4mMtVW81ryVnit4lEzmhrx7_b_EBnaauZzQPDyXZ5uH10WIMmaopEMQSQBgFGMW7lfBmehmlHg3fzRIl3i7EWiJIRgMlSRSG_olczCLfO-LaDulYSoiMV6NVtFE4TRvxruq1-imo0qZTIftDkV2dThSIItf8lJxB9iaoZlY_M7UaMlVfeScq9r8CdGlvNXTQjftC4vGDjVkxPLSyX8mjZIrv4IbFKWN4vU">
+</div>
+</header>
+<main class="flex-1 w-full max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+<div class="mb-xl text-center md:text-left mt-4 md:mt-8">
+<h1 class="font-headline-lg text-headline-lg text-primary mb-sm">Nutrition Guide</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Fuel your body for life-saving.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-lg md:gap-xl">
+<!-- Left/Main Column -->
+<div class="md:col-span-8 flex flex-col gap-lg">
+<!-- Food Categories Horizontal Scroll -->
+<section>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Key Nutrients</h2>
+<div class="flex overflow-x-auto gap-md pb-4 no-scrollbar -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+<!-- Iron Rich -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg min-w-[240px] shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20 flex-shrink-0">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: 'FILL' 1;">set_meal</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Iron Rich</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Red meat, spinach, beans</p>
+</div>
+<!-- Vitamin C -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg min-w-[240px] shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20 flex-shrink-0">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-on-tertiary-fixed" style="font-variation-settings: 'FILL' 1;">local_florist</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Vitamin C</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Citrus, bell peppers, broccoli</p>
+</div>
+<!-- Protein -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg min-w-[240px] shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20 flex-shrink-0">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 1;">egg</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Protein</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Eggs, lentils, lean poultry</p>
+</div>
+<!-- Hydration -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg min-w-[240px] shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20 flex-shrink-0">
+<div class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center mb-md">
+<span class="material-symbols-outlined text-on-tertiary-container" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Hydration</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Water, herbal teas</p>
+</div>
+</div>
+</section>
+<!-- Bento Grid for Before/After -->
+<section class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<!-- Before Donation -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed/30 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Foods Before Donation</h3>
+<ul class="flex flex-col gap-sm">
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">Plenty of Water</span>
+</li>
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">Balanced Meal</span>
+</li>
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-body-md text-body-md">No empty stomach</span>
+</li>
+</ul>
+</div>
+<!-- After Donation -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary-fixed/30 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Foods After Donation</h3>
+<ul class="flex flex-col gap-sm">
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">eco</span>
+<span class="font-body-md text-body-md">Spinach &amp; Greens</span>
+</li>
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">egg_alt</span>
+<span class="font-body-md text-body-md">Eggs &amp; Protein</span>
+</li>
+<li class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">nutrition</span>
+<span class="font-body-md text-body-md">Citrus &amp; Lentils</span>
+</li>
+</ul>
+</div>
+</section>
+</div>
+<!-- Right Column / Tool -->
+<div class="md:col-span-4 flex flex-col gap-lg">
+<!-- Daily Water Calculator -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg shadow-[0_4px_12px_rgba(142,125,127,0.04)] border border-outline-variant/20">
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-tertiary-container text-[32px]" style="font-variation-settings: 'FILL' 1;">opacity</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Daily Hydration Target</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Calculate your recommended daily water intake based on your weight to prepare for donation.</p>
+<div class="flex flex-col gap-sm mb-lg">
+<label class="font-label-lg text-label-lg text-on-surface" for="weightInput">Your Weight (kg)</label>
+<input class="w-full bg-on-primary border border-outline/30 rounded-[12px] px-md py-sm font-body-md text-body-md text-on-surface focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors" id="weightInput" placeholder="e.g. 70" type="number">
+</div>
+<button class="w-full bg-primary hover:bg-surface-tint text-on-primary font-button text-button rounded-full py-sm px-lg transition-colors mb-lg shadow-sm hover:shadow-md">
+                        Calculate Goal
+                    </button>
+<!-- Result Area -->
+<div class="bg-tertiary-fixed rounded-[12px] p-md text-center border border-tertiary-fixed-dim/50">
+<p class="font-label-md text-label-md text-on-tertiary-fixed mb-xs">Recommended Target</p>
+<p class="font-display-lg text-display-lg text-tertiary">2,450 <span class="font-headline-sm text-headline-sm text-tertiary/70">mL</span></p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface dark:bg-inverse-surface shadow-[0_-4px_12px_rgba(142,125,127,0.04)] fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe rounded-t-lg md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">rss_feed</span>
+<span class="font-label-md text-label-md mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">emergency</span>
+<span class="font-label-md text-label-md mt-1">Emergency</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-full px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 transition-all duration-200 scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-label-md text-label-md mt-1">Health</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-5 py-1.5 hover:bg-surface-variant/50 dark:hover:bg-surface-variant/20 rounded-full transition-all duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

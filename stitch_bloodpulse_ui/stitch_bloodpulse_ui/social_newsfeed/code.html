@@ -1,0 +1,354 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#d1e4ff",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-tint": "#c00020",
+                        "primary": "#960017",
+                        "on-secondary-container": "#656464",
+                        "on-surface-variant": "#5c3f3d",
+                        "inverse-surface": "#3a2d2f",
+                        "error-container": "#ffdad6",
+                        "background": "#fff8f7",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#fff0f1",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#e4e2e1",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary-container": "#c30121",
+                        "inverse-primary": "#ffb3ae",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "surface-variant": "#f3dde0",
+                        "inverse-on-surface": "#ffecee",
+                        "surface-container": "#fee9eb",
+                        "on-background": "#24191a",
+                        "on-tertiary-container": "#c3ddff",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#004b7e",
+                        "surface-dim": "#ead5d7",
+                        "surface": "#fff8f7",
+                        "surface-bright": "#fff8f7",
+                        "outline-variant": "#e6bdba",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-container": "#ffd1cd",
+                        "on-surface": "#24191a",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "secondary": "#5f5e5e",
+                        "primary-fixed": "#ffdad7",
+                        "outline": "#916f6c",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#f3dde0",
+                        "surface-container-high": "#f8e3e5",
+                        "on-primary-fixed": "#410005",
+                        "gold": "#FFD700",
+                        "silver": "#C0C0C0",
+                        "bronze": "#CD7F32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "xl": "32px",
+                        "margin-desktop": "64px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "display-lg": ["Georgia"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Georgia"],
+                        "button": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    },
+                    boxShadow: {
+                        'level-1': '0 4px 12px rgba(142, 125, 127, 0.04)',
+                        'level-2': '0 8px 24px rgba(43, 43, 43, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #FDF3F3; } /* Enforce surface color */
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased pb-[100px] pt-[80px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background dark:bg-background flex justify-between items-center px-margin-mobile h-16 shadow-[0_1px_3px_rgba(142,125,127,0.05)] md:hidden"><div class="flex items-center h-full w-full justify-between">
+  <div class="flex items-center">
+    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWEc1Wl02oJpWpM2UDkSf2UuKPDGrX-N-GgJ9-jU0LY3fJEoVfCw09T_bcjbFZEY3yCCkBFkYylhjGeIRCzrPp85Ly3SPV8YOQgnGc0zZgsux7yQQcxkSD72WqzSSbV8iCN5EMHB-xUMCms5MIS4pSrn098cqYGSGR_Awst8SoVoKTBSOz2nEkLEMDtiRx9rfXyc5uvnd1TrWJnPNg7L2KuqHHWk34VFK2QU2QuLQD_tOS3UchxH25Lz0YZhudYzMg1vHonpseiX8" alt="BloodPulse Logo" class="h-[32px] w-auto">
+  </div>
+  <h1 class="font-headline-md text-headline-md text-[#C30121] tracking-tight">BloodPulse</h1>
+  <div class="flex items-center gap-2">
+    <button class="relative text-primary hover:bg-surface-variant/20 transition-colors p-2 rounded-full flex items-center justify-center">
+      <span class="material-symbols-outlined">notifications</span>
+      <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-background"></span>
+    </button>
+    <button class="text-on-surface-variant hover:bg-surface-variant/20 transition-colors p-2 rounded-full flex items-center justify-center">
+      <span class="material-symbols-outlined">more_vert</span>
+    </button>
+  </div>
+</div></header>
+<!-- Desktop Top Nav (Hidden on Mobile) -->
+<header class="hidden md:flex fixed top-0 w-full z-50 bg-background flex justify-between items-center px-margin-desktop h-20 shadow-[0_1px_3px_rgba(142,125,127,0.05)]">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: &quot;FILL&quot; 1;">bloodtype</span>
+<h1 class="font-headline-lg text-headline-lg tracking-tight">BloodPulse</h1>
+</div>
+<nav class="flex gap-8">
+<a class="font-label-lg text-primary-container border-b-2 border-primary-container pb-1" href="#">Feed</a>
+<a class="font-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Search</a>
+<a class="font-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Health</a>
+<a class="font-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Profile</a>
+</nav>
+<button class="text-primary hover:bg-surface-variant/20 transition-colors p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-[600px] mx-auto px-margin-mobile md:px-0 flex flex-col gap-lg md:mt-lg">
+<!-- Create Post Input (Bento style) -->
+<div class="bg-surface-container-lowest rounded-[16px] p-lg shadow-level-1">
+<div class="flex gap-md items-center">
+<img class="w-[48px] h-[48px] rounded-full object-cover" data-alt="A close-up portrait of a friendly young professional woman with brown hair, smiling gently. The background is a soft, out-of-focus modern office setting. The lighting is warm and bright, consistent with a clean, medical-adjacent professional app design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMGEqhG5T0RQaCbxd7WIKeSmzHOi78Xm98RYi4JFAzbir1_pfZdBoOfuR40PltpEL5unIN-q4npBbUFY1eyymvfhyT_5Fjs-yRUicIicKwRemPRqyWMN6hZwnwMgeoKQxYUljnpndlOMyhZsV4MOHLxdo_LFGJRAyxC7fRm5Id691iJcHk2Tksw3ktR-occoD54Xp5FrJ1f_GoMf0nZosXLIMwxiftunqsqdIZ4-L2fpkL12OfToGttNuQbkIbxT0UrcV1n21rsHE">
+<div class="flex-1 bg-surface-container-low rounded-full px-md py-[12px] border border-outline/30 text-on-surface-variant font-body-md cursor-pointer hover:border-tertiary transition-colors">
+                    Share your donation story...
+                </div>
+</div>
+<div class="flex justify-between items-center mt-md pt-sm border-t border-surface-variant">
+<div class="flex gap-2">
+<button class="flex items-center gap-xs px-3 py-1 rounded-full hover:bg-surface-container transition-colors text-primary font-label-md">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+                        Photo
+                    </button>
+<button class="flex items-center gap-xs px-3 py-1 rounded-full hover:bg-surface-container transition-colors text-primary font-label-md">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+                        Check in
+                    </button>
+</div>
+<button class="bg-primary text-on-primary font-button px-4 py-1.5 rounded-full hover:shadow-md transition-all active:scale-95">Post</button>
+</div>
+</div>
+<!-- Post 1: Urgent Request -->
+<article class="bg-surface-container-lowest rounded-[16px] p-lg shadow-level-1 border-l-4 border-error">
+<!-- Header -->
+<div class="flex items-start justify-between mb-sm">
+<div class="flex gap-md">
+<img class="w-[48px] h-[48px] rounded-full object-cover border border-outline-variant" data-alt="Logo of City General Hospital, featuring a minimalist cross inside a shield emblem. The design is modern, utilizing deep blues and crisp whites, set against a soft, sterile-looking background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxoWonVtlDGGM2RWY_RXV3CMZn5VecvncBC3zU4yszUHtN1r5h9DokDGPQtxUlRKZ7kxjnJjsjclufRKtyvaNHh2_MTdCECPkzWbe0W98dx5342rgj7W8vslqoV8EIBkEeXh-4aWYtbOs9iKlP90crQBnahy0HIv6FlCg35TOQjzmCKMkwy9s6sQU8dG9VIVIKZUcE4JnMY8_g9whnwQ0qFR9wCistUrEOtEj3qUAPWJ82Uu1p2xfVvMvpZDzZZRZhiBIf_-HtMv4">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">City General Hospital</h2>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded-full font-label-md text-[10px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: &quot;FILL&quot; 1;">verified</span>
+                                Official
+                            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">2 hours ago</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-variant rounded-full p-1 transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<!-- Body -->
+<div class="mb-md mt-sm">
+<div class="flex gap-2 mb-2">
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">warning</span> URGENT NEED
+                    </span>
+<span class="bg-primary-fixed-dim text-on-primary-fixed-variant px-3 py-1 rounded-full font-label-md">O- Negative</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface whitespace-pre-line mb-sm">
+                    We are experiencing a critical shortage of O- blood due to an emergency trauma incident. If you are an O- donor in the downtown area, please consider donating at our main clinic today. Walk-ins are accepted and prioritized.
+                </p>
+<div class="w-full h-48 rounded-[12px] bg-surface-container flex items-center justify-center border border-outline-variant overflow-hidden" data-alt="A clean, brightly lit modern hospital reception area. A prominent red cross sign is visible above the check-in desk. The atmosphere is urgent but organized, with soft pink and white tones dominating the palette, reflecting a trustworthy healthcare environment." style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuBN4_DURW2lZkft8URMW5QdyhfrhBWBTSkWf06uPgtYwL83PVbtSIgwXiUvMtoEduguR77fywFe_ZzCHkaqibPwPMG26bfiWqPfQehQiKEmokjBBOX0zR3ZucGCROn7dJA8lzAp4MYhIX0iO-tO8t5nZepTyb4QxDtC8hoRnxWhMgMwVQhErfGADTy4fH9B6oXpg7mtC5dTIbXVuvIH0Y9eFauuv4PF-n5s8iFIgbrxsXpu6D4JNJUi8G_Wgjxhme3VTsgBsCGjhBk&quot;);">
+</div>
+</div>
+<!-- Action Bar -->
+<div class="flex justify-between items-center pt-sm border-t border-surface-variant">
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95 group">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">favorite</span>
+<span class="font-label-md text-primary-container">42</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-label-md">12</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95 group">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">repeat</span>
+<span class="font-label-md text-primary-container">Repost</span>
+</button>
+</div>
+</article>
+<!-- Post 2: Success Story -->
+<article class="bg-surface-container-lowest rounded-[16px] p-lg shadow-level-1">
+<!-- Header -->
+<div class="flex items-start justify-between mb-sm">
+<div class="flex gap-md">
+<img class="w-[48px] h-[48px] rounded-full object-cover" data-alt="A portrait of a cheerful middle-aged man with glasses and a slight beard, wearing a casual grey t-shirt. He is smiling warmly. The background is a soft, blurred park setting with natural sunlight filtering through leaves, creating a positive and hopeful mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAloN9um3s9FKmL4aLJoOfD3ebRircCTtxEPizxuSfYRLYLGZFSP8RWYVzWUlbbFK1tT3szJ1CyORYvuwYlFRQZhigDhDAJiR5bQNIssE3AAIZI63vN07o8fqkKJY2XRem9h6vvhyUGTMb6pfF2NKQ6j20RTrDLdAiF0g12gBHFdx7x-a_4a6T5lAijCXDiRuEBQ9pkscxAiuqR4ddsktai8ObdGATkuwEDEQCqMMHutO_GnznxyVfM9X4rYvCR0B_FpQ-VAIelu1g">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">David Chen</h2>
+<span class="bg-[#FFD700]/20 text-[#B8860B] px-2 py-0.5 rounded-full font-label-md text-[10px] flex items-center gap-1 border border-[#FFD700]/30">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: &quot;FILL&quot; 1;">workspace_premium</span>
+                                Gold Donor
+                            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">5 hours ago • Westside Blood Center</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-variant rounded-full p-1 transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<!-- Body -->
+<div class="mb-md mt-sm">
+<p class="font-body-md text-body-md text-on-surface whitespace-pre-line mb-sm">
+                    Just completed my 20th donation today! 🩸 Taking 45 minutes out of your day can literally save three lives. The staff at Westside were incredible as always. If you've been on the fence about donating, take this as your sign to book an appointment! #BloodPulse #DonateLife
+                </p>
+<div class="w-full h-64 rounded-[12px] bg-surface-container flex items-center justify-center border border-outline-variant overflow-hidden" data-alt="A photo taken from a first-person perspective showing an arm with a small bandage resting on a comfortable medical recliner armrest. Next to it, a small table holds a juice box and some cookies. The lighting is bright and cheerful, conveying a sense of relief and accomplishment in a clean clinic setting." style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAlwopisFkguJ5hPtdw6MajXnDxKzS0IJNzFDWw5dIW4idXVwSEFnStjHrUOFn7CJ55TbVofguNQV3eJPa7xhPeE2ooRAw0RfIsMwOUpg3USuWqzIemvf6xZglqCphTRZAXOTXs8GffkcHhlrMQLDi6zbk7b6jRXoCRvTSu1WODjsD5jmS-47KkhMxiVXxrAJKLyphR3k_n_SYC8oDK_XoGSt5HfozGmr9XQS0W-HNRgH5qW2mkRgI6VSPc7YprYMdVBkP-O9g3o3A&quot;);">
+</div>
+</div>
+<!-- Action Bar -->
+<div class="flex justify-between items-center pt-sm border-t border-surface-variant">
+<button class="flex items-center gap-2 text-primary-container bg-primary-container/10 px-4 py-2 rounded-full transition-colors active:scale-95 group">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">favorite</span>
+<span class="font-label-md">156</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-label-md">24</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95 group">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">repeat</span>
+<span class="font-label-md text-primary-container">Repost</span>
+</button>
+</div>
+</article>
+<!-- Post 3: Informational -->
+<article class="bg-surface-container-lowest rounded-[16px] p-lg shadow-level-1">
+<!-- Header -->
+<div class="flex items-start justify-between mb-sm">
+<div class="flex gap-md">
+<div class="w-[48px] h-[48px] rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined">health_metrics</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">BloodPulse Health Info</h2>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded-full font-label-md text-[10px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: &quot;FILL&quot; 1;">verified</span>
+                                System
+                            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Yesterday</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-variant rounded-full p-1 transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<!-- Body -->
+<div class="mb-md mt-sm">
+<p class="font-body-md text-body-md text-on-surface whitespace-pre-line mb-sm">
+                    Did you know? Eating iron-rich foods before your donation helps maintain your hemoglobin levels! Good choices include spinach, red meat, beans, and fortified cereals. Remember to hydrate well today if you have an appointment tomorrow. 💧
+                </p>
+</div>
+<!-- Action Bar -->
+<div class="flex justify-between items-center pt-sm border-t border-surface-variant">
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95 group">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">favorite</span>
+<span class="font-label-md text-primary-container">89</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-label-md">5</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant px-4 py-2 rounded-full transition-colors active:scale-95 group">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">repeat</span>
+<span class="font-label-md text-primary-container">Repost</span>
+</button>
+</div>
+</article>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg bg-surface-container dark:bg-surface-container shadow-[0_-4px_12px_rgba(142,125,127,0.04)] flex justify-around items-center h-20 px-gutter md:hidden"><!-- Feed -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary rounded-full px-4 py-1 transition-all active:scale-90" href="#">
+  <span class="material-symbols-outlined">home</span>
+  <span class="text-label-md font-label-md">Feed</span>
+</a>
+<!-- Blood Hub (Active Capsule) -->
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90" href="#">
+  <span class="material-symbols-outlined">bloodtype</span>
+  <span class="text-label-md font-label-md">Blood Hub</span>
+</a>
+<!-- Community -->
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90" href="#">
+  <span class="material-symbols-outlined">groups</span>
+  <span class="text-label-md font-label-md">Community</span>
+</a>
+<!-- Health -->
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90" href="#">
+  <span class="material-symbols-outlined">medical_services</span>
+  <span class="text-label-md font-label-md">Health</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90" href="#">
+  <span class="material-symbols-outlined">person</span>
+  <span class="text-label-md font-label-md">Profile</span>
+</a></nav>
+
+
+
+
+
+
+
+
+
+
+</body></html>

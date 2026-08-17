@@ -1,0 +1,350 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Request for Blood</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#f3dde0",
+                      "on-primary-fixed-variant": "#930016",
+                      "inverse-surface": "#3a2d2f",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "on-surface-variant": "#5c3f3d",
+                      "on-secondary": "#ffffff",
+                      "surface-container-low": "#fff0f1",
+                      "on-tertiary-container": "#c3ddff",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed": "#ffdad7",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "outline-variant": "#e6bdba",
+                      "on-error": "#ffffff",
+                      "tertiary-container": "#0063a4",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed": "#d1e4ff",
+                      "on-primary-container": "#ffd1cd",
+                      "primary-container": "#c30121",
+                      "on-primary-fixed": "#410005",
+                      "surface-tint": "#c00020",
+                      "on-secondary-fixed-variant": "#474746",
+                      "surface": "#fff8f7",
+                      "outline": "#916f6c",
+                      "on-tertiary": "#ffffff",
+                      "inverse-primary": "#ffb3ae",
+                      "secondary-fixed": "#e4e2e1",
+                      "on-tertiary-fixed": "#001d35",
+                      "on-secondary-container": "#656464",
+                      "error": "#ba1a1a",
+                      "surface-container-highest": "#f3dde0",
+                      "secondary-container": "#e4e2e1",
+                      "error-container": "#ffdad6",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "surface-container": "#fee9eb",
+                      "surface-dim": "#ead5d7",
+                      "surface-bright": "#fff8f7",
+                      "background": "#fff8f7",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "inverse-on-surface": "#ffecee",
+                      "surface-container-high": "#f8e3e5",
+                      "primary": "#960017",
+                      "secondary": "#5f5e5e",
+                      "tertiary": "#004b7e",
+                      "on-surface": "#24191a",
+                      "on-background": "#24191a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "lg": "24px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "64px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "headline-sm": [
+                              "Georgia"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Georgia"
+                      ]
+              },
+              "fontSize": {
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #fff8f7; /* bg-surface */
+            color: #24191a; /* text-on-surface */
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen pb-24 md:pb-0 pt-16 md:pt-20">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 bg-surface dark:bg-surface-dim shadow-sm">
+<div class="flex items-center gap-sm cursor-pointer active:scale-95 transition-transform hover:bg-surface-container dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full">
+<img alt="BloodPulse Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVtjA_HwNHtbF_ak7jRwoo_0qj75kImfCWh8RHaPx5SKYO5yD_AYo-tzyGolPza8HN_qcRRFdd6jFyqQQeOVMgKSgMcKqXlJSQT-1aRrDRT29vGNxSTcHCTPN30y83JalnTenEUSbwFixtwkVbgCIX98cfinJ9SyKq8NAY7nzvTyvKkoXSApe9v7fwUGiJfajDJVMul7PCws5XC0OR7X3AXX0VCL8M9eBPHwUq78itX6EQTDRzpdvnT_JV_FP8YT7BcPArWHP5sPo">
+<span class="font-headline-md text-headline-md text-primary">BloodPulse</span>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex gap-md items-center">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors flex items-center gap-xs font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined">home</span> Feed
+             </a>
+<a class="text-primary dark:text-primary-fixed-dim flex items-center gap-xs font-label-lg text-label-lg border-b-2 border-primary pb-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">emergency_share</span> Emergency
+             </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors flex items-center gap-xs font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined">medical_services</span> Health
+             </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary transition-colors flex items-center gap-xs font-label-lg text-label-lg" href="#">
+<span class="material-symbols-outlined">person</span> Profile
+             </a>
+</nav>
+<div class="cursor-pointer active:scale-95 transition-transform hover:bg-surface-container dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">notifications</span>
+</div><div class="cursor-pointer active:scale-95 transition-transform hover:bg-surface-container dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full ml-1"><span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim">more_vert</span></div>
+</header>
+<main class="max-w-3xl mx-auto px-margin-mobile md:px-0 pt-lg pb-xl">
+<!-- Mode Toggle -->
+<div class="flex justify-center mb-xl">
+<div class="rounded-full p-1 inline-flex bg-surface-container-low"><button class="px-lg py-2 rounded-full font-label-lg text-label-lg text-primary hover:bg-primary/5 transition-colors">Search as Donors</button><button class="px-lg py-2 rounded-full font-label-lg text-label-lg bg-primary-container text-on-primary shadow-sm font-bold">Request for Blood</button></div>
+</div>
+<div class="text-center mb-lg"><h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Emergency Blood Request</h1><p class="font-body-md text-body-md text-secondary">Fill in the details below to broadcast an urgent request to nearby donors.</p><p class="font-body-sm text-body-sm text-secondary mt-1">Provide essential details to help donors understand the patient's situation</p></div><div class="glass-card rounded-lg p-lg space-y-md mb-lg"><div class="flex justify-between items-center mb-md"><h2 class="font-headline-sm text-headline-sm text-on-surface">Patient Photo</h2><span class="font-label-md text-label-md text-secondary bg-surface-container-high px-2 py-1 rounded-full">Optional</span></div><div class="flex flex-col items-center gap-md"><div class="w-full max-w-[200px] aspect-square rounded-lg overflow-hidden border border-outline-variant/30"><img alt="Upload Patient Photo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWuAMnMk9q5-FntIG0MJadTVa4ZjYYU_V9CDSgCg57i084MMvxNE9U6wCHfpXCYq_FNlz2iK7IFk0bzIcJOlviztSfGHLGE2UrRp9daJDfFwx9bRoge53_zNtjsld6HOe0fEFYUmkarXkqRxk_Sxv_tMhaHdhALQtQlHr3NBAn1aMnmv21fW50Xsf5CCd4bwgRQOfGOl0G77gznOM6vDETeWtxgqNCykPkKadxPQDCbq1CIcAaRT_3EUnzSRy-tFzgh2_WA54vxOU"></div><button class="bg-surface-container-highest px-4 py-2 rounded-full font-label-md text-label-md text-on-surface flex items-center gap-xs hover:bg-outline-variant/30 transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">add_a_photo</span> Upload Photo</button></div></div>
+<form class="space-y-lg">
+<!-- Bento-style Form Container -->
+<div class="glass-card rounded-lg p-lg space-y-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Patient Details</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="patientName">Patient Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-DEFAULT px-4 py-3 focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md" id="patientName" placeholder="Enter full name" type="text">
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="bloodType">Required Blood Type</label>
+<select class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-DEFAULT px-4 py-3 focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md text-on-surface" id="bloodType">
+<option value="">Select Type</option>
+<option value="A+">A+</option>
+<option value="A-">A-</option>
+<option value="B+">B+</option>
+<option value="B-">B-</option>
+<option value="O+">O+</option>
+<option value="O-">O-</option>
+<option value="AB+">AB+</option>
+<option value="AB-">AB-</option>
+</select>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="condition">Disease / Condition</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-DEFAULT px-4 py-3 focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md" id="condition" placeholder="e.g. Surgery, Accident, Anemia" type="text">
+</div><div class="flex flex-col gap-xs mt-md"><label class="font-label-lg text-label-lg text-on-surface-variant" for="contactNumber">Contact Number</label><input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-DEFAULT px-4 py-3 focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md" id="contactNumber" placeholder="Enter phone number" type="tel"></div>
+</div>
+<div class="glass-card rounded-lg p-lg space-y-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Location &amp; Urgency</h2>
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="hospital">Hospital Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary">location_on</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-DEFAULT pl-12 pr-4 py-3 focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md" id="hospital" placeholder="Search hospital name or address" type="text">
+</div>
+</div>
+<div class="flex flex-col gap-xs pt-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant mb-2">Urgency Level</label>
+<div class="flex flex-wrap gap-sm">
+<label class="cursor-pointer">
+<input class="peer sr-only" name="urgency" type="radio" value="normal">
+<div class="px-md py-2 rounded-full border border-outline-variant/50 text-secondary peer-checked:bg-tertiary-container peer-checked:text-on-tertiary-container peer-checked:border-tertiary-container transition-all font-label-lg text-label-lg">
+                                Normal (Within 24h)
+                            </div>
+</label>
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="urgency" type="radio" value="urgent">
+<div class="px-md py-2 rounded-full border border-outline-variant/50 text-secondary peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-primary-container transition-all font-label-lg text-label-lg">
+                                Urgent (Immediate)
+                            </div>
+</label>
+<label class="cursor-pointer"><input class="peer sr-only" name="urgency" type="radio" value="custom"><div class="px-md py-2 rounded-full border border-outline-variant/50 text-secondary peer-checked:bg-tertiary-container peer-checked:text-on-tertiary-container peer-checked:border-tertiary-container transition-all font-label-lg text-label-lg">Custom</div></label></div>
+<div class="mt-md flex flex-col gap-xs"><label class="font-label-lg text-label-lg text-on-surface-variant" for="customDate">Required Date &amp; Time</label><input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-DEFAULT px-4 py-3 focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md" id="customDate" type="datetime-local"></div></div>
+</div>
+<!-- Mandatory Document Upload -->
+<div class="glass-card rounded-lg p-lg border-l-4 border-l-primary bg-surface-container-low">
+<div class="flex items-start gap-md">
+<span class="material-symbols-outlined text-primary text-[32px]">assignment_add</span>
+<div class="flex-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Medical Verification</h2>
+<p class="font-body-sm text-body-sm text-secondary mb-md">Please upload a picture of the medical report or blood test to verify this request.</p>
+<div class="border-2 border-dashed border-outline-variant rounded-DEFAULT p-lg text-center hover:bg-surface-container transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary text-[40px] mb-2 transition-colors">cloud_upload</span>
+<p class="font-label-lg text-label-lg text-on-surface mb-1">Tap to upload or drag and drop</p>
+<p class="font-body-sm text-body-sm text-secondary">PNG, JPG, PDF up to 10MB</p>
+<div class="mt-md flex justify-center gap-sm">
+<button class="bg-surface-container-highest px-4 py-2 rounded-full font-label-md text-label-md text-on-surface flex items-center gap-xs hover:bg-outline-variant/30 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span> Camera
+                                </button>
+<button class="bg-surface-container-highest px-4 py-2 rounded-full font-label-md text-label-md text-on-surface flex items-center gap-xs hover:bg-outline-variant/30 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">folder</span> Files
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-md pb-xl md:pb-0">
+<button class="w-full bg-primary-container text-on-primary rounded-full py-4 font-button text-button shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-xs" type="button">
+<span class="material-symbols-outlined">send</span> Submit Request
+                </button>
+<p class="text-center font-body-sm text-body-sm text-secondary mt-sm">Your request will be visible to nearby compatible donors immediately. Verification of medical reports may be required.</p>
+</div>
+</form>
+</main>
+<!-- BottomNavBar Shell (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface dark:bg-surface-dim md:hidden shadow-[0_-1px_12px_rgba(142,125,127,0.04)] rounded-t-lg"><a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high rounded-full transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary rounded-full px-5 py-2 transition-all active:scale-90" href="#">
+<div class="flex flex-col items-center">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">bloodtype</span>
+<span class="font-label-md text-label-md font-bold">Blood Hub</span>
+</div>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high rounded-full transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md mt-1">Community</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high rounded-full transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="font-label-md text-label-md mt-1">Health</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high rounded-full transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</a></nav>
+
+
+
+
+</body></html>

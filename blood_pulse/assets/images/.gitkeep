@@ -1,0 +1,7 @@
+# BloodPulse App Images
+# 
+# Place the following files here:
+#   - app_logo.png  (primary app logo used by AppLogoSlot widget)
+#
+# The AppLogoSlot widget will automatically fall back to the
+# inline blood-drop CustomPainter if app_logo.png is absent.

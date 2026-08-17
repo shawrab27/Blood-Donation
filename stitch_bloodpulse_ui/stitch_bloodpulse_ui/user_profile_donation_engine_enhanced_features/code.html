@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>BloodPulse - User Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "background": "#fff8f7",
+                      "surface": "#fff8f7",
+                      "primary": "#960017",
+                      "primary-container": "#c30121",
+                      "on-primary": "#ffffff",
+                      "on-surface": "#24191a",
+                      "on-surface-variant": "#5c3f3d",
+                      "secondary": "#5f5e5e",
+                      "outline": "#916f6c",
+                      "outline-variant": "#e6bdba",
+                      "surface-container": "#fee9eb",
+                      "surface-container-high": "#f8e3e5",
+                      "surface-container-highest": "#f3dde0",
+                      "tertiary-fixed": "#d1e4ff",
+                      "on-tertiary-fixed": "#001d35"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "xl": "32px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "headline-lg": ["Georgia"],
+                      "headline-md": ["Georgia"],
+                      "headline-sm": ["Georgia"],
+                      "display-lg": ["Georgia"],
+                      "label-lg": ["Inter"],
+                      "label-md": ["Inter"],
+                      "button": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        #edit-profile-modal:target {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased pb-24 max-w-[390px] mx-auto overflow-x-hidden relative shadow-2xl min-h-screen">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface shadow-sm h-14 flex items-center">
+<div class="flex items-center justify-between px-margin-mobile py-sm w-full">
+<div class="flex items-center gap-2">
+<img alt="BloodPulse Logo" class="h-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaCGPYQjZBh-sfkn8Qfsl0fT0fogTWZkk6Lvzygo8LduGnfNJImJYJQrrHu06a8DpGPsU6z8TZGcAU2nSg3NCr47SyGB58illaWFhKTc_JWEpnldDcWwUwRBDXX717J_PBB39xynPtK5Ohhgi4zsk5WANKATsfL1QMsXdU0hvh8fHGkUiDJYZLkU7BAqrGrpvwhjPZ-JU6ARlafszrCw-vU62d3XxquLYweT9x_LwRmk9gCGkrdbkxjGqSZ26ZVsw81nLy3gkOK3k"/>
+<span class="font-headline-md text-headline-md font-bold" style="color: #C30121; font-family: Georgia;">BloodPulse</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="relative hover:opacity-80 transition-opacity active:scale-95">
+<span class="material-symbols-outlined text-primary text-[28px]">notifications</span>
+<div class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-surface">3</div>
+</button>
+<button class="hover:opacity-80 transition-opacity active:scale-95">
+<span class="material-symbols-outlined text-secondary text-[28px]">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<main class="px-margin-mobile flex flex-col gap-lg mt-md">
+<!-- Profile Header Section -->
+<section class="flex flex-col items-center text-center relative pt-4">
+<div class="relative mb-4">
+<!-- Avatar with Camera Overlay -->
+<div class="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden relative group cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAntRnDzHBERAeYxyg3Bbzxl5Vq38WndHhI71_KGZuBdOEnLXqx6fULNngiBbYSDVNjL8ZuR03WnktwWFs77b95S0OJjCV0csU7Ime5UYGeem5XRNEPmJHj59zpiUKYsXn_qt7IUDuul1VYADeq0AnS-4vIGjOb3gUA6PGtd3o9pqrZUu5h5mxb3HCzagNgJ7fXX7NmKj3d515AbIHrHwifHwkYNZ6poyfopeSbYT84iBTvIopv_dHT-7S245mto914h_SydOCqI4Y"/>
+<div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-3xl">photo_camera</span>
+</div>
+</div>
+<!-- Platinum Badge -->
+<div class="absolute bottom-1 right-1 bg-gradient-to-br from-gray-200 to-gray-400 p-1.5 rounded-full border-2 border-white shadow-md flex items-center justify-center" title="Platinum Donor">
+<span class="material-symbols-outlined text-white text-[18px]" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<!-- Edit Button Overlay-like positioning -->
+<a class="absolute -right-12 top-4 bg-primary text-white p-2 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all" href="#edit-profile-modal">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</a>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Sarah Jenkins</h1>
+<p class="font-body-md text-secondary mt-1 px-4 italic leading-tight">"Committed to saving lives, one drop at a time."</p>
+<div class="flex gap-2 mt-4">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full font-label-md text-label-md">Platinum Donor</span>
+<span class="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full font-label-md text-label-md">O- Negative</span>
+</div>
+</section>
+<!-- Donation Engine Section -->
+<section class="flex flex-col gap-md">
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-white rounded-2xl p-md border border-outline-variant/30 shadow-sm flex flex-col items-center justify-center text-center">
+<span class="text-label-md text-secondary uppercase tracking-wider mb-2">Total Bags Donated</span>
+<span class="text-[42px] font-display-lg text-primary leading-none">12</span>
+<span class="text-label-md text-secondary mt-1">Bags</span>
+</div>
+<div class="bg-white rounded-2xl p-md border border-outline-variant/30 shadow-sm flex flex-col items-center justify-center text-center relative">
+<span class="text-label-md text-secondary uppercase tracking-wider mb-2">Next Donation</span>
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full" viewbox="0 0 100 100">
+<circle class="text-surface-container-highest stroke-current" cx="50" cy="50" fill="transparent" r="42" stroke-width="10"></circle>
+<circle class="text-primary progress-ring__circle stroke-current" cx="50" cy="50" fill="transparent" r="42" stroke-dasharray="263.89" stroke-dashoffset="101" stroke-linecap="round" stroke-width="10"></circle>
+</svg>
+<span class="absolute inset-0 flex items-center justify-center font-bold text-primary text-[14px]">74d</span>
+</div>
+</div>
+</div>
+<!-- Secondary Action Row -->
+<div class="grid grid-cols-2 gap-md">
+<button class="flex items-center justify-center gap-2 bg-surface-container-low border border-outline-variant/30 py-3 rounded-xl hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_month</span>
+<span class="font-label-lg">Update Date</span>
+</button>
+<button class="flex items-center justify-center gap-2 bg-surface-container-low border border-outline-variant/30 py-3 rounded-xl hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary text-[20px]">emergency</span>
+<span class="font-label-lg">Emergency</span>
+</button>
+</div>
+</section><section class="px-4">
+<button class="w-full border-2 border-primary text-primary font-button py-3 rounded-full flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified</span>
+        Download Verified Digital Certificate
+    </button>
+</section>
+<!-- Information Sections (Tabs) -->
+<section class="flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-on-surface">Top Donors</h3>
+<a class="text-primary font-label-md flex items-center gap-1" href="#">Global Rank <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+</div>
+<div class="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+<div class="flex flex-col items-center gap-1 shrink-0">
+<div class="w-14 h-14 rounded-full border-2 border-primary p-0.5">
+<img alt="Mark R." class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_tsUWgwzzxW-bfGVnIPURZaWJMUTgLlTNpocyrRMMTGa0AZVMjQDpcsOPrckPZGRjaLJzdxiL7uQUSEXb0jKd7omr_p_F8iHk5OupxHbFMQri2oSQiHr314zbD7wq3AyyFPBhhhTOoDK7Q0bJEpBgD3lg1V1n48s_VP66OSPy39F8h0AQ-uCZ3N8jK1PnjaEZMHACiJRzomGkcp72BAFY0vhIBQC0idUjs0fltMJFVO7Tu4iyBRqCrbvfk7AceICPvgEkxxX5shg"/>
+</div>
+<span class="text-[11px] font-bold">Mark R.</span>
+<span class="text-[10px] text-secondary">18 Bags</span>
+</div>
+<div class="flex flex-col items-center gap-1 shrink-0">
+<div class="w-14 h-14 rounded-full border-2 border-outline-variant p-0.5">
+<img alt="Elena T." class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAntRnDzHBERAeYxyg3Bbzxl5Vq38WndHhI71_KGZuBdOEnLXqx6fULNngiBbYSDVNjL8ZuR03WnktwWFs77b95S0OJjCV0csU7Ime5UYGeem5XRNEPmJHj59zpiUKYsXn_qt7IUDuul1VYADeq0AnS-4vIGjOb3gUA6PGtd3o9pqrZUu5h5mxb3HCzagNgJ7fXX7NmKj3d515AbIHrHwifHwkYNZ6poyfopeSbYT84iBTvIopv_dHT-7S245mto914h_SydOCqI4Y"/>
+</div>
+<span class="text-[11px] font-bold">Elena T.</span>
+<span class="text-[10px] text-secondary">15 Bags</span>
+</div>
+<div class="flex flex-col items-center gap-1 shrink-0">
+<div class="w-14 h-14 rounded-full border-2 border-outline-variant p-0.5">
+<img alt="David K." class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxEuxPg4D9btEiSjdTazJeWqVRRlEy6MgiXXP9yBdz6EcU8lq8oNZ0y-DcxWiomYBOIWhaWe75fmVRgrH7pjUL8UlaghviAFJ4sXGUFB8JkPtLXN07JbGIWUzPiWl5QAvOOJxvMWhImodOxRrPRuBYT4HNLOJ7fRCi6Fpi_CqndzEkNOuOlSCKwrOeWp1M4DjUCK_FgpfNxxksd1oSqlOz5l2cF_jkiKr1aK3awDEoVqBVTI5Pmp_2TLpd-QoFIfTKtDs4SxvH8Xk"/>
+</div>
+<span class="text-[11px] font-bold">David K.</span>
+<span class="text-[10px] text-secondary">14 Bags</span>
+</div>
+<div class="flex flex-col items-center gap-1 shrink-0">
+<div class="w-14 h-14 rounded-full border-2 border-outline-variant p-0.5">
+<div class="w-full h-full rounded-full bg-surface-container flex items-center justify-center text-secondary font-bold text-xs">+12</div>
+</div>
+<span class="text-[11px] font-bold">Others</span>
+<span class="text-[10px] text-secondary">View</span>
+</div>
+</div>
+</section><section class="flex flex-col gap-md">
+<!-- Tab Navigation -->
+<div class="flex border-b border-outline-variant/30 overflow-x-auto hide-scrollbar">
+<button class="px-4 py-2 font-label-lg text-primary border-b-2 border-primary shrink-0">Your Stories</button>
+<button class="px-4 py-2 font-label-lg text-secondary shrink-0">Activity Summary</button>
+<button class="px-4 py-2 font-label-lg text-secondary shrink-0">Donation History</button>
+</div>
+<!-- Tab Content: Your Stories -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-on-surface">Community Feed</h2>
+<button class="flex items-center gap-1 text-primary-container font-label-lg bg-surface-container px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    Add Post
+                </button>
+</div><div class="bg-white rounded-2xl p-3 border border-outline-variant/30 flex items-center gap-3 shadow-sm">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">SJ</div>
+<div class="flex-1 relative">
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 px-4 text-body-md focus:ring-1 focus:ring-primary" placeholder="Write your journey..." type="text"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="aspect-square rounded-2xl overflow-hidden shadow-sm relative group">
+<img alt="Post 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxEuxPg4D9btEiSjdTazJeWqVRRlEy6MgiXXP9yBdz6EcU8lq8oNZ0y-DcxWiomYBOIWhaWe75fmVRgrH7pjUL8UlaghviAFJ4sXGUFB8JkPtLXN07JbGIWUzPiWl5QAvOOJxvMWhImodOxRrPRuBYT4HNLOJ7fRCi6Fpi_CqndzEkNOuOlSCKwrOeWp1M4DjUCK_FgpfNxxksd1oSqlOz5l2cF_jkiKr1aK3awDEoVqBVTI5Pmp_2TLpd-QoFIfTKtDs4SxvH8Xk"/>
+<div class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+<p class="text-white text-[10px] flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">favorite</span> 124</p>
+</div>
+</div>
+<div class="aspect-square rounded-2xl overflow-hidden shadow-sm relative group">
+<img alt="Post 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_tsUWgwzzxW-bfGVnIPURZaWJMUTgLlTNpocyrRMMTGa0AZVMjQDpcsOPrckPZGRjaLJzdxiL7uQUSEXb0jKd7omr_p_F8iHk5OupxHbFMQri2oSQiHr314zbD7wq3AyyFPBhhhTOoDK7Q0bJEpBgD3lg1V1n48s_VP66OSPy39F8h0AQ-uCZ3N8jK1PnjaEZMHACiJRzomGkcp72BAFY0vhIBQC0idUjs0fltMJFVO7Tu4iyBRqCrbvfk7AceICPvgEkxxX5shg"/>
+<div class="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+<p class="text-white text-[10px] flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">favorite</span> 89</p>
+</div>
+</div>
+</div>
+</div>
+<!-- History Log Preview -->
+<div class="bg-white rounded-2xl border border-outline-variant/30 p-md space-y-3">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-sm text-on-surface">Recent Logs</h3>
+<span class="text-tertiary-fixed-variant font-label-md flex items-center gap-1">View All <span class="material-symbols-outlined text-[16px]">chevron_right</span></span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+</div>
+<div>
+<p class="font-label-lg leading-tight">Whole Blood Donation</p>
+<p class="text-[12px] text-secondary">Oct 14, 2023 • Seattle Center</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-green-600" title="Verified Donation">verified</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+</div>
+<div>
+<p class="font-label-lg leading-tight">Platelets Donation</p>
+<p class="text-[12px] text-secondary">Jun 02, 2023 • Seattle Center</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-green-600" title="Verified Donation">verified</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Edit Profile Modal -->
+<div class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-4" id="edit-profile-modal">
+<div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-lg animate-in slide-in-from-bottom duration-300">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline-md text-on-surface">Edit Profile</h2>
+<a class="text-secondary hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">close</span>
+</a>
+</div>
+<form class="space-y-4">
+<div>
+<label class="block text-label-md text-secondary mb-1">Full Name</label>
+<input class="w-full rounded-xl border-outline-variant focus:ring-primary focus:border-primary py-2.5 px-4 bg-surface-container-low font-body-md" type="text" value="Sarah Jenkins"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-label-md text-secondary mb-1">Email</label>
+<input class="w-full rounded-xl border-outline-variant focus:ring-primary focus:border-primary py-2.5 px-4 bg-surface-container-low font-body-md" type="email" value="sarah.j@example.com"/>
+</div>
+<div>
+<label class="block text-label-md text-secondary mb-1">Phone</label>
+<input class="w-full rounded-xl border-outline-variant focus:ring-primary focus:border-primary py-2.5 px-4 bg-surface-container-low font-body-md" type="tel" value="+1 206-555-0123"/>
+</div>
+</div>
+<div>
+<label class="block text-label-md text-secondary mb-1">Address</label>
+<input class="w-full rounded-xl border-outline-variant focus:ring-primary focus:border-primary py-2.5 px-4 bg-surface-container-low font-body-md" type="text" value="123 Pine St, Seattle, WA"/>
+</div>
+<!-- Locked Blood Group Field -->
+<div class="relative opacity-80">
+<label class="block text-label-md text-secondary mb-1">Blood Group</label>
+<div class="flex items-center w-full rounded-xl border-outline-variant border py-2.5 px-4 bg-surface-container-highest cursor-not-allowed">
+<span class="font-bold text-on-surface">O- Negative</span>
+<span class="material-symbols-outlined ml-auto text-secondary text-[20px]">lock</span>
+</div>
+<p class="text-[11px] text-primary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                    🔒 Note: Blood Group can ONLY be edited/approved by an Admin.
+                </p>
+</div>
+<div class="pt-4 flex gap-3">
+<a class="flex-1 border border-outline py-3 rounded-full text-center font-button hover:bg-surface-container-low transition-colors" href="#">Cancel</a>
+<button class="flex-1 bg-primary text-white py-3 rounded-full font-button shadow-md active:scale-95 transition-all" type="submit">Save Changes</button>
+</div>
+</form>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface shadow-[0_-1px_12px_rgba(142,125,127,0.1)] rounded-t-lg">
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-md font-label-md">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-white rounded-full px-6 py-2 transition-all active:scale-90 flex-shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+<span class="text-label-md font-label-md font-bold">Blood Hub</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-label-md font-label-md">Community</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="text-label-md font-label-md">Health</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-label-md font-label-md">Profile</span>
+</button>
+</nav>
+</body></html>

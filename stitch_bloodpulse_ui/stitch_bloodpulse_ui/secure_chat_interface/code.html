@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>BloodPulse Chat - Sarah Jenkins</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Georgia:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#0063a4",
+                    "tertiary-fixed": "#d1e4ff",
+                    "on-tertiary-container": "#c3ddff",
+                    "secondary-fixed": "#e4e2e1",
+                    "on-primary-fixed": "#410005",
+                    "on-primary-container": "#ffd1cd",
+                    "primary-fixed": "#ffdad7",
+                    "inverse-surface": "#3a2d2f",
+                    "tertiary": "#004b7e",
+                    "surface-variant": "#f3dde0",
+                    "primary-container": "#c30121",
+                    "on-secondary-fixed-variant": "#474746",
+                    "primary": "#960017",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#ead5d7",
+                    "surface-container-low": "#fff0f1",
+                    "outline": "#916f6c",
+                    "error": "#ba1a1a",
+                    "secondary": "#5f5e5e",
+                    "on-secondary": "#ffffff",
+                    "inverse-on-surface": "#ffecee",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#656464",
+                    "outline-variant": "#e6bdba",
+                    "background": "#fff8f7",
+                    "surface-container": "#fee9eb",
+                    "surface-tint": "#c00020",
+                    "tertiary-fixed-dim": "#9dcaff",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#e4e2e1",
+                    "on-surface-variant": "#5c3f3d",
+                    "surface": "#fff8f7",
+                    "on-background": "#24191a",
+                    "surface-container-high": "#f8e3e5",
+                    "on-primary-fixed-variant": "#930016",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "surface-container-highest": "#f3dde0",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#ffb3ae",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-surface": "#24191a",
+                    "surface-bright": "#fff8f7",
+                    "inverse-primary": "#ffb3ae",
+                    "on-tertiary-fixed": "#001d35"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "gutter": "16px",
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "margin-desktop": "64px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "sm": "8px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Georgia"],
+                    "label-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "display-lg": ["Georgia"],
+                    "body-md": ["Inter"],
+                    "headline-sm": ["Georgia"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Georgia"],
+                    "button": ["Inter"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #FDF3F3; /* Brand-mandated plasma-inspired soft pink surface */
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .message-bubble-received {
+            box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04);
+            border-bottom-left-radius: 4px;
+        }
+        .message-bubble-sent {
+            background-color: rgba(195, 1, 33, 0.1);
+            border-bottom-right-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e6bdba;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar (Shared Component Contextualized) -->
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm h-16 flex items-center px-4 md:px-8 border-b border-outline-variant/10">
+<div class="flex items-center w-full max-w-7xl mx-auto justify-between">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">arrow_back</span>
+</button>
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover border-2 border-primary-container" data-alt="A professional studio portrait of a kind-faced woman in her 30s with a warm smile, Alex Johnson. She has short dark hair and is wearing a clinical yet approachable soft white knit sweater. The lighting is bright and airy, reflecting a clean medical laboratory setting with soft focus medical equipment in the background. High-quality digital photography with a soft pinkish-warm tone matching the brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtLQf9oKUkO-LaoJv8wtl1f6En0ShpSzjscKvzVLhGNwDeKvPnnxoJC2B6ryoqwndqvpW2Cr9NTQwRC_E2st3B5TMABVfO_XzOfvJny-UTZk2aiKm4Ndrzp7KuOGoE_Crni8awVgqeJYkCIxykuvhTCknk4GTUyLv0g9d7t1MCsvycjJS7yAs_wtEgs6M8bZhStaWYVFJguUePyumWBXxU6zL3Kitht10pL48b4col4ypy3D4Fv1btdZTZGA40la06OotraYRRNQM"/>
+<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-surface rounded-full"></span>
+</div>
+<div class="flex flex-col">
+<h1 class="font-headline-sm text-headline-sm leading-tight">Sarah Jenkins</h1>
+<div class="flex items-center gap-2">
+<span class="bg-primary-container text-white px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase">O-</span>
+<span class="text-body-sm font-label-md text-on-surface-variant/70">Online</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-3 hover:bg-surface-container-high rounded-full transition-colors hidden sm:block">
+<span class="material-symbols-outlined text-on-surface-variant">call</span>
+</button>
+<button class="p-3 hover:bg-surface-container-high rounded-full transition-colors hidden sm:block">
+<span class="material-symbols-outlined text-on-surface-variant">videocam</span>
+</button>
+<button class="p-3 hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Message Area -->
+<main class="flex-1 mt-16 mb-20 overflow-y-auto px-4 py-6 custom-scrollbar flex flex-col gap-4 max-w-4xl mx-auto w-full">
+<!-- Date Marker -->
+<div class="flex justify-center my-4">
+<span class="bg-surface-container-high text-on-surface-variant px-4 py-1 rounded-full text-label-md uppercase tracking-widest opacity-80">Today</span>
+</div>
+<!-- Received Message -->
+<div class="flex flex-col items-start max-w-[85%] sm:max-w-[70%]">
+<div class="message-bubble-received bg-white p-4 rounded-lg text-body-md text-on-surface">
+                Hello Alex, I saw your urgent request for O- blood at Central General. Is the donation slot still open for 3 PM?
+            </div>
+<span class="text-[10px] text-on-surface-variant/60 mt-1 ml-1">10:45 AM</span>
+</div>
+<!-- Sent Message -->
+<div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[70%]">
+<div class="message-bubble-sent p-4 rounded-lg text-body-md text-on-surface">
+                Hi Sarah! Yes, the slot is still open. We really appreciate you reaching out so quickly. The patient is undergoing surgery tomorrow.
+            </div>
+<div class="flex items-center gap-1 mt-1 mr-1">
+<span class="text-[10px] text-on-surface-variant/60">10:47 AM</span>
+<span class="material-symbols-outlined text-blue-500 text-[14px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+<!-- Received Message -->
+<div class="flex flex-col items-start max-w-[85%] sm:max-w-[70%]">
+<div class="message-bubble-received bg-white p-4 rounded-lg text-body-md text-on-surface">
+                Understood. I've just confirmed the appointment through the BloodPulse app. I'll make sure to hydrate and have a good meal beforehand. 
+            </div>
+<span class="text-[10px] text-on-surface-variant/60 mt-1 ml-1">10:48 AM</span>
+</div>
+<!-- Emergency Update Card (Bento Style) -->
+<div class="bg-white border border-outline-variant/30 rounded-lg p-4 my-2 shadow-sm flex items-center gap-4 max-w-full">
+<div class="bg-error-container w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">emergency</span>
+</div>
+<div class="flex-1">
+<p class="text-label-lg font-bold text-on-surface">Appointment Confirmed</p>
+<p class="text-body-sm text-on-surface-variant">Central General Hospital • Room 402</p>
+</div>
+<button class="bg-primary-container text-white px-4 py-2 rounded-full text-label-md font-bold transition-transform active:scale-95">View</button>
+</div>
+<!-- Sent Message -->
+<div class="flex flex-col items-end self-end max-w-[85%] sm:max-w-[70%]">
+<div class="message-bubble-sent p-4 rounded-lg text-body-md text-on-surface">
+                Perfect! Please bring your ID. I'll be there to meet you at the reception. See you then!
+            </div>
+<div class="flex items-center gap-1 mt-1 mr-1">
+<span class="text-[10px] text-on-surface-variant/60">10:52 AM</span>
+<span class="material-symbols-outlined text-blue-500 text-[14px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+</main>
+<!-- Bottom Input Bar -->
+<footer class="fixed bottom-0 left-0 w-full bg-surface-bright/80 backdrop-blur-md px-4 py-3 z-50">
+<div class="max-w-4xl mx-auto flex items-center gap-2">
+<div class="flex-1 bg-white border border-outline-variant/50 rounded-full h-12 flex items-center px-4 shadow-sm focus-within:ring-2 focus-within:ring-tertiary/20 transition-all">
+<button class="p-1 hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-body-md px-2 placeholder:text-on-surface-variant/40" placeholder="Type a message..." type="text"/>
+<button class="p-1 hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">sentiment_satisfied</span>
+</button>
+</div>
+<button class="w-12 h-12 bg-primary-container text-white rounded-full flex items-center justify-center shadow-lg hover:brightness-110 active:scale-90 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</footer>
+<!-- Atmosphere/Interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.querySelector('input');
+            const sendBtn = document.querySelector('button span[data-icon="send"]')?.parentElement || document.querySelector('button span.material-symbols-outlined:last-child').parentElement;
+            
+            // Focus effect
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('border-primary-container');
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('border-primary-container');
+            });
+
+            // Smooth scroll to bottom on load
+            const main = document.querySelector('main');
+            main.scrollTop = main.scrollHeight;
+
+            // Micro-interaction for send button
+            sendBtn.addEventListener('click', () => {
+                if(input.value.trim() !== "") {
+                    // Logic to append message could go here
+                    input.value = "";
+                    main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body></html>

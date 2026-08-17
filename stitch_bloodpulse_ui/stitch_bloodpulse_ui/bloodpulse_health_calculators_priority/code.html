@@ -1,0 +1,345 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Health Calculators - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary": "#ffffff",
+                      "on-background": "#24191a",
+                      "on-tertiary-fixed": "#001d35",
+                      "primary": "#c30121",
+                      "on-primary-fixed": "#410005",
+                      "surface-container-low": "#fff0f1",
+                      "on-secondary-fixed-variant": "#474746",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "surface-bright": "#fff8f7",
+                      "on-primary-container": "#ffd1cd",
+                      "on-tertiary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "primary-container": "#c30121",
+                      "inverse-on-surface": "#ffecee",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "on-surface": "#24191a",
+                      "primary-fixed": "#ffdad7",
+                      "tertiary": "#004b7e",
+                      "background": "#fff8f7",
+                      "surface-container-high": "#f8e3e5",
+                      "on-error": "#ffffff",
+                      "tertiary-container": "#0063a4",
+                      "on-secondary-container": "#656464",
+                      "on-error-container": "#93000a",
+                      "inverse-primary": "#ffb3ae",
+                      "surface-container-highest": "#f3dde0",
+                      "outline-variant": "#e6bdba",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "surface-container": "#fee9eb",
+                      "inverse-surface": "#3a2d2f",
+                      "tertiary-fixed": "#d1e4ff",
+                      "outline": "#916f6c",
+                      "on-secondary": "#ffffff",
+                      "surface": "#fff8f7",
+                      "secondary": "#5f5e5e",
+                      "surface-dim": "#ead5d7",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-tint": "#c30121",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "error": "#ba1a1a",
+                      "secondary-container": "#e4e2e1",
+                      "surface-variant": "#f3dde0",
+                      "secondary-fixed": "#e4e2e1",
+                      "on-tertiary-container": "#c3ddff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "sm": "8px",
+                      "margin-desktop": "64px",
+                      "lg": "24px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "headline-md": ["Georgia"],
+                      "body-lg": ["Inter"],
+                      "headline-lg": ["Georgia"],
+                      "label-lg": ["Inter"],
+                      "button": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "headline-sm": ["Georgia"],
+                      "display-lg": ["Georgia"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.surface'); color: theme('colors.on-surface'); }
+        /* Ambient soft shadow for level 1 cards */
+        .card-shadow { box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04); }
+    </style>
+</head>
+<body class="antialiased min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-margin-mobile md:px-margin-desktop z-40 transition-colors h-16"><div class="flex items-center gap-2 h-full">
+  <img alt="BloodPulse Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMxwBpDHpvDSI71XiPMRaWNvcCFdxpecnkMitGUBC8uIttUeM19WFs8blHy9wW3btYjmkqAWAGhSzkrjfOhIlUsAklanQFZ11AlQ8fVogiPR-gOrQJvz46Y6oPB586Z2tulQj7xn-E2eX7zVn1LoF0Db4IIhE__Gle4Hna1TMDQZo4WuFzvIDuxTp-aAqs9_IlaMOyZ43OFy0tGqyQ1RfI_KD5HuNKwS2fO61_xR3U0e4FvNHNx6Jgw3aRO6dMSFl0Dp7Z0aXbVVM">
+  <span class="font-headline-md text-primary" style="color: #C30121; font-family: Georgia, serif;">BloodPulse</span>
+</div>
+<div class="flex items-center gap-4">
+  <div class="relative cursor-pointer hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined text-primary" style="color: #C30121;">notifications</span>
+    <span class="absolute -top-1 -right-1 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full ring-2 ring-surface">3</span>
+  </div>
+  <button class="material-symbols-outlined text-secondary hover:bg-surface-container-high rounded-full p-1 transition-colors">more_vert</button>
+</div></header>
+<!-- Main Content Canvas -->
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+<div class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-sm">Health Calculators</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Comprehensive tracking for your donation readiness and overall health.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg">
+<!-- BMI Calculator -->
+<div class="md:col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<div class="flex items-center gap-2 mb-md"><span class="material-symbols-outlined text-primary">monitor_weight</span><h3 class="font-headline-sm text-headline-sm text-on-surface">BMI Calculator</h3><p class="text-label-md text-on-surface-variant mt-1 ml-auto">Formula: Weight ÷ Height²</p></div>
+<div class="space-y-4">
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Weight (kg)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="e.g. 70" type="number" value="70">
+</div>
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Height (cm)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" placeholder="e.g. 175" type="number" value="175">
+</div>
+<button class="w-full bg-primary text-on-primary font-button text-button rounded-full px-6 py-3 hover:opacity-90 transition-opacity mt-2">
+                        Calculate BMI
+                    </button>
+<div class="mt-4 p-4 bg-surface-container-low rounded-lg text-center flex flex-col items-center">
+<span class="font-headline-md text-on-surface mb-1">22.9</span>
+<span class="text-sm font-semibold text-green-700 px-3 py-1 bg-green-100 rounded-full">Healthy Weight</span>
+<p class="text-[11px] text-on-surface-variant mt-2 w-full flex justify-between px-2">
+<span class="">Under: &lt;18.5</span> <span class="">Healthy: 18.5-24.9</span> <span class="">Over: 25-29.9</span> <span class="">Obese: 30+</span>
+</p>
+</div>
+</div>
+</div>
+<!-- Water Intake Calculator -->
+<div class="md:col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<div class="flex items-center gap-2 mb-md"><span class="material-symbols-outlined text-tertiary">water_drop</span><h3 class="font-headline-sm text-headline-sm text-on-surface">Daily Hydration</h3><p class="text-label-md text-on-surface-variant mt-1 ml-auto">Formula: Weight × 35 mL</p></div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Crucial for blood volume recovery.</p>
+<div class="space-y-4">
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Weight (kg)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none transition-all" placeholder="e.g. 70" type="number" value="70">
+</div>
+<div class="mt-4 p-4 bg-tertiary/10 rounded-lg text-center">
+<div class="flex justify-between items-end mb-2">
+<span class="font-headline-sm text-tertiary">1800 mL</span>
+<span class="text-label-md text-on-surface-variant">Target: 2450 mL</span>
+</div>
+<div class="w-full bg-tertiary/20 rounded-full h-3">
+<div class="bg-tertiary h-3 rounded-full" style="width: 73%"></div>
+</div>
+</div>
+<button class="w-full border-2 border-tertiary text-tertiary font-button text-button rounded-full px-6 py-2 hover:bg-tertiary/5 transition-colors mt-2">
+                        + Add 250mL Glass
+                    </button>
+</div>
+</div>
+<!-- Next Donation Date -->
+<div class="md:col-span-12 lg:col-span-12 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<div class="flex items-center gap-2 mb-sm"><span class="material-symbols-outlined text-primary">event</span><h2 class="font-headline-sm text-headline-sm text-on-surface">Next Donation Date</h2><p class="text-label-md text-on-surface-variant mt-1 ml-auto">Formula: Last donation + 90 days.</p></div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Whole Blood waiting period: 90 days.</p>
+<div class="flex gap-4"><div class="flex flex-col items-center justify-center bg-surface-container-low rounded-lg p-4 w-full md:w-1/2 mx-auto"><span class="font-headline-lg text-headline-lg text-primary">74</span><span class="font-label-md text-label-md text-on-surface-variant">DAYS REMAINING</span></div></div>
+</div>
+<!-- Blood Donation Eligibility Checker -->
+<div class="md:col-span-12 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<div class="flex items-center gap-2 mb-md"><span class="material-symbols-outlined text-primary">fact_check</span><h3 class="font-headline-sm text-headline-sm text-on-surface">Eligibility Pre-Screening</h3></div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Age</label>
+<input class="w-full bg-surface border border-outline/30 rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface outline-none" placeholder="e.g. 28" type="number" value="28">
+</div>
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Weight (kg)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface outline-none" placeholder="e.g. 70" type="number" value="70">
+</div>
+</div>
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Blood Group</label>
+<select class="w-full bg-surface border border-outline/30 rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface outline-none">
+<option>O+</option>
+<option>O-</option>
+<option>A+</option>
+<option>A-</option>
+<option>B+</option>
+<option>B-</option>
+<option>AB+</option>
+<option>AB-</option>
+</select>
+</div>
+</div>
+<div class="space-y-3">
+<label class="font-label-md text-label-md text-on-surface-variant block">Health Questionnaire</label>
+<label class="flex items-center gap-2 font-body-sm text-on-surface cursor-pointer"><input class="rounded text-primary focus:ring-primary h-4 w-4" type="checkbox"> Currently taking antibiotics?</label>
+<label class="flex items-center gap-2 font-body-sm text-on-surface cursor-pointer"><input class="rounded text-primary focus:ring-primary h-4 w-4" type="checkbox"> Feeling feverish today?</label>
+<label class="flex items-center gap-2 font-body-sm text-on-surface cursor-pointer"><input class="rounded text-primary focus:ring-primary h-4 w-4" type="checkbox"> Pregnant in last 6 months?</label>
+<label class="flex items-center gap-2 font-body-sm text-on-surface cursor-pointer"><input class="rounded text-primary focus:ring-primary h-4 w-4" type="checkbox"> Uncontrolled diabetes or hypertension?</label>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline-variant/30 flex items-center justify-between">
+<button class="bg-surface-container-high text-on-surface font-button text-button rounded-full px-6 py-2 hover:bg-surface-container-highest transition-colors">Check Status</button>
+<div class="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-2 rounded-full border border-green-200">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="font-label-lg font-bold">Status: Eligible</span>
+</div>
+</div>
+</div>
+<!-- Health Score & Readiness -->
+<div class="md:col-span-12 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-primary text-4xl mb-2" style="font-variation-settings: &quot;FILL&quot; 1;">health_metrics</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Wellness Score</h3>
+<p class="text-label-md text-on-surface-variant px-4 mb-4">Combining BMI, hydration, exercise, and sleep.</p>
+<div class="relative w-32 h-32 flex items-center justify-center my-4">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-surface-variant" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="92, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-headline-lg text-headline-lg text-on-surface">92</span>
+<span class="font-label-md text-label-md text-on-surface-variant">/100</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Overall Readiness: <strong class="text-primary">Excellent</strong></p>
+</div>
+<!-- Recovery Timeline & Exercise Guide -->
+<div class="md:col-span-12 lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-md md:gap-lg">
+<!-- Recovery Timeline -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">timeline</span> 48h Recovery Tracker</h3>
+<div class="relative pl-6 space-y-6 before:absolute before:inset-y-2 before:left-3 before:w-0.5 before:bg-surface-variant">
+<div class="relative">
+<span class="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-primary ring-4 ring-surface-container-lowest"></span>
+<p class="font-label-lg text-on-surface">0h: Donation Complete</p>
+<p class="text-body-sm text-on-surface-variant">Rest for 15 mins.</p>
+</div>
+<div class="relative">
+<span class="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-primary ring-4 ring-surface-container-lowest"></span>
+<p class="font-label-lg text-on-surface">2h: Hydration Phase</p>
+<p class="text-body-sm text-on-surface-variant">Drink extra 500ml water.</p>
+</div>
+<div class="relative">
+<span class="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-primary ring-4 ring-surface-container-lowest"></span>
+<p class="font-label-lg text-on-surface">6h: Nutrition</p>
+<p class="text-body-sm text-on-surface-variant">Eat an iron-rich meal.</p>
+</div>
+<div class="relative">
+<span class="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-surface-variant border-2 border-primary ring-4 ring-surface-container-lowest"></span>
+<p class="font-label-lg text-on-surface">24h: Light Activity</p>
+<p class="text-body-sm text-on-surface-variant">Walking is okay. No heavy lifting.</p>
+</div>
+<div class="relative">
+<span class="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-surface-variant ring-4 ring-surface-container-lowest"></span>
+<p class="font-label-lg text-on-surface text-on-surface-variant">48h: Full Recovery</p>
+<p class="text-body-sm text-on-surface-variant">Resume normal intense workouts.</p>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-outline/20">
+<div class="flex justify-between text-label-md mb-2"><span class="text-on-surface-variant">Overall Progress</span><span class="text-primary font-bold">80%</span></div>
+<div class="w-full bg-surface-variant rounded-full h-2"><div class="bg-primary h-2 rounded-full" style="width: 80%"></div></div>
+</div>
+</div>
+<!-- Exercise Guide -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">fitness_center</span> Post-Donation Exercise</h3>
+<div class="space-y-4">
+<div class="p-4 rounded-lg bg-surface-container-low border-l-4 border-primary">
+<h4 class="font-label-lg font-bold text-on-surface">Phase 1 (0-24 hrs)</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Avoid gym, heavy lifting, or strenuous cardio. High risk of dizziness or bleeding.</p>
+</div>
+<div class="p-4 rounded-lg bg-surface-container-low border-l-4 border-tertiary-fixed-dim">
+<h4 class="font-label-lg font-bold text-on-surface">Phase 2 (24-48 hrs)</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Gentle yoga, stretching, or light walking. Listen to your body and stay hydrated.</p>
+</div>
+<div class="p-4 rounded-lg bg-surface-container-low border-l-4 border-green-300">
+<h4 class="font-label-lg font-bold text-on-surface">Phase 3 (48+ hrs)</h4>
+<p class="text-body-sm text-on-surface-variant mt-1">Safe to resume normal workout routines and intensity.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Lives Helped -->
+<div class="md:col-span-12 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary text-4xl mb-1">favorite</span>
+<span class="font-headline-lg text-headline-lg text-on-surface">36</span>
+<span class="font-label-md text-label-md text-on-surface-variant">LIVES HELPED</span>
+<p class="text-[12px] text-on-surface-variant mt-2 bg-surface-container-low px-3 py-1 rounded-full">Formula: Donations × 3</p>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface-container dark:bg-surface-container-low border-t border-outline-variant/30 shadow-lg rounded-t-lg transition-colors"><button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+  <span class="material-symbols-outlined">home</span>
+  <span class="text-label-md font-label-md">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full px-6 py-1 transition-all active:scale-90">
+  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+  <span class="text-label-md font-label-md">Blood Hub</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+  <span class="material-symbols-outlined">groups</span>
+  <span class="text-label-md font-label-md">Community</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+  <span class="material-symbols-outlined">medical_services</span>
+  <span class="text-label-md font-label-md">Health</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+  <span class="material-symbols-outlined">person</span>
+  <span class="text-label-md font-label-md">Profile</span>
+</button></nav>
+
+
+
+
+
+
+
+
+
+
+</body></html>

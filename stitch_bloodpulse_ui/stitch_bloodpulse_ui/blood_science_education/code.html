@@ -1,0 +1,357 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Blood Science - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#ead5d7",
+                      "on-tertiary-fixed": "#001d35",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-container": "#656464",
+                      "surface-container": "#fee9eb",
+                      "secondary-container": "#e4e2e1",
+                      "on-tertiary-container": "#c3ddff",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#474746",
+                      "error-container": "#ffdad6",
+                      "background": "#fff8f7",
+                      "inverse-surface": "#3a2d2f",
+                      "on-primary-fixed": "#410005",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-tint": "#c00020",
+                      "surface-container-high": "#f8e3e5",
+                      "outline": "#916f6c",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#fff0f1",
+                      "outline-variant": "#e6bdba",
+                      "tertiary": "#004b7e",
+                      "surface-bright": "#fff8f7",
+                      "primary-fixed": "#ffdad7",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-fixed": "#d1e4ff",
+                      "on-background": "#24191a",
+                      "surface": "#fff8f7",
+                      "primary": "#960017",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "on-surface": "#24191a",
+                      "inverse-primary": "#ffb3ae",
+                      "surface-container-highest": "#f3dde0",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#c30121",
+                      "surface-variant": "#f3dde0",
+                      "secondary-fixed": "#e4e2e1",
+                      "error": "#ba1a1a",
+                      "inverse-on-surface": "#ffecee",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-primary-container": "#ffd1cd",
+                      "tertiary-container": "#0063a4",
+                      "secondary": "#5f5e5e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "gutter": "16px",
+                      "xs": "4px",
+                      "unit": "4px",
+                      "md": "16px",
+                      "xl": "32px",
+                      "margin-desktop": "64px",
+                      "margin-mobile": "16px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Georgia"
+                      ],
+                      "headline-sm": [
+                              "Georgia"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+        }
+        .bento-card {
+            background-color: theme('colors.surface-container-lowest');
+            border-radius: theme('borderRadius.DEFAULT');
+            padding: theme('spacing.lg');
+            box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .bento-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(142, 125, 127, 0.08);
+        }
+      </style>
+</head>
+<body class="pb-24">
+<header class="w-full top-0 sticky bg-surface flex items-center justify-between px-margin-mobile md:px-margin-desktop h-16 z-50"><div class="flex items-center gap-2">
+  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMxwBpDHpvDSI71XiPMRaWNvcCFdxpecnkMitGUBC8uIttUeM19WFs8blHy9wW3btYjmkqAWAGhSzkrjfOhIlUsAklanQFZ11AlQ8fVogiPR-gOrQJvz46Y6oPB586Z2tulQj7xn-E2eX7zVn1LoF0Db4IIhE__Gle4Hna1TMDQZo4WuFzvIDuxTp-aAqs9_IlaMOyZ43OFy0tGqyQ1RfI_KD5HuNKwS2fO61_xR3U0e4FvNHNx6Jgw3aRO6dMSFl0Dp7Z0aXbVVM" alt="BloodPulse Logo" class="h-8 w-auto">
+  <span class="font-headline-md text-headline-md" style="color: #C30121; font-family: Georgia;">BloodPulse</span>
+</div>
+<div class="flex items-center gap-6">
+  <nav class="hidden md:flex gap-6 mr-4">
+    <a class="font-label-md text-label-md text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Home</a>
+    <a class="font-label-md text-label-md text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Donate</a>
+    <a class="font-label-md text-label-md text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Clinics</a>
+    <a class="font-label-md text-label-md text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Profile</a>
+  </nav>
+  <div class="flex items-center gap-4">
+    <div class="relative">
+      <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+      <span class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+    </div>
+    <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+  </div>
+</div></header>
+<main class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop pt-8 pb-16 space-y-16">
+<section class="text-center space-y-4">
+<h1 class="font-display-lg text-display-lg text-on-surface">The Science of Blood</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Understanding the vital fluid that sustains life, from its cellular components to its intricate journey through the body.</p>
+</section>
+<section class="space-y-8">
+<h2 class="font-headline-lg text-headline-lg text-primary border-b border-outline-variant pb-2">Blood Components</h2>
+<div class="w-full rounded-DEFAULT overflow-hidden shadow-lg bg-white mb-8">
+<img class="w-full h-auto object-cover" data-alt="A detailed, colorful illustration showing the main components of human blood within a blood vessel, including red blood cells, white blood cells, platelets, and plasma, with clear labels for educational purposes in a clinical style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCS7sGWaB09dhVXSKZLC0XMqXo77nl_l3BEIMLAYlPwR8T3Sjo0JLFvge8d8PMGZXM48fVMSnCk3CwmffBD_nFdOif7sLP3GSbJHQx88RWyLfwnaYoorFjp3jR4sWf_EIOIIdx04Lq9hRewtVQ47LgcaFXIBglotGBARWikmTyqrKkFWkApG2ZlGtROMhoKzB-NIiDjxuT7_K77Fr53mCN5wsBzY0ua_VYBDxTcbosvQo9p-HybPEfV0MDJ7xmkz0PXAFIwpu3_fw0">
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bento-card flex flex-col items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined">radio_button_checked</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm mb-2">Red Blood Cells</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Also known as erythrocytes, these cells carry oxygen from the lungs to the rest of the body and return carbon dioxide to the lungs to be exhaled.</p>
+</div>
+</div>
+<div class="bento-card flex flex-col items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">coronavirus</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm mb-2">White Blood Cells</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Leukocytes are the body's primary defense against infection and disease. They are part of the immune system, constantly searching for invaders.</p>
+</div>
+</div>
+<div class="bento-card flex flex-col items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined">scatter_plot</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm mb-2">Platelets</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Thrombocytes are tiny cell fragments that rush to the site of an injury to form a clot, preventing excessive bleeding.</p>
+</div>
+</div>
+<div class="bento-card flex flex-col items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined">water</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm mb-2">Plasma</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">The yellowish liquid component of blood that holds the blood cells in whole blood in suspension. It constitutes about 55% of the body's total blood volume.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+<div class="space-y-6">
+<h2 class="font-headline-lg text-headline-lg text-primary">Hemoglobin</h2>
+<div class="space-y-4 text-on-surface-variant font-body-md text-body-md">
+<p class="">Hemoglobin is an iron-rich protein present in red blood cells that gives blood its red color. It is responsible for carrying oxygen from the lungs to the tissues and organs.</p>
+<div class="bg-surface-container-low p-6 rounded-DEFAULT border border-outline-variant/30">
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Anemia</h4>
+<p class="font-body-sm text-body-sm">A condition where you lack enough healthy red blood cells or hemoglobin to carry adequate oxygen to your body's tissues. It can make you feel tired and weak.</p>
+</div>
+<p class=""><strong>Increasing Hemoglobin:</strong> A diet rich in iron (meat, beans, leafy greens), vitamin C (to aid absorption), and folate can help maintain healthy hemoglobin levels.</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="rounded-DEFAULT overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A microscopic view of red blood cells flowing through a vein, emphasizing the smooth, donut-like shape of healthy cells in a soft pink and red clinical color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfM52Ln09oofaGjNhhWtUqhYnWdTRsq3BZO1EXa7Rs9DJM9nU98c7GvnBt_h8Sfwe5CDfUSM3CWcWYMdJB9GE8-bU6fAfCzSRrM-za5cN4dZAguqngidSvr553D6WR32PrcLGtwKqoux_9tLGYUckUmkXKiBHpSMjQDQWe3gh25tilEVOm0DWJd2fshD7I2qOPaCCZGkhUVyYiI9j5Cn790r0MBmcuupPPDlLmzrGjO-C3Xi1saUPWwGEQsbCTGdDA7iBaLCcDsr0">
+</div>
+<div class="rounded-DEFAULT overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A close-up diagram showing the molecular structure of hemoglobin binding with oxygen molecules, rendered in clean, modern scientific visualization style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrsMzK6lijc0Q0BijE3OjsLyu6Y4GanS05HhYYCKs4_tKDJWx_GXhFUkmyr0XMSRgTYGkg6OnGDaqKMs4SRdrCGvz4_7SVrXPV-ZkrRX8lybP0OHuqvZdL6zBPzRIk1XCo_Lz03HlR4eKQJr-bAnZFqLKSYvG2JVQmAOxZG9x9coOTVLHHwhtaRiu9uRtAV82zx1X4tOlEoyyA5vJ0pEqn-9qDQwhjeO8pmMapQUoFB9_rTOIZiMIBh5lXcV_iyHxXBfPGtL1_w3c">
+</div>
+</div>
+</section>
+<section class="space-y-8">
+<h2 class="font-headline-lg text-headline-lg text-primary border-b border-outline-variant pb-2">Blood Circulation</h2>
+<div class="bg-white rounded-DEFAULT shadow-lg p-6 flex flex-col md:flex-row items-center gap-8">
+<div class="flex-1 space-y-4">
+<p class="font-body-md text-body-md text-on-surface-variant">The circulatory system, powered by the heart, is a continuous loop that delivers essential nutrients and oxygen to every cell while removing waste products.</p>
+<ul class="space-y-2 font-body-sm text-body-sm text-on-surface-variant list-disc pl-5">
+<li class=""><strong>Oxygen Delivery:</strong> Oxygen-rich blood is pumped from the heart's left side through arteries to tissues.</li>
+<li class=""><strong>Deoxygenated Return:</strong> Veins carry oxygen-poor blood back to the heart's right side.</li>
+<li class=""><strong>Oxygen Uptake:</strong> Blood is sent to the lungs to release carbon dioxide and absorb fresh oxygen.</li>
+</ul>
+</div>
+<div class="flex-1 rounded-DEFAULT overflow-hidden">
+<img class="w-full h-auto object-cover" data-alt="A clear, educational diagram illustrating human blood circulation, showing the heart, lungs, and body tissues connected by red and blue vessels representing oxygenated and deoxygenated blood flow." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKEH0AvymoJdHEXANfYRDUutZJyZiY-UK877AfAOi9zA46QbM6U-iL975p1Or-cJcBBbsPP8c1m1DZW9IQfOuimPJRvLNojWPmxkzcaTNQrUdYDznG71Z-IA4FH38XDoE_HKtQdXjrWWVXiAtdlcG_fL3CqgHrRhWNyVUZAEHFhjw397sOrac5Wz-NuWKdezP6G_SvqGPBT54ZLl2gGA1JmbglKUgg60QSTwWAC0PWXOr7ZmLm0rtvXWgKmPPoFA12PWO12B8MJV4">
+</div>
+</div>
+</section>
+<section class="bg-surface-container rounded-DEFAULT p-8 md:p-12">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+<div class="order-2 md:order-1 rounded-DEFAULT overflow-hidden shadow-sm">
+<img class="w-full h-auto object-cover" data-alt="A detailed medical illustration showing the blood clotting process, depicting platelets and fibrin threads forming a mesh over a wound to stop bleeding, in a clean, professional style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsq5S5w_IyqeiKwdmRNSXhhTC6znMZ3XobBqQ4CZmgacy121NtCPFmEeAcdupvDGbzjVubYyUz-O1EN66owlL9cxG1lrzeYFnw6AfGMjSz9vgZQgSV2_xQ8Nu_GL95dTKwrLPrV9Fn_imi0wjNXitqSPA9DS6fFuKk--GetzIdm4vUHDRTgxk5bLbbSTGzzKJLUs5KZq969FGu0FQn0qxL8XnJnI1eY4eieio8fDhDYlgrpg3fT1mJ04PsvIOza1SutGtH-xXqPIU">
+</div>
+<div class="order-1 md:order-2 space-y-6">
+<h2 class="font-headline-lg text-headline-lg text-primary">Blood Clotting</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Coagulation, or clotting, is a complex process by which blood changes from a liquid to a gel, forming a blood clot. It potentially results in hemostasis, the cessation of blood loss from a damaged vessel, followed by repair.</p>
+<div class="flex items-start gap-3 mt-4">
+<span class="material-symbols-outlined text-tertiary">healing</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Platelets are the first responders to a damaged vessel. They adhere to the site and release chemicals that attract more platelets, forming a plug. Proteins in the plasma then create a fibrin mesh to solidify the clot.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center py-sm px-md pb-safe bg-surface-container shadow-[0_-4px_12px_rgba(142,125,127,0.04)] rounded-t-lg z-50 md:hidden"><div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-variant/50 rounded-full active:scale-90 transition-all duration-200">
+  <span class="material-symbols-outlined">home</span>
+  <span class="font-label-md text-label-md mt-1">Feed</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1 active:scale-90 transition-all duration-200">
+  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+  <span class="font-label-md text-label-md mt-1">Blood Hub</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-variant/50 rounded-full active:scale-90 transition-all duration-200">
+  <span class="material-symbols-outlined">group</span>
+  <span class="font-label-md text-label-md mt-1">Community</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-variant/50 rounded-full active:scale-90 transition-all duration-200">
+  <span class="material-symbols-outlined">medical_services</span>
+  <span class="font-label-md text-label-md mt-1">Health</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-variant/50 rounded-full active:scale-90 transition-all duration-200">
+  <span class="material-symbols-outlined">person</span>
+  <span class="font-label-md text-label-md mt-1">Profile</span>
+</div></nav>
+
+
+
+
+
+
+</body></html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Health Hub</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts: Inter & Georgia -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "on-background": "#24191a",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary": "#960017",
+                        "on-primary-fixed": "#410005",
+                        "surface-container-low": "#fff0f1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "surface-bright": "#fff8f7",
+                        "on-primary-container": "#ffd1cd",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#c30121",
+                        "inverse-on-surface": "#ffecee",
+                        "on-surface-variant": "#5c3f3d",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-surface": "#24191a",
+                        "primary-fixed": "#ffdad7",
+                        "tertiary": "#004b7e",
+                        "background": "#fff8f7",
+                        "surface-container-high": "#f8e3e5",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "on-secondary-container": "#656464",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#ffb3ae",
+                        "surface-container-highest": "#f3dde0",
+                        "outline-variant": "#e6bdba",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#fee9eb",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary-fixed": "#d1e4ff",
+                        "outline": "#916f6c",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fff8f7",
+                        "secondary": "#5f5e5e",
+                        "surface-dim": "#ead5d7",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-tint": "#c00020",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#e4e2e1",
+                        "surface-variant": "#f3dde0",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-tertiary-container": "#c3ddff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "margin-desktop": "64px",
+                        "lg": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Georgia"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "label-lg": ["Inter"],
+                        "button": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Georgia"],
+                        "display-lg": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    },
+                    "boxShadow": {
+                        "ambient-1": "0 4px 12px 0 rgba(142, 125, 127, 0.04)",
+                        "ambient-2": "0 8px 24px 0 rgba(43, 43, 43, 0.08)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen pt-16 pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 md:h-20 shadow-sm transition-colors bg-surface-container-lowest"><div class="flex items-center gap-sm cursor-pointer active:scale-95 transition-transform">
+  <img alt="BloodPulse Logo" class="h-8 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgO1ixrVm4HiamtTwZFgWSHpk7QRRcZHcgnh4WPDUsua-WgqkIUCrKIYZ3HNYyqdK9n-zl6gYqO4IRYzL4JCs2dKEt-NCLhaAnY7ANvOj4quckpGjAF0wq7cfGG04xnvJ63YVa-wtx-uNnZzjjlU4fjiqwM589sOGrrDEjapB1jpkpweVAd2tf-8UmlVJaQFakuZ0HiKQG0IpNvLfQ_8HZJe6lhknY_h6tlTI2qH0R-iJmpRnpObO6ha1srckyC7YuNh-3bdvTALg" style="height: 32px;">
+  <h1 class="font-headline-sm text-headline-sm font-bold" style="font-family: Georgia, serif; color: #C30121;">BloodPulse</h1>
+</div>
+<div class="flex items-center gap-md">
+  <button aria-label="Notifications" class="relative p-3 rounded-full hover:bg-surface-container-high transition-colors text-primary">
+    <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+    <span class="absolute top-1.5 right-1.5 w-5 h-5 bg-primary text-on-primary rounded-full border border-surface flex items-center justify-center text-[10px] font-bold">3</span>
+  </button>
+  <button aria-label="More options" class="p-2 rounded-full hover:bg-surface-container-high transition-colors text-secondary">
+    <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+  </button>
+</div></header>
+<main class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg flex flex-col gap-xl">
+<!-- Header Section -->
+<section class="flex flex-col gap-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Health Hub</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Your wellness overview and clinical insights.</p>
+</section><section class="flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Tools &amp; Insights</h2>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-gutter"><!-- AI Report Analysis -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="analytics">analytics</span>
+</div>
+<span class="font-button text-button text-on-surface">AI Analysis</span>
+</button>
+<!-- Health Calculators -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="calculate">calculate</span>
+</div>
+<span class="font-button text-button text-on-surface">Calculators</span>
+</button>
+<!-- Blood Science -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="science">science</span>
+</div>
+<span class="font-button text-button text-on-surface">Blood Science</span>
+</button>
+<!-- Compatibility -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="diversity_3">diversity_3</span>
+</div>
+<span class="font-button text-button text-on-surface">Compatibility</span>
+</button>
+<!-- Donation Guide -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="menu_book">menu_book</span>
+</div>
+<span class="font-button text-button text-on-surface">Donation Guide</span>
+</button>
+<!-- Resources -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="library_books">library_books</span>
+</div>
+<span class="font-button text-button text-on-surface">Resources</span>
+</button>
+<!-- Recovery & Aftercare -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-xl flex flex-col items-center justify-center gap-md text-center active:scale-95 group min-h-[160px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors !text-[32px]" data-icon="healing">healing</span>
+</div>
+<span class="font-button text-button text-on-surface">Recovery &amp; Aftercare</span>
+</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface border-t border-surface-variant transition-transform md:hidden"><button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-label-md font-label-md">Feed</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="bloodtype" style="font-variation-settings: 'FILL' 1;">bloodtype</span>
+<span class="text-label-md font-label-md">Blood Hub</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="text-label-md font-label-md">Community</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+<span class="text-label-md font-label-md">Health</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary px-2 py-1 hover:bg-surface-container-high transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-label-md font-label-md">Profile</span>
+</button></nav>
+
+
+
+
+
+
+
+
+</body></html>

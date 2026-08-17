@@ -1,0 +1,317 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse | Splash</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#fee9eb",
+                        "surface-bright": "#fff8f7",
+                        "on-surface": "#24191a",
+                        "outline-variant": "#e6bdba",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "primary": "#960017",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#c3ddff",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "surface-variant": "#f3dde0",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#001d35",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed": "#410005",
+                        "tertiary-container": "#0063a4",
+                        "background": "#fff8f7",
+                        "surface-tint": "#c00020",
+                        "primary-container": "#c30121",
+                        "secondary-fixed": "#e4e2e1",
+                        "outline": "#916f6c",
+                        "on-surface-variant": "#5c3f3d",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#e4e2e1",
+                        "on-secondary-container": "#656464",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fff8f7",
+                        "on-primary-container": "#ffd1cd",
+                        "inverse-on-surface": "#ffecee",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "surface-container-high": "#f8e3e5",
+                        "on-secondary-fixed-variant": "#474746",
+                        "tertiary": "#004b7e",
+                        "tertiary-fixed": "#d1e4ff",
+                        "primary-fixed": "#ffdad7",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "surface-container-low": "#fff0f1",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#3a2d2f",
+                        "on-background": "#24191a",
+                        "secondary": "#5f5e5e",
+                        "on-primary-fixed-variant": "#930016",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#ffb3ae",
+                        "surface-dim": "#ead5d7",
+                        "surface-container-highest": "#f3dde0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "unit": "4px",
+                        "margin-desktop": "64px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Georgia"],
+                        "display-lg": ["Georgia"],
+                        "button": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Georgia"],
+                        "headline-lg": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #FDF3F3; /* Brand Soft Pink/Surface */
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Micro-interactions */
+        .tap-scale {
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tap-scale:active {
+            transform: scale(0.96);
+        }
+
+        /* Float animation for the logo */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- Background Shader -->
+<div class="fixed inset-0 z-0">
+<!-- STITCH_SHADER_START:ANIMATION_3 class="absolute inset-0 w-full h-full opacity-60" -->
+<div class="absolute inset-0 w-full h-full opacity-60" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_3" style="display:block;width:100%;height:100%" width="390" height="884"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_3');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+varying vec2 v_texCoord;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+void main() {
+    vec2 uv = v_texCoord;
+    
+    // Soft pulsing effect centered on screen
+    vec2 center = vec2(0.5, 0.5);
+    float dist = distance(uv, center);
+    
+    // Create a slow, breathing pulse
+    float pulse = 0.5 + 0.5 * sin(u_time * 1.5);
+    float strength = smoothstep(0.8, 0.2, dist) * 0.05 * pulse;
+    
+    // Background color: #FDF3F3
+    vec3 surfaceColor = vec3(0.992, 0.953, 0.953);
+    // Pulse color: Primary #C30121 with very low opacity
+    vec3 pulseColor = vec3(0.765, 0.004, 0.129);
+    
+    vec3 finalColor = mix(surfaceColor, pulseColor, strength);
+    
+    gl_FragColor = vec4(finalColor, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_3 -->
+</div>
+<!-- Main Canvas (Mobile 390x844 Constrained Viewport for Preview) -->
+<main class="relative z-10 flex flex-col items-center justify-between w-full max-w-[390px] h-full max-h-[844px] px-lg py-xl text-center overflow-hidden">
+<!-- Top Spacer for composition -->
+<div class="h-16"></div>
+<!-- Centered Content Stack -->
+<div class="flex flex-col items-center gap-lg w-full">
+<!-- Logo Section -->
+<div class="animate-float">
+<img alt="BloodPulse Logo" class="w-40 h-auto object-contain drop-shadow-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRIovjJ_duPDTBqKc01E36rcYVtHH_VPibtxhQ99eerruBdeuLiv_XT4eT1cAALVVgoyRTh9x5GdZg9eqTjULxJELv3ojHUP-gguJ5QqR75YWPw-EOhKIYWQ42xKAEZf9BACCUcXmAdMagLoWjb3pJ7jLrFU16qU4lXhNGeu8_03oFSZFr-xWxQYQeocmRiM4vSFfSl2P3TxT50mIGG8CzdQpubmiblzBtefpG2kE_g6sMA4ncMhbaQ8F_L5KV5-42qfALWnFxvbA">
+</div>
+<!-- Text Content -->
+<div class="space-y-sm fade-in-up" style="animation-delay: 0.2s;">
+<h1 class="font-headline-lg text-display-lg text-primary tracking-tight">BloodPulse</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-[280px] mx-auto leading-relaxed">
+                    You give today , They live today.
+                </p>
+</div>
+</div>
+<!-- Footer / CTA Section -->
+<div class="w-full space-y-md fade-in-up pb-xl" style="animation-delay: 0.4s;">
+<button class="tap-scale group w-full bg-primary-container text-on-primary rounded-full py-md px-xl flex items-center justify-center gap-sm shadow-lg hover:shadow-xl transition-all">
+<span class="font-button text-button">Let's Start</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<div class="flex items-center justify-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant opacity-50"></span>
+<span class="w-1.5 h-1.5 rounded-full bg-outline-variant opacity-50"></span>
+</div>
+<p class="font-label-md text-label-md text-secondary opacity-60 px-md">
+                By continuing, you agree to our terms of clinical excellence and community altruism.
+            </p>
+</div>
+</main>
+<!-- Navigation Shell Suppression: This is a Splash screen, so we exclude the TopAppBar and BottomNavBar as per the "Destination" Rule / Relevance Check. -->
+<script>
+        // Micro-interaction for the CTA
+        document.querySelector('button').addEventListener('click', () => {
+            console.log('Navigating to Onboarding...');
+            // In a real app, logic for navigation would go here
+        });
+
+        // Soft interaction for icons
+        document.querySelectorAll('.material-symbols-outlined').forEach(icon => {
+            icon.addEventListener('mouseenter', () => {
+                icon.style.fontVariationSettings = "'FILL' 1";
+            });
+            icon.addEventListener('mouseleave', () => {
+                icon.style.fontVariationSettings = "'FILL' 0";
+            });
+        });
+    </script>
+
+
+</body></html>

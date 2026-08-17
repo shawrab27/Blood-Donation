@@ -1,0 +1,228 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Health Calculators - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary": "#ffffff",
+                      "on-background": "#24191a",
+                      "on-tertiary-fixed": "#001d35",
+                      "primary": "#960017",
+                      "on-primary-fixed": "#410005",
+                      "surface-container-low": "#fff0f1",
+                      "on-secondary-fixed-variant": "#474746",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "surface-bright": "#fff8f7",
+                      "on-primary-container": "#ffd1cd",
+                      "on-tertiary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "primary-container": "#c30121",
+                      "inverse-on-surface": "#ffecee",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "on-surface": "#24191a",
+                      "primary-fixed": "#ffdad7",
+                      "tertiary": "#004b7e",
+                      "background": "#fff8f7",
+                      "surface-container-high": "#f8e3e5",
+                      "on-error": "#ffffff",
+                      "tertiary-container": "#0063a4",
+                      "on-secondary-container": "#656464",
+                      "on-error-container": "#93000a",
+                      "inverse-primary": "#ffb3ae",
+                      "surface-container-highest": "#f3dde0",
+                      "outline-variant": "#e6bdba",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "surface-container": "#fee9eb",
+                      "inverse-surface": "#3a2d2f",
+                      "tertiary-fixed": "#d1e4ff",
+                      "outline": "#916f6c",
+                      "on-secondary": "#ffffff",
+                      "surface": "#fff8f7",
+                      "secondary": "#5f5e5e",
+                      "surface-dim": "#ead5d7",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-tint": "#c00020",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "error": "#ba1a1a",
+                      "secondary-container": "#e4e2e1",
+                      "surface-variant": "#f3dde0",
+                      "secondary-fixed": "#e4e2e1",
+                      "on-tertiary-container": "#c3ddff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "sm": "8px",
+                      "margin-desktop": "64px",
+                      "lg": "24px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "headline-md": ["Georgia"],
+                      "body-lg": ["Inter"],
+                      "headline-lg": ["Georgia"],
+                      "label-lg": ["Inter"],
+                      "button": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "headline-sm": ["Georgia"],
+                      "display-lg": ["Georgia"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.surface'); color: theme('colors.on-surface'); }
+        /* Ambient soft shadow for level 1 cards */
+        .card-shadow { box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04); }
+    </style>
+</head>
+<body class="antialiased min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-margin-mobile md:px-margin-desktop py-sm z-40 transition-colors">
+<div class="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: &quot;FILL&quot; 1;">bloodtype</span>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">BloodPulse</span>
+</div>
+<div class="flex items-center hover:opacity-80 transition-opacity active:scale-95 transition-transform cursor-pointer">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-surface-container-highest">
+<img alt="User profile photo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwDxl-zanwKk0yfJPmU-2FXpM0QMxKlxOR8DnzveskJxbJrOCC5P5yoiZ7VNfNWERim8IKrLeweWHfbHYaHGyEWSv2DVlYD_GoTxEmV2lQQGDsiBW1_Y1jCPJGbmg7PItBL8zDNcjr6jPtscuhxYUOftzqO49uUi8tFgCl5iQn9H3frNI1dHuSZj3mlbaGgTsLcuLH0CXooN3x8dkHOKMVnB_WSfqEtdVansge0vtgU_rIVJu0VjU8A-vTN69hqgIUwfHgtwzk9Qg">
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+<div class="mb-xl">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-sm">Health Insights</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Monitor your vitals and readiness for your next donation.</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-md md:gap-lg">
+<!-- Next Donation & Recovery (Hero Span) -->
+<div class="md:col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow flex flex-col md:flex-row gap-lg items-center">
+<div class="flex-1 w-full"><div class="flex items-center gap-2 mb-sm"><span class="material-symbols-outlined text-primary">event_available</span><h2 class="font-headline-sm text-headline-sm text-on-surface">Next Donation Date</h2></div><p class="font-body-md text-body-md text-on-surface-variant mb-md">You are eligible to donate whole blood in:</p><div class="flex gap-4"><div class="flex flex-col items-center bg-surface-container-low rounded-lg p-4 min-w-[80px]"><span class="font-headline-lg text-headline-lg text-primary">14</span><span class="font-label-md text-label-md text-on-surface-variant">DAYS</span></div><div class="flex flex-col items-center bg-surface-container-low rounded-lg p-4 min-w-[80px]"><span class="font-headline-lg text-headline-lg text-primary">08</span><span class="font-label-md text-label-md text-on-surface-variant">HOURS</span></div></div><p class="text-label-md text-on-surface-variant mt-4 italic">Formula: Last donation date + required waiting period.</p></div>
+<div class="flex-1 w-full flex flex-col items-center justify-center border-t md:border-t-0 pt-4 md:pt-0">
+    <span class="material-symbols-outlined text-primary text-4xl mb-1">volunteer_activism</span>
+    <span class="font-headline-md text-headline-md text-on-surface">36</span>
+    <span class="font-label-md text-label-md text-on-surface-variant">LIVES HELPED</span>
+    <p class="text-[10px] text-on-surface-variant mt-1">Formula: Lives Helped ≈ Total Donations × 3</p>
+</div><div class="w-full md:w-px h-px md:h-32 bg-outline-variant/30"></div>
+<div class="flex-1 w-full">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-sm">Recovery Progress</h3><p class="text-label-md text-on-surface-variant mb-2">Percentage based on days since donation and expected recovery milestones</p><p class="text-label-md text-on-surface-variant mb-2">Recovery: 78% (based on 42 days since last donation)</p>
+<div class="mb-2 flex justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Iron Levels</span>
+<span class="font-label-lg text-label-lg text-primary">85%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-2 mb-4">
+<div class="bg-primary h-2 rounded-full" style="width: 85%"></div>
+</div>
+<div class="mb-2 flex justify-between">
+<span class="font-label-lg text-label-lg text-on-surface-variant">Plasma Volume</span>
+<span class="font-label-lg text-label-lg text-tertiary">100%</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-2">
+<div class="bg-tertiary h-2 rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</div>
+<!-- Health & Eligibility Scores -->
+<div class="md:col-span-12 lg:col-span-4 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow flex flex-col justify-center items-center text-center"><span class="material-symbols-outlined text-primary text-4xl mb-2" style="font-variation-settings: &quot;FILL&quot; 1;">health_and_safety</span><h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Health Score</h3><p class="text-label-md text-on-surface-variant px-4 mb-4">A custom score combining BMI, hydration, exercise, sleep, donation frequency, and other lifestyle factors.</p><div class="relative w-32 h-32 flex items-center justify-center my-4"><svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36"><path class="text-surface-variant" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path><path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="92, 100" stroke-linecap="round" stroke-width="3"></path></svg><div class="absolute flex flex-col items-center"><span class="font-headline-lg text-headline-lg text-on-surface">92</span></div></div><p class="font-body-sm text-body-sm text-on-surface-variant">Eligibility Readiness: <strong class="text-primary">Excellent</strong></p><p class="text-label-md text-on-surface-variant mt-2 px-4">Calculated based on age, weight, last donation, illness, medication, and lifestyle.</p></div>
+<!-- BMI Calculator -->
+<div class="md:col-span-6 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<div class="flex items-center gap-2 mb-md"><span class="material-symbols-outlined text-on-surface-variant">monitor_weight</span><h3 class="font-headline-sm text-headline-sm text-on-surface">BMI Calculator</h3><p class="text-label-md text-on-surface-variant mt-1 ml-auto">Formula: Weight (kg) ÷ Height² (m²)</p></div>
+<div class="space-y-4">
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Weight (kg)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-full px-4 py-2 font-body-md text-body-md text-on-surface focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none transition-all" placeholder="e.g. 70" type="number">
+</div>
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Height (cm)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-full px-4 py-2 font-body-md text-body-md text-on-surface focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none transition-all" placeholder="e.g. 175" type="number">
+</div>
+<button class="w-full bg-primary text-on-primary font-button text-button rounded-full px-6 py-3 hover:opacity-80 transition-opacity mt-2">
+                        Calculate BMI
+                    </button>
+<div class="mt-4 p-3 bg-surface-container-low rounded-lg text-center hidden">
+<!-- Result Placeholder -->
+</div>
+</div>
+</div>
+<!-- Water Intake Calculator -->
+<div class="md:col-span-6 bg-surface-container-lowest rounded-DEFAULT p-lg card-shadow">
+<div class="flex items-center gap-2 mb-md"><span class="material-symbols-outlined text-tertiary">water_drop</span><h3 class="font-headline-sm text-headline-sm text-on-surface">Water Intake</h3><p class="text-label-md text-on-surface-variant mt-1 ml-auto">Formula: Target = Weight (kg) × 35 mL</p></div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Proper hydration is crucial before and after donating blood.</p>
+<div class="space-y-4">
+<div>
+<label class="font-label-md text-label-md text-on-surface-variant block mb-1">Weight (kg)</label>
+<input class="w-full bg-surface border border-outline/30 rounded-full px-4 py-2 font-body-md text-body-md text-on-surface focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none transition-all" placeholder="e.g. 70" type="number">
+</div>
+<button class="w-full border-2 border-primary text-primary font-button text-button rounded-full px-6 py-3 hover:bg-primary/5 transition-colors mt-2">
+                        Calculate Intake
+                    </button>
+<div class="mt-4 p-3 bg-tertiary-fixed rounded-lg text-center hidden">
+<!-- Result Placeholder -->
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface-container dark:bg-surface-container-low border-t border-outline-variant/30 shadow-lg rounded-t-lg transition-colors">
+<!-- Inactive: Feed -->
+<div class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg cursor-pointer w-16">
+<span class="material-symbols-outlined mb-1">rss_feed</span>
+<span class="font-label-md text-label-md">Feed</span>
+</div>
+<!-- Inactive: Blood Hub -->
+<div class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg cursor-pointer w-16">
+<span class="material-symbols-outlined mb-1">opacity</span>
+<span class="font-label-md text-label-md">Blood Hub</span>
+</div>
+<!-- ACTIVE: Health -->
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-fixed-dim text-on-primary-container dark:text-on-primary-fixed-variant rounded-full px-4 py-1 active:scale-90 transition-transform cursor-pointer shadow-sm">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: &quot;FILL&quot; 1;">health_and_safety</span>
+<span class="font-label-md text-label-md">Health</span>
+</div>
+<!-- Inactive: Profile -->
+<div class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg cursor-pointer w-16">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</div>
+</nav>
+
+
+</body></html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Registration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#d1e4ff",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#656464",
+                        "tertiary-container": "#0063a4",
+                        "secondary-container": "#e4e2e1",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#ffdad7",
+                        "surface-dim": "#ead5d7",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "surface": "#fff8f7",
+                        "on-tertiary-container": "#c3ddff",
+                        "on-secondary-fixed-variant": "#474746",
+                        "surface-variant": "#f3dde0",
+                        "error": "#ba1a1a",
+                        "primary-container": "#c30121",
+                        "surface-bright": "#fff8f7",
+                        "surface-container-high": "#f8e3e5",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "tertiary": "#004b7e",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e6bdba",
+                        "on-tertiary-fixed": "#001d35",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#ffecee",
+                        "on-surface-variant": "#5c3f3d",
+                        "surface-container-highest": "#f3dde0",
+                        "on-primary-fixed": "#410005",
+                        "on-background": "#24191a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-primary-container": "#ffd1cd",
+                        "inverse-primary": "#ffb3ae",
+                        "background": "#fff8f7",
+                        "secondary": "#5f5e5e",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#e4e2e1",
+                        "surface-tint": "#c00020",
+                        "on-error": "#ffffff",
+                        "surface-container": "#fee9eb",
+                        "outline": "#916f6c",
+                        "on-surface": "#24191a",
+                        "surface-container-low": "#fff0f1",
+                        "primary": "#960017",
+                        "on-primary-fixed-variant": "#930016"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "margin-desktop": "64px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Georgia"],
+                        "display-lg": ["Georgia"],
+                        "label-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-24 antialiased">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim z-50 flat no shadows flex items-center justify-between px-margin-mobile md:px-margin-desktop h-16">
+<div class="flex items-center gap-sm">
+<img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEITfQQYeyvXmJKm9p4NFOQys5FYr3wAtr6yRJql66LzT1yvyxM5j6RqKH6gr3jsdmHcvcGLlBjRWWEpUlSO6CSQxblNDC80mH2Q9Q9YNS67VkyMMqUOHLS3_AAyYaZ3zwvA_3EhXVuGeVSJ41oTN5khQIVK9AIECnLdkDa8KN-AuL0i3I8FiA1ThJShM9QnuVez0pPAxBU3Pu9q_MAy_DewNPf8c7IYf7fvsuoFiDLs5xgnZzffcU1KC6OYtkRDBWcb7GCIwK5A0" alt="BloodPulse Logo" class="h-8 w-auto cursor-pointer active:scale-95 transition-transform">
+<h1 class="font-headline-sm text-headline-sm-mobile md:text-headline-sm font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim">BloodPulse</h1>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:opacity-80 transition-opacity" data-icon="close" onclick="window.history.back()">close</button>
+</header>
+<main class="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop mt-lg">
+<div class="mb-lg text-center md:text-left">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Join the Lifeline</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm">Complete your profile to start saving lives.</p>
+</div>
+<form class="space-y-xl bg-surface-container-lowest p-lg rounded-xl shadow-[0_4px_24px_rgba(142,125,127,0.04)] border border-outline-variant/30">
+<!-- Avatar Upload -->
+<div class="flex flex-col md:flex-row items-center gap-md pb-lg border-b border-outline-variant/30">
+<div class="relative w-24 h-24 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden border border-outline-variant/50 cursor-pointer group">
+<span class="material-symbols-outlined text-on-surface-variant text-4xl group-hover:scale-110 transition-transform">photo_camera</span>
+<input accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" type="file">
+</div>
+<div class="text-center md:text-left">
+<button class="font-button text-button text-primary bg-transparent border-2 border-primary rounded-full px-lg py-sm hover:bg-primary/5 active:scale-95 transition-all" type="button">
+                        Attach from Library
+                    </button>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Upload a clear photo to help clinics identify you.</p>
+</div>
+</div>
+<!-- Basic Info -->
+<div class="space-y-md">
+<h3 class="font-headline-sm text-headline-sm text-on-surface border-b border-outline-variant/20 pb-xs">Basic Information</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Full Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors" placeholder="name" type="text">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Age</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors" min="18" placeholder="25" type="number">
+</div>
+</div>
+<!-- Gender Pills -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm">Gender</label>
+<div class="flex bg-surface-variant rounded-full p-xs inline-flex">
+<button class="font-button text-button px-lg py-xs rounded-full bg-surface-container-lowest text-primary shadow-sm flex-1 text-center transition-all" type="button">Male</button>
+<button class="font-button text-button px-lg py-xs rounded-full text-on-surface-variant hover:text-on-surface flex-1 text-center transition-all" type="button">Female</button>
+</div>
+</div>
+<!-- Contact -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Primary Phone</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors" placeholder="+880..." type="tel">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Alternative Phone (Optional)</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors" placeholder="+880..." type="tel">
+</div>
+</div>
+</div>
+<!-- Blood Group -->
+<div class="space-y-md bg-surface-container p-md rounded-xl border border-outline-variant/30">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Blood Profile</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Select Blood Group</label>
+<select class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors appearance-none">
+<option value="">Choose...</option>
+<option value="A+">A+</option>
+<option value="O+">O+</option>
+<option value="B+">B+</option>
+<option value="AB+">AB+</option>
+<option value="A-">A-</option>
+<option value="O-">O-</option>
+<option value="B-">B-</option>
+<option value="AB-">AB-</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Confirm Blood Group</label>
+<select class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container focus:ring-1 focus:ring-tertiary-container transition-colors appearance-none">
+<option value="">Confirm...</option>
+<!-- Options same as above -->
+</select>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-error flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">info</span>
+                    Note: Blood Group can ONLY be edited by an Admin once saved.
+                </p>
+</div>
+<!-- Registration Type -->
+<div class="space-y-md border-t border-outline-variant/30 pt-lg">
+<h3 class="font-headline-sm text-headline-sm text-on-surface border-b border-outline-variant/20 pb-xs">Identity Type</h3>
+<div class="flex bg-surface-variant rounded-full p-xs w-full md:w-auto overflow-x-auto">
+<button class="font-button text-button px-md md:px-lg py-xs rounded-full bg-surface-container-lowest text-primary shadow-sm whitespace-nowrap transition-all" id="btn-student" onclick="toggleRegType('student')" type="button">Student Registration</button>
+<button class="font-button text-button px-md md:px-lg py-xs rounded-full text-on-surface-variant hover:text-on-surface whitespace-nowrap transition-all" id="btn-civilian" onclick="toggleRegType('civilian')" type="button">Civilian Registration</button>
+</div>
+<!-- Student Fields -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md transition-all duration-300" id="student-fields">
+<div class="md:col-span-2">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Institute Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container" placeholder="University / College Name" type="text">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Department List</label>
+<select class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container appearance-none">
+<option>Select Department</option>
+<option>Computer Science</option>
+<option>Medicine</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Batch</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container" placeholder="e.g. 2024" type="text">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Class/Group</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container" placeholder="e.g. A" type="text">
+</div>
+</div>
+<!-- Civilian Fields -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md hidden transition-all duration-300" id="civilian-fields">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Division</label>
+<select class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container appearance-none">
+<option>Select Division</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Zila</label>
+<select class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container appearance-none">
+<option>Select Zila</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Upazila</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container" type="text">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Village</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container" type="text">
+</div>
+<div class="md:col-span-2">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">NID/Birth Certificate</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container" type="text">
+</div>
+</div>
+</div>
+<!-- Donation History -->
+<div class="space-y-md border-t border-outline-variant/30 pt-lg">
+<h3 class="font-headline-sm text-headline-sm text-on-surface border-b border-outline-variant/20 pb-xs">Donation History</h3>
+<label class="flex items-center gap-sm cursor-pointer group">
+<div class="relative flex items-center justify-center">
+<input class="peer appearance-none w-5 h-5 border-2 border-outline rounded bg-surface-container-lowest checked:bg-primary checked:border-primary transition-all" id="never-donated" type="checkbox">
+<span class="material-symbols-outlined absolute text-on-primary text-sm opacity-0 peer-checked:opacity-100 pointer-events-none fill">check</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">I have never donated blood before</span>
+</label>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md transition-opacity duration-300" id="donation-details">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Last Donation Date</label>
+<input class="w-full bg-surface-container-lowest border border-outline/30 rounded-full px-md py-sm font-body-md text-body-md focus:outline-none focus:border-tertiary-container text-on-surface" type="date">
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-xs">Total Bags Donated</label>
+<div class="flex items-center bg-surface-container-lowest border border-outline/30 rounded-full focus-within:border-tertiary-container">
+<button class="px-md py-sm text-on-surface-variant hover:text-primary material-symbols-outlined" type="button">remove</button>
+<input class="flex-1 bg-transparent border-none text-center font-body-md text-body-md focus:ring-0" min="0" type="number" value="0">
+<button class="px-md py-sm text-on-surface-variant hover:text-primary material-symbols-outlined" type="button">add</button>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA -->
+<div class="pt-md">
+<button class="w-full font-button text-button bg-[#c30121] text-on-primary rounded-full py-md hover:opacity-90 active:scale-[0.98] transition-all shadow-md" type="submit">
+                    Create Account
+                </button>
+<p class="font-body-sm text-body-sm text-center text-on-surface-variant mt-sm">By creating an account, you agree to our Terms of Service.</p>
+</div>
+</form>
+</main>
+<script>
+        // Registration Type Toggle
+        function toggleRegType(type) {
+            const studentFields = document.getElementById('student-fields');
+            const civilianFields = document.getElementById('civilian-fields');
+            const btnStudent = document.getElementById('btn-student');
+            const btnCivilian = document.getElementById('btn-civilian');
+            
+            const activeClasses = ['bg-surface-container-lowest', 'text-primary', 'shadow-sm'];
+            const inactiveClasses = ['text-on-surface-variant', 'hover:text-on-surface', 'bg-transparent', 'shadow-none'];
+
+            if (type === 'student') {
+                studentFields.classList.remove('hidden');
+                civilianFields.classList.add('hidden');
+                
+                btnStudent.classList.add(...activeClasses);
+                btnStudent.classList.remove(...inactiveClasses);
+                
+                btnCivilian.classList.add(...inactiveClasses);
+                btnCivilian.classList.remove(...activeClasses);
+            } else {
+                studentFields.classList.add('hidden');
+                civilianFields.classList.remove('hidden');
+                
+                btnCivilian.classList.add(...activeClasses);
+                btnCivilian.classList.remove(...inactiveClasses);
+                
+                btnStudent.classList.add(...inactiveClasses);
+                btnStudent.classList.remove(...activeClasses);
+            }
+        }
+
+        // Never Donated Toggle
+        document.getElementById('never-donated').addEventListener('change', function(e) {
+            const details = document.getElementById('donation-details');
+            const inputs = details.querySelectorAll('input, button');
+            
+            if(e.target.checked) {
+                details.style.opacity = '0.5';
+                inputs.forEach(input => input.disabled = true);
+            } else {
+                details.style.opacity = '1';
+                inputs.forEach(input => input.disabled = false);
+            }
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BloodPulse - Health Hub</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter & Georgia (System fallback for Georgia is acceptable, but importing a standard serif if needed. Using standard Georgia as it's web safe) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "on-background": "#24191a",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary": "#960017",
+                        "on-primary-fixed": "#410005",
+                        "surface-container-low": "#fff0f1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "surface-bright": "#fff8f7",
+                        "on-primary-container": "#ffd1cd",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#c30121",
+                        "inverse-on-surface": "#ffecee",
+                        "on-surface-variant": "#5c3f3d",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-surface": "#24191a",
+                        "primary-fixed": "#ffdad7",
+                        "tertiary": "#004b7e",
+                        "background": "#fff8f7",
+                        "surface-container-high": "#f8e3e5",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "on-secondary-container": "#656464",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#ffb3ae",
+                        "surface-container-highest": "#f3dde0",
+                        "outline-variant": "#e6bdba",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#fee9eb",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary-fixed": "#d1e4ff",
+                        "outline": "#916f6c",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fff8f7",
+                        "secondary": "#5f5e5e",
+                        "surface-dim": "#ead5d7",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-tint": "#c00020",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#e4e2e1",
+                        "surface-variant": "#f3dde0",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-tertiary-container": "#c3ddff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "margin-desktop": "64px",
+                        "lg": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Georgia"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "label-lg": ["Inter"],
+                        "button": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Georgia"],
+                        "display-lg": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                        "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    },
+                    "boxShadow": {
+                        "ambient-1": "0 4px 12px 0 rgba(142, 125, 127, 0.04)",
+                        "ambient-2": "0 8px 24px 0 rgba(43, 43, 43, 0.08)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom styles for specific organic/medical feeling gauges not easily done with basic utilities */
+        .gauge-circle {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+        .gauge-bg {
+            stroke: #fee9eb; /* surface-container */
+        }
+        .gauge-fill {
+            stroke: #960017; /* primary */
+            stroke-dasharray: 251.2; /* 2 * pi * r (r=40) */
+            stroke-dashoffset: 62.8; /* 75% fill */
+            transition: stroke-dashoffset 1s ease-in-out;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-margin-mobile py-sm z-50 transition-transform">
+<div class="h-8"><img alt="BloodPulse Logo" class="h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDreFRcUuw0NR4m813HzHLbx9VSPt8htEYGmJddJALvWM-DCsuQoZ8IDV5onGXUEP8u4MF-DAjy1MRPTf3wHN-fi2-pylz5OdD1JCuSrR369t5P6bvmDctavQqy4DObJ9nhc-dH_qiIR3BnU_EAtcQb_VIleDOziHCJenYxhsGN15vP4AA0ElcHjJkOaN0OIae2lwQJp66rKY7jhjnG_hdmt6iEuaQQhrhYVQ1ncBPV-VuLSiXWOEW_dDR_ICafRZX4CXucD7iKcQ8"/></div>
+<div class="flex items-center">
+<!-- User profile photo placeholder -->
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-outline-variant/30">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="A professional, well-lit headshot of a young adult, smiling warmly, suitable for a medical app profile picture. The lighting is soft and high-key, conveying trust and health within a clean, modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoD9GykMmOzqNwJtmJFHkGkEmL51rO9H-Xoh8WPEbsctJ4l0VCvLIvSHSV_10DSdcaic5Vu-me6DTtLEIt9VfTSNel47s3PlsxY4HdQQkCr4GLKdGqRTXVioTmT8SAkb8SpQrEWrBCzjzbJZa_jNCns65Vm2qb5PDSrbpD8sdO4deio-pVBA5Seblx9HIEjKUri7FmFOSXCvcBxMBJ_KLZ6vlve5IWhVMnRtChsYlzE25JkjsnKPKfpD_YItICx5SvFTUZFN65VQM"/>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg flex flex-col gap-xl">
+<!-- Header Section -->
+<section class="flex flex-col gap-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Health Hub</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Your wellness overview and clinical insights.</p>
+</section><section class="flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Tools &amp; Insights</h2>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-gutter">
+<!-- AI Report Analysis -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-lg flex flex-col items-center justify-center gap-sm text-center active:scale-95 group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors" data-icon="analytics">analytics</span>
+</div>
+<span class="font-button text-button text-on-surface">AI Analysis</span>
+</button>
+<!-- Health Calculators -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-lg flex flex-col items-center justify-center gap-sm text-center active:scale-95 group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors" data-icon="calculate">calculate</span>
+</div>
+<span class="font-button text-button text-on-surface">Calculators</span>
+</button>
+<!-- Blood Science -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-lg flex flex-col items-center justify-center gap-sm text-center active:scale-95 group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors" data-icon="science">science</span>
+</div>
+<span class="font-button text-button text-on-surface">Blood Science</span>
+</button>
+<!-- Compatibility -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-lg flex flex-col items-center justify-center gap-sm text-center active:scale-95 group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors" data-icon="diversity_3">diversity_3</span>
+</div>
+<span class="font-button text-button text-on-surface">Compatibility</span>
+</button>
+<!-- Donation Guide -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-lg flex flex-col items-center justify-center gap-sm text-center active:scale-95 group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors" data-icon="menu_book">menu_book</span>
+</div>
+<span class="font-button text-button text-on-surface">Donation Guide</span>
+</button>
+<!-- Resources -->
+<button class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors shadow-ambient-1 rounded-[2rem] p-lg flex flex-col items-center justify-center gap-sm text-center active:scale-95 group">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container transition-colors" data-icon="library_books">library_books</span>
+</div>
+<span class="font-button text-button text-on-surface">Resources</span>
+</button>
+</div>
+</section>
+<!-- Health Score Summary & Key Metrics Grid (Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Health Score Gauge (Large Span) -->
+<div class="md:col-span-5 bg-surface-container-lowest rounded-xl shadow-ambient-1 p-lg flex flex-col items-center justify-center gap-md relative overflow-hidden">
+<h2 class="font-headline-sm text-headline-sm text-on-surface self-start w-full">Overall Score</h2>
+<div class="relative w-48 h-48 flex items-center justify-center mt-sm">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="gauge-circle gauge-bg" cx="50" cy="50" r="40"></circle>
+<circle class="gauge-circle gauge-fill" cx="50" cy="50" r="40"></circle>
+</svg>
+<div class="absolute flex flex-col items-center justify-center">
+<span class="font-display-lg text-display-lg text-primary">85</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Excellent</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center mt-sm">Your vitals and recovery metrics indicate peak readiness for your next donation.</p>
+</div>
+<!-- Key Metrics Grid -->
+<div class="md:col-span-7 grid grid-cols-2 gap-gutter">
+<!-- Next Donation -->
+<div class="bg-surface-container-lowest rounded-xl shadow-ambient-1 p-md flex flex-col justify-between">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-md text-label-md uppercase">Next Donation</span>
+</div>
+<div class="mt-4">
+<span class="font-headline-lg text-headline-lg text-on-surface">14</span>
+<span class="font-body-md text-body-md text-on-surface-variant"> Days</span>
+</div>
+<div class="mt-2 w-full bg-surface-container rounded-full h-2">
+<div class="bg-primary rounded-full h-2 w-[70%]"></div>
+</div>
+</div>
+<!-- Eligibility Status -->
+<div class="bg-surface-container-lowest rounded-xl shadow-ambient-1 p-md flex flex-col justify-between">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="verified_user">verified_user</span>
+<span class="font-label-md text-label-md uppercase">Eligibility</span>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#4CAF50]"></div> <!-- Using explicit green for positive status as primary is red -->
+<span class="font-headline-sm text-headline-sm text-on-surface">Prime</span>
+</div>
+<p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">All parameters optimal.</p>
+</div>
+<!-- Recovery Progress -->
+<div class="bg-surface-container-lowest rounded-xl shadow-ambient-1 p-md flex flex-col justify-between">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="battery_charging_full">battery_charging_full</span>
+<span class="font-label-md text-label-md uppercase">Recovery</span>
+</div>
+<div class="mt-4">
+<span class="font-headline-lg text-headline-lg text-on-surface">92%</span>
+</div>
+<div class="mt-2 w-full bg-surface-container rounded-full h-2">
+<div class="bg-primary rounded-full h-2 w-[92%]"></div>
+</div>
+</div>
+<!-- Water Intake -->
+<div class="bg-surface-container-lowest rounded-xl shadow-ambient-1 p-md flex flex-col justify-between">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="water_drop">water_drop</span>
+<span class="font-label-md text-label-md uppercase">Hydration</span>
+</div>
+<div class="mt-4">
+<span class="font-headline-md text-headline-md text-on-surface">1.8</span>
+<span class="font-body-md text-body-md text-on-surface-variant"> / 2.5 L</span>
+</div>
+<div class="mt-2 w-full bg-surface-container rounded-full h-2">
+<div class="bg-tertiary rounded-full h-2 w-[72%]"></div> <!-- Tertiary Blue for informational -->
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Access Grid -->
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface-container dark:bg-surface-container-low shadow-lg rounded-t-lg md:hidden">
+<!-- Feed (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-xl">
+<span class="material-symbols-outlined" data-icon="rss_feed">rss_feed</span>
+<span class="font-label-md text-label-md mt-1">Feed</span>
+</button>
+<!-- Blood Hub (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-xl">
+<span class="material-symbols-outlined" data-icon="opacity">opacity</span>
+<span class="font-label-md text-label-md mt-1">Blood Hub</span>
+</button>
+<!-- Health (Active) -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-fixed-dim text-on-primary-container dark:text-on-primary-fixed-variant rounded-full px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined icon-fill" data-icon="health_and_safety">health_and_safety</span>
+<span class="font-label-md text-label-md mt-1">Health</span>
+</button>
+<!-- Profile (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-xl">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</button>
+</nav>
+</body></html>

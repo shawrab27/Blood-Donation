@@ -1,0 +1,300 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - AI Report Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#ffffff",
+                        "on-background": "#24191a",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary": "#960017",
+                        "on-primary-fixed": "#410005",
+                        "surface-container-low": "#fff0f1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "surface-bright": "#fff8f7",
+                        "on-primary-container": "#ffd1cd",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#c30121",
+                        "inverse-on-surface": "#ffecee",
+                        "on-surface-variant": "#5c3f3d",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "on-surface": "#24191a",
+                        "primary-fixed": "#ffdad7",
+                        "tertiary": "#004b7e",
+                        "background": "#fff8f7",
+                        "surface-container-high": "#f8e3e5",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#0063a4",
+                        "on-secondary-container": "#656464",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#ffb3ae",
+                        "surface-container-highest": "#f3dde0",
+                        "outline-variant": "#e6bdba",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container": "#fee9eb",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary-fixed": "#d1e4ff",
+                        "outline": "#916f6c",
+                        "on-secondary": "#ffffff",
+                        "surface": "#fff8f7",
+                        "secondary": "#5f5e5e",
+                        "surface-dim": "#ead5d7",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-tint": "#c00020",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#e4e2e1",
+                        "surface-variant": "#f3dde0",
+                        "secondary-fixed": "#e4e2e1",
+                        "on-tertiary-container": "#c3ddff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "8px",
+                        "margin-desktop": "64px",
+                        "lg": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Georgia"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "label-lg": ["Inter"],
+                        "button": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Georgia"],
+                        "display-lg": ["Georgia"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #FDF3F3; /* Warm surface fallback */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(234, 224, 224, 0.5);
+            box-shadow: 0 4px 12px rgba(142, 125, 127, 0.04);
+        }
+        .ai-gradient-text {
+            background: linear-gradient(135deg, #004b7e 0%, #0063a4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24 md:pb-0 flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim w-full h-16 top-0 sticky shadow-sm flex items-center justify-between px-margin-mobile z-50 transition-all">
+  <div class="flex items-center gap-sm">
+    <div class="w-8 h-8 flex items-center justify-center">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMxwBpDHpvDSI71XiPMRaWNvcCFdxpecnkMitGUBC8uIttUeM19WFs8blHy9wW3btYjmkqAWAGhSzkrjfOhIlUsAklanQFZ11AlQ8fVogiPR-gOrQJvz46Y6oPB586Z2tulQj7xn-E2eX7zVn1LoF0Db4IIhE__Gle4Hna1TMDQZo4WuFzvIDuxTp-aAqs9_IlaMOyZ43OFy0tGqyQ1RfI_KD5HuNKwS2fO61_xR3U0e4FvNHNx6Jgw3aRO6dMSFl0Dp7Z0aXbVVM" alt="BloodPulse Logo" class="w-full h-full object-cover">
+    </div>
+    <span class="font-headline-md text-headline-md font-bold tracking-tight" style="color: #c30121;">BloodPulse</span>
+  </div>
+  <div class="flex items-center gap-lg">
+    <div class="hidden md:flex gap-lg items-center mr-lg">
+      <a class="text-on-surface-variant font-label-lg hover:opacity-80 transition-opacity" href="#">Feed</a>
+      <a class="text-on-surface-variant font-label-lg hover:opacity-80 transition-opacity" href="#">Blood Hub</a>
+      <a class="text-primary font-label-lg border-b-2 border-primary pb-1" href="#">Health</a>
+      <a class="text-on-surface-variant font-label-lg hover:opacity-80 transition-opacity" href="#">Profile</a>
+    </div>
+    <div class="flex items-center gap-md">
+      <div class="relative cursor-pointer">
+        <span class="material-symbols-outlined text-primary">notifications</span>
+        <span class="absolute -top-1 -right-1 bg-primary text-on-primary text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">3</span>
+      </div>
+      <span class="material-symbols-outlined text-on-surface-variant cursor-pointer">more_vert</span>
+    </div>
+  </div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow container mx-auto px-margin-mobile md:px-margin-desktop py-lg md:py-xl grid grid-cols-1 lg:grid-cols-12 gap-lg items-start">
+<!-- Left Column: Upload & Context -->
+<div class="lg:col-span-4 flex flex-col gap-lg">
+<div class="glass-card rounded-[16px] p-[24px]">
+<h1 class="font-headline-lg text-headline-lg mb-sm text-on-surface">AI Report Analysis</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">Upload your recent blood work for instant, AI-driven insights and personalized health tracking.</p>
+<!-- Upload Area -->
+<div class="border-2 border-dashed border-tertiary-fixed-dim rounded-[16px] p-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-surface-container-low transition-colors group">
+<div class="w-16 h-16 rounded-full bg-tertiary-container/10 flex items-center justify-center mb-sm group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-tertiary text-3xl">cloud_upload</span>
+</div>
+<span class="font-button text-button text-tertiary mb-xs">Select a file or drag and drop</span>
+<span class="font-label-md text-label-md text-on-surface-variant">PDF, JPG, PNG up to 10MB</span>
+</div>
+</div>
+<!-- Recent Reports Minimal List -->
+<div class="glass-card rounded-[16px] p-[24px]">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-md">Recent Reports</h2>
+<ul class="flex flex-col gap-sm">
+<li class="flex items-center justify-between p-sm rounded-lg hover:bg-surface-container-lowest transition-colors cursor-pointer border border-transparent hover:border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant">description</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">CBC_Panel_Oct2023.pdf</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Oct 12, 2023</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-tertiary text-sm">chevron_right</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Right Column: Analysis Results (Bento Grid Style) -->
+<div class="lg:col-span-8 flex flex-col gap-lg">
+<!-- AI Summary Card -->
+<div class="glass-card rounded-[16px] p-[24px] border-t-4 border-t-tertiary relative overflow-hidden">
+<div class="absolute top-0 right-0 p-md opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-6xl">psychology</span>
+</div>
+<div class="flex items-center gap-sm mb-md">
+<span class="material-symbols-outlined text-tertiary fill">auto_awesome</span>
+<h2 class="font-headline-md text-headline-md ai-gradient-text">AI Health Summary</h2>
+</div>
+<p class="font-body-lg text-body-lg text-on-background leading-relaxed">
+                    Overall, your blood profile indicates a healthy status. However, your <span class="font-semibold text-primary">Hemoglobin</span> levels are marginally below the optimal range for regular donation. We recommend iron-rich dietary adjustments before your next scheduled donation.
+                </p>
+</div>
+<!-- Biomarkers Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Normal Value -->
+<div class="glass-card rounded-[16px] p-[24px] flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-sm">water_drop</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">WBC Count</span>
+</div>
+<span class="bg-surface-container-high text-on-surface px-3 py-1 rounded-full font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary">check_circle</span> Normal
+                        </span>
+</div>
+<div class="flex items-end gap-2 mb-2">
+<span class="font-headline-lg text-headline-lg text-on-background">6.2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">x10³/µL</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-[8px] bg-secondary-fixed/50 rounded-full mt-auto relative">
+<div class="absolute left-[20%] right-[80%] h-full bg-secondary-fixed-dim/30 pointer-events-none" style="width: 60%"></div> <!-- Range visualizer -->
+<div class="absolute h-full bg-tertiary rounded-full" style="width: 45%; left: 0;"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="font-label-md text-label-md text-on-surface-variant">4.5</span>
+<span class="font-label-md text-label-md text-on-surface-variant">11.0</span>
+</div>
+</div>
+<!-- Abnormal Value -->
+<div class="glass-card rounded-[16px] p-[24px] flex flex-col border border-primary/20 bg-primary-fixed/5">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">bloodtype</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface">Hemoglobin</span>
+</div>
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> Low
+                        </span>
+</div>
+<div class="flex items-end gap-2 mb-2">
+<span class="font-headline-lg text-headline-lg text-primary">11.8</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">g/dL</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-[8px] bg-secondary-fixed/50 rounded-full mt-auto relative">
+<div class="absolute h-full bg-primary rounded-full" style="width: 25%; left: 0;"></div>
+</div>
+<div class="flex justify-between mt-1">
+<span class="font-label-md text-label-md text-on-surface-variant">12.0</span>
+<span class="font-label-md text-label-md text-on-surface-variant">15.5</span>
+</div>
+</div>
+</div>
+<!-- Recommendations & Actions -->
+<div class="glass-card rounded-[16px] p-[24px] flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Personalized Recommendations</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Increase intake of spinach, lentils, and red meat. Consider a vitamin C supplement to aid iron absorption.</p>
+</div>
+<button class="shrink-0 bg-surface-container hover:bg-surface-container-high text-on-surface px-lg py-sm rounded-full font-button text-button flex items-center gap-2 transition-colors border border-outline-variant/50">
+<span class="material-symbols-outlined text-sm">download</span>
+                    Download PDF
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container dark:bg-surface-container-low border-t border-outline-variant/30 shadow-lg fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe rounded-t-lg"><a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">rss_feed</span>
+<span class="font-label-md text-label-md">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">bloodtype</span>
+<span class="font-label-md text-label-md">Blood Hub</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">groups</span>
+<span class="font-label-md text-label-md">Community</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary rounded-full px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1 fill">health_and_safety</span>
+<span class="font-label-md text-label-md">Health</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors active:scale-90 transition-transform p-2 rounded-lg" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a></nav>
+
+
+
+
+
+
+</body></html>
