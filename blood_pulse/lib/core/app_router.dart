@@ -78,7 +78,19 @@ final appRouter = GoRouter(
     // ── Real-Time WhatsApp-Style Emergency Chat ───────────────────────────────
     GoRoute(
       path: '/chat',
-      builder: (context, state) => const ChatScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final chatRoomId = extra?['chatRoomId'] as String? ??
+            state.uri.queryParameters['roomId'] ??
+            'general_emergency';
+        final chatRecipientName = extra?['chatRecipientName'] as String? ??
+            state.uri.queryParameters['name'] ??
+            'Emergency Responder';
+        return ChatScreen(
+          chatRoomId: chatRoomId,
+          chatRecipientName: chatRecipientName,
+        );
+      },
     ),
 
     // ── OpenStreetMap Donor Mapping ───────────────────────────────────────────
