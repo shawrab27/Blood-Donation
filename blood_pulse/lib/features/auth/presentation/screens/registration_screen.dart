@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
+import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/otp_provider.dart';
 
@@ -319,64 +320,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   PreferredSizeWidget _buildMobileAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0.5,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF2B2B2B)),
-        onPressed: () => context.go('/login'),
-      ),
-      titleSpacing: 0,
-      title: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: ClipOval(
-              child: Image.asset('assets/images/Blood Pulse logo.jpg', fit: BoxFit.cover),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'BloodPulse',
-            style: TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFC30121),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: Color(0xFF2B2B2B)),
-              onPressed: () => context.push('/notifications'),
-            ),
-            Positioned(
-              right: 10,
-              top: 12,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFC30121)),
-              ),
-            ),
-          ],
-        ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF2B2B2B)),
-          itemBuilder: (context) => [
-            const PopupMenuItem(value: 'learn', child: Text('Learn more')),
-            const PopupMenuItem(value: 'contact', child: Text('Contact us')),
-            const PopupMenuItem(value: 'about', child: Text('About us')),
-          ],
-        ),
-      ],
+    return BloodPulseAppBar(
+      showBackButton: true,
+      onBack: () => context.go('/login'),
+      subtitle: 'Register',
     );
   }
 
