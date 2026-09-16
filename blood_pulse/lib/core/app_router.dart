@@ -31,6 +31,7 @@ import '../features/health_hub/presentation/screens/recovery_aftercare_screen.da
 // Community Screens
 import '../features/communities/presentation/widgets/register_club_form_view.dart';
 import '../features/communities/presentation/widgets/local_club_profile_view.dart';
+import '../features/communities/presentation/widgets/division_detail_screen.dart';
 import '../features/communities/domain/models/community_models.dart';
 
 // Profile Screens
@@ -132,11 +133,52 @@ final appRouter = GoRouter(
     ),
     // ── Community Screens ─────────────────────────────────────────────────────
     GoRoute(
+      path: '/division-view',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final name = extra?['name'] as String? ?? 'Dhaka';
+        final id = extra?['id'] as int?;
+        return DivisionDetailScreen(divisionName: name, divisionId: id);
+      },
+    ),
+    GoRoute(
+      path: '/club-profile',
+      builder: (context, state) {
+        final club = state.extra as LocalClub? ??
+            LocalClub(
+              id: 1,
+              name: 'Uttara Blood Warriors',
+              establishedYear: 2015,
+              slogan: 'You give today, they live today',
+              description:
+                  'Dedicated to saving lives in Uttara since 2015, the Uttara Blood Warriors is a community-driven network of altruistic donors focused on ensuring a safe and reliable blood supply.',
+              divisionId: 1,
+              divisionName: 'Dhaka',
+              districtId: 1,
+              districtName: 'Dhaka',
+              upazilaId: 1,
+              upazilaName: 'Uttara',
+              presidentName: 'Dr. Rafiqul Islam',
+              contactNumber: '+880 1711-234567',
+              totalDonors: '1.2k+',
+              activeDonors: '850+',
+              contributions: '5k+',
+              isVerified: true,
+              executiveMembers: [],
+            );
+        return LocalClubProfileView(club: club);
+      },
+    ),
+    GoRoute(
       path: '/communities/club/:id',
       builder: (context, state) {
         final club = state.extra as LocalClub;
         return LocalClubProfileView(club: club);
       },
+    ),
+    GoRoute(
+      path: '/register-club',
+      builder: (context, state) => const RegisterClubFormView(),
     ),
     GoRoute(
       path: '/communities/register-club',

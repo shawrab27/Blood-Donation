@@ -4,7 +4,7 @@ from .views import (
     DonorProfileViewSet, BloodRequestViewSet, SocialPostViewSet, NIDVerificationView, HospitalViewSet, 
     NearbyDonorsView, FakeAccountFlagViewSet, AdminActionViewSet,
     DivisionViewSet, DistrictViewSet, UpazilaViewSet, 
-    NationalCommunityViewSet, MedicalPartnerViewSet, LocalClubViewSet, ExecutiveMemberViewSet,
+    NationalCommunityViewSet, MedicalPartnerViewSet, LocalClubViewSet, ExecutiveMemberViewSet, AreaGuideViewSet,
     RegisterClubView,
     BloodScienceArticleViewSet, CompatibilityRuleViewSet, DonationGuideSectionViewSet, 
     EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView
@@ -26,6 +26,7 @@ router.register(r'national-communities', NationalCommunityViewSet, basename='nat
 router.register(r'medical-partners', MedicalPartnerViewSet, basename='medical-partners')
 router.register(r'local-clubs', LocalClubViewSet, basename='local-clubs')
 router.register(r'executive-members', ExecutiveMemberViewSet, basename='executive-members')
+router.register(r'area-guides', AreaGuideViewSet, basename='area-guides')
 
 # Health Hub Routes
 router.register(r'health-hub/science-articles', BloodScienceArticleViewSet, basename='science-articles')

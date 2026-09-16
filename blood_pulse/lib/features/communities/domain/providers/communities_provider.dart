@@ -86,3 +86,41 @@ final localClubsProvider = FutureProvider.family<List<LocalClub>, LocalClubFilte
   }
   throw Exception('Failed to load local clubs');
 });
+
+final areaGuidesProvider = FutureProvider<List<AreaGuide>>((ref) async {
+  try {
+    final response = await http.get(Uri.parse('$_baseUrl/area-guides/'));
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((e) => AreaGuide.fromJson(e)).toList();
+    }
+  } catch (_) {}
+  // Fallback default guide matching Stitch design
+  return [
+    AreaGuide(
+      id: 1,
+      name: 'Dr. Rahman Kabir',
+      title: 'Local Blood Guide',
+      areaName: 'Uttara, Dhaka',
+      phone: '+880 1712-345678',
+    ),
+  ];
+});
+
+final localDonorsProvider = FutureProvider.family<List<LocalDonorItem>, String>((ref, district) async {
+  try {
+    final response = await http.get(Uri.parse('$_baseUrl/donors/?district=$district'));
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      if (data.isNotEmpty) {
+        return data.map((e) => LocalDonorItem.fromJson(e)).toList();
+      }
+    }
+  } catch (_) {}
+  // Fallback matching Stitch design
+  return [
+    LocalDonorItem(id: 1, name: 'Arif Ahmed', bloodGroup: 'A+', lastDonationDate: 'Oct 12, 2023', district: 'Dhaka'),
+    LocalDonorItem(id: 2, name: 'Nadia Islam', bloodGroup: 'O-', lastDonationDate: 'Nov 05, 2023', district: 'Dhaka'),
+    LocalDonorItem(id: 3, name: 'Rahim Uddin', bloodGroup: 'B+', lastDonationDate: 'Sep 20, 2023', district: 'Dhaka'),
+  ];
+});

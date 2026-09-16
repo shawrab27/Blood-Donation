@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Hospital, DonorProfile, BloodRequest, SocialPost, FakeAccountFlag, AdminAction,
-    Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember,
+    Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
     DonationHistory, RecentLog
 )
@@ -187,3 +187,9 @@ class LocalClubRegistrationSerializer(serializers.ModelSerializer):
         validated_data['status'] = LocalClub.STATUS_PENDING
         validated_data['is_verified'] = False
         return super().create(validated_data)
+
+
+class AreaGuideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AreaGuide
+        fields = '__all__'

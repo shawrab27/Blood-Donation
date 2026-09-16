@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from django.http import HttpResponse
 from .models import (
     DonorProfile, BloodRequest, SocialPost, Hospital, FakeAccountFlag, AdminAction, 
-    Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember,
+    Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep
 )
 from .serializers import (
@@ -13,7 +13,7 @@ from .serializers import (
     HospitalSerializer, FakeAccountFlagSerializer, AdminActionSerializer,
     DivisionSerializer, DistrictSerializer, UpazilaSerializer,
     NationalCommunitySerializer, MedicalPartnerSerializer, LocalClubSerializer, 
-    LocalClubRegistrationSerializer, ExecutiveMemberSerializer,
+    LocalClubRegistrationSerializer, ExecutiveMemberSerializer, AreaGuideSerializer,
     BloodScienceArticleSerializer, CompatibilityRuleSerializer, DonationGuideSectionSerializer,
     EmergencyContactSerializer, RecoveryTimelineStepSerializer
 )
@@ -252,6 +252,12 @@ class RegisterClubView(APIView):
                 'status': club.status,
             }, status=status.HTTP_201_CREATED)
         return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AreaGuideViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AreaGuide.objects.filter(is_active=True)
+    serializer_class = AreaGuideSerializer
+    permission_classes = [AllowAny]
 
 
 # ── Health Hub ViewSets ──────────────────────────────────────────────────────

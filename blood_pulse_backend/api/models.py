@@ -196,6 +196,20 @@ class ExecutiveMember(models.Model):
     def __str__(self): return f"{self.name} - {self.designation}"
 
 
+class AreaGuide(models.Model):
+    name = models.CharField(max_length=150)
+    title = models.CharField(max_length=150, default="Local Blood Guide")
+    area_name = models.CharField(max_length=150, default="Uttara, Dhaka")
+    division = models.ForeignKey(Division, on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
+    upazila = models.ForeignKey(Upazila, on_delete=models.SET_NULL, null=True, blank=True)
+    phone = models.CharField(max_length=30, default="+8801700000000")
+    photo = models.ImageField(upload_to='area_guides/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self): return f"{self.name} ({self.area_name})"
+
+
 # ── Health Hub Dynamic Models ────────────────────────────────────────────────
 class BloodScienceArticle(models.Model):
     title = models.CharField(max_length=200)

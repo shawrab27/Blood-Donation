@@ -13,73 +13,175 @@ class CommunitiesView extends ConsumerStatefulWidget {
   ConsumerState<CommunitiesView> createState() => _CommunitiesViewState();
 }
 
-class _CommunitiesViewState extends ConsumerState<CommunitiesView>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
+class _CommunitiesViewState extends ConsumerState<CommunitiesView> {
+  int _selectedTab = 0; // 0 = National, 1 = Local
+  int _nationalSubFilter = 0; // 0 = Organizations, 1 = Medical Partners
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.neutral,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            labelStyle: const TextStyle(
-              fontFamily: 'Georgia',
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header Title & Subtitle ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Communities',
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _selectedTab == 0
+                      ? 'Connect with national blood donation organizations.'
+                      : 'Find donors and drives in your area.',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: AppColors.neutral,
+                  ),
+                ),
+              ],
             ),
-            unselectedLabelStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+          ),
+          const SizedBox(height: 10),
+
+          // ── Top Segmented Pill Toggle: [National] [Local] ─────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3E8E8),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedTab = 0),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: _selectedTab == 0 ? AppColors.primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(50),
+                          boxShadow: _selectedTab == 0
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withAlpha(50),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : [],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'National',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: _selectedTab == 0 ? Colors.white : AppColors.neutral,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedTab = 1),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: _selectedTab == 1 ? AppColors.primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(50),
+                          boxShadow: _selectedTab == 1
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withAlpha(50),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : [],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Local',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: _selectedTab == 1 ? Colors.white : AppColors.neutral,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            tabs: const [
-              Tab(text: 'National'),
-              Tab(text: 'Local Area'),
-            ],
           ),
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: const [
-              _NationalCommunityTab(),
-              _LocalCommunityTab(),
-            ],
+          const SizedBox(height: 12),
+
+          // ── Tab Body with smooth animated switcher ────────────────────────
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: _selectedTab == 0
+                  ? _NationalTabContent(
+                      subFilter: _nationalSubFilter,
+                      onSubFilterChanged: (idx) => setState(() => _nationalSubFilter = idx),
+                    )
+                  : const _LocalTabContent(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NATIONAL COMMUNITY TAB
+// SCREEN 1: NATIONAL COMMUNITIES & MEDICAL PARTNERS
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _NationalCommunityTab extends ConsumerWidget {
-  const _NationalCommunityTab();
+class _NationalTabContent extends ConsumerStatefulWidget {
+  const _NationalTabContent({
+    required this.subFilter,
+    required this.onSubFilterChanged,
+  });
+
+  final int subFilter;
+  final ValueChanged<int> onSubFilterChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NationalTabContent> createState() => _NationalTabContentState();
+}
+
+class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
     final nationalAsync = ref.watch(nationalCommunitiesProvider);
     final medicalAsync = ref.watch(medicalPartnersProvider);
 
@@ -90,121 +192,126 @@ class _NationalCommunityTab extends ConsumerWidget {
         ref.invalidate(medicalPartnersProvider);
       },
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
-          // Hero Banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFC30121), Color(0xFF8B000E)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // Sub-filter pill buttons: [Organizations] [Medical Partners]
+          Row(
+            children: [
+              _SubFilterChip(
+                label: 'Organizations',
+                isSelected: widget.subFilter == 0,
+                onTap: () => widget.onSubFilterChanged(0),
               ),
-              borderRadius: BorderRadius.circular(20),
+              const SizedBox(width: 8),
+              _SubFilterChip(
+                label: 'Medical Partners',
+                isSelected: widget.subFilter == 1,
+                onTap: () => widget.onSubFilterChanged(1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Search Field: 🔍 Search national networks...
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: TextField(
+              onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+              decoration: const InputDecoration(
+                hintText: 'Search national networks...',
+                hintStyle: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+                prefixIcon: Icon(Icons.search_rounded, color: AppColors.neutral, size: 20),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Organizations View
+          if (widget.subFilter == 0) ...[
+            nationalAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              ),
+              error: (err, _) => Center(child: Text('Error loading networks: $err')),
+              data: (networks) {
+                final filtered = networks.where((n) {
+                  return n.name.toLowerCase().contains(_searchQuery) ||
+                      n.description.toLowerCase().contains(_searchQuery);
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: Text('No national organizations found.', style: TextStyle(fontFamily: 'Inter', color: AppColors.neutral)),
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: filtered.asMap().entries.map((entry) {
+                    return _NationalOrgCard(org: entry.value, index: entry.key);
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+
+          // Medical Partners View or Bottom Section
+          if (widget.subFilter == 1 || widget.subFilter == 0) ...[
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'National Volunteer Network',
+                  'Medical Partners',
                   style: TextStyle(
                     fontFamily: 'Georgia',
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.secondary,
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Join Bangladesh\'s premier blood donation communities and save lives together.',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.white70, height: 1.4),
-                ),
-                const SizedBox(height: 16),
-                nationalAsync.when(
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, err) => const SizedBox.shrink(),
-                  data: (networks) => Text(
-                    '${networks.length} national communities',
-                    style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.white54, fontWeight: FontWeight.w600),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'View All',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.tertiary,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
-          const Text(
-            'Featured Communities',
-            style: TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.secondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Horizontal community cards
-          SizedBox(
-            height: 200,
-            child: nationalAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-              error: (err, _) => Center(child: Text('Could not load communities.\n$err', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Inter', color: AppColors.neutral))),
-              data: (networks) {
-                if (networks.isEmpty) {
-                  return const Center(
-                    child: Text('No national communities found.', style: TextStyle(fontFamily: 'Inter', color: AppColors.neutral)),
-                  );
-                }
-                return ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: networks.length,
-                  itemBuilder: (ctx, idx) {
-                    final item = networks[idx];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: _NationalCommunityCard(network: item, colorIndex: idx),
-                    );
-                  },
+            medicalAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              ),
+              error: (err, _) => Center(child: Text('Error loading partners: $err')),
+              data: (partners) {
+                return Column(
+                  children: partners.map((p) => _MedicalPartnerCard(partner: p)).toList(),
                 );
               },
             ),
-          ),
-          const SizedBox(height: 28),
-
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Medical Partners & Blood Banks',
-                  style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text('View All', style: TextStyle(fontFamily: 'Inter', color: AppColors.tertiary, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          medicalAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-            error: (err, _) => Center(child: Text('Could not load partners.\n$err', textAlign: TextAlign.center)),
-            data: (partners) {
-              if (partners.isEmpty) {
-                return const Center(child: Text('No medical partners found.', style: TextStyle(fontFamily: 'Inter', color: AppColors.neutral)));
-              }
-              return Column(
-                children: partners.map((h) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _MedicalPartnerCard(partner: h),
-                )).toList(),
-              );
-            },
-          ),
+          ],
           const SizedBox(height: 40),
         ],
       ),
@@ -212,95 +319,199 @@ class _NationalCommunityTab extends ConsumerWidget {
   }
 }
 
-class _NationalCommunityCard extends StatelessWidget {
-  const _NationalCommunityCard({required this.network, required this.colorIndex});
+class _SubFilterChip extends StatelessWidget {
+  const _SubFilterChip({required this.label, required this.isSelected, required this.onTap});
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  final NationalCommunity network;
-  final int colorIndex;
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF680010) : Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: isSelected ? const Color(0xFF680010) : Colors.grey.shade300),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isSelected ? Colors.white : AppColors.secondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-  static const List<Color> _cardColors = [
-    Color(0xFFC30121),
-    AppColors.tertiary,
-    Color(0xFF2B2B2B),
-    Color(0xFF6D4C41),
-  ];
+class _NationalOrgCard extends StatelessWidget {
+  const _NationalOrgCard({required this.org, required this.index});
+  final NationalCommunity org;
+  final int index;
 
-  static const List<IconData> _icons = [
-    Icons.diversity_3_rounded,
-    Icons.volunteer_activism_rounded,
-    Icons.local_hospital_rounded,
+  static const List<IconData> _orgIcons = [
+    Icons.water_drop_rounded,
+    Icons.health_and_safety_rounded,
     Icons.favorite_rounded,
+    Icons.medical_services_rounded,
   ];
 
   @override
   Widget build(BuildContext context) {
-    final color = _cardColors[colorIndex % _cardColors.length];
-    final icon = _icons[colorIndex % _icons.length];
+    final icon = _orgIcons[index % _orgIcons.length];
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: 240,
-      padding: const EdgeInsets.all(16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(8),
+            color: Colors.black.withAlpha(6),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Top Row: Logo/Icon + Name + Member Badge
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withAlpha(20), shape: BoxShape.circle),
-                child: Icon(icon, color: color, size: 22),
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFDE8E9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(network.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    Text('${network.activeDonors} members', maxLines: 1,
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral)),
-                  ],
+                child: Text(
+                  org.name,
+                  style: const TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDE8E9),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  org.activeDonors,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Text(network.description, maxLines: 3, overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral, height: 1.4)),
-          ),
           const SizedBox(height: 10),
+
+          // Description
+          Text(
+            org.description,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: AppColors.neutral,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Details Button (Outlined Capsule)
           SizedBox(
             width: double.infinity,
-            child: CapsuleButton(
-              label: 'Join Community',
-              height: 36,
+            height: 40,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF8B0014), width: 1.5),
+                shape: const StadiumBorder(),
+              ),
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Joined ${network.name}!'),
-                    backgroundColor: color,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                );
+                _showDetailsBottomSheet(context, org);
               },
+              child: const Text(
+                'Details',
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF8B0014),
+                ),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDetailsBottomSheet(BuildContext context, NationalCommunity org) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    org.name,
+                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFFDE8E9), borderRadius: BorderRadius.circular(50)),
+                  child: Text(org.activeDonors, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(org.description, style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.neutral, height: 1.5)),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: CapsuleButton(
+                label: 'Connect with Organization',
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Connected with ${org.name}!'), backgroundColor: AppColors.primary),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -312,102 +523,161 @@ class _MedicalPartnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final availability = (partner.stockStatus).map((key, value) => MapEntry(key, value.toString()));
+    final stock = partner.stockStatus;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 8, offset: const Offset(0, 3)),
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(partner.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+          // Banner Image
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              gradient: LinearGradient(
+                colors: [Colors.blueGrey.shade100, Colors.blueGrey.shade200],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: const Color(0xFFEDF4FF), borderRadius: BorderRadius.circular(50)),
-                child: const Text('Verified', style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.tertiary)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined, size: 13, color: AppColors.neutral),
-              const SizedBox(width: 4),
-              Text(partner.location, style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral)),
-            ],
-          ),
-          if (availability.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: availability.entries.take(4).map((e) {
-                final isUrgent = e.value.toUpperCase() == 'URGENT';
-                return Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isUrgent ? const Color(0xFFFFECEE) : const Color(0xFFFDF3F3),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: isUrgent ? AppColors.primary : Colors.grey.shade300),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(e.key, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                        Text(e.value, style: TextStyle(fontFamily: 'Inter', fontSize: 9, fontWeight: FontWeight.bold, color: isUrgent ? AppColors.primary : AppColors.neutral)),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
             ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+            child: partner.imageUrl != null
+                ? Image.network(partner.imageUrl!, fit: BoxFit.cover)
+                : Center(
+                    child: Icon(Icons.local_hospital_rounded, size: 52, color: Colors.blueGrey.shade400),
                   ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('📞 Dialing hospital...'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating),
-                    );
-                  },
-                  icon: const Icon(Icons.call_outlined, size: 16, color: AppColors.primary),
-                  label: const Text('Call', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13)),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      partner.name,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDF4FF),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: const Text(
+                        'Verified',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.tertiary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey.shade300),
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                const SizedBox(height: 12),
+
+                // Stock badges row (A+ HIGH, B+ URGENT, O- LOW, AB+ MED)
+                if (stock.isNotEmpty)
+                  Row(
+                    children: stock.entries.take(4).map((e) {
+                      final isUrgent = e.value.toString().toUpperCase() == 'URGENT';
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isUrgent ? const Color(0xFFFDE8E9) : const Color(0xFFF8F9FA),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isUrgent ? const Color(0xFFF3B8BC) : Colors.grey.shade300,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                e.key,
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isUrgent ? AppColors.primary : AppColors.secondary,
+                                ),
+                              ),
+                              Text(
+                                e.value.toString(),
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: isUrgent ? AppColors.primary : AppColors.neutral,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  onPressed: () => context.push('/chat'),
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: AppColors.tertiary),
-                  label: const Text('Message', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.tertiary, fontSize: 13)),
+                const SizedBox(height: 14),
+
+                // Buttons: [Call] and [Message]
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF8B0014)),
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Calling Blood Center...')),
+                          );
+                        },
+                        icon: const Icon(Icons.call_rounded, size: 16, color: Color(0xFF8B0014)),
+                        label: const Text('Call', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFF8B0014))),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey.shade400),
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () => context.push('/chat'),
+                        icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: AppColors.secondary),
+                        label: const Text('Message', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -416,225 +686,317 @@ class _MedicalPartnerCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LOCAL COMMUNITY TAB
+// SCREEN 2: LOCAL COMMUNITIES (AREA GUIDES & 8 DIVISIONS GRID)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _LocalCommunityTab extends ConsumerStatefulWidget {
-  const _LocalCommunityTab();
+class _LocalTabContent extends ConsumerStatefulWidget {
+  const _LocalTabContent();
 
   @override
-  ConsumerState<_LocalCommunityTab> createState() => _LocalCommunityTabState();
+  ConsumerState<_LocalTabContent> createState() => _LocalTabContentState();
 }
 
-class _LocalCommunityTabState extends ConsumerState<_LocalCommunityTab> {
+class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
   int? _selectedDivisionId;
   String? _selectedDivisionName;
   int? _selectedDistrictId;
+  String? _selectedDistrictName;
   int? _selectedUpazilaId;
+  String? _selectedUpazilaName;
 
-  // Quick-filter: Dhaka division ID (will be resolved from the API)
-
-
-  void _quickFilterDhaka(List<Division> divisions) {
-    final dhaka = divisions.where((d) => d.name.toLowerCase().contains('dhaka')).toList();
-    if (dhaka.isNotEmpty) {
-      setState(() {
-        _selectedDivisionId = dhaka.first.id;
-        _selectedDivisionName = dhaka.first.name;
-        _selectedDistrictId = null;
-        _selectedUpazilaId = null;
-      });
-    }
-  }
-
-  void _clearFilters() {
-    setState(() {
-      _selectedDivisionId = null;
-      _selectedDivisionName = null;
-      _selectedDistrictId = null;
-      _selectedUpazilaId = null;
-    });
-  }
+  static const List<Map<String, dynamic>> _divisionsCatalog = [
+    {'name': 'Dhaka', 'icon': Icons.location_city_rounded},
+    {'name': 'Chattogram', 'icon': Icons.anchor_rounded},
+    {'name': 'Rajshahi', 'icon': Icons.mosque_rounded},
+    {'name': 'Khulna', 'icon': Icons.forest_rounded},
+    {'name': 'Barishal', 'icon': Icons.directions_boat_rounded},
+    {'name': 'Sylhet', 'icon': Icons.eco_rounded},
+    {'name': 'Rangpur', 'icon': Icons.agriculture_rounded},
+    {'name': 'Mymensingh', 'icon': Icons.set_meal_rounded},
+  ];
 
   @override
   Widget build(BuildContext context) {
     final divisionsAsync = ref.watch(divisionsProvider);
     final districtsAsync = ref.watch(districtsProvider(_selectedDivisionId));
     final upazilasAsync = ref.watch(upazilasProvider(_selectedDistrictId));
+    final guidesAsync = ref.watch(areaGuidesProvider);
 
-    final filter = LocalClubFilter(
-      divisionId: _selectedDivisionId,
-      districtId: _selectedDistrictId,
-      upazilaId: _selectedUpazilaId,
-    );
-
-    final localClubsAsync = ref.watch(localClubsProvider(filter));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
-        // Header with Register CTA
+        // Search Input: 🔍 Search by division, district, or upazila...
         Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: const TextField(
+            decoration: InputDecoration(
+              hintText: 'Search by division, district, or upazila...',
+              hintStyle: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+              prefixIcon: Icon(Icons.search_rounded, color: AppColors.neutral, size: 20),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Stepper: ❶ Division > ❷ District > ❸ Upazila
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _StepBadge(number: '1', label: 'Division', isActive: true),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.neutral),
+            const SizedBox(width: 8),
+            _StepBadge(number: '2', label: 'District', isActive: _selectedDivisionId != null),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.neutral),
+            const SizedBox(width: 8),
+            _StepBadge(number: '3', label: 'Upazila', isActive: _selectedUpazilaId != null),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Dropdown selection row (All Divisions, Select District, Select Upazila)
+        Row(
+          children: [
+            Expanded(
+              child: divisionsAsync.when(
+                loading: () => const _LoadingPill(),
+                error: (err, _) => const SizedBox.shrink(),
+                data: (divisions) => _DropdownPill<int?>(
+                  label: _selectedDivisionName ?? 'All Divisions',
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('All Divisions', style: TextStyle(fontFamily: 'Inter', fontSize: 12))),
+                    ...divisions.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, style: const TextStyle(fontFamily: 'Inter', fontSize: 12)))),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedDivisionId = val;
+                      _selectedDivisionName = val != null ? divisions.firstWhere((d) => d.id == val).name : null;
+                      _selectedDistrictId = null;
+                      _selectedUpazilaId = null;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: districtsAsync.when(
+                loading: () => const _LoadingPill(),
+                error: (err, _) => const SizedBox.shrink(),
+                data: (districts) => _DropdownPill<int?>(
+                  label: _selectedDistrictName ?? 'Select District',
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('All Districts', style: TextStyle(fontFamily: 'Inter', fontSize: 12))),
+                    ...districts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, style: const TextStyle(fontFamily: 'Inter', fontSize: 12)))),
+                  ],
+                  onChanged: (val) => setState(() {
+                    _selectedDistrictId = val;
+                    _selectedDistrictName = val != null ? districts.firstWhere((d) => d.id == val).name : null;
+                    _selectedUpazilaId = null;
+                    _selectedUpazilaName = null;
+                  }),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: upazilasAsync.when(
+                loading: () => const _LoadingPill(),
+                error: (err, _) => const SizedBox.shrink(),
+                data: (upazilas) => _DropdownPill<int?>(
+                  label: _selectedUpazilaName ?? 'Select Upazila',
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('All Upazilas', style: TextStyle(fontFamily: 'Inter', fontSize: 12))),
+                    ...upazilas.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name, style: const TextStyle(fontFamily: 'Inter', fontSize: 12)))),
+                  ],
+                  onChanged: (val) => setState(() {
+                    _selectedUpazilaId = val;
+                    _selectedUpazilaName = val != null ? upazilas.firstWhere((u) => u.id == val).name : null;
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+
+        // ── 8 Divisions Grid (2 Columns x 4 Rows) ────────────────────────────
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.7,
+          ),
+          itemCount: _divisionsCatalog.length,
+          itemBuilder: (ctx, idx) {
+            final div = _divisionsCatalog[idx];
+            return _DivisionGridCard(
+              name: div['name'] as String,
+              icon: div['icon'] as IconData,
+              onTap: () {
+                // Navigate to Division Detail Screen (Screen 3)
+                context.push('/division-view', extra: {
+                  'name': div['name'],
+                  'id': idx + 1, // approximate id matching DB
+                });
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // ── Local Area Guides Section ────────────────────────────────────────
+        const Text(
+          'Local Area Guides',
+          style: TextStyle(
+            fontFamily: 'Georgia',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.secondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Search guides bar: 🔍 Search guides by name or area...
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: const TextField(
+            decoration: InputDecoration(
+              hintText: 'Search guides by name or area...',
+              hintStyle: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+              prefixIcon: Icon(Icons.search_rounded, color: AppColors.neutral, size: 20),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Guide Card: Dr. Rahman Kabir
+        guidesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          error: (err, _) => const SizedBox.shrink(),
+          data: (guides) {
+            return Column(
+              children: guides.map((guide) => _GuideCard(guide: guide)).toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+
+        // "Become a Guide" Banner
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFDF3F3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF3D2D5)),
+          ),
           child: Row(
             children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFDE8E9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Local Clubs & Area Guide',
-                        style: TextStyle(fontFamily: 'Georgia', fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    Text('Find clubs in your area or register yours',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral)),
+                    Text(
+                      'Become a Guide',
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    Text(
+                      'Support your local community',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: AppColors.neutral,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => context.push('/register-club'),
-                icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 18),
-                label: const Text('Register Club', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontFamily: 'Inter', fontSize: 13)),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B0014),
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Guide application submitted for review!'), backgroundColor: AppColors.primary),
+                  );
+                },
+                child: const Text('Apply Now', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
         ),
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+}
 
-        // Quick-filter chips row
-        divisionsAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (_, err) => const SizedBox.shrink(),
-          data: (divisions) => Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  // All chip
-                  _FilterChip(
-                    label: 'All Divisions',
-                    isSelected: _selectedDivisionId == null,
-                    onTap: _clearFilters,
-                    icon: Icons.public_rounded,
-                  ),
-                  const SizedBox(width: 8),
-                  // Dhaka quick filter
-                  _FilterChip(
-                    label: 'Dhaka Division',
-                    isSelected: _selectedDivisionName?.toLowerCase().contains('dhaka') == true,
-                    onTap: () => _quickFilterDhaka(divisions),
-                    icon: Icons.location_city_rounded,
-                  ),
-                  const SizedBox(width: 8),
-                  // All other divisions
-                  ...divisions.where((d) => !d.name.toLowerCase().contains('dhaka')).map((d) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _FilterChip(
-                      label: d.name,
-                      isSelected: _selectedDivisionId == d.id,
-                      onTap: () {
-                        setState(() {
-                          _selectedDivisionId = d.id;
-                          _selectedDivisionName = d.name;
-                          _selectedDistrictId = null;
-                          _selectedUpazilaId = null;
-                        });
-                      },
-                    ),
-                  )),
-                ],
-              ),
+class _StepBadge extends StatelessWidget {
+  const _StepBadge({required this.number, required this.label, required this.isActive});
+  final String number;
+  final String label;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primary : Colors.grey.shade300,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
         ),
-
-        // District & Upazila dropdowns (appear contextually)
-        if (_selectedDivisionId != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: districtsAsync.when(
-              loading: () => const LinearProgressIndicator(color: AppColors.primary),
-              error: (e, _) => Text('Error: $e'),
-              data: (districts) => DropdownButtonFormField<int>(
-                initialValue: _selectedDistrictId,
-                decoration: InputDecoration(
-                  labelText: 'Select District',
-                  labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('All Districts', style: TextStyle(fontFamily: 'Inter'))),
-                  ...districts.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, style: const TextStyle(fontFamily: 'Inter')))),
-                ],
-                onChanged: (val) => setState(() {
-                  _selectedDistrictId = val;
-                  _selectedUpazilaId = null;
-                }),
-              ),
-            ),
-          ),
-
-        if (_selectedDistrictId != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: upazilasAsync.when(
-              loading: () => const LinearProgressIndicator(color: AppColors.primary),
-              error: (e, _) => Text('Error: $e'),
-              data: (upazilas) => DropdownButtonFormField<int>(
-                initialValue: _selectedUpazilaId,
-                decoration: InputDecoration(
-                  labelText: 'Select Upazila',
-                  labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('All Upazilas', style: TextStyle(fontFamily: 'Inter'))),
-                  ...upazilas.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name, style: const TextStyle(fontFamily: 'Inter')))),
-                ],
-                onChanged: (val) => setState(() => _selectedUpazilaId = val),
-              ),
-            ),
-          ),
-
-        const SizedBox(height: 12),
-
-        // Club list
-        Expanded(
-          child: localClubsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-            error: (e, _) => Center(child: Text('Error: $e', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Inter'))),
-            data: (clubs) {
-              if (clubs.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.groups_outlined, size: 64, color: AppColors.neutral),
-                      const SizedBox(height: 12),
-                      const Text('No clubs found in this area.', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, color: AppColors.secondary)),
-                      const SizedBox(height: 4),
-                      const Text('Be the first to register one!', style: TextStyle(fontFamily: 'Inter', color: AppColors.neutral)),
-                      const SizedBox(height: 16),
-                      CapsuleButton(
-                        label: 'Register Your Club',
-                        height: 44,
-                        onPressed: () => context.push('/register-club'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-                itemCount: clubs.length,
-                itemBuilder: (ctx, idx) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _LocalClubTile(club: clubs[idx], index: idx),
-                ),
-              );
-            },
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            color: isActive ? AppColors.secondary : AppColors.neutral,
           ),
         ),
       ],
@@ -642,39 +1004,95 @@ class _LocalCommunityTabState extends ConsumerState<_LocalCommunityTab> {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label, required this.isSelected, required this.onTap, this.icon});
+class _DropdownPill<T> extends StatelessWidget {
+  const _DropdownPill({required this.label, required this.items, required this.onChanged});
   final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final IconData? icon;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          isExpanded: true,
+          hint: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.secondary, fontWeight: FontWeight.w600),
+          ),
+          items: items,
+          onChanged: onChanged,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.neutral),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+      ),
+    );
+  }
+}
+
+class _LoadingPill extends StatelessWidget {
+  const _LoadingPill();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(50)),
+      child: const Center(child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))),
+    );
+  }
+}
+
+class _DivisionGridCard extends StatelessWidget {
+  const _DivisionGridCard({required this.name, required this.icon, required this.onTap});
+  final String name;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: isSelected ? Colors.white : AppColors.neutral),
-              const SizedBox(width: 5),
-            ],
+            Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFDE8E9),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 22),
+            ),
+            const SizedBox(height: 8),
             Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.secondary,
+              name,
+              style: const TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.secondary,
               ),
             ),
           ],
@@ -684,85 +1102,72 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _LocalClubTile extends StatelessWidget {
-  const _LocalClubTile({required this.club, required this.index});
-  final LocalClub club;
-  final int index;
+class _GuideCard extends StatelessWidget {
+  const _GuideCard({required this.guide});
+  final AreaGuide guide;
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 300 + (index * 60)),
-      curve: Curves.easeOut,
-      builder: (ctx, val, child) => Transform.translate(
-        offset: Offset(0, 20 * (1 - val)),
-        child: Opacity(opacity: val, child: child),
-      ),
-      child: InkWell(
-        onTap: () => context.push('/club-profile', extra: club),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withAlpha(6), blurRadius: 8, offset: const Offset(0, 3)),
-            ],
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            children: [
-              Hero(
-                tag: 'club_avatar_${club.name}',
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(color: Color(0xFFF3DDE0), shape: BoxShape.circle),
-                  child: Center(
-                    child: Text(
-                      club.name.isNotEmpty ? club.name[0].toUpperCase() : '?',
-                      style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary),
-                    ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: const Color(0xFFF3DDE0),
+            child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  guide.name,
+                  style: const TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(club.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                        ),
-                        if (club.isVerified)
-                          const Icon(Icons.verified_rounded, color: AppColors.tertiary, size: 18),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${club.upazilaName}, ${club.districtName}'.trim().replaceAll(RegExp(r'^,\s*'), ''),
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${club.activeDonors} active donors',
-                      style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                Text(
+                  guide.areaName,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppColors.neutral,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.neutral),
-            ],
+              ],
+            ),
           ),
-        ),
+          IconButton(
+            icon: const Icon(Icons.call_rounded, color: AppColors.primary, size: 20),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Calling ${guide.name} (${guide.phone})...')),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.tertiary, size: 20),
+            onPressed: () => context.push('/chat'),
+          ),
+        ],
       ),
     );
   }

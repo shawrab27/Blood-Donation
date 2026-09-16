@@ -202,3 +202,70 @@ class LocalClub {
     );
   }
 }
+
+class AreaGuide {
+  final int id;
+  final String name;
+  final String title;
+  final String areaName;
+  final String phone;
+  final String? photoUrl;
+
+  AreaGuide({
+    required this.id,
+    required this.name,
+    required this.title,
+    required this.areaName,
+    required this.phone,
+    this.photoUrl,
+  });
+
+  factory AreaGuide.fromJson(Map<String, dynamic> json) {
+    return AreaGuide(
+      id: json['id'] as int,
+      name: json['name'] as String? ?? 'Guide',
+      title: json['title'] as String? ?? 'Local Blood Guide',
+      areaName: json['area_name'] as String? ?? 'Local Area',
+      phone: json['phone'] as String? ?? '+880...',
+      photoUrl: json['photo'] as String?,
+    );
+  }
+}
+
+class LocalDonorItem {
+  final int id;
+  final String name;
+  final String bloodGroup;
+  final String lastDonationDate;
+  final String district;
+
+  LocalDonorItem({
+    required this.id,
+    required this.name,
+    required this.bloodGroup,
+    required this.lastDonationDate,
+    required this.district,
+  });
+
+  factory LocalDonorItem.fromJson(Map<String, dynamic> json) {
+    final user = json['user'];
+    String fullName = 'Anonymous Donor';
+    if (user is Map) {
+      final first = user['first_name'] ?? '';
+      final last = user['last_name'] ?? '';
+      final combined = '$first $last'.trim();
+      if (combined.isNotEmpty) {
+        fullName = combined;
+      } else if (user['username'] != null) {
+        fullName = user['username'];
+      }
+    }
+    return LocalDonorItem(
+      id: json['id'] as int? ?? 0,
+      name: fullName,
+      bloodGroup: json['blood_group'] as String? ?? 'A+',
+      lastDonationDate: json['last_donation_date'] as String? ?? 'Recent',
+      district: json['district'] as String? ?? 'Dhaka',
+    );
+  }
+}
