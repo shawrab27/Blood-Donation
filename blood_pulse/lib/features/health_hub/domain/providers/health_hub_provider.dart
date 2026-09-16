@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../models/health_hub_models.dart';
 
-const String _baseUrl = 'http://127.0.0.1:8000/api/health-hub';
+const String _baseUrl = 'https://bloodpulse-backend.onrender.com/api/health-hub';
+
 
 final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) async {
   final response = await http.get(Uri.parse('$_baseUrl/science-articles/'));

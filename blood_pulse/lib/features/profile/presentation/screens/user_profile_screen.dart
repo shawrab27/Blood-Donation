@@ -55,8 +55,9 @@ class ProfileView extends ConsumerWidget {
             CircleAvatar(
               radius: 50,
               backgroundImage: profile.profilePicture != null 
-                  ? NetworkImage('http://127.0.0.1:8000${profile.profilePicture}') 
+                  ? NetworkImage('https://bloodpulse-backend.onrender.com${profile.profilePicture}') 
                   : const NetworkImage('https://ui-avatars.com/api/?name=User&background=random') as ImageProvider,
+
             ),
             Positioned(
               top: 0,
@@ -158,7 +159,8 @@ class ProfileView extends ConsumerWidget {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () async {
-          final url = Uri.parse('http://127.0.0.1:8000/api/donor_profiles/${profile.id}/certificate/');
+          final url = Uri.parse('https://bloodpulse-backend.onrender.com/api/donor_profiles/${profile.id}/certificate/');
+
           if (await canLaunchUrl(url)) {
             await launchUrl(url);
           }

@@ -14,8 +14,8 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     fetchProfile();
   }
 
-  // Assuming local dev for now; ideally use a centralized API config
-  final String _baseUrl = 'http://127.0.0.1:8000/api';
+  final String _baseUrl = 'https://bloodpulse-backend.onrender.com/api';
+
 
   Future<void> fetchProfile() async {
     try {

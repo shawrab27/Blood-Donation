@@ -19,13 +19,14 @@ class ApiException implements Exception {
 
 /// BloodPulse REST API Client with automatic crash-hardening, token management, and retry logic.
 class ApiClient {
-  /// Reads `baseUrl` dynamically from compile-time environment variables.
-  /// Default: `http://10.0.2.2:8000` for Android Emulator or `http://localhost:8000/api/` for Web.
-  /// Pass LAN IP via `--dart-define=API_BASE_URL=http://192.168.x.x:8000` for physical device testing.
+  /// Production: `https://bloodpulse-backend.onrender.com/api/`
+  /// Override via `--dart-define=API_BASE_URL=https://...`
+  static const String defaultServerUrl = 'https://bloodpulse-backend.onrender.com';
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000/api/',
+    defaultValue: 'https://bloodpulse-backend.onrender.com/api/',
   );
+
 
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 15);
