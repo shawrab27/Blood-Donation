@@ -9,6 +9,7 @@ class ProfileModel {
   final String? phoneNumber;
   final String? lastDonationDate;
   final bool isVerified;
+  final bool isProfileComplete;
   final String? bio;
   final String? institute;
   final String? address;
@@ -30,6 +31,7 @@ class ProfileModel {
     this.phoneNumber,
     this.lastDonationDate,
     this.isVerified = false,
+    this.isProfileComplete = false,
     this.bio,
     this.institute,
     this.address,
@@ -53,6 +55,7 @@ class ProfileModel {
       phoneNumber: json['phone_number'],
       lastDonationDate: json['last_donation_date'],
       isVerified: json['is_verified'] ?? false,
+      isProfileComplete: json['is_profile_complete'] ?? false,
       bio: json['bio'],
       institute: json['institute'],
       address: json['address'],

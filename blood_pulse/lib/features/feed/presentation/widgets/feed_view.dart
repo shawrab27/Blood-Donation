@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../profile/domain/providers/profile_provider.dart';
 import '../providers/feed_provider.dart';
 
 /// Comprehensive Feed View supporting both Mobile and Desktop layout parity.
@@ -49,6 +51,10 @@ class _FeedViewState extends ConsumerState<FeedView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
+          // ── Quick Lazy-Registration Actions ──
+          const _FeedActionCards(),
+          const SizedBox(height: 16),
+
           // ── Post Creation Card (Top) ──
           _PostCreatorCard(picker: _picker),
           const SizedBox(height: 16),
@@ -64,8 +70,139 @@ class _FeedViewState extends ConsumerState<FeedView> {
       ),
     );
   }
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LAZY REGISTRATION ACTIONS (REQUEST BLOOD & DONATE)
+// ─────────────────────────────────────────────────────────────────────────────
 
+class _FeedActionCards extends ConsumerWidget {
+  const _FeedActionCards();
+
+  void _handleAction(BuildContext context, WidgetRef ref, {required String actionType}) {
+    final profile = ref.read(profileProvider).value;
+    final authUser = ref.read(authProvider).user;
+    final bool isComplete = (profile?.isProfileComplete == true) || (authUser?.isProfileComplete == true);
+
+    if (!isComplete) {
+      context.push('/complete-profile');
+    } else {
+      context.push('/emergency-request');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        // ── 1. Request Blood Button ──
+        Expanded(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => _handleAction(context, ref, actionType: 'request'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFC30121), Color(0xFF9E001A)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFC30121).withAlpha(70),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.emergency_rounded, color: Colors.white, size: 26),
+                    SizedBox(height: 10),
+                    Text(
+                      'Request Blood',
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Post urgent emergency',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // ── 2. Donate Blood Button ──
+        Expanded(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => _handleAction(context, ref, actionType: 'donate'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFF3D2D6), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.volunteer_activism_rounded, color: Color(0xFFC30121), size: 26),
+                    SizedBox(height: 10),
+                    Text(
+                      'Donate Blood',
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Available as lifesaver',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        color: Color(0xFF757575),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

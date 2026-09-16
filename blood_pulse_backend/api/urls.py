@@ -7,7 +7,8 @@ from .views import (
     NationalCommunityViewSet, MedicalPartnerViewSet, LocalClubViewSet, ExecutiveMemberViewSet, AreaGuideViewSet,
     RegisterClubView,
     BloodScienceArticleViewSet, CompatibilityRuleViewSet, DonationGuideSectionViewSet, 
-    EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView
+    EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView,
+    GoogleAuthView
 )
 
 router = DefaultRouter()
@@ -41,4 +42,5 @@ urlpatterns = [
     path('donors-nearby/', NearbyDonorsView.as_view(), name='donors-nearby'),
     path('clubs/register/', RegisterClubView.as_view(), name='register-club'),
     path('health-hub/analyze-report/', GeminiReportAnalyzeView.as_view(), name='analyze-report'),
+    path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
 ]

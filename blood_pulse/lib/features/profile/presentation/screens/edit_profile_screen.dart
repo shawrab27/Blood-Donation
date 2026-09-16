@@ -99,7 +99,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       CircleAvatar(
                         radius: 50,
                         backgroundImage: profile?.profilePicture != null 
-                            ? NetworkImage('https://bloodpulse-backend.onrender.com${profile!.profilePicture}') 
+                            ? NetworkImage('https://bloodpulse-proxy.vercel.app${profile!.profilePicture}') 
                             : const NetworkImage('https://ui-avatars.com/api/?name=User&background=random') as ImageProvider,
 
                       ),

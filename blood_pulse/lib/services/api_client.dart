@@ -19,12 +19,12 @@ class ApiException implements Exception {
 
 /// BloodPulse REST API Client with automatic crash-hardening, token management, and retry logic.
 class ApiClient {
-  /// Production: `https://bloodpulse-backend.onrender.com/api/`
+  /// Production via Vercel Reverse Proxy: `https://bloodpulse-proxy.vercel.app/api/`
   /// Override via `--dart-define=API_BASE_URL=https://...`
-  static const String defaultServerUrl = 'https://bloodpulse-backend.onrender.com';
+  static const String defaultServerUrl = 'https://bloodpulse-proxy.vercel.app';
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://bloodpulse-backend.onrender.com/api/',
+    defaultValue: 'https://bloodpulse-proxy.vercel.app/api/',
   );
 
 
@@ -131,6 +131,57 @@ class ApiClient {
       throw ApiException('Malformed response received from server.', rawError: e);
     } catch (e) {
       throw ApiException('Unexpected authentication error: $e', rawError: e);
+    }
+  }
+
+  /// Exchanges Google OAuth token with the backend, returning JWT tokens and saving them to secure storage.
+  Future<Map<String, dynamic>> loginWithGoogle({
+    required String accessToken,
+    String? idToken,
+    String? email,
+    String? displayName,
+  }) async {
+    try {
+      final uri = Uri.parse(_normalizeUrl('auth/google/'));
+      final response = await _client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'access_token': accessToken,
+              if (idToken != null && idToken.isNotEmpty) 'id_token': idToken,
+              if (email != null && email.isNotEmpty) 'email': email,
+              if (displayName != null && displayName.isNotEmpty) 'display_name': displayName,
+            }),
+          )
+          .timeout(connectTimeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final access = data['access'] as String?;
+        final refresh = data['refresh'] as String?;
+
+        if (access != null && refresh != null) {
+          await saveTokens(access: access, refresh: refresh);
+        }
+        return data;
+      } else {
+        throw ApiException(
+          'Google login failed [${response.statusCode}]: ${_extractErrorMessage(response.body)}',
+          statusCode: response.statusCode,
+          rawError: response.body,
+        );
+      }
+    } on ApiException {
+      rethrow;
+    } on SocketException catch (e) {
+      throw ApiException('Network unreachable. Please check your internet connection.', rawError: e);
+    } on TimeoutException catch (e) {
+      throw ApiException('Connection timed out. Server took too long to respond.', rawError: e);
+    } on FormatException catch (e) {
+      throw ApiException('Malformed response received from server.', rawError: e);
+    } catch (e) {
+      throw ApiException('Google authentication error: $e', rawError: e);
     }
   }
 

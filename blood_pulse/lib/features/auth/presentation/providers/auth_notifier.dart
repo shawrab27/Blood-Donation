@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../services/api_client.dart';
 
 /// Authentication status for BloodPulse.
@@ -21,6 +22,7 @@ class UserProfile {
     this.lastDonationDate,
     required this.totalBagsDonated,
     this.isOtpVerified = false,
+    this.isProfileComplete = false,
     this.nidHash,
   });
 
@@ -37,6 +39,7 @@ class UserProfile {
   final DateTime? lastDonationDate;
   final int totalBagsDonated;
   final bool isOtpVerified;
+  final bool isProfileComplete;
   final String? nidHash;
 
   UserProfile copyWith({
@@ -53,6 +56,7 @@ class UserProfile {
     DateTime? lastDonationDate,
     int? totalBagsDonated,
     bool? isOtpVerified,
+    bool? isProfileComplete,
     String? nidHash,
   }) {
     return UserProfile(
@@ -69,6 +73,7 @@ class UserProfile {
       lastDonationDate: lastDonationDate ?? this.lastDonationDate,
       totalBagsDonated: totalBagsDonated ?? this.totalBagsDonated,
       isOtpVerified:    isOtpVerified    ?? this.isOtpVerified,
+      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
       nidHash:          nidHash          ?? this.nidHash,
     );
   }
@@ -148,6 +153,72 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
   }
+
+  /// Initiates Google OAuth Sign-In flow, sends tokens to Django backend,
+  /// retrieves JWT tokens and persists them via ApiClient (FlutterSecureStorage).
+  Future<bool> signInWithGoogle() async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      if (account == null) {
+        // User aborted the sign in dialog
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+        return false;
+      }
+
+      final GoogleSignInAuthentication auth = await account.authentication;
+      final accessToken = auth.accessToken ?? auth.idToken ?? '';
+
+      final authData = await _apiClient.loginWithGoogle(
+        accessToken: accessToken,
+        idToken: auth.idToken,
+        email: account.email,
+        displayName: account.displayName,
+      );
+
+      final userData = authData['user'] as Map<String, dynamic>?;
+      final bool isProfileComplete = userData?['is_profile_complete'] == true;
+
+      final user = UserProfile(
+        fullName: account.displayName ?? 'Google Donor',
+        email: account.email,
+        primaryPhone: userData?['phone_number'] ?? '',
+        age: 25,
+        gender: 'Not specified',
+        bloodGroup: userData?['blood_group'] ?? '',
+        category: 'civilian',
+        categoryDetails: {
+          'district': userData?['district'] ?? 'Dhaka',
+        },
+        neverDonated: true,
+        totalBagsDonated: 0,
+        isOtpVerified: true,
+        isProfileComplete: isProfileComplete,
+      );
+
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: user,
+        errorMessage: null,
+      );
+      return true;
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: msg,
+      );
+      return false;
+    }
+  }
+
+  /// Alias for signInWithGoogle
+  Future<bool> loginWithGoogle() => signInWithGoogle();
 
   /// Sets the user profile upon registration and posts to `/api/donors/`.
   Future<bool> registerUser(UserProfile profile) async {
@@ -235,38 +306,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Social authentication (Google)
-  Future<bool> loginWithGoogle() async {
-    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      final user = UserProfile(
-        fullName: 'Google Altruist',
-        email: 'donor@gmail.com',
-        primaryPhone: '+8801700000001',
-        age: 24,
-        gender: 'Male',
-        bloodGroup: 'B+',
-        category: 'civilian',
-        categoryDetails: const {'provider': 'Google'},
-        neverDonated: false,
-        totalBagsDonated: 3,
-        isOtpVerified: true,
-      );
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: user,
-        errorMessage: null,
-      );
-      return true;
-    } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Failed to sign in with Google: $e',
-      );
-      return false;
-    }
-  }
 
   /// Social authentication (Facebook)
   Future<bool> loginWithFacebook() async {

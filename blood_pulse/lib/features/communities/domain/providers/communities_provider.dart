@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../models/community_models.dart';
 
-const String _baseUrl = 'https://bloodpulse-backend.onrender.com/api';
+const String _baseUrl = 'https://bloodpulse-proxy.vercel.app/api';
 
 
 final divisionsProvider = FutureProvider<List<Division>>((ref) async {

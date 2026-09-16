@@ -365,3 +365,79 @@ class GeminiReportAnalyzeView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
+class GoogleAuthView(APIView):
+    """
+    Handles Google Sign-In exchange.
+    Receives access_token, id_token, and user profile metadata,
+    creates/retrieves User and DonorProfile, and returns JWT tokens.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        access_token = request.data.get('access_token')
+        id_token_str = request.data.get('id_token')
+        email = request.data.get('email')
+        display_name = request.data.get('display_name') or request.data.get('name', '')
+
+        # Attempt resolving email via Google UserInfo API if not directly supplied
+        if not email and access_token:
+            try:
+                import urllib.request
+                import json
+                req = urllib.request.Request(
+                    'https://www.googleapis.com/oauth2/v3/userinfo',
+                    headers={'Authorization': f'Bearer {access_token}'}
+                )
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    info = json.loads(resp.read().decode('utf-8'))
+                    email = info.get('email')
+                    if not display_name:
+                        display_name = info.get('name', '')
+            except Exception:
+                pass
+
+        if not email:
+            return Response(
+                {'error': 'A valid Google email or token is required for authentication.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        username = email.split('@')[0]
+        # Resolve user
+        user, _ = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'username': username,
+                'first_name': display_name.split(' ')[0] if display_name else username,
+                'last_name': ' '.join(display_name.split(' ')[1:]) if display_name and len(display_name.split(' ')) > 1 else '',
+            }
+        )
+
+        profile, _ = DonorProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                'blood_group': '',
+                'district': '',
+                'phone_number': f"+880{user.id:08d}",
+                'is_profile_complete': False,
+            }
+        )
+
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_profile_complete': profile.is_profile_complete,
+                'blood_group': profile.blood_group,
+                'district': profile.district,
+            }
+        }, status=status.HTTP_200_OK)
+

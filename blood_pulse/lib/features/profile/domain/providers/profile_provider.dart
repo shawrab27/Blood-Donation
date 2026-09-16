@@ -14,7 +14,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     fetchProfile();
   }
 
-  final String _baseUrl = 'https://bloodpulse-backend.onrender.com/api';
+  final String _baseUrl = 'https://bloodpulse-proxy.vercel.app/api';
 
 
   Future<void> fetchProfile() async {

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../models/health_hub_models.dart';
 
-const String _baseUrl = 'https://bloodpulse-backend.onrender.com/api/health-hub';
+const String _baseUrl = 'https://bloodpulse-proxy.vercel.app/api/health-hub';
 
 
 final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) async {

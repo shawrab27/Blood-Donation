@@ -36,6 +36,7 @@ import '../features/communities/domain/models/community_models.dart';
 
 // Profile Screens
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../features/profile/presentation/screens/complete_profile_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -86,10 +87,18 @@ final appRouter = GoRouter(
       builder: (context, state) => const DonorMapScreen(),
     ),
 
-    // ── Emergency Blood Request ───────────────────────────────────────────────
+    // ── Emergency Blood Request & Profile Completion ────────────────────────
     GoRoute(
       path: '/emergency-request',
       builder: (context, state) => const EmergencyRequestScreen(),
+    ),
+    GoRoute(
+      path: '/create-request',
+      builder: (context, state) => const EmergencyRequestScreen(),
+    ),
+    GoRoute(
+      path: '/complete-profile',
+      builder: (context, state) => const CompleteProfileScreen(),
     ),
 
     // ── Admin Panel ───────────────────────────────────────────────────────────
