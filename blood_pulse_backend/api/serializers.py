@@ -172,3 +172,18 @@ class LocalClubSerializer(serializers.ModelSerializer):
         model = LocalClub
         fields = '__all__'
 
+
+class LocalClubRegistrationSerializer(serializers.ModelSerializer):
+    """Used when a user submits a new club registration. Status defaults to 'pending'."""
+    class Meta:
+        model = LocalClub
+        fields = [
+            'name', 'established_year', 'slogan', 'description',
+            'division', 'district', 'upazila',
+            'president_name', 'contact_number',
+        ]
+
+    def create(self, validated_data):
+        validated_data['status'] = LocalClub.STATUS_PENDING
+        validated_data['is_verified'] = False
+        return super().create(validated_data)

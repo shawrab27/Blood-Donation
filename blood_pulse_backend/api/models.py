@@ -151,14 +151,23 @@ class MedicalPartner(models.Model):
     def __str__(self): return self.name
 
 class LocalClub(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending Review'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
     name = models.CharField(max_length=200)
     established_year = models.IntegerField(null=True, blank=True)
     slogan = models.CharField(max_length=255, blank=True)
     description = models.TextField()
     
-    division = models.ForeignKey(Division, on_delete=models.SET_NULL, null=True)
-    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True)
-    upazila = models.ForeignKey(Upazila, on_delete=models.SET_NULL, null=True)
+    division = models.ForeignKey(Division, on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
+    upazila = models.ForeignKey(Upazila, on_delete=models.SET_NULL, null=True, blank=True)
     
     cover_photo = models.ImageField(upload_to='club_covers/', null=True, blank=True)
     
@@ -171,6 +180,9 @@ class LocalClub(models.Model):
     contributions = models.CharField(max_length=50, default="0")
 
     is_verified = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    registered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_clubs')
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
     
     def __str__(self): return self.name
 

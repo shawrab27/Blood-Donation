@@ -12,7 +12,8 @@ from .serializers import (
     DonorProfileSerializer, BloodRequestSerializer, SocialPostSerializer, 
     HospitalSerializer, FakeAccountFlagSerializer, AdminActionSerializer,
     DivisionSerializer, DistrictSerializer, UpazilaSerializer,
-    NationalCommunitySerializer, MedicalPartnerSerializer, LocalClubSerializer, ExecutiveMemberSerializer,
+    NationalCommunitySerializer, MedicalPartnerSerializer, LocalClubSerializer, 
+    LocalClubRegistrationSerializer, ExecutiveMemberSerializer,
     BloodScienceArticleSerializer, CompatibilityRuleSerializer, DonationGuideSectionSerializer,
     EmergencyContactSerializer, RecoveryTimelineStepSerializer
 )
@@ -226,6 +227,31 @@ class LocalClubViewSet(viewsets.ModelViewSet):
 class ExecutiveMemberViewSet(viewsets.ModelViewSet):
     queryset = ExecutiveMember.objects.all()
     serializer_class = ExecutiveMemberSerializer
+
+
+class RegisterClubView(APIView):
+    """
+    POST endpoint for users to submit a new local club registration.
+    Clubs are saved with status='pending' until an admin approves them.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = LocalClubRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            club = serializer.save()
+            # Link to the authenticated user if logged in
+            if request.user and request.user.is_authenticated:
+                club.registered_by = request.user
+                club.save()
+            return Response({
+                'success': True,
+                'message': 'Your club registration has been submitted for admin review.',
+                'club_id': club.id,
+                'club_name': club.name,
+                'status': club.status,
+            }, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ── Health Hub ViewSets ──────────────────────────────────────────────────────

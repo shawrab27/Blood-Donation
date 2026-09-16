@@ -5,6 +5,7 @@ from .views import (
     NearbyDonorsView, FakeAccountFlagViewSet, AdminActionViewSet,
     DivisionViewSet, DistrictViewSet, UpazilaViewSet, 
     NationalCommunityViewSet, MedicalPartnerViewSet, LocalClubViewSet, ExecutiveMemberViewSet,
+    RegisterClubView,
     BloodScienceArticleViewSet, CompatibilityRuleViewSet, DonationGuideSectionViewSet, 
     EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView
 )
@@ -17,7 +18,7 @@ router.register(r'hospitals', HospitalViewSet)
 router.register(r'flags', FakeAccountFlagViewSet, basename='flags')
 router.register(r'admin-actions', AdminActionViewSet, basename='admin-actions')
 
-# New Community & Geo Routes
+# Community & Geo Routes
 router.register(r'divisions', DivisionViewSet, basename='divisions')
 router.register(r'districts', DistrictViewSet, basename='districts')
 router.register(r'upazilas', UpazilaViewSet, basename='upazilas')
@@ -37,5 +38,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('verify-nid/', NIDVerificationView.as_view(), name='verify-nid'),
     path('donors-nearby/', NearbyDonorsView.as_view(), name='donors-nearby'),
+    path('clubs/register/', RegisterClubView.as_view(), name='register-club'),
     path('health-hub/analyze-report/', GeminiReportAnalyzeView.as_view(), name='analyze-report'),
 ]
