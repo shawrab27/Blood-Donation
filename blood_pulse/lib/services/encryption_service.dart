@@ -14,8 +14,8 @@ library;
 
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pointycastle/asn1.dart';
 import 'package:pointycastle/export.dart';
@@ -88,7 +88,7 @@ class EncryptionService {
   Future<String> ensureKeypairExists() async {
     final existing = await _secureStorage.read(key: _kPublicKeyPem);
     if (existing != null && existing.isNotEmpty) return existing;
-    return _generateAndStoreKeypair();
+    return await _generateAndStoreKeypair();
   }
 
   /// Returns the locally stored RSA public key PEM string, or `null`.
@@ -149,14 +149,15 @@ class EncryptionService {
         Uint8List.fromList(authTag),
       );
       return utf8.decode(plainBytes);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[EncryptionService] Decrypt error: $e\n$st');
       return null;
     }
   }
 
   // ── RSA Keypair Generation ──────────────────────────────────────────────
 
-  String _generateAndStoreKeypair() {
+  Future<String> _generateAndStoreKeypair() async {
     final keyGen = RSAKeyGenerator()
       ..init(
         ParametersWithRandom(
@@ -172,9 +173,8 @@ class EncryptionService {
     final pubPem  = _encodePublicKeyToPem(pubKey);
     final privPem = _encodePrivateKeyToPem(privKey);
 
-    // Store asynchronously — caller awaits ensureKeypairExists().
-    _secureStorage.write(key: _kPublicKeyPem,  value: pubPem);
-    _secureStorage.write(key: _kPrivateKeyPem, value: privPem);
+    await _secureStorage.write(key: _kPublicKeyPem,  value: pubPem);
+    await _secureStorage.write(key: _kPrivateKeyPem, value: privPem);
 
     return pubPem;
   }
@@ -223,8 +223,8 @@ class EncryptionService {
     len += cipher.doFinal(output, len);
     // GCM appends the 16-byte auth tag after the ciphertext.
     return (
-      ciphertext: Uint8List.sublistView(output, 0, output.length - 16),
-      authTag:    Uint8List.sublistView(output, output.length - 16),
+      ciphertext: Uint8List.sublistView(output, 0, len - 16),
+      authTag:    Uint8List.sublistView(output, len - 16, len),
     );
   }
 

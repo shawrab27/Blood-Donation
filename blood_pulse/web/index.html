@@ -51,19 +51,45 @@
     <div style="margin-top: 4px; font-family: sans-serif; font-size: 12px; color: #666;">Loading Application...</div>
   </div>
   <script>
-    // Remove loading overlay as soon as Flutter mounts flutter-view or flt-glass-pane
-    const observer = new MutationObserver((mutations) => {
-      if (document.querySelector('flutter-view') || document.querySelector('flt-glass-pane') || document.querySelector('flt-scene-host')) {
-        const loader = document.getElementById('loading-screen');
-        if (loader) {
-          loader.style.opacity = '0';
-          loader.style.transition = 'opacity 0.25s ease';
-          setTimeout(() => loader.remove(), 250);
-        }
-        observer.disconnect();
+    function removeLoader() {
+      const loader = document.getElementById('loading-screen');
+      if (loader) {
+        loader.style.opacity = '0';
+        loader.style.pointerEvents = 'none';
+        loader.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+          try { loader.remove(); } catch (_) {}
+        }, 300);
       }
+    }
+
+    // Trigger 1: Flutter first frame event
+    window.addEventListener('flutter-first-frame', removeLoader);
+
+    // Trigger 2: Periodic check for Flutter DOM elements
+    const checkInterval = setInterval(() => {
+      if (document.querySelector('flutter-view') || 
+          document.querySelector('flt-glass-pane') || 
+          document.querySelector('flt-scene-host') || 
+          document.querySelector('canvas')) {
+        removeLoader();
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    // Trigger 3: Window load + short delay
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        removeLoader();
+        clearInterval(checkInterval);
+      }, 1000);
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Trigger 4: Safety fallback
+    setTimeout(() => {
+      removeLoader();
+      clearInterval(checkInterval);
+    }, 3500);
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

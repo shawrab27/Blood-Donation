@@ -5,11 +5,16 @@
 library;
 
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+// ML Kit OCR is only supported on Android and iOS.
+// Import is conditional to avoid web/desktop compilation errors.
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart'
+    if (dart.library.html) 'package:blood_pulse/core/utils/mlkit_stub.dart';
+
+import '../core/utils/pii_redactor.dart';
 
 // Provide key via: flutter run --dart-define=GEMINI_API_KEY=your_key
 const String _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
@@ -60,25 +65,7 @@ class AiTrustDetectorService {
 
   /// On-device PII redaction helper to strip sensitive personal identification
   /// data (NID, phone numbers, email) before sending OCR text off-device.
-  static String redactPII(String text) {
-    var redacted = text;
-    // Email redaction
-    redacted = redacted.replaceAll(
-      RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'),
-      '[REDACTED_EMAIL]',
-    );
-    // Phone number redaction (+880XXXXXXXXXX or 01XXXXXXXXX)
-    redacted = redacted.replaceAll(
-      RegExp(r'(\+?880|0)1[3-9]\d{8}\b'),
-      '[REDACTED_PHONE]',
-    );
-    // Bangladesh NID redaction (10, 13, or 17 consecutive digits)
-    redacted = redacted.replaceAll(
-      RegExp(r'\b\d{17}\b|\b\d{13}\b|\b\d{10}\b'),
-      '[REDACTED_NID]',
-    );
-    return redacted;
-  }
+  static String redactPII(String text) => PiiRedactor.redactPII(text);
 
   /// Analyzes uploaded medical report documents and computes an instant AI Trust Score.
   /// Gatekeeper Rule: If trust score < 60%, request publication is blocked.
@@ -123,32 +110,53 @@ class AiTrustDetectorService {
       );
     }
 
-    // Safely extract File path depending on dynamic type (File or XFile)
-    String filePath;
-    if (medicalReportFile is File) {
-      filePath = medicalReportFile.path;
-    } else {
-      try {
-        filePath = (medicalReportFile as dynamic).path as String;
-      } catch (e) {
-        return _fallbackResult(selectedBloodGroup, 'Invalid file format.');
+    // ── Platform guard: ML Kit OCR is Android/iOS only ──
+    // On web/desktop, skip Stage 1 and jump straight to Stage 2 (Gemini) or heuristic.
+    final bool canRunOcr =
+        Platform.isAndroid || Platform.isIOS;
+
+    String redactedText = '';
+
+    if (canRunOcr) {
+      // Safely extract File path depending on dynamic type (File or XFile)
+      String filePath;
+      if (medicalReportFile is File) {
+        filePath = medicalReportFile.path;
+      } else {
+        try {
+          filePath = (medicalReportFile as dynamic).path as String;
+        } catch (e) {
+          return _fallbackResult(selectedBloodGroup, 'Invalid file format.');
+        }
       }
+
+      try {
+        // ── Stage 1: Local OCR Extraction (mobile only) ──
+        final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+        final inputImage = InputImage.fromFilePath(filePath);
+        final recognizedText = await textRecognizer.processImage(inputImage);
+        final rawText = recognizedText.text;
+        await textRecognizer.close();
+
+        if (rawText.trim().isEmpty) {
+          return _fallbackResult(selectedBloodGroup, 'No readable text found in document.');
+        }
+
+        // ── Stage 1.5: On-device PII Redaction ──
+        redactedText = redactPII(rawText);
+      } catch (e) {
+        debugPrint('[AiTrustDetector] OCR failed: $e');
+        return _fallbackResult(selectedBloodGroup, 'OCR error: $e');
+      }
+    } else {
+      // Web/desktop: skip OCR — inform user and use Gemini without raw text
+      debugPrint('[AiTrustDetector] ML Kit OCR not supported on this platform. Skipping Stage 1.');
+      redactedText = '[Document uploaded — OCR not available on web/desktop. Applying AI heuristic trust score.]';
     }
 
     try {
-      // ── Stage 1: Local OCR Extraction ──
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      final inputImage = InputImage.fromFilePath(filePath);
-      final recognizedText = await textRecognizer.processImage(inputImage);
-      final rawText = recognizedText.text;
-      await textRecognizer.close();
 
-      if (rawText.trim().isEmpty) {
-        return _fallbackResult(selectedBloodGroup, 'No readable text found in document.');
-      }
-
-      // ── Stage 1.5: On-device PII Redaction ──
-      final redactedText = redactPII(rawText);
+      // (PII redaction already done above in the canRunOcr block)
 
       // ── Stage 2: LLM Trust Scoring via Gemini ──
       if (_geminiApiKey.isEmpty) {

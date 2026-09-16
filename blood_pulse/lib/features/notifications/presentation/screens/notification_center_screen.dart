@@ -1,7 +1,8 @@
+import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import 'notification_wallpaper_overlay.dart';
 
@@ -22,24 +23,32 @@ class NotificationCenterScreen extends StatefulWidget {
 class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
   int _selectedFilterIndex = 0; // 0: Feed, 1: Request, 2: Messages, 3: Profile
 
-  final List<String> _filters = ['Feed', 'Request', 'Messages', 'Profile'];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isBoxOpen = Hive.isBoxOpen('notifications_box');
+
+    final List<String> filters = [
+      l10n?.notifTabFeed ?? 'Feed',
+      l10n?.notifTabRequest ?? 'Request',
+      l10n?.notifTabMessages ?? 'Messages',
+      l10n?.notifTabProfile ?? 'Profile',
+    ];
+
     return Scaffold(
       appBar: BloodPulseAppBar(
-        subtitle: 'Notifications',
+        subtitle: l10n?.notifTitle ?? 'Notifications',
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ResponsiveLayout(
+      body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Notification Center',
-              style: TextStyle(fontFamily: 'Georgia', fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondary),
+            Text(
+              l10n?.notifTitle ?? 'Notification Center',
+              style: const TextStyle(fontFamily: 'Georgia', fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondary),
             ),
             const SizedBox(height: 4),
             Text(
@@ -52,12 +61,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List.generate(_filters.length, (index) {
+                children: List.generate(filters.length, (index) {
                   final isSelected = index == _selectedFilterIndex;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(_filters[index]),
+                      label: Text(filters[index]),
                       selected: isSelected,
                       selectedColor: AppColors.primary,
                       backgroundColor: const Color(0xFFFFF0F1),
@@ -78,7 +87,14 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
             // ── Notification Items List ─────────────────────────────────────
             Expanded(
-              child: _buildNotificationList(),
+              child: isBoxOpen
+                  ? ValueListenableBuilder<Box>(
+                      valueListenable: Hive.box('notifications_box').listenable(),
+                      builder: (context, box, _) {
+                        return _buildNotificationList(box);
+                      },
+                    )
+                  : _buildNotificationList(null),
             ),
           ],
         ),
@@ -86,12 +102,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     );
   }
 
-  Widget _buildNotificationList() {
+  Widget _buildNotificationList(Box? box) {
+    final cachedWidgets = _getCachedNotificationWidgets(box);
+
     switch (_selectedFilterIndex) {
       case 0:
         return ListView(
-          children: const [
-            _NotificationItemTile(
+          children: [
+            ...cachedWidgets,
+            const _NotificationItemTile(
               icon: Icons.favorite_rounded,
               iconColor: AppColors.primary,
               title: 'Rahim Ahmed liked your post',
@@ -99,7 +118,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               time: '5 mins ago',
               isUnread: true,
             ),
-            _NotificationItemTile(
+            const _NotificationItemTile(
               icon: Icons.mode_comment_rounded,
               iconColor: AppColors.tertiary,
               title: 'Nusrat Jahan commented on your update',
@@ -112,6 +131,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 1:
         return ListView(
           children: [
+            ...cachedWidgets,
             _NotificationItemTile(
               icon: Icons.emergency_rounded,
               iconColor: AppColors.primary,
@@ -135,6 +155,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 2:
         return ListView(
           children: [
+            ...cachedWidgets,
             _NotificationItemTile(
               icon: Icons.chat_bubble_rounded,
               iconColor: AppColors.tertiary,
@@ -158,8 +179,9 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 3:
       default:
         return ListView(
-          children: const [
-            _NotificationItemTile(
+          children: [
+            ...cachedWidgets,
+            const _NotificationItemTile(
               icon: Icons.verified_user_rounded,
               iconColor: AppColors.success,
               title: '🎉 NID & JIT Verification Approved',
@@ -167,7 +189,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               time: 'Yesterday',
               isUnread: false,
             ),
-            _NotificationItemTile(
+            const _NotificationItemTile(
               icon: Icons.timelapse_rounded,
               iconColor: AppColors.tertiary,
               title: '⏳ Cooldown Countdown Update',
@@ -178,6 +200,101 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           ],
         );
     }
+  }
+
+  List<Widget> _getCachedNotificationWidgets(Box? box) {
+    if (box == null || box.isEmpty) return [];
+
+    final List<Widget> widgets = [];
+    final total = box.length;
+
+    // Read in reverse order so latest notifications appear first
+    for (int i = total - 1; i >= 0; i--) {
+      final raw = box.getAt(i);
+      if (raw is! Map) continue;
+
+      final title = raw['title']?.toString() ?? 'BloodPulse Alert';
+      final body = raw['body']?.toString() ?? '';
+      final type = raw['type']?.toString().toUpperCase() ?? 'GENERAL';
+      final timestampStr = raw['timestamp']?.toString();
+      final isRead = raw['is_read'] == true;
+
+      // Match filter index: 0=Feed, 1=Request, 2=Messages, 3=Profile
+      bool matches = false;
+      if (_selectedFilterIndex == 0 && (type.contains('FEED') || type.contains('POST') || type.contains('SOCIAL'))) {
+        matches = true;
+      } else if (_selectedFilterIndex == 1 && (type.contains('REQUEST') || type.contains('EMERGENCY') || type.contains('MATCH') || type.contains('BLOOD'))) {
+        matches = true;
+      } else if (_selectedFilterIndex == 2 && (type.contains('CHAT') || type.contains('MESSAGE'))) {
+        matches = true;
+      } else if (_selectedFilterIndex == 3 && (type.contains('PROFILE') || type.contains('VERIF') || type.contains('COOLDOWN'))) {
+        matches = true;
+      } else if (type == 'GENERAL' && _selectedFilterIndex == 1) {
+        // Default general alerts to requests hub
+        matches = true;
+      }
+
+      if (!matches) continue;
+
+      IconData icon = Icons.notifications_active_rounded;
+      Color iconColor = AppColors.primary;
+      if (type.contains('CHAT')) {
+        icon = Icons.chat_bubble_rounded;
+        iconColor = AppColors.tertiary;
+      } else if (type.contains('FEED')) {
+        icon = Icons.favorite_rounded;
+        iconColor = AppColors.primary;
+      } else if (type.contains('VERIF')) {
+        icon = Icons.verified_user_rounded;
+        iconColor = AppColors.success;
+      }
+
+      String timeText = 'Recent';
+      if (timestampStr != null) {
+        try {
+          final dt = DateTime.parse(timestampStr);
+          final diff = DateTime.now().difference(dt);
+          if (diff.inMinutes < 1) {
+            timeText = 'Just now';
+          } else if (diff.inMinutes < 60) {
+            timeText = '${diff.inMinutes}m ago';
+          } else if (diff.inHours < 24) {
+            timeText = '${diff.inHours}h ago';
+          } else {
+            timeText = '${diff.inDays}d ago';
+          }
+        } catch (_) {}
+      }
+
+      final boxIndex = i;
+      widgets.add(
+        _NotificationItemTile(
+          icon: icon,
+          iconColor: iconColor,
+          title: title,
+          subtitle: body,
+          time: timeText,
+          isUnread: !isRead,
+          onTap: () async {
+            // Mark as read in Hive
+            try {
+              final updated = Map<String, dynamic>.from(raw);
+              updated['is_read'] = true;
+              await box.putAt(boxIndex, updated);
+            } catch (_) {}
+
+            if (!mounted) return;
+            if (type.contains('CHAT')) {
+              context.push('/chat');
+            } else if (type.contains('EMERGENCY')) {
+              NotificationWallpaperOverlay.show(context);
+            }
+          },
+        ),
+      );
+    }
+
+    return widgets;
   }
 }
 

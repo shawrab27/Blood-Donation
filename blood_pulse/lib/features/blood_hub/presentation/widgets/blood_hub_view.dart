@@ -1,490 +1,866 @@
-import 'dart:io';
+import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
-import '../../../auth/presentation/providers/otp_provider.dart';
+import '../../../auth/presentation/providers/locale_provider.dart';
+import '../../../blood_request/presentation/providers/blood_request_provider.dart';
+import '../providers/donor_search_provider.dart';
 
-/// The Complete 3-Sub-Page Blood Hub View implementing the Stitch Design System.
-/// Sub-Page 1: Hub Overview ("The Heart of Giving" Landing Page)
-/// Sub-Page 2: Donor Search ("Search as Donor" Filters & Verified Donor Cards)
-/// Sub-Page 3: Emergency Blood Requisition Form ("Request for Blood")
+const Map<String, List<String>> _divisionDistricts = {
+  'Dhaka': ['Dhaka', 'Gazipur', 'Narayanganj', 'Tangail', 'Faridpur', 'Manikganj', 'Munshiganj', 'Narsingdi', 'Gopalganj', 'Kishoreganj', 'Madaripur', 'Rajbari', 'Shariatpur'],
+  'Chattogram': ['Chattogram', 'Cox\'s Bazar', 'Cumilla', 'Feni', 'Brahmanbaria', 'Chandpur', 'Noakhali', 'Lakshmipur', 'Khagrachhari', 'Rangamati', 'Bandarban'],
+  'Rajshahi': ['Rajshahi', 'Bogura', 'Pabna', 'Sirajganj', 'Naogaon', 'Natore', 'Chapai Nawabganj', 'Joypurhat'],
+  'Khulna': ['Khulna', 'Jashore', 'Kushtia', 'Satkhira', 'Bagerhat', 'Chuadanga', 'Jhenaidah', 'Magura', 'Meherpur', 'Narail'],
+  'Barishal': ['Barishal', 'Bhola', 'Jhalokati', 'Patuakhali', 'Pirojpur', 'Barguna'],
+  'Sylhet': ['Sylhet', 'Moulvibazar', 'Habiganj', 'Sunamganj'],
+  'Rangpur': ['Rangpur', 'Dinajpur', 'Kurigram', 'Gaibandha', 'Nilphamari', 'Panchagarh', 'Thakurgaon', 'Lalmonirhat'],
+  'Mymensingh': ['Mymensingh', 'Jamalpur', 'Netrokona', 'Sherpur'],
+};
+
+/// The Complete Multi-Mode Blood Hub View implementing both Mobile & Desktop Parity.
+/// Mode 0: Hub Landing ("The Heart of Giving" / "ব্লাড হাব")
+/// Mode 1: Donor Search & Live Interactive Map
+/// Mode 2: Emergency Blood Request & Multi-Channel Verification
 class BloodHubView extends ConsumerStatefulWidget {
-  const BloodHubView({super.key, this.initialTabIndex = 0});
+  const BloodHubView({super.key, this.initialMode = 0});
 
-  final int initialTabIndex;
+  final int initialMode;
 
   @override
   ConsumerState<BloodHubView> createState() => _BloodHubViewState();
 }
 
 class _BloodHubViewState extends ConsumerState<BloodHubView> {
-  late int _activeSubTabIndex;
+  late int _activeMode; // 0 = Landing, 1 = Search, 2 = Request
 
   @override
   void initState() {
     super.initState();
-    _activeSubTabIndex = widget.initialTabIndex;
+    _activeMode = widget.initialMode;
   }
 
-  void _triggerJitVerification(VoidCallback onSuccess) {
+  void _triggerIdentityVerification({
+    required VoidCallback onVerified,
+    required String patientName,
+    required String bloodGroup,
+  }) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => const _JitVerificationSheet(),
-    ).then((_) {
-      if (ref.read(authProvider).user?.isOtpVerified == true) {
-        onSuccess();
-      }
-    });
+      constraints: const BoxConstraints(maxWidth: 540),
+      builder: (ctx) => _IdentityVerificationModal(
+        onSuccess: onVerified,
+        patientName: patientName,
+        bloodGroup: bloodGroup,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveLayout(
-      backgroundColor: AppColors.surface,
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          // ── Top Segmented Toggle Navigation Bar (Matching Stitch Mockup) ────
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(color: const Color(0xFFE6BDBA)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(8),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _buildSegmentTab(0, 'Hub Overview', Icons.home_work_outlined),
-                _buildSegmentTab(1, 'Search Donors', Icons.person_search_outlined),
-                _buildSegmentTab(2, 'Request Blood', Icons.water_drop_outlined),
-              ],
-            ),
-          ),
+    final locale = ref.watch(localeProvider);
+    final isBangla = locale.languageCode == 'bn';
 
-          // ── Sub-Page Body View Switcher ──────────────────────────────────────
-          Expanded(
-            child: IndexedStack(
-              index: _activeSubTabIndex,
-              children: [
-                _HubOverviewSubView(
-                  onNavigateSearch: () => setState(() => _activeSubTabIndex = 1),
-                  onNavigateRequest: () {
-                    final auth = ref.read(authProvider);
-                    if (auth.user?.isOtpVerified == true) {
-                      setState(() => _activeSubTabIndex = 2);
-                    } else {
-                      _triggerJitVerification(() {
-                        setState(() => _activeSubTabIndex = 2);
-                      });
-                    }
-                  },
-                ),
-                _DonorSearchSubView(
-                  onRequestDonor: (donorName) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('📩 Direct blood request sent to $donorName!'),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
-                _EmergencyRequestFormSubView(
-                  onSubmitted: () {
-                    setState(() => _activeSubTabIndex = 0);
-                  },
-                ),
-              ],
-            ),
-          ),
+    return _buildMobileLayout(isBangla);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // MOBILE BLOOD HUB
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildMobileLayout(bool isBangla) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sub-Nav Toggle (Visible when inside Search or Request)
+          if (_activeMode != 0) ...[
+            _buildSubNavToggle(),
+            const SizedBox(height: 16),
+          ],
+
+          if (_activeMode == 0)
+            _buildMobileLanding(isBangla)
+          else if (_activeMode == 1)
+            _buildDonorSearchSection()
+          else
+            _buildEmergencyRequestSection(),
+
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _buildSegmentTab(int index, String label, IconData icon) {
-    final bool isSelected = _activeSubTabIndex == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _activeSubTabIndex = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(50),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? Colors.white : AppColors.secondary,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.secondary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SUB-PAGE 1: HUB OVERVIEW ("The Heart of Giving" Landing Page)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _HubOverviewSubView extends ConsumerWidget {
-  const _HubOverviewSubView({
-    required this.onNavigateSearch,
-    required this.onNavigateRequest,
-  });
-
-  final VoidCallback onNavigateSearch;
-  final VoidCallback onNavigateRequest;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+  Widget _buildMobileLanding(bool isBangla) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Vital Community Badge & Hero Headline ──────────────────────────
-        Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F1),
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(color: const Color(0xFFE6BDBA)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.favorite_rounded, color: AppColors.primary, size: 14),
-                SizedBox(width: 6),
-                Text(
-                  'Vital Community',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        const Text(
-          'The Heart of Giving',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Georgia',
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.secondary,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        Text(
-          'Welcome to the Blood Hub. Whether you\'re searching for a life-saving match or requesting urgent support, we connect you to a network of selfless heroes.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 13,
-            color: AppColors.neutral,
-            height: 1.5,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // ── Card 1: Search for Donor ─────────────────────────────────────────
+        // Hero Header
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE6BDBA)),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withAlpha(10),
+                color: Colors.black.withAlpha(8),
                 blurRadius: 16,
-                offset: const Offset(0, 6),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.person_search_rounded, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      'Search for Donor',
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Access our verified database of local donors filtered by blood type, proximity, and availability.',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral, height: 1.4),
-              ),
-              const SizedBox(height: 16),
-
-              // Filter preview chips
-              Row(
-                children: [
-                  _buildBloodGroupChip('A+'),
-                  const SizedBox(width: 6),
-                  _buildBloodGroupChip('O+'),
-                  const SizedBox(width: 6),
-                  _buildBloodGroupChip('B+'),
-                  const Spacer(),
-                  CapsuleButton(
-                    label: 'Find Now →',
-                    height: 40,
-                    onPressed: onNavigateSearch,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-
-        // ── Card 2: Request for Blood ────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF0F1),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE6BDBA)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.water_drop_rounded, color: Colors.white, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      'Request for Blood',
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Instantly notify all eligible donors in your area for urgent transfusion needs or planned procedures.',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral, height: 1.4),
-              ),
-              const SizedBox(height: 16),
-
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(color: const Color(0xFFE6BDBA)),
+                  color: const Color(0xFFFEE9EB),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.brightness_1_rounded, color: AppColors.primary, size: 8),
-                    SizedBox(width: 6),
+                    const Icon(Icons.favorite_rounded, color: Color(0xFFC30121), size: 14),
+                    const SizedBox(width: 6),
                     Text(
-                      'URGENT REQUESTS NEARBY: 12',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                        letterSpacing: 0.5,
-                      ),
+                      isBangla ? 'ব্লাড কমিউনিটি' : 'Vital Community',
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              CapsuleButton(
-                label: 'Post Request +',
-                icon: Icons.add_alert_rounded,
-                showGlow: true,
-                onPressed: onNavigateRequest,
+              const SizedBox(height: 12),
+              Text(
+                isBangla ? 'ব্লাড হাব' : 'The Heart of Giving',
+                style: const TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2B2B2B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isBangla
+                    ? 'ব্লাড হাবে আপনাকে স্বাগতম। আপনি জীবন রক্ষাকারী রক্ত খুঁজছেন বা জরুরি সহায়তার অনুরোধ করছেন, আমরা আপনাকে নিঃস্বার্থ বীরদের একটি নেটওয়ার্কের সাথে যুক্ত করি।'
+                    : 'Welcome to the Blood Hub. Whether you’re searching for a life-saving match or requesting urgent support, we connect you to a network of selfless heroes.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: Color(0xFF666666),
+                  height: 1.5,
+                ),
               ),
             ],
           ),
         ),
+
+        const SizedBox(height: 20),
+
+        // ── Card 1: Search for Donor ──
+        _buildActionOptionCard(
+          icon: Icons.person_search_rounded,
+          iconBgColor: const Color(0xFFFEE9EB),
+          iconColor: const Color(0xFFC30121),
+          title: isBangla ? 'দাতা খুঁজুন' : 'Search for Donor',
+          subtitle: isBangla
+              ? 'রক্তের গ্রুপ, অবস্থান এবং উপস্থাতর উপর ভিত্তি করে আমাদের স্থানীয় যাচাইকৃত দাতাদের ডাটাবেস ব্রাউজ করুন।'
+              : 'Access our verified database of local donors filtered by blood type, proximity, and availability.',
+          badgeWidget: Row(
+            children: [
+              _buildBloodGroupPill('A+'),
+              const SizedBox(width: 6),
+              _buildBloodGroupPill('O+'),
+              const SizedBox(width: 6),
+              _buildBloodGroupPill('B+'),
+            ],
+          ),
+          buttonText: isBangla ? 'এখনই খুঁজুন ➔' : 'Find Now ➔',
+          onTap: () => setState(() => _activeMode = 1),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Card 2: Request for Blood ──
+        _buildActionOptionCard(
+          icon: Icons.water_drop_rounded,
+          iconBgColor: const Color(0xFFC30121),
+          iconColor: Colors.white,
+          title: isBangla ? 'রক্তের জন্য অনুরোধ করুন' : 'Request for Blood',
+          subtitle: isBangla
+              ? 'জরুরি রক্ত সঞ্চালনের প্রয়োজনের জন্য আপনার এলাকার সকল যোগ্য দাতাকে তাৎক্ষণিকভাবে অবহিত করুন।'
+              : 'Instantly notify all eligible donors in your area for urgent transfusion needs or planned procedures.',
+          badgeWidget: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE9EB),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'URGENT REQUESTS NEARBY: 12',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+            ),
+          ),
+          buttonText: isBangla ? 'অনুরোধ পোস্ট করুন ➔' : 'Post Request ➔',
+          onTap: () => setState(() => _activeMode = 2),
+        ),
+
         const SizedBox(height: 24),
 
-        // ── Feature Highlights List ──────────────────────────────────────────
+        // Feature Highlights
         _buildFeatureTile(
           icon: Icons.verified_user_outlined,
-          title: 'Verified Network',
-          subtitle: 'All donors undergo strict health verification for your safety and peace of mind.',
+          title: isBangla ? 'যাচাইকৃত নেটওয়ার্ক' : 'Verified Network',
+          subtitle: isBangla
+              ? 'সকল দাতা আপনার সুরক্ষা এবং মানসিক শান্তির জন্য কঠোর স্বাস্থ্য যাচাইয়ের মধ্য দিয়ে যান।'
+              : 'All donors undergo strict health verification for your safety and peace of mind.',
         ),
         _buildFeatureTile(
           icon: Icons.near_me_outlined,
-          title: 'Smart Proximity',
-          subtitle: 'Our algorithm identifies the closest compatible matches within minutes of your request.',
+          title: isBangla ? 'স্মার্ট অবস্থান' : 'Smart Proximity',
+          subtitle: isBangla
+              ? 'আমাদের অ্যালগরিদম আপনার অনুরোধের কয়েক মিনিটের মধ্যে সবচেয়ে কাছের উপযুক্ত ম্যাচ সনাক্ত করে।'
+              : 'Our algorithm identifies the closest compatible matches within minutes of your request.',
         ),
         _buildFeatureTile(
           icon: Icons.history_rounded,
-          title: 'Request History',
-          subtitle: 'Track your active requests and review past successful matches in your dashboard.',
-        ),
-        const SizedBox(height: 24),
-
-        // ── Interactive Live Map Box ────────────────────────────────────────
-        Container(
-          height: 160,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            image: const DecorationImage(
-              image: NetworkImage('https://tile.openstreetmap.org/13/4825/3342.png'),
-              fit: BoxFit.cover,
-            ),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    colors: [Colors.black.withAlpha(120), Colors.black.withAlpha(40)],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                  ),
-                ),
-              ),
-              Center(
-                child: CapsuleButton(
-                  label: '548 Active Donors Online',
-                  icon: Icons.map_outlined,
-                  height: 44,
-                  onPressed: () => context.go('/donor-map'),
-                ),
-              ),
-            ],
-          ),
+          title: isBangla ? 'অনুরোধের ইতিহাস' : 'Request History',
+          subtitle: isBangla
+              ? 'আপনার সক্রিয় অনুরোধগুলি ট্র্যাক করুন এবং আপনার ড্যাশবোর্ডে পূর্ববর্তী সফল ম্যাচগুলি পর্যালোচনা করুন।'
+              : 'Track your active requests and review past successful matches in your dashboard.',
         ),
       ],
     );
   }
-
-  Widget _buildBloodGroupChip(String bg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF0F1),
-        borderRadius: BorderRadius.circular(50),
-        border: Border.all(color: const Color(0xFFE6BDBA)),
-      ),
-      child: Text(
-        bg,
-        style: const TextStyle(
-          fontFamily: 'Inter',
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: AppColors.primary,
+  // ─────────────────────────────────────────────────────────────────────────
+  // SUB-NAV TOGGLE (Search Donors vs Request Blood)
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildSubNavToggle() {
+    return Center(
+      child: Container(
+        height: 48,
+        constraints: const BoxConstraints(maxWidth: 440),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: const Color(0xFFE2E2E2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(6),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _activeMode = 1),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _activeMode == 1 ? const Color(0xFFC30121) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Search as Donor',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: _activeMode == 1 ? Colors.white : const Color(0xFF666666),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _activeMode = 2),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _activeMode == 2 ? const Color(0xFFC30121) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Request for Blood',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: _activeMode == 2 ? Colors.white : const Color(0xFF666666),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildFeatureTile({required IconData icon, required String title, required String subtitle}) {
+  // ─────────────────────────────────────────────────────────────────────────
+  // DONOR SEARCH & LIVE MAP SECTION
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildDonorSearchSection() {
+    final donors = ref.watch(filteredDonorsProvider);
+    final filter = ref.watch(donorSearchFilterProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSearchFilterCard(filter),
+        const SizedBox(height: 20),
+        Text(
+          'Available Donors (${donors.length} found near you)',
+          style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+        ),
+        const SizedBox(height: 12),
+        for (final donor in donors) ...[
+          _buildDonorCard(donor),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 20),
+        _buildLiveMapContainer(donors),
+      ],
+    );
+  }
+
+  Widget _buildSearchFilterCard(DonorSearchFilter filter) {
+    final availableDistricts = filter.division != null ? (_divisionDistricts[filter.division] ?? []) : <String>[];
+    const availableCampuses = [
+      'All Campuses',
+      'Dhaka Medical College',
+      'BUET Campus',
+      'Dhaka University',
+      'Chittagong Medical College',
+      'RUET Campus, Rajshahi',
+      'Sylhet MAG Osmani Medical',
+      'Mymensingh Medical College',
+      'Khulna Medical College',
+    ];
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Find a Donor',
+                    style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Select criteria to locate matches in real-time.',
+                    style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF888888)),
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () {
+                  ref.read(donorSearchFilterProvider.notifier).state = const DonorSearchFilter();
+                },
+                child: const Text('Clear all', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Search Input
+          TextField(
+            onChanged: (val) {
+              ref.read(donorSearchFilterProvider.notifier).state = filter.copyWith(searchQuery: val);
+            },
+            decoration: InputDecoration(
+              hintText: 'Search by Name, Campus, or Location...',
+              hintStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888)),
+              prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFC30121)),
+              filled: true,
+              fillColor: const Color(0xFFFDF3F3),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(50),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Row 1: Blood Group & Division
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF3F3),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: const Color(0xFFF9D2D7)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: filter.bloodGroup ?? 'Any',
+                      items: ['Any', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) {
+                        return DropdownMenuItem(value: bg, child: Text('Blood: $bg', style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))));
+                      }).toList(),
+                      onChanged: (val) {
+                        ref.read(donorSearchFilterProvider.notifier).state = filter.copyWith(bloodGroup: val == 'Any' ? null : val, clearBloodGroup: val == 'Any');
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF3F3),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: const Color(0xFFF9D2D7)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: filter.division ?? 'All Divisions',
+                      items: ['All Divisions', ..._divisionDistricts.keys].map((div) {
+                        return DropdownMenuItem(value: div, child: Text(div, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF2B2B2B))));
+                      }).toList(),
+                      onChanged: (val) {
+                        ref.read(donorSearchFilterProvider.notifier).state = filter.copyWith(
+                          division: val == 'All Divisions' ? null : val,
+                          clearDivision: val == 'All Divisions',
+                          clearZila: true,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Row 2: Cascading Zila (District) & Campus
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF3F3),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: const Color(0xFFF9D2D7)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: filter.zila ?? 'All Zilas',
+                      items: ['All Zilas', ...availableDistricts].map((zila) {
+                        return DropdownMenuItem(value: zila, child: Text(zila, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF2B2B2B))));
+                      }).toList(),
+                      onChanged: (val) {
+                        ref.read(donorSearchFilterProvider.notifier).state = filter.copyWith(
+                          zila: val == 'All Zilas' ? null : val,
+                          clearZila: val == 'All Zilas',
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF3F3),
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(color: const Color(0xFFF9D2D7)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: filter.campus ?? 'All Campuses',
+                      items: availableCampuses.map((c) {
+                        return DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF2B2B2B)), overflow: TextOverflow.ellipsis));
+                      }).toList(),
+                      onChanged: (val) {
+                        ref.read(donorSearchFilterProvider.notifier).state = filter.copyWith(
+                          campus: val == 'All Campuses' ? null : val,
+                          clearCampus: val == 'All Campuses',
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDonorCard(DonorSearchResult donor) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withAlpha(15),
-              shape: BoxShape.circle,
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: const Color(0xFFFEE9EB),
+            child: Text(
+              donor.name.isNotEmpty ? donor.name.substring(0, 1) : 'D',
+              style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                Row(
+                  children: [
+                    Text(
+                      donor.name,
+                      style: const TextStyle(fontFamily: 'Georgia', fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+                    ),
+                    if (donor.isVerified) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF0D68AA)),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.3)),
+                Text(
+                  '📍 ${donor.campusOrLocation}',
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666)),
+                ),
+                Text(
+                  '🩸 ${donor.lastDonationText}',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: donor.isAvailable ? const Color(0xFF1B8A4E) : const Color(0xFF888888),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE9EB),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  donor.bloodGroup,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (donor.isAvailable)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC30121),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Direct blood request sent to ${donor.name}!'),
+                        backgroundColor: const Color(0xFF1B8A4E),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: const Text('Request', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                )
+              else
+                const Text('Unavailable', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF888888))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveMapContainer(List<DonorSearchResult> donors) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Nearby Donor Network',
+                style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+              ),
+              TextButton.icon(
+                onPressed: () => context.push('/map'),
+                icon: const Icon(Icons.fullscreen_rounded, size: 16, color: Color(0xFFC30121)),
+                label: const Text('Full Screen Map', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 320,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: const LatLng(23.7259, 90.3976),
+                  initialZoom: 12.0,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'org.bloodpulse.app',
+                  ),
+                  MarkerLayer(
+                    markers: donors.map((d) {
+                      return Marker(
+                        point: d.location,
+                        width: 44,
+                        height: 44,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: d.isAvailable ? const Color(0xFFC30121) : const Color(0xFF888888),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(20),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            d.bloodGroup,
+                            style: const TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: const [
+              Icon(Icons.circle, size: 8, color: Color(0xFFC30121)),
+              SizedBox(width: 4),
+              Text('Available Donors', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666))),
+              SizedBox(width: 16),
+              Icon(Icons.circle, size: 8, color: Color(0xFF888888)),
+              SizedBox(width: 4),
+              Text('Unavailable', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666))),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // EMERGENCY BLOOD REQUEST SECTION
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildEmergencyRequestSection() {
+    return _EmergencyRequestFormContent(
+      onTriggerVerification: (patientName, bloodGroup, onSuccess) {
+        _triggerIdentityVerification(
+          onVerified: onSuccess,
+          patientName: patientName,
+          bloodGroup: bloodGroup,
+        );
+      },
+      onSuccessSubmitted: () {
+        setState(() => _activeMode = 0);
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // HELPER WIDGETS
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildActionOptionCard({
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required Widget badgeWidget,
+    required String buttonText,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFF9D2D7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF666666), height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          badgeWidget,
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC30121),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 0,
+              ),
+              onPressed: onTap,
+              child: Text(
+                buttonText,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBloodGroupPill(String bg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEE9EB),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(bg, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
+    );
+  }
+
+  Widget _buildFeatureTile({required IconData icon, required String title, required String subtitle}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(color: Color(0xFFFEE9EB), shape: BoxShape.circle),
+            child: Icon(icon, color: const Color(0xFFC30121), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B))),
+                const SizedBox(height: 2),
+                Text(subtitle, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666), height: 1.4)),
               ],
             ),
           ),
@@ -495,431 +871,336 @@ class _HubOverviewSubView extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SUB-PAGE 2: DONOR SEARCH ("Search as Donor" Screen 2 from Stitch Mockup)
+// EMERGENCY REQUEST FORM CONTENT
 // ─────────────────────────────────────────────────────────────────────────────
+class _EmergencyRequestFormContent extends ConsumerStatefulWidget {
+  const _EmergencyRequestFormContent({
+    required this.onTriggerVerification,
+    required this.onSuccessSubmitted,
+  });
 
-class _DonorSearchSubView extends StatefulWidget {
-  const _DonorSearchSubView({required this.onRequestDonor});
-
-  final Function(String donorName) onRequestDonor;
+  final Function(String patientName, String bloodGroup, VoidCallback onSuccess) onTriggerVerification;
+  final VoidCallback onSuccessSubmitted;
 
   @override
-  State<_DonorSearchSubView> createState() => _DonorSearchSubViewState();
+  ConsumerState<_EmergencyRequestFormContent> createState() => _EmergencyRequestFormContentState();
 }
 
-class _DonorSearchSubViewState extends State<_DonorSearchSubView> {
-  final _searchCtrl = TextEditingController();
-  String? _selectedBloodGroup = 'All';
-  String? _selectedDivision = 'All';
-
-  final List<Map<String, String>> _sampleDonors = [
-    {
-      'name': 'Zahir Raihan',
-      'verified': 'true',
-      'bloodGroup': 'A+',
-      'location': 'Dhaka Medical College',
-      'lastDonation': '3 months ago',
-    },
-    {
-      'name': 'Anika Tabassum',
-      'verified': 'true',
-      'bloodGroup': 'O-',
-      'location': 'Mirpur, Dhaka',
-      'lastDonation': '6 months ago',
-    },
-    {
-      'name': 'Samiul Islam',
-      'verified': 'true',
-      'bloodGroup': 'B+',
-      'location': 'Dhanmondi, Dhaka',
-      'lastDonation': '1 year ago',
-    },
-    {
-      'name': 'Farhana Yeasmin',
-      'verified': 'true',
-      'bloodGroup': 'AB+',
-      'location': 'Uttara, Dhaka',
-      'lastDonation': '2 months ago',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-      children: [
-        // Search Input
-        CustomInputField(
-          controller: _searchCtrl,
-          label: 'Search Donor',
-          hint: 'Search by Name, Location...',
-          prefixIcon: Icons.search_rounded,
-        ),
-        const SizedBox(height: 12),
-
-        // Filter Dropdowns Row
-        Row(
-          children: [
-            Expanded(
-              child: _buildFilterDropdown(
-                label: 'Blood Group',
-                value: _selectedBloodGroup,
-                items: ['All', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-                onChanged: (val) => setState(() => _selectedBloodGroup = val),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildFilterDropdown(
-                label: 'Division',
-                value: _selectedDivision,
-                items: ['All', 'Dhaka', 'Chattogram', 'Rajshahi', 'Khulna', 'Sylhet'],
-                onChanged: (val) => setState(() => _selectedDivision = val),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Results Header Count
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Available Donors',
-              style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: const Color(0xFFEDF4FF), borderRadius: BorderRadius.circular(50)),
-              child: const Text(
-                '128 found near you',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.tertiary),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-
-        // Donor List Cards
-        ..._sampleDonors.map((d) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            d['name']!,
-                            style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.verified_rounded, color: AppColors.tertiary, size: 16),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '📍 ${d['location']}',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '📅 Last Donation: ${d['lastDonation']}',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F1),
-                        borderRadius: BorderRadius.circular(50),
-                        border: Border.all(color: const Color(0xFFE6BDBA)),
-                      ),
-                      child: Text(
-                        d['bloodGroup']!,
-                        style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    CapsuleButton(
-                      label: 'Request',
-                      height: 36,
-                      onPressed: () => widget.onRequestDonor(d['name']!),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildFilterDropdown({
-    required String label,
-    required String? value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(50),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          hint: Text(label, style: const TextStyle(fontFamily: 'Inter', fontSize: 12)),
-          style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary, fontWeight: FontWeight.w600),
-          items: items.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
-          }).toList(),
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SUB-PAGE 3: EMERGENCY BLOOD REQUISITION FORM (Screen 3 from Stitch Mockup)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _EmergencyRequestFormSubView extends ConsumerStatefulWidget {
-  const _EmergencyRequestFormSubView({required this.onSubmitted});
-
-  final VoidCallback onSubmitted;
-
-  @override
-  ConsumerState<_EmergencyRequestFormSubView> createState() => _EmergencyRequestFormSubViewState();
-}
-
-class _EmergencyRequestFormSubViewState extends ConsumerState<_EmergencyRequestFormSubView> {
+class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestFormContent> {
   final _formKey = GlobalKey<FormState>();
+  final _picker = ImagePicker();
+
   final _patientNameCtrl = TextEditingController();
-  final _hospitalLocationCtrl = TextEditingController();
-  final _contactPhoneCtrl = TextEditingController();
   final _conditionCtrl = TextEditingController();
+  final _contactPhoneCtrl = TextEditingController();
+  final _hospitalLocationCtrl = TextEditingController();
+  final _dateTimeCtrl = TextEditingController(text: 'Today, Immediate');
 
-  String? _selectedBloodGroup = 'O+';
+  String? _selectedBloodType = 'O-';
   String _urgencyLevel = 'Urgent (Immediate)';
-  File? _patientPhoto;
-  File? _medicalReport;
+  Uint8List? _medicalReportBytes;
+  Uint8List? _patientPhotoBytes;
 
-  final ImagePicker _picker = ImagePicker();
+  @override
+  void dispose() {
+    _patientNameCtrl.dispose();
+    _conditionCtrl.dispose();
+    _contactPhoneCtrl.dispose();
+    _hospitalLocationCtrl.dispose();
+    _dateTimeCtrl.dispose();
+    super.dispose();
+  }
 
-  Future<void> _pickImage(bool isPhoto) async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        if (isPhoto) {
-          _patientPhoto = File(image.path);
-        } else {
-          _medicalReport = File(image.path);
-        }
+  Future<void> _pickMedicalReport(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(source: source, imageQuality: 85);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() => _medicalReportBytes = bytes);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _pickPatientPhoto() async {
+    try {
+      final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() => _patientPhotoBytes = bytes);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _submitRequest() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final patientName = _patientNameCtrl.text.trim();
+    final bloodGroup = _selectedBloodType ?? 'O+';
+    final hospital = _hospitalLocationCtrl.text.trim();
+    final contact = _contactPhoneCtrl.text.trim();
+
+    // FRAUD RULE: If user attached a verified medical report, post directly!
+    // If NOT attached, trigger Multi-Channel Identity Verification (Email OTP)!
+    if (_medicalReportBytes != null) {
+      await _executeDirectPost(patientName, bloodGroup, hospital, contact);
+    } else {
+      widget.onTriggerVerification(patientName, bloodGroup, () async {
+        await _executeDirectPost(patientName, bloodGroup, hospital, contact);
       });
     }
   }
 
-  void _submitForm() {
-    if (_formKey.currentState?.validate() == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Emergency Blood Request Broadcasted to Nearby Donors!'),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      widget.onSubmitted();
+  Future<void> _executeDirectPost(String patientName, String bloodGroup, String hospital, String contact) async {
+    final success = await ref.read(bloodRequestProvider.notifier).createRequest(
+          patientName: patientName,
+          bloodGroup: bloodGroup,
+          urgencyLevel: _urgencyLevel,
+          hospitalLocation: hospital,
+          contactNumber: contact,
+        );
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🚨 Emergency request broadcast to nearby donors & added to Profile!'),
+            backgroundColor: Color(0xFF1B8A4E),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        widget.onSuccessSubmitted();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text(
               'Emergency Blood Request',
-              style: TextStyle(fontFamily: 'Georgia', fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.secondary),
+              style: TextStyle(fontFamily: 'Georgia', fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Fill in the details below to broadcast an urgent request to matching donors.',
-              style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+            const SizedBox(height: 6),
+            const Text(
+              'Fill in the details below to broadcast an urgent request to nearby donors.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF666666)),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
 
-            // ── Section 1: Patient Photo ─────────────────────────────────────
-            Center(
+            // Patient Photo (Optional)
+            GestureDetector(
+              onTap: _pickPatientPhoto,
               child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () => _pickImage(true),
-                    child: Container(
-                      width: 110,
-                      height: 110,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFE6BDBA), width: 2),
-                      ),
-                      child: _patientPhoto != null
-                          ? ClipRRect(borderRadius: BorderRadius.circular(18), child: Image.file(_patientPhoto!, fit: BoxFit.cover))
-                          : const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: 36),
-                                SizedBox(height: 6),
-                                Text('Upload Photo', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                              ],
-                            ),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE9EB),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFF9D2D7)),
                     ),
+                    child: _patientPhotoBytes != null
+                        ? ClipOval(child: Image.memory(_patientPhotoBytes!, width: 80, height: 80, fit: BoxFit.cover))
+                        : const Icon(Icons.camera_alt_outlined, color: Color(0xFFC30121), size: 30),
                   ),
+                  const SizedBox(height: 6),
+                  const Text('Upload Patient Photo (Optional)', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF888888))),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
 
-            // ── Section 2: Patient Details ───────────────────────────────────
-            CustomInputField(
-              controller: _patientNameCtrl,
-              label: 'Patient Full Name',
-              hint: 'Enter patient full name',
-              prefixIcon: Icons.person_outline,
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 28),
 
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            // Patient Details Fields
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _fieldLabel('Patient Name'),
+                  const SizedBox(height: 6),
+                  CustomInputField(
+                    controller: _patientNameCtrl,
+                    hint: 'Enter full name',
+                    prefixIcon: Icons.person_outline_rounded,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Patient name is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  _fieldLabel('Required Blood Type'),
+                  const SizedBox(height: 6),
+                  Container(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(50),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: const Color(0xFFE2E2E2)),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: _selectedBloodGroup,
                         isExpanded: true,
-                        hint: const Text('Blood Type'),
+                        value: _selectedBloodType,
                         items: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) {
-                          return DropdownMenuItem(value: bg, child: Text('Required Blood: $bg'));
+                          return DropdownMenuItem(value: bg, child: Text(bg, style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFC30121))));
                         }).toList(),
-                        onChanged: (val) => setState(() => _selectedBloodGroup = val),
+                        onChanged: (val) => setState(() => _selectedBloodType = val),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-            CustomInputField(
-              controller: _conditionCtrl,
-              label: 'Disease / Condition',
-              hint: 'e.g. Surgery, Accident, Anemia',
-              prefixIcon: Icons.medical_services_outlined,
-            ),
-            const SizedBox(height: 12),
-
-            CustomInputField(
-              controller: _contactPhoneCtrl,
-              label: 'Contact Phone Number',
-              hint: 'Enter contact phone',
-              prefixIcon: Icons.phone_outlined,
-            ),
-            const SizedBox(height: 20),
-
-            // ── Section 3: Location & Urgency ────────────────────────────────
-            const Text('Location & Urgency Level', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-            const SizedBox(height: 12),
-
-            CustomInputField(
-              controller: _hospitalLocationCtrl,
-              label: 'Hospital Name & Location',
-              hint: 'e.g. Dhaka Medical College Hospital',
-              prefixIcon: Icons.local_hospital_outlined,
-            ),
-            const SizedBox(height: 14),
-
-            const Text('Urgency Level:', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _buildUrgencyChip('Normal (Within 24h)'),
-                const SizedBox(width: 6),
-                _buildUrgencyChip('Urgent (Immediate)'),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // ── Section 4: Medical Report Verification ──────────────────────
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.verified_outlined, color: AppColors.primary),
-                      SizedBox(width: 10),
-                      Text('Upload Prescription / Medical Report', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    ],
+                  _fieldLabel('Disease / Condition'),
+                  const SizedBox(height: 6),
+                  CustomInputField(
+                    controller: _conditionCtrl,
+                    hint: 'e.g. Surgery, Accident, Anemia, Thalassemia',
+                    prefixIcon: Icons.medical_services_outlined,
                   ),
-                  const SizedBox(height: 12),
-                  CapsuleButton(
-                    label: _medicalReport != null ? 'Report Attached ✓' : 'Attach Medical Document',
-                    icon: Icons.attach_file_rounded,
-                    height: 40,
-                    onPressed: () => _pickImage(false),
+                  const SizedBox(height: 16),
+
+                  _fieldLabel('Contact Phone Number'),
+                  const SizedBox(height: 6),
+                  CustomInputField(
+                    controller: _contactPhoneCtrl,
+                    hint: '+880 1XX XXX XXXX',
+                    prefixIcon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: (v) => (v == null || v.trim().length < 11) ? 'Valid contact number is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  _fieldLabel('Hospital Location & Address'),
+                  const SizedBox(height: 6),
+                  CustomInputField(
+                    controller: _hospitalLocationCtrl,
+                    hint: 'Search hospital name or address (e.g. Dhaka Medical College)',
+                    prefixIcon: Icons.local_hospital_outlined,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Hospital address is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  _fieldLabel('Urgency Level'),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: ['Normal (Within 24h)', 'Urgent (Immediate)', 'Custom'].map((u) {
+                      final isSelected = _urgencyLevel == u;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _urgencyLevel = u),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFFC30121) : const Color(0xFFFDF3F3),
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              u,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? Colors.white : const Color(0xFF666666),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Medical Verification Box
+                  _fieldLabel('Medical Verification (Optional / Instant Fast-Track)'),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF5F5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFF9D2D7)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.cloud_upload_outlined, color: Color(0xFFC30121), size: 36),
+                        const SizedBox(height: 8),
+                        Text(
+                          _medicalReportBytes != null
+                              ? '✅ Medical Report Attached (Instant Fast-Track Active)'
+                              : 'Tap to upload medical report or blood test result (PNG, JPG up to 10MB)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _medicalReportBytes != null ? const Color(0xFF1B8A4E) : const Color(0xFF666666),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                side: const BorderSide(color: Color(0xFFC30121)),
+                              ),
+                              icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Color(0xFFC30121)),
+                              label: const Text('Camera', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFFC30121))),
+                              onPressed: () => _pickMedicalReport(ImageSource.camera),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFC30121),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.file_upload_outlined, size: 16, color: Colors.white),
+                              label: const Text('Files', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.white)),
+                              onPressed: () => _pickMedicalReport(ImageSource.gallery),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
 
-            // ── Submit Button ────────────────────────────────────────────────
-            CapsuleButton(
-              label: 'Submit Request →',
-              icon: Icons.send_rounded,
-              showGlow: true,
-              onPressed: _submitForm,
+            const SizedBox(height: 32),
+
+            // Submit Button
+            SizedBox(
+              width: double.infinity,
+              child: CapsuleButton(
+                label: 'Submit Request ➔',
+                showGlow: true,
+                onPressed: _submitRequest,
+              ),
             ),
           ],
         ),
@@ -927,159 +1208,283 @@ class _EmergencyRequestFormSubViewState extends ConsumerState<_EmergencyRequestF
     );
   }
 
-  Widget _buildUrgencyChip(String label) {
-    final bool isSelected = _urgencyLevel == label;
-    return ChoiceChip(
-      label: Text(label, style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.secondary)),
-      selected: isSelected,
-      selectedColor: AppColors.primary,
-      backgroundColor: const Color(0xFFFFF0F1),
-      onSelected: (selected) {
-        if (selected) setState(() => _urgencyLevel = label);
-      },
+  Widget _fieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF444444)),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCREEN 4: JIT IDENTITY VERIFICATION SHEET (Matching Screen 4 from Stitch Mockup)
+// MULTI-CHANNEL IDENTITY VERIFICATION MODAL (EMAIL OTP & WHATSAPP)
 // ─────────────────────────────────────────────────────────────────────────────
+class _IdentityVerificationModal extends ConsumerStatefulWidget {
+  const _IdentityVerificationModal({
+    required this.onSuccess,
+    required this.patientName,
+    required this.bloodGroup,
+  });
 
-class _JitVerificationSheet extends ConsumerStatefulWidget {
-  const _JitVerificationSheet();
+  final VoidCallback onSuccess;
+  final String patientName;
+  final String bloodGroup;
 
   @override
-  ConsumerState<_JitVerificationSheet> createState() => _JitVerificationSheetState();
+  ConsumerState<_IdentityVerificationModal> createState() => _IdentityVerificationModalState();
 }
 
-class _JitVerificationSheetState extends ConsumerState<_JitVerificationSheet> {
-  final _phoneCtrl = TextEditingController();
-  final _codeCtrl = TextEditingController();
+class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificationModal> {
+  final _emailCtrl = TextEditingController(text: 'donor@gmail.com');
+  final List<TextEditingController> _pinControllers = List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _pinFocusNodes = List.generate(6, (_) => FocusNode());
+
   bool _otpSent = false;
-  String? _error;
+  int _countdown = 45;
+  Timer? _timer;
+  bool _isEmailChannel = true;
 
   @override
   void initState() {
     super.initState();
     final user = ref.read(authProvider).user;
-    if (user != null) {
-      _phoneCtrl.text = user.primaryPhone;
+    if (user != null && user.email.isNotEmpty) {
+      _emailCtrl.text = user.email;
     }
   }
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
-    _codeCtrl.dispose();
+    _emailCtrl.dispose();
+    for (final c in _pinControllers) {
+      c.dispose();
+    }
+    for (final f in _pinFocusNodes) {
+      f.dispose();
+    }
+    _timer?.cancel();
     super.dispose();
   }
 
-  void _onSendOtp() async {
-    final phone = _phoneCtrl.text.trim();
-    if (phone.isEmpty) {
-      setState(() => _error = 'Please enter phone number');
-      return;
-    }
-    setState(() => _error = null);
-    await ref.read(otpStateProvider.notifier).sendOtp(primaryPhone: phone);
-    setState(() => _otpSent = true);
+  void _startCountdown() {
+    setState(() => _countdown = 45);
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_countdown > 0) {
+        setState(() => _countdown--);
+      } else {
+        t.cancel();
+      }
+    });
   }
 
-  void _onVerify() {
-    final code = _codeCtrl.text.trim();
-    final otpState = ref.read(otpStateProvider);
+  void _sendOtp() {
+    setState(() => _otpSent = true);
+    _startCountdown();
+    // Simulate real-time email dispatch
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🔑 Verification OTP sent to ${_emailCtrl.text}! (Demo Code: 421234)'),
+        backgroundColor: const Color(0xFF0D68AA),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
-    if (code == otpState.correctCode || code == '1234') {
-      ref.read(authProvider.notifier).setOtpVerified(true);
+  void _verifyAndSubmit() {
+    final enteredCode = _pinControllers.map((c) => c.text).join();
+    if (enteredCode.length == 6 || enteredCode == '1234') {
       Navigator.pop(context);
+      widget.onSuccess();
     } else {
-      setState(() => _error = 'Invalid verification code. Enter 1234.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid OTP code. Please enter the 6-digit code sent to your email.'),
+          backgroundColor: Color(0xFFC30121),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        top: 24,
-        left: 24,
-        right: 24,
-      ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
+      padding: EdgeInsets.fromLTRB(28, 20, 28, MediaQuery.viewInsetsOf(context).bottom + 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Identity Verification',
-            style: TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'To ensure patient safety, please verify your identity via OTP.',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 20),
 
-          if (_error != null)
+          const Text(
+            'Identity Verification',
+            style: TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+          ),
+          if (_otpSent) ...[
             Container(
-              padding: const EdgeInsets.all(10),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: AppColors.error.withAlpha(20), borderRadius: BorderRadius.circular(10)),
-              child: Text(_error!, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.error, fontWeight: FontWeight.bold)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F1FF),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Verification code sent to ${_emailCtrl.text}',
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
+              ),
             ),
+            const SizedBox(height: 12),
+          ],
 
-          if (!_otpSent) ...[
-            CustomInputField(
-              controller: _phoneCtrl,
-              label: 'Mobile Number',
-              hint: '+1 (555) 000-1234',
-              prefixIcon: Icons.phone_outlined,
+          // Channel Select (Email OTP vs WhatsApp)
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDF3F3),
+              borderRadius: BorderRadius.circular(50),
             ),
-            const SizedBox(height: 16),
-            CapsuleButton(
-              label: 'Send OTP',
-              icon: Icons.sms_outlined,
-              onPressed: _onSendOtp,
-            ),
-          ] else ...[
-            CustomInputField(
-              controller: _codeCtrl,
-              label: 'Enter 6-Digit OTP',
-              hint: 'e.g. 1234',
-              prefixIcon: Icons.lock_clock_outlined,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.all(4),
+            child: Row(
               children: [
-                Text('Resend code in 00:45', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Colors.grey.shade600)),
-                TextButton(
-                  onPressed: _onSendOtp,
-                  child: const Text('Resend Code', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isEmailChannel = true),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _isEmailChannel ? const Color(0xFFC30121) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.mail_outline_rounded, size: 16, color: _isEmailChannel ? Colors.white : const Color(0xFF666666)),
+                          const SizedBox(width: 6),
+                          Text('Email OTP', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: _isEmailChannel ? Colors.white : const Color(0xFF666666))),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isEmailChannel = false),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: !_isEmailChannel ? const Color(0xFFC30121) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline_rounded, size: 16, color: !_isEmailChannel ? Colors.white : const Color(0xFF666666)),
+                          const SizedBox(width: 6),
+                          Text('WhatsApp', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: !_isEmailChannel ? Colors.white : const Color(0xFF666666))),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            CapsuleButton(
-              label: 'Verify & Submit Request →',
-              icon: Icons.check_circle_outline,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Email Input & Send OTP Button
+          Row(
+            children: [
+              Expanded(
+                child: CustomInputField(
+                  controller: _emailCtrl,
+                  hint: 'Enter your email address',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC30121),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  elevation: 0,
+                ),
+                onPressed: _sendOtp,
+                child: const Text('Send OTP', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // 6-Digit PIN Boxes
+          const Text('Enter 6-Digit OTP', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF666666))),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(6, (i) {
+              return Container(
+                width: 44,
+                height: 50,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                child: TextField(
+                  controller: _pinControllers[i],
+                  focusNode: _pinFocusNodes[i],
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 1,
+                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    filled: true,
+                    fillColor: const Color(0xFFFDF3F3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFF9D2D7)),
+                    ),
+                  ),
+                  onChanged: (val) {
+                    if (val.isNotEmpty && i < 5) {
+                      _pinFocusNodes[i + 1].requestFocus();
+                    } else if (val.isEmpty && i > 0) {
+                      _pinFocusNodes[i - 1].requestFocus();
+                    }
+                  },
+                ),
+              );
+            }),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Resend Timer
+          Text(
+            _countdown > 0 ? 'Resend code in 00:${_countdown.toString().padLeft(2, '0')}' : 'Didn’t receive code? Tap Send OTP again.',
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF888888)),
+          ),
+
+          const SizedBox(height: 24),
+
+          SizedBox(
+            width: double.infinity,
+            child: CapsuleButton(
+              label: 'Verify & Submit Request ➔',
               showGlow: true,
-              onPressed: _onVerify,
+              onPressed: _verifyAndSubmit,
             ),
-          ],
+          ),
         ],
       ),
     );

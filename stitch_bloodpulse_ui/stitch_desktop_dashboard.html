@@ -1,0 +1,408 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse | Vital Flow Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container": "#fee9eb",
+                    "primary-fixed": "#ffdad7",
+                    "on-tertiary-container": "#c3ddff",
+                    "on-secondary-container": "#656464",
+                    "on-surface-variant": "#5c3f3d",
+                    "on-primary-fixed": "#410005",
+                    "tertiary": "#004b7e",
+                    "surface-tint": "#c00020",
+                    "surface-bright": "#fff8f7",
+                    "inverse-surface": "#3a2d2f",
+                    "surface-container-high": "#f8e3e5",
+                    "on-secondary-fixed-variant": "#474746",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "surface-container-highest": "#f3dde0",
+                    "primary": "#960017",
+                    "brand-red": "#C30121",
+                    "surface": "#fff8f7",
+                    "secondary": "#5f5e5e",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "background": "#fff8f7",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "surface-container-low": "#fff0f1",
+                    "secondary-fixed": "#e4e2e1",
+                    "on-background": "#24191a",
+                    "on-tertiary-fixed": "#001d35",
+                    "outline-variant": "#e6bdba",
+                    "on-surface": "#24191a",
+                    "inverse-on-surface": "#ffecee",
+                    "surface-variant": "#f3dde0",
+                    "on-primary-container": "#ffd1cd",
+                    "surface-container-lowest": "#ffffff",
+                    "outline": "#916f6c",
+                    "tertiary-fixed-dim": "#9dcaff",
+                    "primary-fixed-dim": "#ffb3ae",
+                    "secondary-container": "#e4e2e1",
+                    "primary-container": "#c30121",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "error-container": "#ffdad6",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#930016",
+                    "tertiary-container": "#0063a4",
+                    "surface-dim": "#ead5d7",
+                    "inverse-primary": "#ffb3ae",
+                    "tertiary-fixed": "#d1e4ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "xl": "32px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "sm": "8px",
+                    "xs": "4px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "16px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Georgia"],
+                    "label-md": ["Inter"],
+                    "button": ["Inter"],
+                    "headline-md": ["Georgia"],
+                    "display-lg": ["Georgia"],
+                    "body-sm": ["Inter"],
+                    "headline-sm": ["Georgia"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fff8f7;
+            color: #24191a;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(230, 189, 186, 0.4);
+        }
+        .gauge-svg {
+            transform: rotate(-90deg);
+        }
+        .gauge-path {
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: calc(251.2 - (251.2 * 85) / 100);
+            transition: stroke-dashoffset 1s ease-out;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fff8f7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e6bdba;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="h-screen w-64 left-0 top-0 sticky flex flex-col p-gutter gap-md bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant/30 shrink-0">
+<div class="flex items-center gap-sm px-sm py-md">
+<img alt="BloodPulse Logo" class="w-10 h-10 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyT3tRewcoKVmHdFh-pg17h7m87hlJGxolEMwaLhWbEzpZc06nPSTI3Lj87Qrubf__43CWWj4K88PPooVnZJjTVGrReB8jLD-XBP5CReCGIsxp02szhwuvo_SjGDIVXOH9IsluE_zCJ4QJyl7ZwSl-oujYKGpSy0t-6sakmvJCrlQbkXp6XBkk8UvmGeVs1C_fb8gqw_stPXwUVl0g4LT7CcLAqB7-3K7cFiK03YGcdaZazgNJhaeluy-zKxsls5bFw39XliloilQ">
+<div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-brand-red" style="font-family: Georgia;">BloodPulse</h1>
+<p class="text-[10px] uppercase tracking-widest text-secondary font-bold">Saving Lives Together</p>
+</div>
+</div>
+<nav class="flex flex-col gap-xs mt-lg">
+<!-- Feed (Active) -->
+<a class="flex items-center gap-md px-md py-sm bg-brand-red text-on-primary rounded-full font-bold transition-all shadow-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-label-lg font-label-lg">Feed</span>
+</a>
+<!-- Blood Hub -->
+<a class="flex items-center gap-md px-md py-sm text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined">bloodtype</span>
+<span class="text-label-lg font-label-lg">Blood Hub</span>
+</a>
+<!-- Health Hub -->
+<a class="flex items-center gap-md px-md py-sm text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined">monitor_heart</span>
+<span class="text-label-lg font-label-lg">Health Hub</span>
+</a>
+<!-- Profile -->
+<a class="flex items-center gap-md px-md py-sm text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-label-lg font-label-lg">Profile</span>
+</a>
+</nav>
+<div class="mt-auto p-md">
+<button class="w-full bg-brand-red text-on-primary font-button py-sm rounded-full shadow-lg hover:opacity-90 transition-all active:scale-95">
+            Schedule Donation
+        </button>
+</div>
+</aside>
+<main class="flex-grow flex flex-col min-w-0">
+<!-- TopNavBar (Authority: JSON) -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm full-width top-0 z-50 sticky">
+<div class="flex justify-between items-center w-full px-margin-desktop py-md max-w-[1280px] mx-auto">
+<div class="flex items-center gap-lg flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">search</span>
+<input class="w-full pl-[48px] pr-md py-sm bg-surface-container-lowest border border-outline-variant/30 rounded-full text-body-sm focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Search clinics or donor stats..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-secondary">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-secondary">help</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant/30 mx-xs"></div>
+<button class="text-secondary hover:text-brand-red font-label-lg px-md transition-colors">Log Donation</button>
+<div class="flex items-center gap-sm pl-md">
+<span class="text-label-lg font-label-lg text-brand-red">Alex Johnson</span>
+<div class="w-10 h-10 rounded-full border-2 border-primary-fixed overflow-hidden">
+<img alt="Profile Picture" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFBLvViWkwEeg30I-gAiKxAMYJjUmJRgwqC5UKCR6tWMLuIpcJ24XF3rtFxJd5jsGtV5XEufbLUnRmRIEA-nyzZm2XNivBmIl7DbIY33XMvzfpKoJAlBRDpLQLpXCcDAwciFr6B-4P0PrcvpzegPSodWrpPrWnDjQs3XoK-GEXEzBI_kHQMZaWojBn3smXPBDpfM_fUBfVAY1dPIIedbhwDyKbhzfhgh386iLzvzMS5skaFhaYI-bM9QtJyBt7xHqUUe0Lx17ZawY">
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="px-margin-desktop py-xl max-w-[1280px] mx-auto w-full space-y-xl">
+<!-- Hero Section: Donation Readiness -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-lg items-stretch">
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-lg p-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group border border-outline-variant/20">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+<div class="relative z-10 flex flex-col md:flex-row items-center gap-xl">
+<!-- Health Score Gauge -->
+<div class="relative flex items-center justify-center shrink-0">
+<svg class="gauge-svg w-40 h-40" viewBox="0 0 100 100">
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#e6bdba" stroke-opacity="0.2" stroke-width="8"></circle>
+<circle class="gauge-path" cx="50" cy="50" fill="transparent" r="40" stroke="#C30121" stroke-linecap="round" stroke-width="8" style="stroke-dashoffset: calc(37.68);"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-display-lg font-display-lg text-brand-red">85</span>
+<span class="text-label-md font-label-md text-secondary uppercase tracking-widest">Ready</span>
+</div>
+</div>
+<div class="flex-grow space-y-md text-center md:text-left">
+<h2 class="text-headline-lg font-headline-lg text-on-background">Your Vitals are Peak</h2>
+<p class="text-body-md font-body-md text-secondary max-w-lg">You give today, they live today. You've maintained excellent hydration and iron levels this week. You are in the top 10% of donors for consistent health tracking.</p>
+<div class="flex flex-wrap gap-md pt-sm justify-center md:justify-start">
+<div class="bg-surface-container-low px-lg py-md rounded-DEFAULT flex flex-col border border-outline-variant/10 shadow-sm">
+<span class="text-label-md font-label-md text-secondary">Next Donation</span>
+<span class="text-headline-sm font-headline-sm text-brand-red">14 Days</span>
+</div>
+<div class="bg-surface-container-low px-lg py-md rounded-DEFAULT flex flex-col border border-outline-variant/10 shadow-sm">
+<span class="text-label-md font-label-md text-secondary">Lives Impacted</span>
+<span class="text-headline-sm font-headline-sm text-tertiary">24 Souls</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Impact Stats -->
+<div class="lg:col-span-4 grid grid-rows-2 gap-lg">
+<div class="bg-brand-red text-on-primary rounded-lg p-lg shadow-xl flex flex-col justify-between relative overflow-hidden transition-transform hover:scale-[1.02]">
+<div class="z-10">
+<span class="text-label-lg font-label-lg opacity-80 uppercase tracking-widest">Status</span>
+<h3 class="text-headline-md font-headline-md">O+ Positive</h3>
+</div>
+<div class="flex justify-between items-end z-10">
+<div class="text-body-sm">Rare in current supply<br>Needed urgently.</div>
+<span class="material-symbols-outlined text-4xl opacity-30">water_drop</span>
+</div>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+</div>
+<div class="bg-surface-container-highest rounded-lg p-lg border border-outline-variant/30 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+<div>
+<span class="text-label-md font-label-md text-secondary">Clinic Nearby</span>
+<h3 class="text-headline-sm font-headline-sm text-on-background">Saint Mary's Hub</h3>
+</div>
+<div class="flex items-center justify-between mt-sm">
+<span class="text-body-sm text-secondary">0.8 miles away</span>
+<button class="text-brand-red hover:underline font-label-lg flex items-center gap-xs">
+                            Directions <span class="material-symbols-outlined text-sm">north_east</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Grid: Activity and Graph -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Donation Impact Graph -->
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-lg p-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-outline-variant/20">
+<div class="flex justify-between items-center mb-xl">
+<h3 class="text-headline-sm font-headline-sm text-on-background">Donation Impact History</h3>
+<div class="flex gap-sm">
+<span class="px-sm py-xs bg-primary-fixed text-on-primary-fixed rounded-full text-label-md cursor-pointer">Yearly</span>
+<span class="px-sm py-xs hover:bg-surface-container-low text-secondary rounded-full text-label-md cursor-pointer transition-colors">All Time</span>
+</div>
+</div>
+<div class="h-64 w-full relative flex items-end gap-md px-md">
+<div class="flex-1 bg-primary-fixed/40 rounded-t-lg h-[30%] relative group transition-all hover:bg-brand-red/60"></div>
+<div class="flex-1 bg-primary-fixed/40 rounded-t-lg h-[45%] relative group transition-all hover:bg-brand-red/60"></div>
+<div class="flex-1 bg-brand-red rounded-t-lg h-[85%] relative group shadow-lg">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 text-label-md text-brand-red font-bold bg-white px-2 py-1 rounded-md shadow-sm">Mar</div>
+</div>
+<div class="flex-1 bg-primary-fixed/40 rounded-t-lg h-[20%] relative group transition-all hover:bg-brand-red/60"></div>
+<div class="flex-1 bg-primary-fixed/40 rounded-t-lg h-[60%] relative group transition-all hover:bg-brand-red/60"></div>
+<div class="flex-1 bg-primary-fixed/40 rounded-t-lg h-[40%] relative group transition-all hover:bg-brand-red/60"></div>
+<div class="flex-1 bg-primary-fixed/40 rounded-t-lg h-[75%] relative group transition-all hover:bg-brand-red/60"></div>
+</div>
+<div class="mt-lg pt-lg border-t border-outline-variant/10 flex justify-around text-label-md text-secondary">
+<span class="">Jan</span><span class="">Feb</span><span class="font-bold text-brand-red">Mar</span><span class="">Apr</span><span class="">May</span><span class="">Jun</span><span class="">Jul</span>
+</div>
+</div>
+<!-- Recent Activity Feed -->
+<div class="lg:col-span-4 bg-surface-container-lowest rounded-lg p-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col border border-outline-variant/20">
+<h3 class="text-headline-sm font-headline-sm text-on-background mb-lg">Recent Activity</h3>
+<div class="space-y-lg overflow-y-auto max-h-[320px] pr-sm custom-scrollbar">
+<div class="flex gap-md group">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-tertiary text-sm">verified</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm text-on-background"><strong>Blood Tested</strong> &amp; validated at North Gen.</p>
+<span class="text-label-md text-secondary">2 hours ago</span>
+</div>
+</div>
+<div class="flex gap-md group">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-brand-red text-sm">favorite</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm text-on-background"><strong>Lives Helped</strong>: Your donation was used today.</p>
+<span class="text-label-md text-secondary">1 day ago</span>
+</div>
+</div>
+<div class="flex gap-md group">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-secondary text-sm">badge</span>
+</div>
+<div>
+<p class="text-body-sm font-body-sm text-on-background"><strong>New Badge</strong>: Iron Core Achiever.</p>
+<span class="text-label-md text-secondary">3 days ago</span>
+</div>
+</div>
+</div>
+<button class="mt-auto w-full text-center text-label-lg font-label-lg text-brand-red pt-md border-t border-outline-variant/10 hover:opacity-70 transition-opacity">
+                    View All Activity
+                </button>
+</div>
+<!-- Urgent Nearby Map Widget -->
+<div class="lg:col-span-12 bg-surface-container-lowest rounded-lg p-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-outline-variant/20">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-md mb-lg">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-on-background">Nearby Urgent Requests</h3>
+<p class="text-body-sm text-secondary">Clinics requiring immediate O+ and A- units.</p>
+</div>
+<button class="bg-surface-container-highest px-lg py-sm rounded-full text-label-lg hover:bg-surface-variant transition-colors flex items-center gap-sm shadow-sm">
+<span class="material-symbols-outlined text-sm">map</span> Open Map
+                    </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<div class="relative h-48 rounded-lg overflow-hidden group shadow-md">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBBCt8Ar0-TsuxYSq8v3SCRDi5JYymmwYMNsIXcn4FQZLC1ia5SVOdm9A3V4BqFKSfblCVIMlKlE0b5UUm77E_ecMudSSh4VjVrRytvaQZT7GVA-Su47_hMnrWDI3APGnaTz8f_FbzRYvuErid5gecwX2zNfV6erN_uTSMCDqgf8_agABPZbqJLm2t1M8_xOcn3K0xOT3iKok1llMyV4klOhQbO_OV_FsZvhRiH3ita1e0gOSyhEupNCyjvHGBrYcdAUVQQC1f8HdU')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+<div class="absolute bottom-md left-md text-white">
+<p class="text-label-lg">City Medical Center</p>
+<p class="text-xs opacity-80">Urgent O- Required</p>
+</div>
+<div class="absolute top-md right-md bg-error text-white text-[10px] px-sm py-xs rounded-full animate-pulse shadow-lg font-bold">URGENT</div>
+</div>
+<div class="relative h-48 rounded-lg overflow-hidden group shadow-md">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDLqFPSXpaBDrSE6kHGQRIWr6XhUq512UaCJGBYdVXgT2hNkToA36YUUiGujEyHk9LDNzTrZdKaDFqtC8wxGkYIdbHsBic1mXpa5GGi-Dbro0_pwKOX5REpOrmAupCzW_SYlna-oKKY1q9uYMDPxP4Z0NeHxcKSI4_qZqfRhw9rzgv7jg3yG0N_SVJw83XmTm5HoqXrC5N7WqICymBzOCUGyoCvFYxR-ir5Qn4asYBx0a3-Ux9no21OniKrmVLcKh0UfMUe9ax2HIA')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+<div class="absolute bottom-md left-md text-white">
+<p class="text-label-lg">East Bay Clinic</p>
+<p class="text-xs opacity-80">Platelets needed</p>
+</div>
+</div>
+<div class="relative h-48 rounded-lg overflow-hidden group shadow-md">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPEeD8w_bqQWpcB8Rmf05vm3n9yr8fKTblJwsFKilCrcw1p-u152xaNx5C2pxHIe3xPIuOmyJm2jZz-wgiW4MofAku9XLvE_JH02bTU-LcqExYuEJ7yUkVW-6pJHQCglt-p-Aid0bAd35RlWmIvnzIRxFPdNWXuWGw9nPUOeSICnU92ukUYhzOoIjRtjRtuDYnKfow5Qp3YW_iNM6g0cvApLC1Y2shvScbAbRJJojJt7bqCKwCatTmFQC9JqQoOf-1cFpF4z5kT6o')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+<div class="absolute bottom-md left-md text-white">
+<p class="text-label-lg">Community Hub</p>
+<p class="text-xs opacity-80">Supply critical</p>
+</div>
+<div class="absolute top-md right-md bg-tertiary text-white text-[10px] px-sm py-xs rounded-full shadow-lg font-bold">INFO</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer (Authority: JSON) -->
+<footer class="bg-surface-container-highest dark:bg-inverse-surface border-t border-outline-variant/20 py-xl mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-desktop w-full max-w-[1280px] mx-auto">
+<div class="mb-md md:mb-0">
+<span class="text-label-lg font-label-lg font-bold text-on-surface" style="font-family: Georgia;">BloodPulse Medical Systems</span>
+<p class="text-body-sm font-body-sm text-secondary mt-xs">© 2024 BloodPulse Medical Systems. All rights reserved.</p>
+</div>
+<div class="flex gap-lg">
+<a class="text-label-md font-label-md text-secondary dark:text-secondary-fixed-dim hover:text-brand-red transition-colors" href="#">Privacy Policy</a>
+<a class="text-label-md font-label-md text-secondary dark:text-secondary-fixed-dim hover:text-brand-red transition-colors" href="#">Terms of Service</a>
+<a class="text-label-md font-label-md text-secondary dark:text-secondary-fixed-dim hover:text-brand-red transition-colors" href="#">Clinic Portal</a>
+<a class="text-label-md font-label-md text-secondary dark:text-secondary-fixed-dim hover:text-brand-red transition-colors" href="#">Contact Support</a>
+</div>
+</div>
+</footer>
+</main>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const gauge = document.querySelector('.gauge-path');
+        if (gauge) {
+            setTimeout(() => {
+                gauge.style.strokeDashoffset = 'calc(251.2 - (251.2 * 85) / 100)';
+            }, 500);
+        }
+
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.addEventListener('mousedown', () => btn.classList.add('scale-95'));
+            btn.addEventListener('mouseup', () => btn.classList.remove('scale-95'));
+            btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
+        });
+    });
+</script>
+
+
+</body></html>

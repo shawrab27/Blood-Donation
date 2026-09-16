@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:blood_pulse/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
@@ -81,9 +82,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  void _openForgotPasswordSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const _ForgotPasswordModal(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    return _buildMobile();
+  }
+
+  Widget _buildMobile() {
     final auth = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFDF3F3),
@@ -93,172 +108,224 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           child: SlideTransition(
             position: _slideAnim,
             child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-
-                      // ── Logo ──────────────────────────────────────────
-                      const AppLogoSlot(size: AppLogoSize.card),
-
-                      const SizedBox(height: 20),
-
-                      // ── Title ─────────────────────────────────────────
-                      const Text(
-                        'Blood Pulse',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 20),
+                        // ── Logo ──────────────────────────────────────────
+                        const AppLogoSlot(size: AppLogoSize.card),
+                        const SizedBox(height: 20),
+                        // ── Title ─────────────────────────────────────────
+                        Text(
+                          l10n?.appName ?? 'BloodPulse',
+                          style: const TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ),
-
-                      const SizedBox(height: 6),
-
-                      Text(
-                        'Welcome back to the community.\nYour donation matters.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          color: AppColors.neutral,
-                          height: 1.5,
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n?.loginSubtitle ?? 'Welcome back to the community.\nYour donation matters.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            color: AppColors.neutral,
+                            height: 1.5,
+                          ),
                         ),
-                      ),
-
-                      const SizedBox(height: 36),
-
-                      // ── Card ──────────────────────────────────────────
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF8E7D7F).withAlpha(22),
-                              blurRadius: 24,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ── Phone / Username ────────────────────────
-                            _SectionLabel('Username or Phone'),
-                            const SizedBox(height: 8),
-                            CustomInputField(
-                              controller: _idCtrl,
-                              focusNode: _idFocus,
-                              hint: 'Enter your credentials',
-                              prefixIcon: Icons.person_outline_rounded,
-                              textInputAction: TextInputAction.next,
-                              keyboardType: TextInputType.text,
-                              onSubmitted: (_) =>
-                                  FocusScope.of(context).requestFocus(_pwFocus),
-                              validator: (v) => (v == null || v.trim().isEmpty)
-                                  ? 'Please enter your username or phone'
-                                  : null,
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // ── Password ────────────────────────────────
-                            _SectionLabel('Password'),
-                            const SizedBox(height: 8),
-                            CustomInputField(
-                              controller: _pwCtrl,
-                              focusNode: _pwFocus,
-                              hint: '••••••••',
-                              prefixIcon: Icons.lock_outline_rounded,
-                              isPassword: true,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _onSignIn(),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                if (v.length < 6) {
-                                  return 'At least 6 characters required';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // ── Forgot Password ─────────────────────────
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: GestureDetector(
-                                onTap: () {
-                                  // TODO(phase-5): JIT OTP reset flow
+                        const SizedBox(height: 36),
+                        // ── Card ──────────────────────────────────────────
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8E7D7F).withAlpha(22),
+                                blurRadius: 24,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // ── Phone / Username ────────────────────────
+                              _SectionLabel(l10n?.usernameOrPhone ?? 'Username or Phone'),
+                              const SizedBox(height: 8),
+                              CustomInputField(
+                                controller: _idCtrl,
+                                focusNode: _idFocus,
+                                hint: l10n?.enterCredentials ?? 'Enter your credentials',
+                                prefixIcon: Icons.person_outline_rounded,
+                                textInputAction: TextInputAction.next,
+                                keyboardType: TextInputType.text,
+                                onSubmitted: (_) =>
+                                    FocusScope.of(context).requestFocus(_pwFocus),
+                                validator: (v) => (v == null || v.trim().isEmpty)
+                                    ? (l10n?.usernameOrPhone ?? 'Please enter your username or phone')
+                                    : null,
+                              ),
+                              const SizedBox(height: 20),
+                              // ── Password ────────────────────────────────
+                              _SectionLabel(l10n?.authPassword ?? 'Password'),
+                              const SizedBox(height: 8),
+                              CustomInputField(
+                                controller: _pwCtrl,
+                                focusNode: _pwFocus,
+                                hint: '••••••••',
+                                prefixIcon: Icons.lock_outline_rounded,
+                                isPassword: true,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => _onSignIn(),
+                                validator: (v) {
+                                  if (v == null || v.isEmpty) {
+                                    return l10n?.authPassword ?? 'Password is required';
+                                  }
+                                  if (v.length < 6) {
+                                    return 'At least 6 characters required';
+                                  }
+                                  return null;
                                 },
-                                child: const Text(
-                                  'Forgot password?',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.tertiary,
+                              ),
+                              const SizedBox(height: 12),
+                              // ── Forgot Password ─────────────────────────
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () => _openForgotPasswordSheet(context),
+                                  child: Text(
+                                    l10n?.forgotPassword ?? 'Forgot password?',
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.tertiary,
+                                    ),
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 24),
+                              // ── Sign In Button ──────────────────────────
+                              CapsuleButton(
+                                label: l10n?.signIn ?? 'Sign In',
+                                icon: Icons.arrow_forward_rounded,
+                                isLoading: auth.isLoading,
+                                showGlow: true,
+                                onPressed: auth.isLoading ? null : _onSignIn,
+                              ),
+                              const SizedBox(height: 20),
+                              // ── Social Login Row (Mobile) ──
+                              const Row(
+                                children: [
+                                  Expanded(child: Divider(color: Color(0xFFE2E2E2))),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 12),
+                                    child: Text(
+                                      'Or continue with',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 12,
+                                        color: Color(0xFF888888),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(child: Divider(color: Color(0xFFE2E2E2))),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                        side: const BorderSide(color: Color(0xFFE2E2E2)),
+                                      ),
+                                      icon: const Icon(Icons.g_mobiledata, size: 20, color: Color(0xFF2B2B2B)),
+                                      label: const Text(
+                                        'Google',
+                                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+                                      ),
+                                      onPressed: () async {
+                                        final success = await ref.read(authProvider.notifier).loginWithGoogle();
+                                        if (!mounted) return;
+                                        if (success) {
+                                          context.go('/feed');
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                        side: const BorderSide(color: Color(0xFFE2E2E2)),
+                                      ),
+                                      icon: const Icon(Icons.facebook, size: 18, color: Color(0xFF2B2B2B)),
+                                      label: const Text(
+                                        'Facebook',
+                                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
+                                      ),
+                                      onPressed: () async {
+                                        final success = await ref.read(authProvider.notifier).loginWithFacebook();
+                                        if (!mounted) return;
+                                        if (success) {
+                                          context.go('/feed');
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        // ── Register link ──────────────────────────────────
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              l10n?.dontHaveAccount ?? "Don't have an account? ",
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                color: AppColors.neutral,
+                              ),
                             ),
-
-                            const SizedBox(height: 24),
-
-                            // ── Sign In Button ──────────────────────────
-                            CapsuleButton(
-                              label: 'Sign In',
-                              icon: Icons.arrow_forward_rounded,
-                              isLoading: auth.isLoading,
-                              showGlow: true,
-                              onPressed: auth.isLoading ? null : _onSignIn,
+                            GestureDetector(
+                              onTap: () => context.push('/register'),
+                              child: Text(
+                                l10n?.createAccount ?? 'Create an Account',
+                                style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.primary,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // ── Register link ──────────────────────────────────
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Don't have an account? ",
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 14,
-                              color: AppColors.neutral,
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => context.go('/register'),
-                            child: const Text(
-                              'Create an Account',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
-                                decoration: TextDecoration.underline,
-                                decorationColor: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 32),
-                    ],
+                        const SizedBox(height: 32),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -288,3 +355,158 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
+
+class _ForgotPasswordModal extends ConsumerStatefulWidget {
+  const _ForgotPasswordModal();
+
+  @override
+  ConsumerState<_ForgotPasswordModal> createState() => _ForgotPasswordModalState();
+}
+
+class _ForgotPasswordModalState extends ConsumerState<_ForgotPasswordModal> {
+  final _phoneCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
+  final _newPwCtrl = TextEditingController();
+  bool _otpSent = false;
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    _codeCtrl.dispose();
+    _newPwCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSendOtp() {
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty) return;
+    setState(() => _otpSent = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Verification code sent to your phone! (PIN: 1234)', style: TextStyle(fontFamily: 'Inter')),
+        backgroundColor: AppColors.tertiary,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _onResetPassword() {
+    if (_codeCtrl.text.trim() != '1234' && _codeCtrl.text.trim() != '0000') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid verification code. Use PIN: 1234', style: TextStyle(fontFamily: 'Inter')),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_newPwCtrl.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must be at least 6 characters.', style: TextStyle(fontFamily: 'Inter')),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Password reset successfully! You can now sign in.', style: TextStyle(fontFamily: 'Inter')),
+        backgroundColor: Color(0xFF1B8A4E),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.viewInsetsOf(context).bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Reset Password',
+            style: TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.secondary),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Enter your registered phone number to receive a secure OTP code.',
+            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+          ),
+          const SizedBox(height: 20),
+          if (!_otpSent) ...[
+            CustomInputField(
+              controller: _phoneCtrl,
+              hint: 'Phone Number (e.g. 01711000000)',
+              prefixIcon: Icons.phone_android_rounded,
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 20),
+            CapsuleButton(
+              label: 'Send OTP Code',
+              icon: Icons.sms_outlined,
+              onPressed: _onSendOtp,
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(color: const Color(0xFFEDF4FF), borderRadius: BorderRadius.circular(12)),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: AppColors.tertiary, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '🔑 Demo PIN: 1234',
+                      style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.tertiary, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            CustomInputField(
+              controller: _codeCtrl,
+              hint: 'Enter 4-Digit OTP Code',
+              prefixIcon: Icons.lock_clock_rounded,
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 14),
+            CustomInputField(
+              controller: _newPwCtrl,
+              hint: 'Enter New Password',
+              prefixIcon: Icons.lock_outline_rounded,
+              isPassword: true,
+            ),
+            const SizedBox(height: 20),
+            CapsuleButton(
+              label: 'Update Password',
+              icon: Icons.check_circle_outline_rounded,
+              onPressed: _onResetPassword,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+

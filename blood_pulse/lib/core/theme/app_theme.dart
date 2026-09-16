@@ -48,7 +48,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: const StadiumBorder(),                 // full pill
           elevation: 0,
@@ -65,7 +65,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: const StadiumBorder(),
           side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -187,7 +187,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: const StadiumBorder(),
           elevation: 0,
@@ -203,7 +203,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(0, 56),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: const StadiumBorder(),
           side: const BorderSide(color: AppColors.primary, width: 1.5),

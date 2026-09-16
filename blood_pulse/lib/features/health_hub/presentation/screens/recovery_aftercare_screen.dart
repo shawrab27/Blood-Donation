@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../domain/providers/health_hub_provider.dart';
 
-class RecoveryAftercareScreen extends StatefulWidget {
+class RecoveryAftercareScreen extends ConsumerStatefulWidget {
   const RecoveryAftercareScreen({super.key});
 
   @override
-  State<RecoveryAftercareScreen> createState() => _RecoveryAftercareScreenState();
+  ConsumerState<RecoveryAftercareScreen> createState() => _RecoveryAftercareScreenState();
 }
 
-class _RecoveryAftercareScreenState extends State<RecoveryAftercareScreen> {
+class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScreen> {
   int _waterGlasses = 6;
 
   @override
   Widget build(BuildContext context) {
+    final timelineAsync = ref.watch(recoveryTimelineProvider);
+
     return Scaffold(
       appBar: BloodPulseAppBar(
         subtitle: 'Recovery & Aftercare',
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ResponsiveLayout(
+      body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: ListView(
-          children: [
+        children: [
             const SizedBox(height: 8),
 
             const Text(
@@ -33,7 +35,7 @@ class _RecoveryAftercareScreenState extends State<RecoveryAftercareScreen> {
               style: TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
             ),
             const SizedBox(height: 4),
-            Text(
+            const Text(
               'Track your body\'s plasma restoration and iron recovery timeline after donating.',
               style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
             ),
@@ -77,7 +79,7 @@ class _RecoveryAftercareScreenState extends State<RecoveryAftercareScreen> {
                     style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                  const Text(
                     'It has been 24 hours since your donation. Plasma volume is 95% restored.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4),
@@ -132,12 +134,26 @@ class _RecoveryAftercareScreenState extends State<RecoveryAftercareScreen> {
             // ── Recovery Timeline Milestones ────────────────────────────────
             _sectionHeader('Recovery Timeline'),
             const SizedBox(height: 12),
-
-            _timelineTile('0–2 Hours', 'Rest & Immediate Fluids', 'Keep bandage on, drink 500ml water or juice, avoid standing quickly.', true),
-            _timelineTile('24 Hours', 'Plasma Volume Restoration', 'Body replaces lost fluid volume. Avoid heavy weightlifting or intense workouts.', true),
-            _timelineTile('48 Hours', 'Hydration Complete', 'Fluid levels fully restored. Normal routine & exercise can be resumed.', false),
-            _timelineTile('2–3 Weeks', 'Iron & RBC Regeneration', 'Bone marrow actively produces new red blood cells to replace donated units.', false),
-
+            timelineAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              error: (err, stack) => Center(child: Text('Error: $err')),
+              data: (timelineSteps) {
+                if (timelineSteps.isEmpty) {
+                  return const Text('No timeline data available.');
+                }
+                return Column(
+                  children: timelineSteps.map((step) {
+                    final isCompleted = step.hourMark <= 24; // Dummy condition for UI based on "24 hours since donation" text above
+                    return _timelineTile(
+                      '${step.hourMark} Hours',
+                      step.title,
+                      '${step.description}\n\nDo: ${step.activityGuideline}\nAvoid: ${step.avoidList}',
+                      isCompleted,
+                    );
+                  }).toList(),
+                );
+              },
+            ),
             const SizedBox(height: 28),
 
             // ── Nutrition & Diet Guide ──────────────────────────────────────
@@ -170,7 +186,6 @@ class _RecoveryAftercareScreenState extends State<RecoveryAftercareScreen> {
             const SizedBox(height: 32),
           ],
         ),
-      ),
     );
   }
 
@@ -216,7 +231,7 @@ class _RecoveryAftercareScreenState extends State<RecoveryAftercareScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(desc, style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4)),
+                Text(desc, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4)),
               ],
             ),
           ),

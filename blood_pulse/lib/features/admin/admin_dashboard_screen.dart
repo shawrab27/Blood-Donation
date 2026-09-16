@@ -1,10 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/blood_pulse_app_bar.dart';
-import '../../core/widgets/capsule_button.dart';
-import '../../core/widgets/responsive_layout.dart';
 import '../../services/api_client.dart';
 import '../auth/presentation/providers/auth_notifier.dart';
 
@@ -20,11 +19,39 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   bool _isLoading = false;
   List<dynamic> _requests = [];
   List<dynamic> _flags = [];
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    // 30s silent auto-poll for admin requests and flags without blocking spinners
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _silentPollData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _silentPollData() async {
+    try {
+      final reqRes = await _apiClient.get('requests/');
+      if (reqRes.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(reqRes.body);
+        _requests = data.where((r) => r['is_active'] == true).toList();
+      }
+
+      final flagRes = await _apiClient.get('flags/');
+      if (flagRes.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(flagRes.body);
+        _flags = data.where((f) => f['resolved'] == false).toList();
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -183,12 +210,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           subtitle: 'Admin Dashboard',
           showBackButton: true,
         ),
-        body: const ResponsiveLayout(
-          child: Center(
-            child: Text(
-              'Access Denied. Admins only.',
-              style: TextStyle(fontFamily: 'Inter', color: AppColors.secondary, fontSize: 16),
-            ),
+        body: const Center(
+          child: Text(
+            'Access Denied. Admins only.',
+            style: TextStyle(fontFamily: 'Inter', color: AppColors.secondary, fontSize: 16),
           ),
         ),
       );
@@ -200,9 +225,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         subtitle: 'Admin Dashboard',
         showBackButton: true,
       ),
-      body: ResponsiveLayout(
-        padding: EdgeInsets.zero,
-        child: RefreshIndicator(
+      body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: _loadData,
           child: _isLoading && _requests.isEmpty && _flags.isEmpty
@@ -315,7 +338,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   ],
                 ),
         ),
-      ),
     );
   }
 }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:blood_pulse/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/app_logo_slot.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/otp_provider.dart';
@@ -55,10 +55,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     final otpState = ref.watch(otpStateProvider);
+    final l10n = AppLocalizations.of(context);
 
-    return ResponsiveLayout(
+    return Scaffold(
       backgroundColor: AppColors.surface,
-      child: Center(
+      body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -67,9 +68,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             children: [
               const AppLogoSlot(size: AppLogoSize.card),
               const SizedBox(height: 12),
-              const Text(
-                'Blood Pulse',
-                style: TextStyle(
+              Text(
+                l10n?.appName ?? 'BloodPulse',
+                style: const TextStyle(
                   fontFamily: 'Georgia',
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -79,9 +80,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               const SizedBox(height: 20),
 
               // Title
-              const Text(
-                'Security Verification',
-                style: TextStyle(
+              Text(
+                l10n?.authOtpTitle ?? 'Security Verification',
+                style: const TextStyle(
                   fontFamily: 'Georgia',
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -91,7 +92,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               const SizedBox(height: 8),
 
               Text(
-                'An OTP verification code was sent to:',
+                l10n?.authOtpDesc ?? 'An OTP verification code was sent to:',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
@@ -205,7 +206,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
               // Submit Button
               CapsuleButton(
-                label: 'Verify Code',
+                label: l10n?.authVerifyBtn ?? 'Verify Code',
                 icon: Icons.check_circle_outline_rounded,
                 showGlow: true,
                 onPressed: _onVerify,

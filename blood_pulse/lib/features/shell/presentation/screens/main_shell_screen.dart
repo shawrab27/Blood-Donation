@@ -1,3 +1,4 @@
+import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -26,6 +27,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     final List<Widget> tabs = [
       const _FeedTab(),
       const _BloodHubTab(),
@@ -35,11 +38,11 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     ];
 
     final List<String> tabTitles = [
-      'Feed',
-      'Blood Hub',
-      'Communities',
-      'Health Hub',
-      'Profile',
+      l10n?.navFeed ?? 'Feed',
+      l10n?.navBloodHub ?? 'Blood Hub',
+      l10n?.navCommunities ?? 'Communities',
+      l10n?.navHealthHub ?? 'Health Hub',
+      l10n?.navProfile ?? 'Profile',
     ];
 
     return Scaffold(
@@ -65,31 +68,31 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           unselectedItemColor: AppColors.neutral,
           selectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 11),
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.feed_outlined),
-              activeIcon: Icon(Icons.feed_rounded),
-              label: 'Feed',
+              icon: const Icon(Icons.feed_outlined),
+              activeIcon: const Icon(Icons.feed_rounded),
+              label: l10n?.navFeed ?? 'Feed',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.water_drop_outlined),
-              activeIcon: Icon(Icons.water_drop_rounded),
-              label: 'Blood Hub',
+              icon: const Icon(Icons.water_drop_outlined),
+              activeIcon: const Icon(Icons.water_drop_rounded),
+              label: l10n?.navBloodHub ?? 'Blood Hub',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.groups_outlined),
-              activeIcon: Icon(Icons.groups_rounded),
-              label: 'Communities',
+              icon: const Icon(Icons.groups_outlined),
+              activeIcon: const Icon(Icons.groups_rounded),
+              label: l10n?.navCommunities ?? 'Communities',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.health_and_safety_outlined),
-              activeIcon: Icon(Icons.health_and_safety_rounded),
-              label: 'Health Hub',
+              icon: const Icon(Icons.health_and_safety_outlined),
+              activeIcon: const Icon(Icons.health_and_safety_rounded),
+              label: l10n?.navHealthHub ?? 'Health Hub',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline_rounded),
+              activeIcon: const Icon(Icons.person_rounded),
+              label: l10n?.navProfile ?? 'Profile',
             ),
           ],
         ),

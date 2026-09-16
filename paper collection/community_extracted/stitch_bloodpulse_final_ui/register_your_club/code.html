@@ -1,0 +1,438 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>BloodPulse - Register Your Club</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed-variant": "#474746",
+                      "on-surface": "#24191a",
+                      "outline": "#916f6c",
+                      "on-secondary": "#ffffff",
+                      "primary-container": "#c30121",
+                      "inverse-surface": "#3a2d2f",
+                      "on-primary": "#ffffff",
+                      "on-primary-fixed": "#410005",
+                      "surface": "#fff8f7",
+                      "background": "#fff8f7",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-container": "#0063a4",
+                      "surface-container": "#fee9eb",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "error-container": "#ffdad6",
+                      "primary": "#960017",
+                      "surface-tint": "#c00020",
+                      "secondary-container": "#e4e2e1",
+                      "inverse-primary": "#ffb3ae",
+                      "on-tertiary-container": "#c3ddff",
+                      "surface-variant": "#f3dde0",
+                      "surface-container-high": "#f8e3e5",
+                      "inverse-on-surface": "#ffecee",
+                      "primary-fixed": "#ffdad7",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed": "#001d35",
+                      "secondary-fixed": "#e4e2e1",
+                      "surface-container-low": "#fff0f1",
+                      "tertiary": "#004b7e",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "error": "#ba1a1a",
+                      "on-primary-container": "#ffd1cd",
+                      "surface-bright": "#fff8f7",
+                      "surface-container-highest": "#f3dde0",
+                      "on-secondary-container": "#656464",
+                      "surface-dim": "#ead5d7",
+                      "tertiary-fixed": "#d1e4ff",
+                      "on-background": "#24191a",
+                      "outline-variant": "#e6bdba",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-error-container": "#93000a",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "secondary": "#5f5e5e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "lg": "24px",
+                      "gutter": "16px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "margin-desktop": "64px",
+                      "xs": "4px",
+                      "sm": "8px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Georgia"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Georgia"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Georgia&family=Inter:wght@400;600&display=swap');
+        
+        .shadow-diffuse {
+            box-shadow: 0 4px 12px rgba(142,125,127,0.04);
+        }
+        .shadow-overlay {
+            box-shadow: 0 8px 24px rgba(43,43,43,0.08);
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+        
+        /* Form Field Styles based on Guidance */
+        .input-field {
+            background-color: #FFFFFF;
+            border: 1px solid rgba(142, 125, 127, 0.3);
+            border-radius: 12px;
+            width: 100%;
+            padding: 12px 16px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            line-height: 24px;
+            color: #24191a;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #0D68AA; /* Tertiary Blue from guidance */
+            border-width: 2px;
+            padding: 11px 15px; /* Adjust padding to prevent jumping when border becomes 2px */
+        }
+        .input-field::placeholder {
+            color: #8E7D7F; /* Neutral */
+            opacity: 0.7;
+        }
+        
+        /* Custom scrollbar for textareas */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(142, 125, 127, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Georgia&amp;family=Inter:wght@400;600&amp;display=swap" data-snapdom="injected-import"></head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none z-40 bg-surface-container-low dark:bg-surface-container-lowest flex justify-between items-center px-md py-sm">
+<div class="flex items-center gap-sm cursor-pointer active:scale-95 duration-150 hover:bg-surface-variant/50 dark:hover:bg-surface-container-highest transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: &quot;FILL&quot; 1;">format_h4</span>
+<img alt="BloodPulse Logo" class="h-6 w-auto hidden" src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ"> <!-- Hidden but included as requested, using vector icon instead for header -->
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim font-bold tracking-tight">BloodPulse</span>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full hover:bg-surface-variant/50 dark:hover:bg-surface-container-highest transition-colors text-on-surface-variant dark:text-on-secondary-fixed-variant active:scale-95 duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-variant/50 dark:hover:bg-surface-container-highest transition-colors text-on-surface-variant dark:text-on-secondary-fixed-variant active:scale-95 duration-150">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop pt-lg pb-32">
+<!-- Header & Introduction -->
+<div class="mb-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-sm">Register Your Club</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+                Submit your local blood donation club to our directory. All submissions are reviewed by our medical admins before appearing publicly to ensure community trust and clinical reliability.
+            </p>
+</div>
+<!-- Form Container - Glassmorphism inspired Card -->
+<div class="bg-surface-container-lowest shadow-diffuse rounded-[16px] p-lg w-full max-w-3xl border border-surface-variant/30">
+<form action="#" class="space-y-lg" method="POST">
+<!-- Section 1: Basic Info -->
+<div class="space-y-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface border-b border-surface-variant pb-2">Basic Information</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="club_name">Club Name <span class="text-error">*</span></label>
+<input class="input-field" id="club_name" name="club_name" placeholder="e.g. LifeSavers Dhaka" required="" type="text">
+</div>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="year_est">Year Established</label>
+<input class="input-field" id="year_est" max="2025" min="1900" name="year_est" placeholder="YYYY" type="number">
+</div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="slogan">Club Slogan / Motto</label>
+<input class="input-field" id="slogan" name="slogan" placeholder="e.g. Give Blood, Give Life" type="text">
+</div>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="about">About the Club <span class="text-error">*</span></label>
+<textarea class="input-field resize-y min-h-[100px]" id="about" name="about" placeholder="Describe your club's mission and regular activities..." required="" rows="4"></textarea>
+</div>
+</div>
+<!-- Section 2: Contact & Location -->
+<div class="space-y-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface border-b border-surface-variant pb-2">Contact &amp; Location</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="president_name">President / Leader Name <span class="text-error">*</span></label>
+<input class="input-field" id="president_name" name="president_name" placeholder="Full Name" required="" type="text">
+</div><div class="space-y-sm">
+  <label class="font-label-lg text-label-lg text-on-surface-variant block" for="leader_photo">Leader Photo (Optional)</label>
+  <div class="flex items-center gap-md">
+    <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant overflow-hidden">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc-Z4NpDMNU99ElhlVfghZJQ8BEh6Q9iK6hgPO4Oe5kncuINoMVKSJCvSWqLurFAfBRzn6G-1IE7WLt18GptrMv4IfyBf6toZVKIyrn_dqeNlJVw5z7UO38hZMUpVuBFDMrA73RNzGrB7xJjDdW4RjdBQwAjjW4IY_CYfJdZ4WSnnP8jCS-zTwagihiZh0dyoG83Il7jGZIM4Q2XuigFQepYT1G6ZF3xrtnefpX3vEVh7L9JuPDjCs" alt="Leader Photo Placeholder" class="w-full h-full object-cover">
+    </div>
+    <div class="flex flex-col gap-1">
+      <button type="button" class="text-primary font-button text-label-lg hover:bg-primary/5 px-3 py-1 rounded-lg transition-colors flex items-center gap-2 w-fit" onclick="document.getElementById('leader_photo').click()">
+        <span class="material-symbols-outlined text-[20px]">photo_camera</span>
+        <span class="">Upload Photo</span>
+      </button>
+      <p class="text-xs text-on-surface-variant opacity-70">JPG or PNG, max 1MB</p>
+    </div>
+    <input type="file" accept="image/*" class="hidden" id="leader_photo" name="leader_photo">
+  </div>
+</div>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="contact_num">Contact Number <span class="text-error">*</span></label>
+<input class="input-field" id="contact_num" name="contact_num" placeholder="+880..." required="" type="tel">
+</div>
+</div>
+<!-- Location Selectors -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="space-y-sm relative">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="division">Division <span class="text-error">*</span></label>
+<div class="relative">
+<select class="input-field appearance-none pr-10 cursor-pointer bg-white" id="division" name="division" required="">
+<option disabled="" selected="" value="">Select Division</option>
+<option value="dhaka">Dhaka</option>
+<option value="chattogram">Chattogram</option>
+<option value="rajshahi">Rajshahi</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="space-y-sm">
+  <label class="font-label-lg text-label-lg text-on-surface-variant block" for="leader_photo">Leader Photo (Optional)</label>
+  <div class="flex items-center gap-md">
+    <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center border border-outline-variant overflow-hidden">
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc-Z4NpDMNU99ElhlVfghZJQ8BEh6Q9iK6hgPO4Oe5kncuINoMVKSJCvSWqLurFAfBRzn6G-1IE7WLt18GptrMv4IfyBf6toZVKIyrn_dqeNlJVw5z7UO38hZMUpVuBFDMrA73RNzGrB7xJjDdW4RjdBQwAjjW4IY_CYfJdZ4WSnnP8jCS-zTwagihiZh0dyoG83Il7jGZIM4Q2XuigFQepYT1G6ZF3xrtnefpX3vEVh7L9JuPDjCs" alt="Leader Photo Placeholder" class="w-full h-full object-cover">
+    </div>
+    <div class="flex flex-col gap-1">
+      <button type="button" class="text-primary font-button text-label-lg hover:bg-primary/5 px-3 py-1 rounded-lg transition-colors flex items-center gap-2 w-fit" onclick="document.getElementById('leader_photo').click()">
+        <span class="material-symbols-outlined text-[20px]">photo_camera</span>
+        <span class="">Upload Photo</span>
+      </button>
+      <p class="text-xs text-on-surface-variant opacity-70">JPG or PNG, max 1MB</p>
+    </div>
+    <input type="file" accept="image/*" class="hidden" id="leader_photo" name="leader_photo">
+  </div>
+</div>
+<div class="space-y-sm relative">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="upazila">Upazila</label>
+<div class="relative">
+<select class="input-field appearance-none pr-10 cursor-pointer bg-white" id="upazila" name="upazila">
+<option disabled="" selected="" value="">Select Upazila</option>
+<option value="mirpur">Mirpur</option>
+<option value="uttara">Uttara</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Media -->
+<div class="space-y-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface border-b border-surface-variant pb-2">Media</h2>
+<div class="space-y-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant block">Club Logo / Profile Photo (Optional)</label>
+<div class="border-2 border-dashed border-outline-variant rounded-[12px] p-6 text-center hover:bg-surface-container-low transition-colors cursor-pointer group bg-white">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-primary text-3xl">add_photo_alternate</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Click to upload or drag and drop</p>
+<p class="font-body-sm text-body-sm text-secondary-fixed-dim text-xs mt-1">SVG, PNG, JPG or GIF (max. 2MB)</p>
+<input accept="image/*" class="hidden" id="club_logo" name="club_logo" type="file">
+</div>
+</div>
+</div>
+<!-- Submit Action -->
+<div class="pt-md mt-lg border-t border-surface-variant flex justify-end">
+<button class="bg-primary-container text-on-primary font-button text-button rounded-full px-8 py-4 hover:shadow-overlay transition-all active:scale-[0.98] flex items-center gap-2" type="submit">
+<span class="">Submit for Verification</span>
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</form>
+</div>
+</main>
+<!-- BottomNavBar (Visible only on mobile/md:hidden) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-lg bg-surface dark:bg-surface-dim shadow-[0_-4px_12px_rgba(142,125,127,0.04)] bg-surface-container dark:bg-surface-container-low fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe md:hidden">
+<!-- Feed (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant px-4 py-1 hover:bg-surface-variant/30 dark:hover:bg-surface-container-high rounded-full active:scale-90 transition-transform duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">dynamic_feed</span>
+<span class="font-label-md text-label-md mt-1">Feed</span>
+</a>
+<!-- Blood Hub (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant px-4 py-1 hover:bg-surface-variant/30 dark:hover:bg-surface-container-high rounded-full active:scale-90 transition-transform duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">replace_video</span>
+<span class="font-label-md text-label-md mt-1">Blood Hub</span>
+</a>
+<!-- Community (Active) -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-4 py-1 hover:bg-surface-variant/30 dark:hover:bg-surface-container-high active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">groups</span>
+<span class="font-label-md text-label-md mt-1">Community</span>
+</a>
+<!-- Health (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant px-4 py-1 hover:bg-surface-variant/30 dark:hover:bg-surface-container-high rounded-full active:scale-90 transition-transform duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">monitor_heart</span>
+<span class="font-label-md text-label-md mt-1">Health</span>
+</a>
+<!-- Profile (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant px-4 py-1 hover:bg-surface-variant/30 dark:hover:bg-surface-container-high rounded-full active:scale-90 transition-transform duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">account_circle</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</a>
+</nav>
+<!-- Desktop Side Navigation equivalent placeholder (Hidden on mobile) -->
+<!-- Not explicitly requested but standard practice for responsive design when hiding bottom nav -->
+<script>
+        // Simple file upload interaction script
+        document.querySelector('.border-dashed').addEventListener('click', function() {
+            document.getElementById('club_logo').click();
+        });
+
+        document.getElementById('club_logo').addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                const textElement = document.querySelector('.border-dashed p:first-of-type');
+                textElement.textContent = fileName;
+                textElement.classList.add('text-primary', 'font-medium');
+                
+                const icon = document.querySelector('.border-dashed .material-symbols-outlined');
+                icon.textContent = 'check_circle';
+                icon.style.fontVariationSettings = "'FILL' 1";
+            }
+        });
+    </script>
+
+
+</body></html>

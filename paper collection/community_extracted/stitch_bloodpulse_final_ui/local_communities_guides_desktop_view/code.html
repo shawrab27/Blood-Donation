@@ -1,0 +1,359 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Local Communities - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-container": "#656464",
+                      "background": "#fff8f7",
+                      "on-secondary-fixed-variant": "#474746",
+                      "inverse-on-surface": "#ffecee",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#24191a",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-container": "#c30121",
+                      "tertiary": "#004b7e",
+                      "primary-fixed": "#ffdad7",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#e4e2e1",
+                      "secondary-container": "#e4e2e1",
+                      "surface-bright": "#fff8f7",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "surface-variant": "#f3dde0",
+                      "surface-container": "#fee9eb",
+                      "surface-container-low": "#fff0f1",
+                      "error": "#ba1a1a",
+                      "surface-container-high": "#f8e3e5",
+                      "inverse-primary": "#ffb3ae",
+                      "on-tertiary-fixed": "#001d35",
+                      "tertiary-fixed": "#d1e4ff",
+                      "inverse-surface": "#3a2d2f",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-container-highest": "#f3dde0",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "tertiary-container": "#0063a4",
+                      "surface": "#fff8f7",
+                      "error-container": "#ffdad6",
+                      "primary": "#960017",
+                      "on-primary-container": "#ffd1cd",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#410005",
+                      "outline-variant": "#e6bdba",
+                      "surface-tint": "#c00020",
+                      "on-tertiary-container": "#c3ddff",
+                      "outline": "#916f6c",
+                      "on-background": "#24191a",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#ead5d7",
+                      "secondary": "#5f5e5e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "xs": "4px",
+                      "unit": "4px",
+                      "margin-mobile": "16px",
+                      "xl": "32px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Georgia"
+                      ],
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Georgia"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 24px -2px rgba(142, 125, 127, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline shadow-sm h-screen w-64 left-0 sticky py-xl px-md gap-md z-50">
+<div class="mb-lg px-sm">
+<img src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ" alt="BloodPulse Logo" class="h-16 w-auto object-contain">
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">You give today, they live today</p>
+</div>
+<div class="flex-1 flex flex-col gap-sm">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="dynamic_feed">dynamic_feed</span>
+<span class="font-body-md text-body-md font-medium">Feed</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="bloodtype">bloodtype</span>
+<span class="font-body-md text-body-md font-medium">Blood Hub</span>
+</a>
+<a class="flex items-center gap-md bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-lg py-md translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="groups" style="font-variation-settings: &quot;FILL&quot; 1;">groups</span>
+<span class="font-body-md text-body-md font-medium">Community</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="health_and_safety">health_and_safety</span>
+<span class="font-body-md text-body-md font-medium">Health Hub</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="account_circle">account_circle</span>
+<span class="font-body-md text-body-md font-medium">Profile</span>
+</a>
+</div>
+<div class="mt-auto pt-lg border-t border-outline-variant">
+<button class="w-full bg-primary text-on-primary font-button text-button rounded-full py-md px-lg hover:-translate-y-0.5 hover:shadow-md transition-all">
+                Donate Now
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+<!-- Header Section -->
+<header class="w-full max-w-[1280px] mx-auto px-margin-desktop py-xl mt-lg z-10 relative">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface mb-sm">Local Communities</h2><p class="font-body-lg text-body-lg text-primary italic">You give today, they live today</p>
+
+</div>
+<div class="text-right">
+
+</div>
+</div>
+<!-- Tab Navigation & Search -->
+<div class="flex flex-col justify-between gap-md pb-md border-b border-outline-variant items-start mt-md">
+<div class="flex gap-lg">
+<button class="font-label-lg text-label-lg text-on-surface-variant pb-sm hover:text-primary transition-colors">National Organization</button>
+<button class="font-label-lg text-label-lg text-primary border-b-2 border-primary pb-sm">Local Organization</button>
+</div>
+<div class="w-full relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-primary" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-md pl-xl pr-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-body-md transition-all placeholder:text-on-surface-variant" placeholder="Search division, district, or upazila..." type="text">
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="w-full max-w-[1280px] mx-auto px-margin-desktop py-lg flex-1 z-10 relative">
+<!-- Divisions Grid -->
+<section class="mb-xl">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-lg">Divisions</h3>
+<div class="flex overflow-x-auto snap-x gap-md pb-md">
+<!-- Division Card 1 -->
+<div class="bg-primary-container rounded-DEFAULT p-lg hover:shadow-md transition-shadow cursor-pointer group snap-start min-w-[280px]"><div class="flex justify-between items-start mb-sm"><h4 class="font-headline-sm text-headline-sm text-on-primary group-hover:text-on-primary transition-colors">Dhaka</h4><span class="material-symbols-outlined text-on-primary group-hover:text-on-primary transition-colors" data-icon="arrow_forward">arrow_forward</span></div><div class="mt-md flex gap-xs flex-wrap"></div></div>
+<!-- Division Card 2 -->
+<div class="bg-primary-container rounded-DEFAULT p-lg hover:shadow-md transition-shadow cursor-pointer group snap-start min-w-[280px]"><div class="flex justify-between items-start mb-sm"><h4 class="font-headline-sm text-headline-sm text-on-primary group-hover:text-on-primary transition-colors">Chattogram</h4><span class="material-symbols-outlined text-on-primary group-hover:text-on-primary transition-colors" data-icon="arrow_forward">arrow_forward</span></div></div>
+<!-- Division Card 3 -->
+<div class="bg-primary-container rounded-DEFAULT p-lg hover:shadow-md transition-shadow cursor-pointer group snap-start min-w-[280px]"><div class="flex justify-between items-start mb-sm"><h4 class="font-headline-sm text-headline-sm text-on-primary group-hover:text-on-primary transition-colors">Rajshahi</h4><span class="material-symbols-outlined text-on-primary group-hover:text-on-primary transition-colors" data-icon="arrow_forward">arrow_forward</span></div></div>
+<!-- Division Card 4 -->
+<div class="bg-primary-container rounded-DEFAULT p-lg hover:shadow-md transition-shadow cursor-pointer group snap-start min-w-[280px]"><div class="flex justify-between items-start mb-sm"><h4 class="font-headline-sm text-headline-sm text-on-primary group-hover:text-on-primary transition-colors">Khulna</h4><span class="material-symbols-outlined text-on-primary group-hover:text-on-primary transition-colors" data-icon="arrow_forward">arrow_forward</span></div></div>
+</div>
+</section>
+<!-- Local Area Guides -->
+<section>
+<div class="flex justify-between items-end mb-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface">Local Area Guides</h3>
+<a class="font-label-lg text-label-lg text-tertiary hover:underline" href="#">View All Guides</a>
+</div><div class="w-full relative mb-lg">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-primary" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-md pl-xl pr-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-body-md transition-all placeholder:text-on-surface-variant" placeholder="Search guides by name or area..." type="text">
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Guide Card 1 -->
+<div class="bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/30 p-lg shadow-[0_4px_24px_-2px_rgba(142,125,127,0.04)] flex flex-col h-full">
+<div class="flex items-center gap-md mb-md">
+<img class="w-16 h-16 rounded-full object-cover border-2 border-surface-variant" data-alt="Professional headshot of a mature South Asian male doctor wearing a white coat and a warm smile, positioned in front of a soft, light-mode clinical background. The lighting is bright and inviting, emphasizing trustworthiness and clinical excellence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiUVAfLm2yIgtX-BFoes4DQP96oNCiKV_R6X7CLD13RlEL-lU259PdkDxU438Am7SwNUuNHYSSBEo6xHqgy5FMPPhK3PrP1HXtfC7whrLDjuFCG28evKsLOcuvZzIiJR4NsrTagagnD5nB9IAjXNxheW5v3JZTHR_DVmReOShLkSfYBttKCxP6gR-tRj8ZhXbuTx9dlqNqQbpf8lIeCfupg71sFF213YBph0ih9UfFTnEVykBVU18Y">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Dr. Rahman Kabir</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Dhaka South Coordinator</p>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg flex-1">Specializing in rapid response coordination for rare blood types in the Dhaka metropolitan area.</p>
+<div class="flex gap-sm mt-auto">
+<button class="flex-1 bg-surface-container text-on-surface font-button text-button rounded-full py-sm px-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[20px]" data-icon="mail">mail</span> Message
+                            </button>
+<button class="flex-1 border-2 border-primary text-primary font-button text-button rounded-full py-sm px-md hover:bg-primary-fixed transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span> Call
+                            </button>
+</div>
+</div>
+<!-- Guide Card 2 -->
+<div class="bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/30 p-lg shadow-[0_4px_24px_-2px_rgba(142,125,127,0.04)] flex flex-col h-full">
+<div class="flex items-center gap-md mb-md">
+<div class="w-16 h-16 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-headline-md font-bold">SA</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Syeda Amina</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Chattogram Hub Lead</p>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg flex-1">Managing community blood drives and university partnerships across the Chattogram division.</p>
+<div class="flex gap-sm mt-auto">
+<button class="flex-1 bg-surface-container text-on-surface font-button text-button rounded-full py-sm px-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[20px]" data-icon="mail">mail</span> Message
+                            </button>
+<button class="flex-1 border-2 border-primary text-primary font-button text-button rounded-full py-sm px-md hover:bg-primary-fixed transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[20px]" data-icon="call">call</span> Call
+                            </button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/30 p-lg shadow-[0_4px_24px_-2px_rgba(142,125,127,0.04)] flex flex-col h-full">
+<div class="flex items-center gap-md mb-md">
+<div class="w-16 h-16 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[32px]" data-icon="add_circle">add_circle</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Become a Guide</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Support your local community</p>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg flex-1">Help coordinate emergency blood requests and blood drives in your area.</p>
+<div class="flex gap-sm mt-auto">
+<button class="flex-1 bg-primary text-on-primary font-button text-button rounded-full py-sm px-md hover:shadow-md transition-all flex items-center justify-center gap-xs">
+Apply Now
+</button>
+</div>
+</div></div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full mt-auto bg-surface-container-lowest dark:bg-surface-dim border-t border-outline-variant dark:border-outline z-10 relative">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-desktop py-lg max-w-[1280px] mx-auto">
+<img src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ" alt="BloodPulse Logo" class="h-8 w-auto object-contain mb-md md:mb-0">
+<div class="flex gap-lg flex-wrap justify-center mb-md md:mb-0">
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-colors" href="#">Clinic Directory</a>
+<a class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed underline transition-colors" href="#">Help Center</a>
+</div>
+<span class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim text-center md:text-right">© 2024 BloodPulse. Clinical Excellence &amp; Empathy.</span>
+</div>
+</footer>
+</main>
+
+
+</body></html>

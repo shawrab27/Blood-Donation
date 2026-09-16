@@ -1,23 +1,24 @@
+import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 
 class HealthHubDashboardScreen extends StatelessWidget {
   const HealthHubDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveLayout(
+    final l10n = AppLocalizations.of(context);
+
+    return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: ListView(
-        children: [
+      children: [
           const SizedBox(height: 8),
 
           // ── Title & Intro ──────────────────────────────────────────────────
-          const Text(
-            'Health Hub',
-            style: TextStyle(
+          Text(
+            l10n?.healthTitle ?? 'Health Hub',
+            style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -26,8 +27,8 @@ class HealthHubDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Your personal health & donation intelligence center.',
-            style: TextStyle(
+            l10n?.healthSubtitle ?? 'Your personal health & donation intelligence center.',
+            style: const TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
               color: AppColors.neutral,
@@ -36,14 +37,14 @@ class HealthHubDashboardScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ── Summary Status Card ───────────────────────────────────────────
-          _buildHealthStatusCard(),
+          _buildHealthStatusCard(l10n),
 
           const SizedBox(height: 24),
 
           // ── 7 Tools & Analytics Grid Title ───────────────────────────────
-          const Text(
-            'Tools & Analytics',
-            style: TextStyle(
+          Text(
+            l10n?.healthToolsTitle ?? 'Tools & Analytics',
+            style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -53,20 +54,19 @@ class HealthHubDashboardScreen extends StatelessWidget {
           const SizedBox(height: 14),
 
           // ── 7 Tools Grid Cards ────────────────────────────────────────────
-          _buildFeatureGrid(context),
+          _buildFeatureGrid(context, l10n),
 
           const SizedBox(height: 28),
 
           // ── Daily Wellness Tip Card ───────────────────────────────────────
-          _buildWellnessTipCard(),
+          _buildWellnessTipCard(l10n),
 
           const SizedBox(height: 40),
         ],
-      ),
-    );
+      );
   }
 
-  Widget _buildHealthStatusCard() {
+  Widget _buildHealthStatusCard(AppLocalizations? l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -92,23 +92,23 @@ class HealthHubDashboardScreen extends StatelessWidget {
             child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 30),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Donor Health Status: Optimal',
-                  style: TextStyle(
+                  l10n?.healthStatusOptimal ?? 'Donor Health Status: Optimal',
+                  style: const TextStyle(
                     fontFamily: 'Georgia',
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Hemoglobin: 14.2 g/dL • Next donation in 42 days',
-                  style: TextStyle(
+                  l10n?.healthStatusDesc ?? 'Hemoglobin: 14.2 g/dL • Next donation in 42 days',
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
                     color: Colors.white70,
@@ -122,17 +122,17 @@ class HealthHubDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureGrid(BuildContext context) {
+  Widget _buildFeatureGrid(BuildContext context, AppLocalizations? l10n) {
     final List<_FeatureShortcut> features = [
       _FeatureShortcut(
-        title: 'AI Report Analysis',
+        title: l10n?.healthToolScanner ?? 'AI Report Analysis',
         icon: Icons.document_scanner_outlined,
         color: AppColors.primary,
         bgColor: const Color(0xFFFFF0F1),
         route: '/health-hub/ai-report',
       ),
       _FeatureShortcut(
-        title: 'Health Calculators',
+        title: l10n?.healthToolReadiness ?? 'Health Calculators',
         icon: Icons.calculate_outlined,
         color: AppColors.tertiary,
         bgColor: const Color(0xFFEDF4FF),
@@ -146,7 +146,7 @@ class HealthHubDashboardScreen extends StatelessWidget {
         route: '/health-hub/science-of-blood',
       ),
       _FeatureShortcut(
-        title: 'Blood Compatibility',
+        title: l10n?.healthToolCompatibility ?? 'Blood Compatibility',
         icon: Icons.grid_on_rounded,
         color: AppColors.primary,
         bgColor: const Color(0xFFFFF0F1),
@@ -160,14 +160,14 @@ class HealthHubDashboardScreen extends StatelessWidget {
         route: '/health-hub/donation-guide',
       ),
       _FeatureShortcut(
-        title: 'Resources Hub',
+        title: l10n?.healthToolResources ?? 'Resources Hub',
         icon: Icons.local_hospital_outlined,
         color: AppColors.tertiary,
         bgColor: const Color(0xFFEDF4FF),
         route: '/health-hub/resources',
       ),
       _FeatureShortcut(
-        title: 'Recovery & Aftercare',
+        title: l10n?.healthToolRecovery ?? 'Recovery & Aftercare',
         icon: Icons.timelapse_outlined,
         color: const Color(0xFF6A1B9A),
         bgColor: const Color(0xFFF3E5F5),
@@ -232,7 +232,7 @@ class HealthHubDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWellnessTipCard() {
+  Widget _buildWellnessTipCard(AppLocalizations? l10n) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -248,9 +248,9 @@ class HealthHubDashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Daily Hydration Tip',
-                  style: TextStyle(
+                Text(
+                  l10n?.healthWellnessTip ?? 'Daily Hydration Tip',
+                  style: const TextStyle(
                     fontFamily: 'Georgia',
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -259,8 +259,9 @@ class HealthHubDashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Drinking 500ml of water 30 minutes before donating blood significantly reduces lightheadedness.',
-                  style: TextStyle(
+                  l10n?.healthToolHydrationDesc ??
+                      'Drinking 500ml of water 30 minutes before donating blood significantly reduces lightheadedness.',
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
                     color: AppColors.neutral,

@@ -1,0 +1,337 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Local Communities</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary": "#ffffff",
+                      "primary-container": "#c30121",
+                      "on-error-container": "#93000a",
+                      "on-error": "#ffffff",
+                      "inverse-surface": "#3a2d2f",
+                      "surface-container": "#fee9eb",
+                      "error": "#ba1a1a",
+                      "surface-tint": "#c00020",
+                      "secondary": "#5f5e5e",
+                      "on-surface-variant": "#5c3f3d",
+                      "primary": "#960017",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "surface-bright": "#fff8f7",
+                      "on-secondary-fixed-variant": "#474746",
+                      "on-surface": "#24191a",
+                      "tertiary": "#004b7e",
+                      "background": "#fff8f7",
+                      "inverse-primary": "#ffb3ae",
+                      "inverse-on-surface": "#ffecee",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-primary-fixed-variant": "#930016",
+                      "on-primary-container": "#ffd1cd",
+                      "tertiary-fixed": "#d1e4ff",
+                      "on-background": "#24191a",
+                      "surface": "#fff8f7",
+                      "surface-container-high": "#f8e3e5",
+                      "primary-fixed": "#ffdad7",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "outline-variant": "#e6bdba",
+                      "on-primary": "#ffffff",
+                      "tertiary-container": "#0063a4",
+                      "on-tertiary-fixed": "#001d35",
+                      "surface-container-highest": "#f3dde0",
+                      "on-secondary-container": "#656464",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "error-container": "#ffdad6",
+                      "outline": "#916f6c",
+                      "surface-variant": "#f3dde0",
+                      "secondary-fixed": "#e4e2e1",
+                      "on-tertiary-container": "#c3ddff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed": "#410005",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "surface-dim": "#ead5d7",
+                      "secondary-container": "#e4e2e1",
+                      "surface-container-low": "#fff0f1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "margin-desktop": "64px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "gutter": "16px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "unit": "4px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Georgia", "serif"],
+                      "body-sm": ["Inter", "sans-serif"],
+                      "headline-md": ["Georgia", "serif"],
+                      "label-md": ["Inter", "sans-serif"],
+                      "body-md": ["Inter", "sans-serif"],
+                      "body-lg": ["Inter", "sans-serif"],
+                      "headline-sm": ["Georgia", "serif"],
+                      "label-lg": ["Inter", "sans-serif"],
+                      "headline-lg": ["Georgia", "serif"],
+                      "button": ["Inter", "sans-serif"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                      "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "button": ["16px", {"lineHeight": "24px", "fontWeight": "600"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased pb-24 md:pb-0">
+<!-- TopAppBar (Mobile & Desktop) -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full top-0 sticky z-40">
+<div class="flex items-center gap-4">
+<button aria-label="Menu" class="md:hidden p-2 text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 duration-100 rounded-full">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<div class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim">
+                BloodPulse
+            </div>
+</div>
+<!-- Desktop Nav Items (Hidden on Mobile) -->
+<nav class="hidden md:flex gap-8 items-center font-label-lg text-label-lg">
+<a class="text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Home</a>
+<a class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity" href="#">Communities</a>
+<a class="text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Donors</a>
+<a class="text-on-surface-variant hover:opacity-80 transition-opacity" href="#">Profile</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg grid grid-cols-4 md:grid-cols-12 gap-gutter">
+<div class="col-span-4 md:col-span-12 mb-md">
+<h1 class="font-headline-md text-headline-md text-on-surface mb-sm">Communities</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Find donors and drives in your area.</p>
+</div>
+<!-- Segmented Control -->
+<div class="col-span-4 md:col-span-8 md:col-start-3 mb-lg">
+<div class="flex p-1 bg-surface-container-high rounded-full w-full max-w-md mx-auto">
+<button class="flex-1 py-2 px-4 rounded-full font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors">
+                    National
+                </button>
+<button class="flex-1 py-2 px-4 rounded-full font-label-lg text-label-lg bg-surface shadow-sm text-primary transition-colors">
+                    Local
+                </button>
+</div>
+</div>
+<!-- Search & Filter -->
+<div class="col-span-4 md:col-span-10 md:col-start-2 mb-lg flex flex-col sm:flex-row gap-4 items-center">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline/30 rounded-full font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-tertiary focus:border-transparent transition-shadow" placeholder="Search by division, district, or upazila..." type="text">
+</div>
+
+</div>
+<!-- Breadcrumbs Navigation -->
+<div class="col-span-4 md:col-span-12 mb-md flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-on-primary">1</span>
+<span class="text-primary font-bold">Division</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md opacity-60">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-surface-container-high text-on-surface-variant">2</span>
+<span class="">District</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md opacity-60">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-surface-container-high text-on-surface-variant">3</span>
+<span class="">Upazila</span>
+</div>
+</div><div class="col-span-4 md:col-span-12 mb-lg flex gap-3 items-center flex-row">
+
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-high border border-outline-variant cursor-pointer hover:bg-surface-container-highest transition-colors">
+<span class="font-label-md text-label-md">All Divisions</span>
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-high border border-outline-variant cursor-pointer hover:bg-surface-container-highest transition-colors opacity-60">
+<span class="font-label-md text-label-md">Select District</span>
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-high border border-outline-variant cursor-pointer hover:bg-surface-container-highest transition-colors opacity-60">
+<span class="font-label-md text-label-md">Select Upazila</span>
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</div>
+
+</div>
+<!-- Division Selection Grid -->
+<div class="col-span-4 md:col-span-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"><button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="apartment">apartment</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Dhaka</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="anchor">anchor</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Chattogram</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="spa">spa</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Rajshahi</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="park">park</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Khulna</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="directions_boat">directions_boat</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Barishal</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="eco">eco</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Sylhet</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="grass">grass</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Rangpur</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button>
+<button class="flex flex-col items-center justify-center p-6 bg-surface-container-lowest rounded-lg border border-outline/20 hover:border-primary/50 hover:shadow-lg transition-all group group-focus:ring-2 ring-tertiary text-center cursor-pointer relative overflow-hidden">
+<div class="w-12 h-12 bg-primary-container/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary" data-icon="nature">nature</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface mb-1">Mymensingh</span>
+
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+</button></div><section class="col-span-4 md:col-span-12 mt-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-md">Local Area Guides</h2>
+<div class="bg-surface-container-low p-6 rounded-lg border border-outline/20">
+<!-- Search Bar -->
+<div class="relative w-full max-w-md mb-lg">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline/30 rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-tertiary transition-shadow" placeholder="Search guides by name or area..." type="text">
+</div>
+<!-- Guide Card -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest border border-outline-variant rounded-full max-w-md hover:shadow-sm transition-shadow">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full border-2 border-primary overflow-hidden">
+<img alt="Dr. Rahman Kabir" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFBUxn37SYf6rcsVYZGsNwbdfnoGvXHwGr8qtFGJyp5LmLugUIhdvsVMf3pgJaC1xh0bkhO3kVw2XtauYFy4yUkkYsaZHdLvanQUhWg2ypPBE8lgJERM3yQr457_zSrAlR-E66uBIEyatI9IGQrrNWtewqR1DZg9yga8E62YLG0gjmfdDlGc5ugb2fbw4NWnOrRt2uqNhq6FKjoiv32bsXl84qajzrGTF0Kf4a-W_EYOw14u1xy3ry">
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Dr. Rahman Kabir</h3>
+<p class="text-on-surface-variant text-sm">Uttara, Dhaka</p>
+</div>
+</div>
+<div class="flex gap-2 pr-2">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-primary hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm">call</span>
+</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-primary hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest border border-outline-variant rounded-full max-w-md hover:shadow-sm transition-shadow mt-4">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-primary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-headline-md">add</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Become a Guide</h3>
+<p class="text-on-surface-variant text-sm">Support your local community</p>
+</div>
+</div>
+<div class="pr-2">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-full font-label-md text-label-md hover:opacity-90 transition-opacity active:scale-95">Apply Now</button>
+</div>
+</div></div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface dark:bg-surface-dim shadow-[0_-4px_12px_rgba(142,125,127,0.04)] fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe rounded-t-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors rounded-full p-2" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="group" data-weight="fill" style="font-variation-settings: &quot;FILL&quot; 1;">group</span>
+<span class="font-label-md text-label-md">Communities</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors rounded-full p-2" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="bloodtype">bloodtype</span>
+<span class="font-label-md text-label-md">Donors</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors rounded-full p-2" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</a>
+</nav>
+<style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+
+
+
+
+
+</body></html>

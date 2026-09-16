@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/widgets/responsive_layout.dart';
 import '../../core/widgets/blood_pulse_app_bar.dart';
 import '../../core/widgets/shimmer_loading_widget.dart';
 import '../../models/chat_message_model.dart';
@@ -129,9 +128,7 @@ class _ChatScreenState extends State<ChatScreen> {
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ResponsiveLayout(
-        padding: EdgeInsets.zero,
-        child: Column(
+      body: Column(
           children: [
             // Recipient Header
             _buildChatHeader(),
@@ -146,6 +143,25 @@ class _ChatScreenState extends State<ChatScreen> {
                     currentUserId: widget.currentUserId,
                   ),
                   builder: (ctx, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.sync_problem_rounded, color: AppColors.error, size: 36),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Real-time connection error. Retrying...',
+                                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
                     if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                       return ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -158,6 +174,38 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
 
                     final messages = snapshot.data ?? [];
+
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFFF0F1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.lock_rounded, color: AppColors.primary, size: 32),
+                              ),
+                              const SizedBox(height: 14),
+                              const Text(
+                                'End-to-End Encrypted Thread',
+                                style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Messages and attachments are secured with RSA+AES encryption. Send a message to coordinate blood donation.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
 
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -173,7 +221,6 @@ class _ChatScreenState extends State<ChatScreen> {
             _buildInputBar(),
           ],
         ),
-      ),
     );
   }
 

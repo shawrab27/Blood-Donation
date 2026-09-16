@@ -129,7 +129,11 @@ class ChatService {
       },
     };
 
-    await docRef.set(data);
+    try {
+      await docRef.set(data);
+    } catch (e) {
+      debugPrint('[ChatService] Firestore set document error: $e');
+    }
 
     // Also update the mock stream so the UI reflects the sent message even
     // in environments where Firestore listeners have not been wired to the
@@ -163,7 +167,7 @@ class ChatService {
     // Primary: live Firestore stream with E2EE decryption.
     try {
       return _messages(chatId)
-          .orderBy(_Fields.timestamp)
+          .orderBy(_Fields.timestamp, descending: false)
           .snapshots()
           .asyncMap((snapshot) async {
         final messages = <ChatMessageModel>[];
@@ -174,12 +178,15 @@ class ChatService {
           messages.add(msg);
         }
 
-        // Auto-mark incoming messages as read.
-        if (currentUserId != null) {
+        // Auto-mark incoming messages as read in real time.
+        if (currentUserId != null && snapshot.docs.isNotEmpty) {
           _batchMarkAsRead(chatId, snapshot, currentUserId);
         }
 
         return messages;
+      }).handleError((error) {
+        debugPrint('[ChatService] Firestore stream error fallback: $error');
+        return _getMockStream(chatId);
       });
     } catch (e) {
       debugPrint('[ChatService] Firestore stream error, using mock: $e');

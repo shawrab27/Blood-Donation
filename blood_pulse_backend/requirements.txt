@@ -7,3 +7,8 @@ djangorestframework_simplejwt==5.5.1
 PyJWT==2.13.0
 sqlparse==0.5.5
 tzdata==2026.3
+python-dotenv==1.2.3
+Pillow==11.1.0
+psycopg2-binary==2.9.10
+gunicorn==23.0.0
+whitenoise==6.11.0

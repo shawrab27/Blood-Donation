@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:blood_pulse/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/capsule_button.dart';
 import '../../core/widgets/custom_input_field.dart';
-import '../../core/widgets/responsive_layout.dart';
 import '../../providers/profile_countdown_provider.dart';
 
 /// Interactive Profile Screen with Edit Profile Modal, Date Picker for Last Donation Date,
@@ -252,17 +252,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   Widget build(BuildContext context) {
     final state = ref.watch(profileCountdownProvider);
     final user = state.user;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: ResponsiveLayout(
-        backgroundColor: AppColors.surface,
-        padding: EdgeInsets.zero,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
                 // ── Section 1: Header, Avatar & Badge Tier ───────────────────────
                 Center(
                   child: Stack(
@@ -322,10 +318,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            user?.name ?? 'Dr. S. M. Shawrab',
-                            style: const TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                          Flexible(
+                            child: Text(
+                              user?.name ?? 'Dr. S. M. Shawrab',
+                              style: const TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
@@ -346,6 +346,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         child: Text(
                           '${user?.role ?? "Student"} • ${user?.institution ?? "Department of CSE"}',
                           style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -401,9 +403,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Registered Blood Group:',
-                            style: TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                          Text(
+                            l10n?.regBloodGroup ?? 'Registered Blood Group:',
+                            style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -448,23 +450,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 height: 72,
                                 child: CircularProgressIndicator(
                                   value: state.daysRemaining == 0 ? 1.0 : (120 - state.daysRemaining) / 120.0,
-                                  strokeWidth: 8,
-                                  backgroundColor: Colors.grey.shade200,
-                                  color: state.daysRemaining == 0 ? AppColors.success : AppColors.primary,
+                                  strokeWidth: 7,
+                                  backgroundColor: const Color(0xFFF3DDE0),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
                                 ),
                               ),
                               Text(
-                                state.daysRemaining == 0 ? 'READY' : '${state.daysRemaining}d',
-                                style: TextStyle(
-                                  fontFamily: 'Georgia',
-                                  fontSize: state.daysRemaining == 0 ? 12 : 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: state.daysRemaining == 0 ? AppColors.success : AppColors.primary,
-                                ),
+                                '${state.daysRemaining}d',
+                                style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                               ),
                             ],
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 18),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,7 +490,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Last Donation Date:', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                          Text(l10n?.profileLastDonated ?? 'Last Donation Date:', style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.secondary)),
                           TextButton.icon(
                             onPressed: _selectLastDonationDate,
                             icon: const Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.primary),
@@ -518,10 +515,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                   unselectedLabelColor: AppColors.neutral,
                   indicatorColor: AppColors.primary,
                   labelStyle: const TextStyle(fontFamily: 'Georgia', fontWeight: FontWeight.bold, fontSize: 13),
-                  tabs: const [
-                    Tab(text: 'Requests Chart'),
-                    Tab(text: 'User Posts Log'),
-                    Tab(text: 'Donation History'),
+                  tabs: [
+                    const Tab(text: 'Requests Chart'),
+                    const Tab(text: 'User Posts Log'),
+                    Tab(text: l10n?.profileDonationHistory ?? 'Donation History'),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -658,10 +655,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 ),
                 const SizedBox(height: 24),
               ],
-            );
-          },
-        ),
-      ),
+            ),
     );
   }
 }

@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodPulse | Blood Donation & Health Community</title>
+    <meta name="description" content="BloodPulse - Connecting blood donors and recipients across Bangladesh. Real-time blood matching, verified organizations, and health tools.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Georgia:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #FAF3F2;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            color: #2B2B2B;
+            min-height: 100vh;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
+        @keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.6; } }
+        @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .animate-float { animation: floatLogo 3.5s ease-in-out infinite; }
+        .pulse-live { animation: pulseDot 2s ease-in-out infinite; }
+        .tap-scale { transition: transform 0.15s ease, opacity 0.15s ease; }
+        .tap-scale:active { transform: scale(0.97); }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .glass-card {
+            background: #FFFFFF;
+            border: 1px solid rgba(230, 189, 186, 0.6);
+        }
+        .pill-button {
+            border-radius: 9999px;
+            padding: 10px 22px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .pill-input {
+            border-radius: 9999px;
+            border: 1.5px solid rgba(145, 111, 108, 0.3);
+            background: #FFFFFF;
+            padding: 10px 18px;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .pill-input:focus {
+            border-color: #C30121;
+            box-shadow: 0 0 0 3px rgba(195, 1, 33, 0.15);
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            border-radius: 9999px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #555555;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .sidebar-link:hover {
+            background: #FFEAEB;
+            color: #C30121;
+        }
+        .sidebar-link.active {
+            background: #C30121;
+            color: #FFFFFF;
+            box-shadow: 0 4px 14px rgba(195, 1, 33, 0.25);
+        }
+        .sidebar-link.active .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 1px solid #E6BDBA;
+            z-index: 100;
+            min-width: 190px;
+            overflow: hidden;
+        }
+        .dropdown-menu.show { display: block; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-content {
+            background: #FFFFFF;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 28px 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .notif-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            background-color: #C30121;
+            border: 2px solid #FFFFFF;
+            border-radius: 50%;
+        }
+        /* Gauge Arc styling */
+        .gauge-circle {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#C30121 0% 85%, #F0D5D3 85% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gauge-inner {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Interactive Map Pin Styling */
+        .map-pin {
+            cursor: pointer;
+            transition: transform 0.2s ease, fill 0.2s ease;
+        }
+        .map-pin:hover {
+            transform: scale(1.3);
+            fill: #C30121 !important;
+        }
+    </style>
+</head>
+<body class="bg-[#FAF3F2]">
+
+<div class="min-h-screen flex flex-col lg:flex-row">
+
+    <!-- ========================================================================= -->
+    <!-- 1. EXACT STITCH DESKTOP SIDEBAR (w-60 to w-64, sticky top-0) -->
+    <!-- ========================================================================= -->
+    <aside class="hidden lg:flex flex-col justify-between w-60 xl:w-64 bg-[#FFF8F7] border-r border-[#E6BDBA]/70 p-5 sticky top-0 h-screen z-30 shrink-0">
+        <div class="space-y-6">
+            <!-- Brand Logo Header -->
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchMainTab('dashboard')">
+                <img src="assets/images/Blood Pulse logo.jpg" onerror="this.src='https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=80&auto=format&fit=crop&q=80'" class="w-9 h-9 rounded-full object-cover shadow-sm ring-2 ring-[#C30121]/30" alt="BloodPulse Logo">
+                <div>
+                    <span class="font-serif font-bold text-xl text-[#C30121] tracking-tight block">BloodPulse</span>
+                    <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest block">Saving lives together</span>
+                </div>
+            </div>
+
+            <!-- Persistent Desktop Navigation Links -->
+            <nav class="space-y-1.5">
+                <button onclick="switchMainTab('feed')" class="sidebar-link w-full" data-tab="feed">
+                    <span class="material-symbols-outlined text-xl">feed</span>
+                    <span>Feed</span>
+                </button>
+                <button onclick="switchMainTab('dashboard')" class="sidebar-link w-full active" data-tab="dashboard">
+                    <span class="material-symbols-outlined text-xl">grid_view</span>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchMainTab('blood-hub')" class="sidebar-link w-full" data-tab="blood-hub">
+                    <span class="material-symbols-outlined text-xl">bloodtype</span>
+                    <span>Blood Hub</span>
+                </button>
+                <button onclick="switchMainTab('health')" class="sidebar-link w-full" data-tab="health">
+                    <span class="material-symbols-outlined text-xl">health_and_safety</span>
+                    <span>Health Hub</span>
+                </button>
+                <button onclick="switchMainTab('communities')" class="sidebar-link w-full" data-tab="communities">
+                    <span class="material-symbols-outlined text-xl">diversity_3</span>
+                    <span>Community</span>
+                </button>
+                <button onclick="switchMainTab('profile')" class="sidebar-link w-full" data-tab="profile">
+                    <span class="material-symbols-outlined text-xl">person</span>
+                    <span>Profile</span>
+                </button>
+            </nav>
+
+            <!-- Stitch Red Capsule Action Button -->
+            <div class="pt-4">
+                <button onclick="openModal('modal-blood-request')" class="tap-scale pill-button w-full bg-[#C30121] text-white hover:bg-[#960017] shadow-md shadow-red-900/20 text-xs py-3 font-bold">
+                    <span class="material-symbols-outlined text-lg">campaign</span>
+                    <span>Emergency Request</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sidebar User Badge -->
+        <div class="p-3 bg-white rounded-2xl border border-[#E6BDBA]/60 shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Dr. Julian Vance" class="w-9 h-9 rounded-full object-cover border border-[#C30121]">
+                <div>
+                    <h4 class="font-bold text-xs text-[#2B2B2B]" id="sidebar-user-name">Dr. Julian Vance</h4>
+                    <span class="text-[10px] text-[#C30121] font-bold" id="sidebar-user-tier">O- Whole Blood Donor</span>
+                </div>
+            </div>
+            <button onclick="switchMainTab('profile')" class="p-1 rounded-full text-gray-400 hover:text-[#C30121]">
+                <span class="material-symbols-outlined text-base">navigate_next</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- 2. MAIN APP CONTENT CONTAINER -->
+    <!-- ========================================================================= -->
+    <div class="flex-1 flex flex-col min-w-0 pb-24 lg:pb-8">
+
+        <!-- TOP BAR -->
+        <header id="main-header" class="sticky top-0 z-40 bg-[#FFF8F7]/95 backdrop-blur border-b border-[#E6BDBA]/70 px-4 lg:px-8 py-3.5 flex items-center justify-between shadow-sm">
+            <!-- Mobile Brand Header -->
+            <div class="flex items-center gap-2.5 lg:hidden cursor-pointer" onclick="switchMainTab('dashboard')">
+                <img src="assets/images/Blood Pulse logo.jpg" onerror="this.src='https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=64&auto=format&fit=crop&q=80'" class="w-8 h-8 rounded-full object-cover ring-2 ring-[#C30121]/20" alt="BloodPulse Logo">
+                <span class="font-serif font-bold text-xl text-[#C30121] tracking-tight">BloodPulse</span>
+            </div>
+
+            <!-- Page Title / Subtitle Slot -->
+            <div class="hidden lg:block">
+                <h1 id="topbar-page-title" class="font-serif font-bold text-xl text-[#2B2B2B]">Desktop Dashboard</h1>
+            </div>
+
+            <!-- Search Bar across Desktop -->
+            <div class="hidden md:flex items-center flex-1 max-w-md mx-6 relative">
+                <span class="material-symbols-outlined absolute left-3.5 text-gray-400 text-lg">search</span>
+                <input type="text" placeholder="Search donors, blood groups (e.g. O-), hospitals..." class="pill-input pl-10 text-xs py-2 bg-white/90 border-[#E6BDBA]/60">
+            </div>
+
+            <!-- Right Controls -->
+            <div class="flex items-center gap-2 ml-auto">
+                <button onclick="showNotificationCenter()" class="tap-scale relative p-2.5 rounded-full bg-white hover:bg-red-50 text-[#C30121] border border-[#E6BDBA]/60 shadow-sm" title="Notifications">
+                    <span class="material-symbols-outlined text-xl">notifications</span>
+                    <span class="notif-badge"></span>
+                </button>
+
+                <div class="relative">
+                    <button onclick="toggleTopMenu()" class="tap-scale p-2.5 rounded-full bg-white hover:bg-red-50 text-[#2B2B2B] border border-[#E6BDBA]/60 shadow-sm" title="More Options">
+                        <span class="material-symbols-outlined text-xl">more_vert</span>
+                    </button>
+                    <div id="top-dropdown-menu" class="dropdown-menu">
+                        <a href="javascript:void(0)" onclick="closeTopMenu(); openModal('modal-admin');" class="flex items-center gap-2.5 px-4 py-3 text-xs font-semibold text-[#2B2B2B] hover:bg-red-50 border-b border-[#E6BDBA]/40">
+                            <span class="material-symbols-outlined text-[#C30121] text-base">admin_panel_settings</span> Admin Dashboard
+                        </a>
+                        <a href="javascript:void(0)" onclick="closeTopMenu(); alert('BloodPulse connects voluntary donors and verified hospitals across Bangladesh.');" class="flex items-center gap-2.5 px-4 py-3 text-xs font-semibold text-[#2B2B2B] hover:bg-red-50 border-b border-[#E6BDBA]/40">
+                            <span class="material-symbols-outlined text-[#C30121] text-base">info</span> Learn more
+                        </a>
+                        <a href="javascript:void(0)" onclick="closeTopMenu(); alert('Emergency Hotline: 999\nHealth Directorate: 16263\nSupport: support@bloodpulse.org');" class="flex items-center gap-2.5 px-4 py-3 text-xs font-semibold text-[#2B2B2B] hover:bg-red-50 border-b border-[#E6BDBA]/40">
+                            <span class="material-symbols-outlined text-[#C30121] text-base">support_agent</span> Contact us
+                        </a>
+                        <a href="javascript:void(0)" onclick="triggerLogoutFlow();" class="flex items-center gap-2.5 px-4 py-3 text-xs font-semibold text-[#C30121] hover:bg-red-50">
+                            <span class="material-symbols-outlined text-[#C30121] text-base">logout</span> Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN VIEWPORTS CONTAINER -->
+        <main class="p-4 lg:p-7 max-w-[1360px] w-full mx-auto">
+
+            <!-- ========================================================================= -->
+            <!-- SCREEN 2: 📊 BLOODPULSE - DESKTOP DASHBOARD -->
+            <!-- ========================================================================= -->
+            <section id="tab-dashboard" class="tab-content active space-y-6">
+                <!-- Section 1: Hero Cards -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left Flex 8: Health Score Radial Gauge Hero Card -->
+                    <div class="lg:col-span-8 bg-white rounded-3xl p-7 border border-[#E6BDBA]/60 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+                        <div class="gauge-circle shrink-0">
+                            <div class="gauge-inner">
+                                <span class="font-serif text-3xl font-extrabold text-[#C30121]" id="dash-health-score">85</span>
+                                <span class="text-[9px] font-bold text-gray-400 uppercase">Ready Score</span>
+                            </div>
+                        </div>
+                        <div class="space-y-3 flex-1 text-center sm:text-left">
+                            <div class="space-y-1">
+                                <h2 class="font-serif text-2xl font-bold text-[#2B2B2B]">Your Vitals are Peak</h2>
+                                <p class="text-xs text-gray-600 leading-relaxed">
+                                    You gave blood 45 days ago. Your body has fully replenished red blood cells and your hydration and hemoglobin parameters are in the top 10% of donors in your community.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 justify-center sm:justify-start pt-1">
+                                <div class="bg-red-50/70 border border-[#E6BDBA] px-4 py-2 rounded-2xl text-center">
+                                    <p class="text-[10px] text-gray-500 font-semibold uppercase">Next Safe Donation</p>
+                                    <p class="font-serif text-base font-bold text-[#C30121]" id="dash-cooldown-days">42 Days</p>
+                                </div>
+                                <div class="bg-red-50/70 border border-[#E6BDBA] px-4 py-2 rounded-2xl text-center">
+                                    <p class="text-[10px] text-gray-500 font-semibold uppercase">Total Donated</p>
+                                    <p class="font-serif text-base font-bold text-[#2B2B2B]" id="dash-total-donations">12 Units</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Flex 4: Quick Blood Group & Clinic Card -->
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="bg-[#C30121] rounded-3xl p-6 text-white shadow-lg space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-white/80 uppercase font-bold tracking-wider">Donor Group</span>
+                                <span class="bg-white/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full">ACTIVE</span>
+                            </div>
+                            <h3 class="font-serif text-3xl font-extrabold" id="dash-blood-group">O- Negative</h3>
+                            <p class="text-xs text-white/90">Whole Blood Donor • Saint Mary's Hub</p>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-5 border border-[#E6BDBA]/60 shadow-sm flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-[#0D68AA] text-2xl">local_hospital</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-[#2B2B2B]">Saint Mary's Hub</h4>
+                                    <p class="text-[10px] text-gray-500">Dhanmondi, Dhaka • 1.4 km</p>
+                                </div>
+                            </div>
+                            <button onclick="alert('Opening map navigation...');" class="pill-button bg-red-50 text-[#C30121] text-[11px] py-1.5 px-3 font-bold border border-[#E6BDBA]">Directions →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Donation Impact Bar Chart + Recent Activity -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left Flex 8: Donation Impact Bar Chart -->
+                    <div class="lg:col-span-8 bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Donation Impact History</h3>
+                                <p class="text-xs text-gray-500">Monthly blood volume donated across calendar year</p>
+                            </div>
+                            <span class="text-xs font-bold text-[#C30121] bg-red-50 px-3 py-1 rounded-full border border-red-100">2025 - 2026</span>
+                        </div>
+
+                        <div class="h-44 flex items-end justify-between gap-2 pt-6 px-2">
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-16"></div><span class="text-[10px] text-gray-500 font-semibold">Jan</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-10"></div><span class="text-[10px] text-gray-500 font-semibold">Feb</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-24"></div><span class="text-[10px] text-gray-500 font-semibold">Mar</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-14"></div><span class="text-[10px] text-gray-500 font-semibold">Apr</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-28"></div><span class="text-[10px] text-gray-500 font-semibold">May</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-[#C30121] rounded-t-lg h-36 shadow-md"></div><span class="text-[10px] font-bold text-[#C30121]">Jun (Peak)</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-20"></div><span class="text-[10px] text-gray-500 font-semibold">Jul</span></div>
+                            <div class="flex-1 flex flex-col items-center gap-1.5"><div class="w-full bg-red-100 rounded-t-lg h-16"></div><span class="text-[10px] text-gray-500 font-semibold">Aug</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Flex 4: Recent Activity -->
+                    <div class="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                        <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Recent Activity</h3>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex items-start gap-3 p-2.5 rounded-2xl bg-red-50/40">
+                                <span class="material-symbols-outlined text-[#C30121] text-lg">bloodtype</span>
+                                <div>
+                                    <p class="font-bold text-[#2B2B2B]">Blood Request Filled</p>
+                                    <p class="text-gray-500">Dhaka Medical College • 2 days ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-2.5 rounded-2xl bg-blue-50/40">
+                                <span class="material-symbols-outlined text-[#0D68AA] text-lg">verified</span>
+                                <div>
+                                    <p class="font-bold text-[#2B2B2B]">Gold Badge Earned</p>
+                                    <p class="text-gray-500">Completed 12 donations • 1 week ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-2.5 rounded-2xl bg-yellow-50/40">
+                                <span class="material-symbols-outlined text-yellow-700 text-lg">water_drop</span>
+                                <div>
+                                    <p class="font-bold text-[#2B2B2B]">Daily Target Met</p>
+                                    <p class="text-gray-500">Hydration score 100% • Yesterday</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Nearby Urgent Requests Grid -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-serif text-xl font-bold text-[#2B2B2B]">Nearby Urgent Requests</h3>
+                        <button onclick="switchMainTab('blood-hub')" class="text-xs font-bold text-[#C30121] hover:underline">View Map & Filter →</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-[#E6BDBA]/60 shadow-sm space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="bg-red-100 text-[#C30121] font-bold text-xs px-2.5 py-0.5 rounded-full">O- Needed</span>
+                                <span class="text-[10px] text-gray-400">1.2 km away</span>
+                            </div>
+                            <h4 class="font-bold text-sm text-[#2B2B2B]">Holy Family Red Crescent Hospital</h4>
+                            <p class="text-xs text-gray-500">Trauma ICU • 2 Units Needed</p>
+                            <button onclick="alert('Contacting Hospital Coordination...');" class="w-full pill-button bg-[#C30121] text-white text-[11px] py-1.5 font-bold mt-2">Respond</button>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl border border-[#E6BDBA]/60 shadow-sm space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="bg-red-100 text-[#C30121] font-bold text-xs px-2.5 py-0.5 rounded-full">A+ Needed</span>
+                                <span class="text-[10px] text-gray-400">2.5 km away</span>
+                            </div>
+                            <h4 class="font-bold text-sm text-[#2B2B2B]">Dhaka Medical College Hospital</h4>
+                            <p class="text-xs text-gray-500">Surgery Ward 8 • 3 Units Needed</p>
+                            <button onclick="alert('Contacting Hospital Coordination...');" class="w-full pill-button bg-[#C30121] text-white text-[11px] py-1.5 font-bold mt-2">Respond</button>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-2xl border border-[#E6BDBA]/60 shadow-sm space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="bg-red-100 text-[#C30121] font-bold text-xs px-2.5 py-0.5 rounded-full">B- Needed</span>
+                                <span class="text-[10px] text-gray-400">3.8 km away</span>
+                            </div>
+                            <h4 class="font-bold text-sm text-[#2B2B2B]">Evercare Hospital Dhaka</h4>
+                            <p class="text-xs text-gray-500">Pediatric Unit • 1 Unit Needed</p>
+                            <button onclick="alert('Contacting Hospital Coordination...');" class="w-full pill-button bg-[#C30121] text-white text-[11px] py-1.5 font-bold mt-2">Respond</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================================= -->
+            <!-- SCREEN 1: 📰 COMMUNITY NEWSFEED -->
+            <!-- ========================================================================= -->
+            <section id="tab-feed" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left 8 Cols -->
+                    <div class="lg:col-span-8 space-y-5">
+                        <div class="space-y-1">
+                            <h2 class="font-serif text-3xl font-bold text-[#2B2B2B]">Community Feed</h2>
+                            <p class="text-xs text-gray-500">Share your blood journey and live donation updates across Bangladesh.</p>
+                        </div>
+
+                        <!-- Post Create Card -->
+                        <div class="bg-white rounded-3xl p-5 border border-[#E6BDBA]/60 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Sarah" class="w-10 h-10 rounded-full object-cover border border-[#C30121]">
+                                <button onclick="openCreatePostModal()" class="w-full text-left bg-red-50/50 hover:bg-red-50 border border-[#E6BDBA]/70 text-gray-500 rounded-full px-5 py-3 text-xs transition">
+                                    Share a story or request for assistance...
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Featured Hospital Request Card -->
+                        <article class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center text-[#C30121] font-bold">
+                                        <span class="material-symbols-outlined">local_hospital</span>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="font-bold text-base text-[#2B2B2B]">City General Hospital</h3>
+                                            <span class="bg-blue-100 text-[#0D68AA] text-[10px] font-bold px-2 py-0.5 rounded-full">Verified</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400">45 minutes ago • Emergency Wing</p>
+                                    </div>
+                                </div>
+                                <span class="bg-red-100 text-[#C30121] font-bold text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-[#C30121] pulse-live"></span> CRITICAL NEED
+                                </span>
+                            </div>
+
+                            <p class="text-xs text-[#2B2B2B] leading-relaxed">
+                                <strong>CRITICAL NEED:</strong> We are currently critically low on <strong>O-Negative blood</strong> at the Blood Bank Center. If you are O-, your contribution could save up to 3 lives this evening.
+                            </p>
+
+                            <div class="rounded-2xl overflow-hidden h-56 bg-gray-100 relative">
+                                <img src="https://images.unsplash.com/photo-1579154204601-01588f351e67?w=800&auto=format&fit=crop&q=80" class="w-full h-full object-cover" alt="Hospital Blood Bank">
+                                <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur text-white text-[10px] px-3 py-1 rounded-full">
+                                    City General Hospital Central Blood Storage
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-2 border-t border-[#E6BDBA]/40">
+                                <div class="flex items-center gap-4 text-xs text-gray-500">
+                                    <button onclick="toggleLike(this)" class="flex items-center gap-1.5 font-semibold hover:text-[#C30121]"><span class="material-symbols-outlined text-lg text-[#C30121]">favorite</span> <span class="like-count">342</span></button>
+                                    <button onclick="alert('Comment box active in full release');" class="flex items-center gap-1.5 font-semibold hover:text-[#2B2B2B]"><span class="material-symbols-outlined text-lg">chat_bubble</span> 48</button>
+                                </div>
+                                <button onclick="alert('Direct routing instructions generated.');" class="pill-button bg-[#C30121] text-white text-xs font-bold py-2 px-5">Respond</button>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Right 4 Cols -->
+                    <div class="lg:col-span-4 space-y-5">
+                        <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                            <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Top Donors</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover" alt="David">
+                                        <div><p class="font-bold text-xs text-[#2B2B2B]">David Miller</p><p class="text-[10px] text-gray-400">24 Donations</p></div>
+                                    </div>
+                                    <span class="text-xs font-bold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">#1</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover" alt="Alena">
+                                        <div><p class="font-bold text-xs text-[#2B2B2B]">Alena Vance</p><p class="text-[10px] text-gray-400">19 Donations</p></div>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">#2</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-3">
+                            <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Trending Stories</h3>
+                            <div class="space-y-2 text-xs">
+                                <a href="javascript:void(0)" class="block text-[#0D68AA] font-semibold hover:underline">How Sandhani's Medical Drive Saved 200 Lives</a>
+                                <p class="text-gray-400 text-[10px]">Medical Hub • 1.2k reads</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================================= -->
+            <!-- SCREEN 4: 🩸 BLOODPULSE - BLOOD HUB DESKTOP -->
+            <!-- ========================================================================= -->
+            <section id="tab-blood-hub" class="tab-content space-y-6">
+                <!-- Blood Hub Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="font-serif text-3xl font-bold text-[#2B2B2B]">Blood Hub</h2>
+                        <p class="text-xs text-gray-600">Connect with donors or find recipients in your local community. Dedicated Coordination for every drop that matters.</p>
+                        <p class="text-xs text-[#C30121] font-semibold italic mt-0.5">"You give today, they live today."</p>
+                    </div>
+                    <button onclick="openModal('modal-blood-request')" class="pill-button bg-[#C30121] text-white hover:bg-[#960017] text-xs font-bold py-3 shadow-md shrink-0">
+                        <span class="material-symbols-outlined text-lg">campaign</span> Emergency Request
+                    </button>
+                </div>
+
+                <!-- Interactive Map & Filter Panel -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Left Filter & Live Status (4 cols) -->
+                    <div class="lg:col-span-4 space-y-5">
+                        <!-- Location Interactive Map Box -->
+                        <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-3">
+                            <h3 class="font-serif text-base font-bold text-[#2B2B2B]">Interactive Donor Map</h3>
+                            <p class="text-[11px] text-gray-500">Click a pin location to filter active donors in that area.</p>
+                            
+                            <!-- Vector SVG map container representing Savar/Dhaka locations -->
+                            <div class="bg-[#FFF8F7] border border-[#E6BDBA]/50 rounded-2xl p-4 flex items-center justify-center relative overflow-hidden h-44">
+                                <svg width="220" height="150" viewBox="0 0 220 150" class="w-full h-full text-[#E6BDBA]">
+                                    <!-- Simple styled map paths -->
+                                    <path d="M20,20 Q60,40 100,20 T180,40 T200,100 T120,130 T40,110 Z" fill="#FDF3F3" stroke="#E6BDBA" stroke-width="1.5"/>
+                                    <path d="M100,20 Q120,60 140,90" fill="none" stroke="#E6BDBA" stroke-dasharray="4"/>
+                                    <!-- Interactive Markers -->
+                                    <g class="map-pin" fill="#C30121" onclick="filterMapLocation('Savar', 'O-')">
+                                        <circle cx="60" cy="50" r="6" />
+                                        <text x="60" y="40" font-size="9" font-family="Inter" font-weight="bold" text-anchor="middle" fill="#2B2B2B">Savar</text>
+                                    </g>
+                                    <g class="map-pin" fill="#0D68AA" onclick="filterMapLocation('Dhanmondi', 'All')">
+                                        <circle cx="120" cy="80" r="6" />
+                                        <text x="120" y="70" font-size="9" font-family="Inter" font-weight="bold" text-anchor="middle" fill="#2B2B2B">Dhanmondi</text>
+                                    </g>
+                                    <g class="map-pin" fill="#0D68AA" onclick="filterMapLocation('Mirpur', 'All')">
+                                        <circle cx="95" cy="40" r="6" />
+                                        <text x="95" y="30" font-size="9" font-family="Inter" font-weight="bold" text-anchor="middle" fill="#2B2B2B">Mirpur</text>
+                                    </g>
+                                    <g class="map-pin" fill="#0D68AA" onclick="filterMapLocation('Gulshan', 'All')">
+                                        <circle cx="160" cy="60" r="6" />
+                                        <text x="160" y="50" font-size="9" font-family="Inter" font-weight="bold" text-anchor="middle" fill="#2B2B2B">Gulshan</text>
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                            <h3 class="font-serif text-base font-bold text-[#2B2B2B]">Search Filters</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-[#2B2B2B] mb-1">Blood Group</label>
+                                    <select class="pill-input text-xs" id="filter-hub-bg" onchange="runLocalFilters()">
+                                        <option value="All">All Blood Groups</option>
+                                        <option value="O-">O- (Negative)</option>
+                                        <option value="O+">O+ (Positive)</option>
+                                        <option value="A+">A+ (Positive)</option>
+                                        <option value="B+">B+ (Positive)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-[#2B2B2B] mb-1">Location</label>
+                                    <input type="text" id="filter-hub-loc" value="Dhaka" class="pill-input text-xs" oninput="runLocalFilters()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right 8 Cols: 6-Donor Card Grid -->
+                    <div class="lg:col-span-8 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" id="donor-cards-grid">
+                            <!-- Donor 1 -->
+                            <div class="bg-white rounded-2xl p-4 border border-[#E6BDBA]/60 shadow-sm text-center space-y-2.5 donor-item" data-bg="O-" data-loc="Dhanmondi">
+                                <span class="w-8 h-8 rounded-full bg-red-100 text-[#C30121] font-bold text-xs inline-flex items-center justify-center">O-</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-[#2B2B2B]">Dr. Julian Vance</h4>
+                                    <p class="text-[10px] text-gray-500">Dhanmondi • 1.2 km</p>
+                                </div>
+                                <div class="flex gap-1.5 pt-1">
+                                    <button onclick="startChatSimulation('Dr. Julian Vance')" class="flex-1 pill-button bg-[#C30121] text-white text-[10px] py-1.5 font-bold">Connect</button>
+                                </div>
+                            </div>
+
+                            <!-- Donor 2 -->
+                            <div class="bg-white rounded-2xl p-4 border border-[#E6BDBA]/60 shadow-sm text-center space-y-2.5 donor-item" data-bg="A+" data-loc="Mirpur">
+                                <span class="w-8 h-8 rounded-full bg-red-100 text-[#C30121] font-bold text-xs inline-flex items-center justify-center">A+</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-[#2B2B2B]">Anonymous Donor</h4>
+                                    <p class="text-[10px] text-gray-500">Mirpur • 3.5 km</p>
+                                </div>
+                                <div class="flex gap-1.5 pt-1">
+                                    <button onclick="startChatSimulation('Anonymous Donor (A+)')" class="flex-1 pill-button bg-[#2B2B2B] text-white text-[10px] py-1.5 font-bold">Send Request</button>
+                                </div>
+                            </div>
+
+                            <!-- Donor 3 -->
+                            <div class="bg-white rounded-2xl p-4 border border-[#E6BDBA]/60 shadow-sm text-center space-y-2.5 donor-item" data-bg="O-" data-loc="Savar">
+                                <span class="w-8 h-8 rounded-full bg-red-100 text-[#C30121] font-bold text-xs inline-flex items-center justify-center">O-</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-[#2B2B2B]">Sarah Jenkins</h4>
+                                    <p class="text-[10px] text-gray-500">Savar • 4.1 km</p>
+                                </div>
+                                <div class="flex gap-1.5 pt-1">
+                                    <button onclick="startChatSimulation('Sarah Jenkins')" class="flex-1 pill-button bg-[#C30121] text-white text-[10px] py-1.5 font-bold">Connect</button>
+                                </div>
+                            </div>
+
+                            <!-- Donor 4 -->
+                            <div class="bg-white rounded-2xl p-4 border border-[#E6BDBA]/60 shadow-sm text-center space-y-2.5 donor-item" data-bg="B+" data-loc="Gulshan">
+                                <span class="w-8 h-8 rounded-full bg-red-100 text-[#C30121] font-bold text-xs inline-flex items-center justify-center">B+</span>
+                                <div>
+                                    <h4 class="font-bold text-xs text-[#2B2B2B]">Jackson Miller</h4>
+                                    <p class="text-[10px] text-gray-500">Gulshan • 2.8 km</p>
+                                </div>
+                                <div class="flex gap-1.5 pt-1">
+                                    <button onclick="startChatSimulation('Jackson Miller')" class="flex-1 pill-button bg-[#C30121] text-white text-[10px] py-1.5 font-bold">Connect</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================================= -->
+            <!-- SCREEN 3: 🏥 HEALTH HUB DESKTOP -->
+            <!-- ========================================================================= -->
+            <section id="tab-health" class="tab-content space-y-6">
+                <!-- Top Row: Radial Gauge 82 + AI Report Analyzer -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 bg-white rounded-3xl p-7 border border-[#E6BDBA]/60 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Overall Health Score</span>
+                        <div class="gauge-circle">
+                            <div class="gauge-inner">
+                                <span class="font-serif text-4xl font-extrabold text-[#C30121]">82</span>
+                                <span class="text-[10px] font-bold text-gray-400 uppercase">Donation Fit</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-600 max-w-xs">Your biomarkers are optimal for both whole blood and platelet apheresis.</p>
+                    </div>
+
+                    <!-- AI Report Analyzer Upload Box -->
+                    <div class="lg:col-span-7 bg-white rounded-3xl p-7 border border-[#E6BDBA]/60 shadow-sm flex flex-col justify-between space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#C30121] text-2xl">smart_toy</span>
+                                <h3 class="font-serif text-xl font-bold text-[#2B2B2B]">AI Report Analyzer</h3>
+                            </div>
+                            <span class="bg-blue-100 text-[#0D68AA] text-[10px] font-bold px-2.5 py-0.5 rounded-full">AI Beta</span>
+                        </div>
+                        <p class="text-xs text-gray-600">Upload your latest lab test results for an instant clinical-grade eligibility summary.</p>
+
+                        <div class="border-2 border-dashed border-[#E6BDBA] rounded-2xl p-6 text-center bg-red-50/30 cursor-pointer hover:bg-red-50 transition space-y-2" onclick="document.getElementById('health-report-file').click()">
+                            <span class="material-symbols-outlined text-4xl text-[#C30121]">cloud_upload</span>
+                            <p class="text-xs font-bold text-[#2B2B2B]">Drag & drop lab report PDF or Click to browse</p>
+                            <input type="file" id="health-report-file" class="hidden" onchange="simulateReportAnalysis()">
+                        </div>
+
+                        <div id="report-ai-output" class="hidden p-3.5 rounded-xl bg-green-50 border border-green-200 text-xs space-y-1">
+                            <p class="font-bold text-green-900">✓ AI Report Summary Verified:</p>
+                            <p class="text-green-800">Hemoglobin: 14.5 g/dL (Normal: 13.5-17.5) • Platelets: 280,000 /mcL • Safe for whole blood or platelet donation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7 bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                        <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Health Calculators</h3>
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div class="p-3 bg-red-50/50 rounded-2xl border border-[#E6BDBA]/60 space-y-1">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase">BMI & Weight</span>
+                                <p class="font-serif text-xl font-bold text-[#C30121]" id="bmi-value">23.0</p>
+                                <span class="text-[9px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">Healthy</span>
+                            </div>
+                            <div class="p-3 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-1">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase">Hydration</span>
+                                <p class="font-serif text-xl font-bold text-[#0D68AA]" id="hydration-count">1.75L / 2.5L</p>
+                                <span class="text-[9px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">70% Target</span>
+                            </div>
+                            <div class="p-3 bg-green-50/50 rounded-2xl border border-green-100 space-y-1">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase">Blood Pressure</span>
+                                <p class="font-serif text-xl font-bold text-green-800">120/80</p>
+                                <span class="text-[9px] font-bold text-green-700 bg-green-100 px-1.5 py-0.5 rounded-full">Optimal</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="addWater()" class="flex-1 pill-button bg-blue-50 border border-[#0D68AA] text-[#0D68AA] text-xs font-bold py-2">+ 250mL Water</button>
+                            <button onclick="calculateBMI()" class="flex-1 pill-button bg-red-50 border border-[#C30121] text-[#C30121] text-xs font-bold py-2">Recalculate BMI</button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 rounded-3xl p-6 bg-gradient-to-br from-[#2B2B2B] to-[#1A1112] text-white shadow-md flex flex-col justify-between space-y-3">
+                        <div class="space-y-1">
+                            <span class="text-[10px] text-red-400 font-bold uppercase tracking-widest">Nutritional Science</span>
+                            <h4 class="font-serif text-xl font-bold">Superfoods For Blood Recovery</h4>
+                            <p class="text-xs text-gray-300">Boost iron absorption with vitamin-C rich citrus and leafy greens.</p>
+                        </div>
+                        <button onclick="alert('Nutrition guide loaded.');" class="pill-button bg-[#C30121] text-white text-xs font-bold py-2 self-start">Read Food Insight →</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================================= -->
+            <!-- SCREEN 5: 👤 USER PROFILE -->
+            <!-- ========================================================================= -->
+            <section id="tab-profile" class="tab-content space-y-6">
+                <!-- Top Profile Card -->
+                <div class="bg-white rounded-3xl p-7 border border-[#E6BDBA]/60 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                        <div class="relative w-24 h-24">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80" alt="Sarah" class="w-full h-full rounded-full object-cover border-2 border-[#C30121] shadow">
+                            <span class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#C30121] text-white flex items-center justify-center text-xs" title="Verified Member">
+                                <span class="material-symbols-outlined text-sm">verified</span>
+                            </span>
+                        </div>
+                        <div class="space-y-1">
+                            <h2 class="font-serif text-2xl font-bold text-[#2B2B2B]" id="profile-name">Dr. Julian Vance</h2>
+                            <p class="text-xs text-gray-500" id="profile-role">O- Whole Blood Donor • Member since 2024</p>
+                            <p class="text-[11px] text-gray-500">Dhaka Medical College & Hospital</p>
+                            <button onclick="alert('Profile edit modal opened.');" class="pill-button bg-red-50 text-[#C30121] text-[11px] py-1.5 px-4 font-bold border border-[#E6BDBA] mt-1">Edit Profile</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center bg-red-50/60 border border-[#E6BDBA] p-4 rounded-3xl text-center min-w-[170px]">
+                        <div class="font-serif text-3xl font-extrabold text-[#C30121]" id="profile-cooldown-gauge">42</div>
+                        <p class="text-[10px] font-bold text-gray-600 uppercase">Days Left</p>
+                        <p class="text-[10px] text-gray-400 mt-1">Next Eligible Date: April 10, 2026</p>
+                    </div>
+                </div>
+
+                <!-- Middle Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-8 bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Donation History</h3>
+                            <span class="text-xs font-bold text-[#C30121]" id="profile-total-donations">Total Log: 12</span>
+                        </div>
+
+                        <div class="space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between p-3.5 bg-red-50/40 rounded-2xl border border-[#E6BDBA]/40">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-[#C30121] text-xl">bloodtype</span>
+                                    <div>
+                                        <p class="font-bold text-[#2B2B2B]">Whole Blood Donation (450 mL)</p>
+                                        <p class="text-[11px] text-gray-500">Dhaka Medical College • Nov 20, 2025</p>
+                                    </div>
+                                </div>
+                                <span class="text-green-600 font-bold text-xs">Verified ✓</span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3.5 bg-red-50/40 rounded-2xl border border-[#E6BDBA]/40">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-[#C30121] text-xl">bloodtype</span>
+                                    <div>
+                                        <p class="font-bold text-[#2B2B2B]">Platelet Apheresis Donation</p>
+                                        <p class="text-[11px] text-gray-500">Evercare Hospital • Aug 14, 2025</p>
+                                    </div>
+                                </div>
+                                <span class="text-green-600 font-bold text-xs">Verified ✓</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right 4 cols -->
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-3 text-xs">
+                            <h3 class="font-serif text-base font-bold text-[#2B2B2B]">Health Vitals</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between py-1 border-b border-gray-100">
+                                    <span class="text-gray-500">Hemoglobin Level</span>
+                                    <span class="font-bold text-[#2B2B2B]">15.1 g/dL</span>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-gray-100">
+                                    <span class="text-gray-500">Blood Pressure</span>
+                                    <span class="font-bold text-[#2B2B2B]">118/78</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================================= -->
+            <!-- SCREEN: 👥 COMMUNITY DIRECTORY -->
+            <!-- ========================================================================= -->
+            <section id="tab-communities" class="tab-content space-y-6">
+                <div class="space-y-1">
+                    <h2 class="font-serif text-3xl font-bold text-[#2B2B2B]">Volunteer Organizations & Communities</h2>
+                    <p class="text-xs text-gray-600">Connect with national blood donor networks and volunteer societies across Bangladesh.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-12 h-12 rounded-full bg-[#C30121] text-white flex items-center justify-center font-bold text-base">বাঁধন</div>
+                            <span class="bg-red-50 text-[#C30121] text-[10px] font-bold px-2.5 py-0.5 rounded-full">National</span>
+                        </div>
+                        <h4 class="font-bold text-base text-[#2B2B2B]">Badhan (বাঁধন)</h4>
+                        <p class="text-xs text-gray-600 leading-relaxed italic">"Voluntary blood donors running free testing across all universities in Bangladesh."</p>
+                        <button onclick="alert('Calling Badhan Central: 01712000000');" class="pill-button w-full bg-[#C30121] text-white text-xs font-bold py-2">Call Helpline</button>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-6 border border-[#E6BDBA]/60 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="w-12 h-12 rounded-full bg-[#0D68AA] text-white flex items-center justify-center font-bold text-base">সন্ধানী</div>
+                            <span class="bg-blue-50 text-[#0D68AA] text-[10px] font-bold px-2.5 py-0.5 rounded-full">Medical Units</span>
+                        </div>
+                        <h4 class="font-bold text-base text-[#2B2B2B]">Sandhani (সন্ধানী)</h4>
+                        <p class="text-xs text-gray-600 leading-relaxed italic">"Pioneering blood donor movement in medical colleges across Bangladesh."</p>
+                        <button onclick="alert('Calling Sandhani Central: 01819000000');" class="pill-button w-full bg-[#0D68AA] text-white text-xs font-bold py-2">Call Helpline</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. MOBILE PERSISTENT BOTTOM NAV BAR -->
+    <!-- ========================================================================= -->
+    <nav id="bottom-nav" class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#FFF8F7]/95 backdrop-blur border-t border-[#E6BDBA] px-2 py-1.5 flex items-center justify-around z-40 shadow-lg">
+        <button onclick="switchMainTab('feed')" class="nav-tab-btn flex flex-col items-center gap-0.5 p-1 text-gray-500 hover:text-[#C30121]" data-tab="feed">
+            <span class="material-symbols-outlined text-2xl">feed</span>
+            <span class="text-[10px] font-medium">Feed</span>
+        </button>
+        <button onclick="switchMainTab('dashboard')" class="nav-tab-btn flex flex-col items-center gap-0.5 p-1 text-[#C30121]" data-tab="dashboard">
+            <span class="material-symbols-outlined text-2xl fill-icon">grid_view</span>
+            <span class="text-[10px] font-bold">Dashboard</span>
+        </button>
+        <button onclick="switchMainTab('blood-hub')" class="nav-tab-btn flex flex-col items-center gap-0.5 p-1 text-gray-500 hover:text-[#C30121]" data-tab="blood-hub">
+            <span class="material-symbols-outlined text-2xl">bloodtype</span>
+            <span class="text-[10px] font-medium">Blood Hub</span>
+        </button>
+        <button onclick="switchMainTab('health')" class="nav-tab-btn flex flex-col items-center gap-0.5 p-1 text-gray-500 hover:text-[#C30121]" data-tab="health">
+            <span class="material-symbols-outlined text-2xl">health_and_safety</span>
+            <span class="text-[10px] font-medium">Health Hub</span>
+        </button>
+        <button onclick="switchMainTab('profile')" class="nav-tab-btn flex flex-col items-center gap-0.5 p-1 text-gray-500 hover:text-[#C30121]" data-tab="profile">
+            <span class="material-symbols-outlined text-2xl">person</span>
+            <span class="text-[10px] font-medium">Profile</span>
+        </button>
+    </nav>
+
+</div>
+
+<!-- ========================================================================= -->
+<!-- 4. NOTIFICATION CENTER MODAL (4 Sub-Tabs) -->
+<!-- ========================================================================= -->
+<div id="modal-notifications" class="modal-overlay" onclick="if(event.target===this) closeModal('modal-notifications')">
+    <div class="modal-content space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#E6BDBA]">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#C30121]">notifications</span>
+                <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Notification Center</h3>
+            </div>
+            <button onclick="closeModal('modal-notifications')" class="p-1 text-gray-400 hover:text-[#2B2B2B]">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="flex border-b border-[#E6BDBA] bg-gray-50 rounded-xl p-1">
+            <button onclick="switchNotifTab('notif-feed')" class="notif-tab-btn flex-1 py-2 text-center text-xs font-bold text-[#C30121] bg-white rounded-lg shadow-sm" data-ntab="notif-feed">📰 Feed</button>
+            <button onclick="switchNotifTab('notif-request')" class="notif-tab-btn flex-1 py-2 text-center text-xs font-semibold text-gray-500" data-ntab="notif-request">🚨 Request</button>
+            <button onclick="switchNotifTab('notif-messages')" class="notif-tab-btn flex-1 py-2 text-center text-xs font-semibold text-gray-500" data-ntab="notif-messages">💬 Messages</button>
+            <button onclick="switchNotifTab('notif-profile')" class="notif-tab-btn flex-1 py-2 text-center text-xs font-semibold text-gray-500" data-ntab="notif-profile">👤 Profile</button>
+        </div>
+
+        <div class="space-y-3 pt-2">
+            <div id="notif-feed" class="notif-content active space-y-2">
+                <div class="p-3 bg-red-50/40 rounded-xl border border-[#E6BDBA] flex items-start gap-3">
+                    <span class="material-symbols-outlined text-[#C30121] text-lg">favorite</span>
+                    <div class="flex-1 text-xs">
+                        <p class="text-[#2B2B2B]"><strong class="font-bold">David Chen</strong> and 14 others liked your donation post.</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">30 mins ago</p>
+                    </div>
+                </div>
+            </div>
+            <div id="notif-request" class="notif-content hidden space-y-2">
+                <div class="p-3 bg-red-50 rounded-xl border border-red-200 flex items-start gap-3">
+                    <span class="material-symbols-outlined text-[#C30121] text-lg">emergency</span>
+                    <div class="flex-1 text-xs">
+                        <p class="text-[#C30121] font-bold">URGENT: O- Blood Needed Near You!</p>
+                        <p class="text-[#2B2B2B] mt-0.5">Dhaka Medical College Hospital (2.3 km away). Patient in surgery.</p>
+                    </div>
+                </div>
+            </div>
+            <div id="notif-messages" class="notif-content hidden space-y-2">
+                <div class="p-3 bg-white rounded-xl border border-[#E6BDBA] flex items-start gap-3">
+                    <span class="material-symbols-outlined text-[#0D68AA] text-lg">chat</span>
+                    <div class="flex-1 text-xs">
+                        <p class="font-bold text-[#2B2B2B]">David Rahman</p>
+                        <p class="text-gray-600 mt-0.5">Thank you so much for coordinating with our hospital team!</p>
+                    </div>
+                </div>
+            </div>
+            <div id="notif-profile" class="notif-content hidden space-y-2">
+                <div class="p-3 bg-white rounded-xl border border-[#E6BDBA] flex items-start gap-3">
+                    <span class="material-symbols-outlined text-yellow-600 text-lg">workspace_premium</span>
+                    <div class="flex-1 text-xs">
+                        <p class="text-[#2B2B2B]"><strong class="font-bold">Platinum Badge Unlocked!</strong> You reached 12 verified donations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 5. INTERACTIVE CHAT SCREEN MODAL (WhatsApp style) -->
+<!-- ========================================================================= -->
+<div id="modal-chat" class="modal-overlay" onclick="if(event.target===this) closeModal('modal-chat')">
+    <div class="modal-content !max-w-md !p-0 flex flex-col h-[520px] rounded-3xl overflow-hidden shadow-2xl border border-[#E6BDBA]">
+        <!-- Chat Header -->
+        <div class="bg-[#C30121] p-4 text-white flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm" id="chat-recipient-avatar">JV</div>
+                <div>
+                    <h4 class="font-bold text-sm" id="chat-recipient-name">Dr. Julian Vance</h4>
+                    <span class="text-[10px] text-white/80 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online</span>
+                </div>
+            </div>
+            <button onclick="closeModal('modal-chat')" class="p-1 hover:bg-white/10 rounded-full text-white">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Message Log -->
+        <div class="flex-1 bg-[#FAF3F2] p-4 overflow-y-auto space-y-3" id="chat-messages-container">
+            <div class="flex justify-start">
+                <div class="bg-white text-xs p-3 rounded-2xl max-w-[80%] border border-[#E6BDBA]/40 shadow-sm">
+                    Hello! I saw your post. I am in Dhanmondi and can reach the hospital within 20 minutes if O- negative is still urgently needed.
+                    <span class="block text-[8px] text-gray-400 text-right mt-1">10:42 AM</span>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <div class="bg-[#C30121] text-white text-xs p-3 rounded-2xl max-w-[80%] shadow-sm">
+                    Yes please! The patient is in DMCH Surgery Ward 8. Relatives are on site.
+                    <span class="block text-[8px] text-white/70 text-right mt-1">10:43 AM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input Footer -->
+        <form onsubmit="event.preventDefault(); sendChatMessage();" class="p-3 bg-white border-t border-[#E6BDBA]/60 flex items-center gap-2 shrink-0">
+            <input type="text" id="chat-input-text" placeholder="Type a message..." class="pill-input text-xs flex-1 py-2.5">
+            <button type="submit" class="w-10 h-10 rounded-full bg-[#C30121] text-white flex items-center justify-center shadow-md hover:bg-[#960017] shrink-0">
+                <span class="material-symbols-outlined text-lg">send</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 6. ADMIN DASHBOARD MODAL -->
+<!-- ========================================================================= -->
+<div id="modal-admin" class="modal-overlay" onclick="if(event.target===this) closeModal('modal-admin')">
+    <div class="modal-content !max-w-2xl flex flex-col h-[560px] p-6 justify-between">
+        <div class="space-y-4 flex-1 overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-[#E6BDBA]">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#C30121]">admin_panel_settings</span>
+                    <h3 class="font-serif text-lg font-bold text-[#2B2B2B]">Admin Control Panel</h3>
+                </div>
+                <button onclick="closeModal('modal-admin')" class="p-1 text-gray-400 hover:text-[#2B2B2B]">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Admin Tabs -->
+            <div class="flex border-b border-[#E6BDBA] bg-gray-50 rounded-xl p-1">
+                <button onclick="switchAdminTab('admin-nid')" class="admin-tab-btn flex-1 py-2 text-center text-xs font-bold text-[#C30121] bg-white rounded-lg shadow-sm" id="btn-admin-nid">🪪 NID Queue (2)</button>
+                <button onclick="switchAdminTab('admin-flags')" class="admin-tab-btn flex-1 py-2 text-center text-xs font-semibold text-gray-500" id="btn-admin-flags">🚨 Flags (1)</button>
+                <button onclick="switchAdminTab('admin-logs')" class="admin-tab-btn flex-1 py-2 text-center text-xs font-semibold text-gray-500" id="btn-admin-logs">📋 Action Audit Logs</button>
+            </div>
+
+            <!-- Admin Tab Contents -->
+            <div id="admin-nid" class="admin-tab-content active space-y-3 pt-2">
+                <div class="p-4 bg-white rounded-2xl border border-[#E6BDBA]/60 flex items-center justify-between text-xs" id="nid-row-1">
+                    <div class="space-y-1">
+                        <p class="font-bold text-[#2B2B2B]">Dr. Julian Vance</p>
+                        <p class="text-gray-500">NID Uploaded: nid_julian_vance.jpg</p>
+                        <span class="text-[10px] text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-bold">OCR Match 98%</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="approveNid('nid-row-1', 'Dr. Julian Vance')" class="pill-button bg-green-600 text-white text-[10px] py-1 px-3">Approve</button>
+                        <button onclick="rejectNid('nid-row-1')" class="pill-button bg-red-600 text-white text-[10px] py-1 px-3">Reject</button>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-white rounded-2xl border border-[#E6BDBA]/60 flex items-center justify-between text-xs" id="nid-row-2">
+                    <div class="space-y-1">
+                        <p class="font-bold text-[#2B2B2B]">Sarah Jenkins</p>
+                        <p class="text-gray-500">NID Uploaded: nid_sarah_j.jpg</p>
+                        <span class="text-[10px] text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-bold">OCR Match 95%</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="approveNid('nid-row-2', 'Sarah Jenkins')" class="pill-button bg-green-600 text-white text-[10px] py-1 px-3">Approve</button>
+                        <button onclick="rejectNid('nid-row-2')" class="pill-button bg-red-600 text-white text-[10px] py-1 px-3">Reject</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-flags" class="admin-tab-content hidden space-y-3 pt-2">
+                <div class="p-4 bg-red-50/50 rounded-2xl border border-[#E6BDBA] flex items-center justify-between text-xs" id="flag-row-1">
+                    <div class="space-y-1">
+                        <p class="font-bold text-[#C30121]">Suspicious User: test_account_99</p>
+                        <p class="text-gray-500">Reason: Broadcasted 5 identical requests within 10 minutes.</p>
+                        <span class="text-[10px] text-red-700 bg-red-100 px-2 py-0.5 rounded-full font-bold">Flagged by: System Monitor</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="banUser('flag-row-1')" class="pill-button bg-[#C30121] text-white text-[10px] py-1 px-3">Restrict Account</button>
+                        <button onclick="dismissFlag('flag-row-1')" class="pill-button bg-gray-200 text-gray-700 text-[10px] py-1 px-3">Dismiss</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-logs" class="admin-tab-content hidden space-y-2 pt-2 text-xs" id="audit-logs-container">
+                <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <span class="text-gray-400 font-mono">[2026-08-29 02:00]</span> NID verified automatically for O- donor.
+                </div>
+                <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <span class="text-gray-400 font-mono">[2026-08-29 01:45]</span> Hospital referral verification token validated.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 7. INTERACTIVE LOGIN & OTP SIMULATION MODAL -->
+<!-- ========================================================================= -->
+<div id="modal-login" class="modal-overlay">
+    <div class="modal-content !max-w-sm space-y-5 text-center">
+        <div class="space-y-2">
+            <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto text-[#C30121]">
+                <span class="material-symbols-outlined text-2xl">water_drop</span>
+            </div>
+            <h3 class="font-serif text-xl font-bold text-[#2B2B2B]">BloodPulse Login</h3>
+            <p class="text-xs text-gray-500">Sign in with phone number to access matched donors</p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); submitPhoneLogin();" class="space-y-4">
+            <input type="tel" id="login-phone" placeholder="Phone Number (e.g. 01711223344)" class="pill-input text-xs text-center" value="01711223344" required>
+            <input type="password" placeholder="Password" class="pill-input text-xs text-center" value="password123" required>
+            
+            <button type="submit" class="tap-scale pill-button w-full bg-[#C30121] text-white text-xs font-bold py-3 mt-2">
+                Continue
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="modal-otp" class="modal-overlay">
+    <div class="modal-content !max-w-sm space-y-5 text-center">
+        <div class="space-y-2">
+            <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-[#0D68AA]">
+                <span class="material-symbols-outlined text-2xl">sms</span>
+            </div>
+            <h3 class="font-serif text-xl font-bold text-[#2B2B2B]">Enter OTP Code</h3>
+            <p class="text-xs text-gray-500" id="otp-instruction-text">We sent a 4-digit code to 01711223344</p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); verifyOtpCode();" class="space-y-4">
+            <div class="flex justify-center gap-2">
+                <input type="text" maxlength="1" class="w-12 h-12 border border-[#E6BDBA] rounded-xl text-center font-bold text-lg focus:border-[#C30121] focus:ring-1 focus:ring-[#C30121]" value="1" required>
+                <input type="text" maxlength="1" class="w-12 h-12 border border-[#E6BDBA] rounded-xl text-center font-bold text-lg focus:border-[#C30121] focus:ring-1 focus:ring-[#C30121]" value="2" required>
+                <input type="text" maxlength="1" class="w-12 h-12 border border-[#E6BDBA] rounded-xl text-center font-bold text-lg focus:border-[#C30121] focus:ring-1 focus:ring-[#C30121]" value="3" required>
+                <input type="text" maxlength="1" class="w-12 h-12 border border-[#E6BDBA] rounded-xl text-center font-bold text-lg focus:border-[#C30121] focus:ring-1 focus:ring-[#C30121]" value="4" required>
+            </div>
+            
+            <button type="submit" class="tap-scale pill-button w-full bg-[#0D68AA] text-white text-xs font-bold py-3 mt-2">
+                Verify & Log In
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="modal-login-success" class="modal-overlay">
+    <div class="modal-content !max-w-sm space-y-4 text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-600">
+            <span class="material-symbols-outlined text-3xl">verified_user</span>
+        </div>
+        <h3 class="font-serif text-2xl font-bold text-[#2B2B2B]">Login Successful</h3>
+        <p class="text-xs text-gray-500">Your profile verification token has been successfully synced.</p>
+        <button onclick="closeModal('modal-login-success')" class="tap-scale pill-button w-full bg-green-600 text-white text-xs font-bold py-2.5 mt-2">
+            Go to Dashboard
+        </button>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT CONTROLLERS -->
+<!-- ========================================================================= -->
+<script>
+    const PAGE_TITLES = {
+        'dashboard': 'Desktop Dashboard',
+        'feed': 'Community Newsfeed',
+        'blood-hub': 'Blood Hub Desktop',
+        'health': 'Health Hub Desktop',
+        'communities': 'Community Directory',
+        'profile': 'User Profile'
+    };
+
+    let currentUser = {
+        name: 'Dr. Julian Vance',
+        phone: '01711223344',
+        bloodGroup: 'O- Negative',
+        totalDonations: 12,
+        cooldownDays: 42,
+        healthScore: 85,
+        tier: 'O- Whole Blood Donor'
+    };
+
+    function switchMainTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        const tabEl = document.getElementById('tab-' + tabName);
+        if (tabEl) tabEl.classList.add('active');
+
+        const titleEl = document.getElementById('topbar-page-title');
+        if (titleEl && PAGE_TITLES[tabName]) {
+            titleEl.innerText = PAGE_TITLES[tabName];
+        }
+
+        document.querySelectorAll('.sidebar-link').forEach(btn => {
+            if (btn.getAttribute('data-tab') === tabName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+            const icon = btn.querySelector('.material-symbols-outlined');
+            const label = btn.querySelector('span:not(.material-symbols-outlined)');
+            if (btn.getAttribute('data-tab') === tabName) {
+                btn.classList.remove('text-gray-500');
+                btn.classList.add('text-[#C30121]');
+                if (icon) icon.classList.add('fill-icon');
+                if (label) label.classList.replace('font-medium', 'font-bold');
+            } else {
+                btn.classList.remove('text-[#C30121]');
+                btn.classList.add('text-gray-500');
+                if (icon) icon.classList.remove('fill-icon');
+                if (label) label.classList.replace('font-bold', 'font-medium');
+            }
+        });
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showNotificationCenter() {
+        openModal('modal-notifications');
+    }
+
+    function switchNotifTab(ntabId) {
+        document.querySelectorAll('.notif-content').forEach(c => {
+            c.classList.add('hidden');
+            c.classList.remove('active');
+        });
+        const target = document.getElementById(ntabId);
+        if (target) {
+            target.classList.remove('hidden');
+            target.classList.add('active');
+        }
+
+        document.querySelectorAll('.notif-tab-btn').forEach(btn => {
+            if (btn.getAttribute('data-ntab') === ntabId) {
+                btn.classList.add('text-[#C30121]', 'bg-white', 'shadow-sm', 'font-bold');
+                btn.classList.remove('text-gray-500', 'font-semibold');
+            } else {
+                btn.classList.remove('text-[#C30121]', 'bg-white', 'shadow-sm', 'font-bold');
+                btn.classList.add('text-gray-500', 'font-semibold');
+            }
+        });
+    }
+
+    function toggleTopMenu() {
+        const menu = document.getElementById('top-dropdown-menu');
+        if (menu) menu.classList.toggle('show');
+    }
+    function closeTopMenu() {
+        const menu = document.getElementById('top-dropdown-menu');
+        if (menu) menu.classList.remove('show');
+    }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#main-header') && !e.target.closest('#top-dropdown-menu')) {
+            closeTopMenu();
+        }
+    });
+
+    function openModal(id) {
+        const m = document.getElementById(id);
+        if (m) m.classList.add('open');
+    }
+    function closeModal(id) {
+        const m = document.getElementById(id);
+        if (m) m.classList.remove('open');
+    }
+
+    function setRadius(btn) {
+        document.querySelectorAll('.radius-btn').forEach(b => {
+            b.classList.replace('bg-[#C30121]', 'bg-white');
+            b.classList.replace('text-white', 'text-[#2B2B2B]');
+            b.classList.add('border', 'border-[#E6BDBA]');
+        });
+        btn.classList.replace('bg-white', 'bg-[#C30121]');
+        btn.classList.replace('text-[#2B2B2B]', 'text-white');
+        btn.classList.remove('border', 'border-[#E6BDBA]');
+    }
+
+    function toggleLike(btn) {
+        const countSpan = btn.querySelector('.like-count');
+        let count = parseInt(countSpan.innerText);
+        if (btn.classList.contains('liked')) {
+            btn.classList.remove('liked');
+            countSpan.innerText = count - 1;
+        } else {
+            btn.classList.add('liked');
+            countSpan.innerText = count + 1;
+        }
+    }
+
+    function calculateBMI() {
+        alert('BMI calculated: 23.0 (Healthy Weight • Eligible for Whole Blood Donation)');
+    }
+
+    let waterConsumed = 1750;
+    function addWater() {
+        waterConsumed = Math.min(waterConsumed + 250, 3000);
+        document.getElementById('hydration-count').innerText = (waterConsumed / 1000).toFixed(2) + "L / 2.5L";
+    }
+
+    function simulateReportAnalysis() {
+        const out = document.getElementById('report-ai-output');
+        out.classList.remove('hidden');
+        out.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openCreatePostModal() {
+        const post = prompt("Write your post for the BloodPulse community:");
+        if (post && post.trim() !== '') {
+            alert('Your post has been published to the BloodPulse Feed!');
+        }
+    }
+
+    function executeDonorSearch() {
+        alert('Filtering verified donors in Dhaka matching your search criteria... 4 active donors loaded!');
+    }
+
+    function submitBloodRequest() {
+        alert('Emergency blood request broadcasted to all matching donors nearby and volunteer coordinators!');
+        closeModal('modal-blood-request');
+    }
+
+    // ── CHAT SYSTEM CONTROLLER ──
+    let activeChatRecipient = '';
+    function startChatSimulation(donorName) {
+        activeChatRecipient = donorName;
+        document.getElementById('chat-recipient-name').innerText = donorName;
+        document.getElementById('chat-recipient-avatar').innerText = donorName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        
+        // Reset message log with a couple of mock context messages
+        const container = document.getElementById('chat-messages-container');
+        container.innerHTML = `
+            <div class="flex justify-start">
+                <div class="bg-white text-xs p-3 rounded-2xl max-w-[80%] border border-[#E6BDBA]/40 shadow-sm">
+                    Hi, is the blood request for DMCH still active? I'm available to donate.
+                    <span class="block text-[8px] text-gray-400 text-right mt-1">10:42 AM</span>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <div class="bg-[#C30121] text-white text-xs p-3 rounded-2xl max-w-[80%] shadow-sm">
+                    Yes, it is extremely urgent. Please reach DMCH Surgery Ward 8 as soon as possible! Thank you!
+                    <span class="block text-[8px] text-white/70 text-right mt-1">10:43 AM</span>
+                </div>
+            </div>
+        `;
+        openModal('modal-chat');
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input-text');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const container = document.getElementById('chat-messages-container');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'flex justify-end';
+        
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        msgDiv.innerHTML = `
+            <div class="bg-[#C30121] text-white text-xs p-3 rounded-2xl max-w-[80%] shadow-sm">
+                ${text}
+                <span class="block text-[8px] text-white/70 text-right mt-1">${timeStr}</span>
+            </div>
+        `;
+        container.appendChild(msgDiv);
+        input.value = '';
+        container.scrollTop = container.scrollHeight;
+
+        // Auto fake replies to simulate real-time socket connections
+        setTimeout(() => {
+            const replyDiv = document.createElement('div');
+            replyDiv.className = 'flex justify-start';
+            replyDiv.innerHTML = `
+                <div class="bg-white text-xs p-3 rounded-2xl max-w-[80%] border border-[#E6BDBA]/40 shadow-sm">
+                    Got it! I am leaving now. I will notify you once I reach the hospital lobby.
+                    <span class="block text-[8px] text-gray-400 text-right mt-1">${timeStr}</span>
+                </div>
+            `;
+            container.appendChild(replyDiv);
+            container.scrollTop = container.scrollHeight;
+        }, 1500);
+    }
+
+    // ── ADMIN SYSTEM CONTROLLER ──
+    function switchAdminTab(tabId) {
+        document.querySelectorAll('.admin-tab-content').forEach(c => {
+            c.classList.add('hidden');
+            c.classList.remove('active');
+        });
+        const target = document.getElementById(tabId);
+        if (target) {
+            target.classList.remove('hidden');
+            target.classList.add('active');
+        }
+
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            if (btn.id === 'btn-' + tabId) {
+                btn.classList.add('text-[#C30121]', 'bg-white', 'shadow-sm', 'font-bold');
+                btn.classList.remove('text-gray-500', 'font-semibold');
+            } else {
+                btn.classList.remove('text-[#C30121]', 'bg-white', 'shadow-sm', 'font-bold');
+                btn.classList.add('text-gray-500', 'font-semibold');
+            }
+        });
+    }
+
+    function addAuditLog(action) {
+        const container = document.getElementById('audit-logs-container');
+        const logDiv = document.createElement('div');
+        logDiv.className = 'p-3 bg-gray-50 rounded-xl border border-gray-200';
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        logDiv.innerHTML = `<span class="text-gray-400 font-mono">[${timeStr}]</span> ${action}`;
+        container.insertBefore(logDiv, container.firstChild);
+    }
+
+    function approveNid(rowId, userName) {
+        document.getElementById(rowId).remove();
+        addAuditLog(`NID document approved for ${userName}. Donor status marked verified.`);
+        alert(`Approved NID for ${userName}!`);
+    }
+
+    function rejectNid(rowId) {
+        document.getElementById(rowId).remove();
+        addAuditLog(`NID document rejected and returned to review.`);
+        alert('Rejected NID document.');
+    }
+
+    function banUser(rowId) {
+        document.getElementById(rowId).remove();
+        addAuditLog(`Suspicious test account restricted due to spamming behavior.`);
+        alert('User restricted successfully.');
+    }
+
+    function dismissFlag(rowId) {
+        document.getElementById(rowId).remove();
+        addAuditLog(`Flag dismissed for test user account.`);
+        alert('Flag dismissed.');
+    }
+
+    // ── MAP FILTER CONTROLLER ──
+    function filterMapLocation(location, bgFilter) {
+        document.getElementById('filter-hub-loc').value = location;
+        if (bgFilter !== 'All') {
+            document.getElementById('filter-hub-bg').value = bgFilter;
+        }
+        runLocalFilters();
+        alert(`Showing donors located near ${location}.`);
+    }
+
+    function runLocalFilters() {
+        const bgVal = document.getElementById('filter-hub-bg').value;
+        const locVal = document.getElementById('filter-hub-loc').value.toLowerCase().trim();
+
+        document.querySelectorAll('.donor-item').forEach(card => {
+            const cardBg = card.getAttribute('data-bg');
+            const cardLoc = card.getAttribute('data-loc').toLowerCase();
+            
+            const matchBg = (bgVal === 'All' || cardBg === bgVal);
+            const matchLoc = (locVal === '' || cardLoc.includes(locVal) || 'dhaka'.includes(locVal));
+
+            if (matchBg && matchLoc) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // ── AUTH/OTP SIMULATION FLOW ──
+    function triggerLogoutFlow() {
+        closeTopMenu();
+        openModal('modal-login');
+    }
+
+    function submitPhoneLogin() {
+        const phone = document.getElementById('login-phone').value;
+        currentUser.phone = phone;
+        document.getElementById('otp-instruction-text').innerText = `We sent a 4-digit code to ${phone}`;
+        closeModal('modal-login');
+        openModal('modal-otp');
+    }
+
+    function verifyOtpCode() {
+        closeModal('modal-otp');
+        openModal('modal-login-success');
+        
+        // Populate profile with newly logged-in details
+        currentUser.name = 'Sarah Jenkins';
+        currentUser.bloodGroup = 'O- Negative';
+        currentUser.totalDonations = 12;
+        currentUser.cooldownDays = 42;
+        currentUser.healthScore = 85;
+        currentUser.tier = 'O- Whole Blood Donor';
+
+        // Update profile widgets
+        document.getElementById('sidebar-user-name').innerText = currentUser.name;
+        document.getElementById('sidebar-user-tier').innerText = currentUser.tier;
+        document.getElementById('profile-name').innerText = currentUser.name;
+        document.getElementById('profile-role').innerText = currentUser.tier;
+        document.getElementById('profile-total-donations').innerText = `Total Log: ${currentUser.totalDonations}`;
+        document.getElementById('profile-cooldown-gauge').innerText = currentUser.cooldownDays;
+
+        document.getElementById('dash-health-score').innerText = currentUser.healthScore;
+        document.getElementById('dash-cooldown-days').innerText = `${currentUser.cooldownDays} Days`;
+        document.getElementById('dash-total-donations').innerText = `${currentUser.totalDonations} Units`;
+        document.getElementById('dash-blood-group').innerText = currentUser.bloodGroup;
+    }
+</script>
+</body>
+</html>

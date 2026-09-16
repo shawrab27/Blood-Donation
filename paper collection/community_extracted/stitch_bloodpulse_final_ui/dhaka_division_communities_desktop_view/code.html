@@ -1,0 +1,314 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Dhaka Division Communities &amp; Donors - BloodPulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Georgia:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#656464",
+                        "background": "#fff8f7",
+                        "on-secondary-fixed-variant": "#474746",
+                        "inverse-on-surface": "#ffecee",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#24191a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#c30121",
+                        "tertiary": "#004b7e",
+                        "primary-fixed": "#ffdad7",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#e4e2e1",
+                        "secondary-container": "#e4e2e1",
+                        "surface-bright": "#fff8f7",
+                        "on-surface-variant": "#5c3f3d",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "surface-variant": "#f3dde0",
+                        "surface-container": "#fee9eb",
+                        "surface-container-low": "#fff0f1",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#f8e3e5",
+                        "inverse-primary": "#ffb3ae",
+                        "on-tertiary-fixed": "#001d35",
+                        "tertiary-fixed": "#d1e4ff",
+                        "inverse-surface": "#3a2d2f",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary-fixed-variant": "#930016",
+                        "surface-container-highest": "#f3dde0",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "tertiary-container": "#0063a4",
+                        "surface": "#fff8f7",
+                        "error-container": "#ffdad6",
+                        "primary": "#960017",
+                        "on-primary-container": "#ffd1cd",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#410005",
+                        "outline-variant": "#e6bdba",
+                        "surface-tint": "#c00020",
+                        "on-tertiary-container": "#c3ddff",
+                        "outline": "#916f6c",
+                        "on-background": "#24191a",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#ead5d7",
+                        "secondary": "#5f5e5e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "xl": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Georgia"],
+                        "headline-lg": ["Georgia"],
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-sm": ["Georgia"],
+                        "headline-md": ["Georgia"],
+                        "body-lg": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-georgia { font-family: 'Georgia', serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-low border-r border-outline-variant shadow-sm h-screen w-64 sticky left-0 top-0 hidden md:flex flex-col py-xl px-md gap-md z-50">
+<div class="mb-lg">
+<div class="mb-sm"><img src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ" alt="BloodPulse Logo" class="h-12 w-auto object-contain"></div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Clinical Excellence</p>
+</div>
+<div class="flex-grow flex flex-col gap-sm">
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">dynamic_feed</span>
+<span class="font-body-md text-body-md">Feed</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">bloodtype</span>
+<span class="font-body-md text-body-md">Blood Hub</span>
+</a>
+<a class="flex items-center gap-md bg-primary-container text-on-primary-container rounded-full px-lg py-md active translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-body-md text-body-md font-bold">Community</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">health_and_safety</span>
+<span class="font-body-md text-body-md">Health Hub</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-body-md text-body-md">Profile</span>
+</a>
+</div>
+
+</nav>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col w-full relative">
+<!-- Header -->
+<header class="bg-surface sticky top-0 z-40 border-b border-outline-variant px-margin-desktop py-lg flex justify-between items-center"><div class="flex items-center gap-md md:hidden"><img src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ" alt="BloodPulse" class="h-10 w-auto"></div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-background">Dhaka Division</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm">Communities &amp; Donors</p>
+</div>
+
+</header>
+<div class="p-margin-desktop max-w-[1280px] mx-auto w-full flex flex-col gap-xl">
+<!-- Hero Banner -->
+<div class="relative w-full rounded-[24px] overflow-hidden bg-surface-container-high p-xl flex items-center justify-between border border-outline-variant/30">
+<div class="z-10 max-w-lg">
+<h3 class="font-display-lg text-display-lg text-primary mb-md">You give today, they live today</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Join hands with local communities in Dhaka to make a life-saving impact. Connect with clubs or find donors nearby.</p>
+</div>
+<div class="hidden lg:block w-1/3 h-48 opacity-80" style="background-image: radial-gradient(circle at center, #f3dde0 0%, transparent 70%);"><div class="flex items-center justify-end h-full pr-lg">
+    <button class="bg-primary text-on-primary rounded-full px-lg py-md font-button text-button flex items-center gap-sm hover:shadow-lg transition-all shadow-sm">
+        <span class="material-symbols-outlined text-[20px]">group_add</span>
+        Register Your Club
+    </button>
+</div></div>
+</div>
+<!-- Local Blood Clubs Section -->
+<section>
+<div class="flex justify-between items-end mb-lg">
+<h3 class="font-headline-md text-headline-md text-on-background">Local Blood Clubs</h3>
+<a class="font-label-lg text-label-lg text-tertiary hover:underline" href="#">View All Clubs</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Club Card 1 -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_12px_24px_-4px_rgba(43,43,43,0.04)] border border-outline-variant/20 hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
+<div class="flex items-start justify-between mb-md">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">volunteer_activism</span>
+</div>
+<span class="bg-surface-container py-1 px-3 rounded-full font-label-md text-label-md text-primary">Uttara</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-background mb-sm">Uttara Blood Warriors</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg flex-grow">A dedicated group of volunteers organizing monthly drives in Sector 4 and 7.</p>
+<div class="flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]">group</span>
+<span class="font-label-md text-label-md">1.2k Members</span>
+</div>
+<button class="text-tertiary font-button text-button hover:underline">View Club</button>
+</div>
+</div>
+<!-- Club Card 2 -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_12px_24px_-4px_rgba(43,43,43,0.04)] border border-outline-variant/20 hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
+<div class="flex items-start justify-between mb-md">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed-dim flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined">favorite</span>
+</div>
+<span class="bg-surface-container py-1 px-3 rounded-full font-label-md text-label-md text-primary">Dhanmondi</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-background mb-sm">Dhanmondi Donors</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg flex-grow">Focusing on rapid response for emergency requests at local hospitals.</p>
+<div class="flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]">group</span>
+<span class="font-label-md text-label-md">850 Members</span>
+</div>
+<button class="text-tertiary font-button text-button hover:underline">View Club</button>
+</div>
+</div>
+<!-- Club Card 3 -->
+<div class="bg-surface-container-lowest rounded-DEFAULT p-lg shadow-[0_12px_24px_-4px_rgba(43,43,43,0.04)] border border-outline-variant/20 hover:-translate-y-1 transition-transform cursor-pointer flex flex-col">
+<div class="flex items-start justify-between mb-md">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">water_drop</span>
+</div>
+<span class="bg-surface-container py-1 px-3 rounded-full font-label-md text-label-md text-primary">Mirpur</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-background mb-sm">Mirpur Lifeline</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg flex-grow">Community-driven initiative supporting thalassemia patients in Mirpur 10.</p>
+<div class="flex items-center justify-between pt-md border-t border-outline-variant/30">
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]">group</span>
+<span class="font-label-md text-label-md">2.1k Members</span>
+</div>
+<button class="text-tertiary font-button text-button hover:underline">View Club</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Local Donors Section -->
+<section>
+<div class="flex justify-between items-end mb-lg">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-background">Local Donors in Dhaka</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Active donors ready to help.</p>
+</div>
+<div class="flex gap-sm">
+<button class="bg-surface-container border border-outline-variant/50 rounded-full px-md py-sm font-label-md text-label-md text-on-surface flex items-center gap-xs hover:bg-surface-variant">
+<span class="material-symbols-outlined text-[16px]">filter_list</span> Filter
+                        </button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-[20px] shadow-[0_4px_12px_-4px_rgba(142,125,127,0.08)] border border-outline-variant/20 overflow-hidden">
+<div class="grid grid-cols-1 divide-y divide-outline-variant/20">
+<!-- Donor Row 1 -->
+<div class="p-lg flex items-center justify-between hover:bg-surface/50 transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-14 h-14 rounded-full bg-primary-container/20 border border-primary-container/30 flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold">
+                                    A+
+                                </div>
+<div>
+<h5 class="font-button text-button text-on-background">Rahim Uddin</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs mt-1">
+<span class="material-symbols-outlined text-[14px]">location_on</span> Gulshan 2
+                                    </p>
+</div>
+</div>
+<div class="text-right flex flex-col items-end gap-2">
+<span class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-md text-label-md">Last donated: 3 mos ago</span>
+<button class="text-primary font-button text-button hover:underline flex items-center gap-xs">
+                                    Request <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Donor Row 2 -->
+<div class="p-lg flex items-center justify-between hover:bg-surface/50 transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-14 h-14 rounded-full bg-tertiary-fixed-dim/20 border border-tertiary/30 flex items-center justify-center font-headline-sm text-headline-sm text-tertiary font-bold">
+                                    O-
+                                </div>
+<div>
+<h5 class="font-button text-button text-on-background">Sadia Islam</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs mt-1">
+<span class="material-symbols-outlined text-[14px]">location_on</span> Banani
+                                    </p>
+</div>
+</div>
+<div class="text-right flex flex-col items-end gap-2">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-md text-label-md">Eligible Now</span>
+<button class="text-primary font-button text-button hover:underline flex items-center gap-xs">
+                                    Request <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Donor Row 3 -->
+<div class="p-lg flex items-center justify-between hover:bg-surface/50 transition-colors">
+<div class="flex items-center gap-md">
+<div class="w-14 h-14 rounded-full bg-primary-container/20 border border-primary-container/30 flex items-center justify-center font-headline-sm text-headline-sm text-primary font-bold">
+                                    B+
+                                </div>
+<div>
+<h5 class="font-button text-button text-on-background">Kamal Hossain</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs mt-1">
+<span class="material-symbols-outlined text-[14px]">location_on</span> Mohammadpur
+                                    </p>
+</div>
+</div>
+<div class="text-right flex flex-col items-end gap-2">
+<span class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-md text-label-md">Last donated: 5 mos ago</span>
+<button class="text-primary font-button text-button hover:underline flex items-center gap-xs">
+                                    Request <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="p-md bg-surface border-t border-outline-variant/20 text-center"><div class="flex flex-col md:flex-row items-center justify-center gap-md"><button class="font-button text-button text-tertiary hover:underline">Load More Donors</button><div class="h-4 w-px bg-outline-variant/30 hidden md:block"></div><button class="bg-primary text-on-primary rounded-full px-lg py-md font-button text-button flex items-center gap-sm hover:shadow-lg transition-all shadow-sm"><span class="material-symbols-outlined text-[20px]">person_add</span>Become a Local Donor</button></div></div>
+</div>
+</section>
+</div>
+</main>
+
+
+</body></html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Dhaka Division Community</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#5f5e5e",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#e4e2e1",
+                        "tertiary": "#004b7e",
+                        "surface-tint": "#c00020",
+                        "primary-fixed-dim": "#ffb3ae",
+                        "on-surface": "#24191a",
+                        "primary-fixed": "#ffdad7",
+                        "tertiary-container": "#0063a4",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-container-low": "#fff0f1",
+                        "on-primary-container": "#ffd1cd",
+                        "on-primary-fixed": "#410005",
+                        "primary-container": "#c30121",
+                        "on-secondary-container": "#656464",
+                        "background": "#fff8f7",
+                        "inverse-surface": "#3a2d2f",
+                        "tertiary-fixed-dim": "#9dcaff",
+                        "surface-bright": "#fff8f7",
+                        "primary": "#960017",
+                        "surface-variant": "#f3dde0",
+                        "surface-container": "#fee9eb",
+                        "surface-dim": "#ead5d7",
+                        "on-background": "#24191a",
+                        "inverse-primary": "#ffb3ae",
+                        "secondary-fixed": "#e4e2e1",
+                        "inverse-on-surface": "#ffecee",
+                        "outline": "#916f6c",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#f3dde0",
+                        "outline-variant": "#e6bdba",
+                        "on-surface-variant": "#5c3f3d",
+                        "on-tertiary-container": "#c3ddff",
+                        "surface-container-high": "#f8e3e5",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface": "#fff8f7",
+                        "on-primary-fixed-variant": "#930016",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-tertiary-fixed": "#001d35",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#d1e4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "lg": "24px",
+                        "margin-desktop": "64px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "xl": "32px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "button": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-sm": ["Georgia"],
+                        "headline-md": ["Georgia"],
+                        "label-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Georgia"],
+                        "display-lg": ["Georgia"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "button": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface dark:bg-surface-dim text-on-surface antialiased pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full top-0 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-mobile h-16 sticky z-50">
+<button class="text-on-surface-variant hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim">BloodPulse</h1>
+<h2 class="font-label-lg text-label-lg text-on-surface-variant">Dhaka Division</h2>
+</div>
+<button class="hover:opacity-80 transition-opacity">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A small circular avatar of a user profile in a clean, professional medical app setting. Soft natural lighting, warm tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtYk0SgKz6jWttvar0_a24vqvktput7nBUmitwDYWtxjQx1P2Z9sXAjoyKlxBRq-21-NhwTQQRpu2csdXIYuLs14ag0OD2zlCQ4StfajEEHChKYy4f-BHEi8V98M1qb4DfYR1tQrn9wu7lHwyEdrPYa993m-MFBBdf_Q7V6Rgh-ckUgBKYJovxGzF-Xifh_l9yvqwRORU-90X-kTDWxoqU8uulfV3MyTrgo_p8JU7knoRnubTDUucG">
+</button>
+</header>
+<!-- Navigation Drawer (Desktop) -->
+<aside class="hidden md:flex flex-col h-screen fixed left-0 top-0 pt-16 bg-surface dark:bg-surface-dim shadow-2xl w-80 rounded-r-lg z-40">
+<div class="px-margin-desktop py-lg">
+<div class="flex items-center gap-md mb-xl">
+<img class="w-16 h-16 rounded-full object-cover" data-alt="A medium circular avatar of a donor profile, showing a friendly, approachable person. Soft studio lighting, minimalist background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbbySjz0FfC0mLoqV0W3eWhBJQmbFY6VcDGVb3FiD6Oid2JwSAWEJHErZyYVo181g7r0I3hCurLGNBbvfaDWuU_GM52ZYvMR4G5SvUMsLkhrmuzNH7DltSWTJtK0RSsVWtRp8cQCXpj-aalGHadpBETYgwnba5CaRaLiboxDzXckRFBwCSOChlrO9UpKF9V6th4v-qTCgqq7LMONHgv5YhMjnswFKPeNj9ChzmnDX5U-2on0rQt_YU">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Abrar Fahim</h3>
+<p class="font-body-md text-body-md text-primary">B+ Positive</p>
+<p class="font-label-md text-label-md text-on-surface-variant">12 Donations</p>
+</div>
+</div>
+<nav class="flex flex-col gap-sm">
+<a class="flex items-center gap-md px-4 py-3 rounded-full text-on-surface hover:bg-surface-container-low transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 rounded-full bg-primary-container text-on-primary-container hover:bg-surface-container-low transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Communities</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 rounded-full text-on-surface hover:bg-surface-container-low transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="bloodtype">bloodtype</span>
+<span class="font-label-lg text-label-lg">Donors</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 rounded-full text-on-surface hover:bg-surface-container-low transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-lg text-label-lg">Profile</span>
+</a>
+</nav>
+</div>
+</aside>
+<main class="md:ml-80 max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-lg">
+<!-- Section 1: Local Blood Clubs -->
+<section class="mb-xl">
+<h2 class="font-headline-md text-headline-md text-primary mb-md">Local Blood Clubs</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-full p-md shadow-sm border border-outline-variant/30 flex items-center justify-between hover:shadow-lg transition-shadow">
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Uttara Blood Warriors</h3>
+<span class="inline-block mt-xs px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full font-label-md text-label-md">Active</span>
+</div>
+<button class="text-primary font-label-lg flex items-center gap-xs hover:opacity-80 transition-opacity">
+  <span class="">View Club</span>
+  <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-full p-md shadow-sm border border-outline-variant/30 flex items-center justify-between hover:shadow-lg transition-shadow">
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Dhanmondi Donors Club</h3>
+<span class="inline-block mt-xs px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full font-label-md text-label-md">Verified</span>
+</div>
+<button class="text-primary font-label-lg flex items-center gap-xs hover:opacity-80 transition-opacity">
+  <span class="">View Club</span>
+  <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-full p-md shadow-sm border border-outline-variant/30 flex items-center justify-between hover:shadow-lg transition-shadow">
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Mirpur Lifeline</h3>
+<span class="inline-block mt-xs px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full font-label-md text-label-md">Active</span>
+</div>
+<button class="text-primary font-label-lg flex items-center gap-xs hover:opacity-80 transition-opacity">
+  <span class="">View Club</span>
+  <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Section 2: Local Donors -->
+<section>
+<h2 class="font-headline-md text-headline-md text-primary mb-md">Local Donors in Dhaka</h2>
+<div class="flex flex-col gap-sm">
+<!-- Donor 1 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-md shadow-sm border border-outline-variant/30 flex items-center gap-md">
+<img class="w-14 h-14 rounded-full object-cover" data-alt="A small circular portrait of a young male blood donor. Friendly expression, natural soft lighting, warm modern background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtfffU_R32BV-4wXkDxb7OrfqB_Ti6qnerobyiQ0G0HgOfQfalOb03ZHRdMnzYT89KUOY6doOgHA0xQ5clFhB0Uj9U2HUwxd0bQORhQykogAmlsgqsLAglv-odVWzc-QxuFQJyDhstkHqNKPycCKKxOPS5OLwfpckiqR3e7WoEuZpU3C1sHHi44O2oCbw0COHaeyoXzX6dcAcH32m2Mx7KzohQU6dGYhaCu5qQBi0e49nMW8VlNCW3">
+<div class="flex-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Arif Ahmed</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last donation: Oct 12, 2023</p>
+</div>
+<span class="px-4 py-2 bg-error-container text-on-error-container font-headline-sm text-headline-sm rounded-full">A+</span>
+</div>
+<!-- Donor 2 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-md shadow-sm border border-outline-variant/30 flex items-center gap-md">
+<img class="w-14 h-14 rounded-full object-cover" data-alt="A small circular portrait of a female blood donor wearing a hijab. Professional, approachable look, bright soft lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhn3cSVMf314x_x109udv9NQsFiUCjm1Hc_yjDSw_QwhTh6vQSxwLv6wX_orbGGtYeEAqZKTzDcOf8WBnWa8ePzhDfJzbN8AvqgV1s8RqExL09ZeEXCv2gtYFO36w9HcHhX7sycQ55nsPUKgL5xQmtzKcfBgnBrYWeHef4E9hq6Q8M2jMOWiJn6I8H1BnHw272c1Br0Am2ccmgrdwDU5aUEXol_BXUZlIkYjE_yDlQNoaBQ5fN3eAy">
+<div class="flex-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Nadia Islam</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last donation: Nov 05, 2023</p>
+</div>
+<span class="px-4 py-2 bg-error-container text-on-error-container font-headline-sm text-headline-sm rounded-full">O-</span>
+</div>
+<!-- Donor 3 -->
+<div class="bg-surface-container-lowest rounded-[24px] p-md shadow-sm border border-outline-variant/30 flex items-center gap-md">
+<img class="w-14 h-14 rounded-full object-cover" data-alt="A small circular portrait of an older male blood donor. Calm, reassuring expression, warm studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoqyLF9Aqi0oE2DX_5ooCUozjfqTZr0cVzSkpxkfHD99DvYCLNyBquynAhRm_PwVuj1zydBxka85dJtidW0ohJoATMK5as_7VQ4JadTw6F6MFloB3pxju3OavSi_otpd--3KRoVTzhIL5pH3VnsRmduoS25x4WgiL1OYCbO1Y2wMdixRR4XeDrdCqHVJN4Y_4WgYbv_9c7p4DGMuKopDw2iWWF_I3cE7F455-lG4RuZYbAaR7tcPrh">
+<div class="flex-1">
+<h3 class="font-label-lg text-label-lg text-on-surface">Rahim Uddin</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Last donation: Sep 20, 2023</p>
+</div>
+<span class="px-4 py-2 bg-error-container text-on-error-container font-headline-sm text-headline-sm rounded-full">B+</span>
+</div>
+</div>
+</section>
+<section class="mt-xl mb-md">
+  <div class="bg-surface-container-high rounded-xl p-lg text-center border border-primary/10">
+    <p class="font-body-md text-on-surface-variant mb-md">
+      Join 1.2k+ heroes in Dhaka. Register as a verified donor to save lives.
+    </p>
+    <button class="w-full bg-primary text-on-primary font-button py-3 rounded-full shadow-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-sm">
+      <span class="material-symbols-outlined">volunteer_activism</span>
+      <span class="">Become a Local Donor</span>
+    </button>
+  </div>
+</section></main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-safe bg-surface dark:bg-surface-dim shadow-[0_-4px_12px_rgba(142,125,127,0.04)] rounded-t-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest w-16 h-14 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-label-md mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md mt-1">Communities</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest w-16 h-14 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="bloodtype">bloodtype</span>
+<span class="font-label-md text-label-md mt-1">Donors</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-highest w-16 h-14 rounded-xl transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md mt-1">Profile</span>
+</a>
+</nav>
+
+
+</body></html>

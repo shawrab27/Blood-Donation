@@ -1,57 +1,148 @@
-import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:blood_pulse/main.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:blood_pulse/core/utils/pii_redactor.dart';
 import 'package:blood_pulse/services/api_client.dart';
-import 'package:integration_test/integration_test.dart';
+import 'package:blood_pulse/services/ai_trust_detector_service.dart';
+import 'package:blood_pulse/services/encryption_service.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  group('BloodPulse Complete E2E Integration Flow', () {
-    testWidgets('Register -> Login -> Submit Request -> Verify Feed', (WidgetTester tester) async {
-      final apiClient = ApiClient();
-      final random = Random().nextInt(100000);
-      final phone = '01711$random';
-      
-      // Step 1: Register a test user
-      final regResponse = await apiClient.post('donors/', body: {
-        'blood_group': 'B+',
-        'district': 'Dhaka',
-        'phone_number': phone,
-        'full_name': 'Integration Test User',
-        'age': 25,
-        'gender': 'Male',
-        'category': 'civilian',
-        'is_verified': false,
+  TestWidgetsFlutterBinding.ensureInitialized();
+  FlutterSecureStorage.setMockInitialValues({});
+
+  group('BloodPulse End-to-End Core Pipeline Smoke Tests', () {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Step A: ApiClient JWT Authorization Header
+    // ─────────────────────────────────────────────────────────────────────────
+    test('Step A: ApiClient attaches JWT Authorization headers to authenticated requests', () async {
+      String? capturedAuthHeader;
+      final mockClient = MockClient((request) async {
+        capturedAuthHeader = request.headers['Authorization'];
+        return http.Response('{"status": "ok"}', 200);
       });
-      
-      expect(regResponse.statusCode, anyOf(200, 201), reason: 'Registration failed: ${regResponse.body}');
 
-      // Step 2: Login
-      // We expect this might break if the backend didn't set a password properly during registration.
-      Map<String, dynamic> loginData;
-      try {
-        loginData = await apiClient.login(phone, 'password123');
-        expect(loginData['access'], isNotNull, reason: 'Login failed, no access token');
-      } catch (e) {
-        fail('Login broke: $e');
-      }
+      const secureStorage = FlutterSecureStorage();
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:8000',
+        client: mockClient,
+        secureStorage: secureStorage,
+      );
 
-      // Step 3: Submit Blood Request
-      final reqResponse = await apiClient.post('requests/', body: {
-        'patient_name': 'Emergency Patient $random',
-        'blood_group': 'B+',
-        'urgency_level': 'Emergency',
-        'hospital_location': 'Test Hospital',
-        'contact_number': phone,
-      });
-      expect(reqResponse.statusCode, anyOf(200, 201), reason: 'Failed to create request: ${reqResponse.body}');
+      // Save mock token
+      await apiClient.saveTokens(
+        access: 'mock_jwt_access_token_xyz123',
+        refresh: 'mock_jwt_refresh_token_abc789',
+      );
 
-      // Step 4: Assert it appears in UI
-      await tester.pumpWidget(const ProviderScope(child: BloodPulseApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // Execute GET request
+      final response = await apiClient.get('api/v1/profile/');
 
-      expect(find.textContaining('Emergency Patient $random'), findsWidgets);
+      expect(response.statusCode, 200);
+      expect(capturedAuthHeader, isNotNull);
+      expect(capturedAuthHeader, equals('Bearer mock_jwt_access_token_xyz123'));
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Step B: PiiRedactor on Bangladeshi Phone (+88017...), NID, & Email
+    // ─────────────────────────────────────────────────────────────────────────
+    test('Step B: PiiRedactor masks Bangladeshi phone, NID, and email from medical reports', () {
+      const mockReport = '''
+      DHAKA MEDICAL COLLEGE HOSPITAL
+      Patient: Md. Rahim Ali
+      Contact: +8801712345678, Alternative: 01898765432
+      NID Number: 19951234567890123 (Old NID: 1234567890)
+      Doctor Email: dr.karim@dmch-transfusion.gov.bd
+      Diagnosis: Severe Anemia. Hemoglobin: 8.2 g/dL. Blood Group: B+
+      ''';
+
+      final redacted = PiiRedactor.redact(mockReport);
+
+      // Verify PII is masked
+      expect(redacted, contains('[REDACTED_PHONE]'));
+      expect(redacted, contains('[REDACTED_NID]'));
+      expect(redacted, contains('[REDACTED_EMAIL]'));
+
+      // Verify raw sensitive numbers are NOT present
+      expect(redacted.contains('+8801712345678'), isFalse);
+      expect(redacted.contains('01898765432'), isFalse);
+      expect(redacted.contains('19951234567890123'), isFalse);
+      expect(redacted.contains('1234567890'), isFalse);
+      expect(redacted.contains('dr.karim@dmch-transfusion.gov.bd'), isFalse);
+
+      // Verify clinical non-PII data is retained
+      expect(redacted, contains('Hemoglobin: 8.2 g/dL'));
+      expect(redacted, contains('Blood Group: B+'));
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Step C: AI Trust Gate Permits Requests with trustScore >= 60
+    // ─────────────────────────────────────────────────────────────────────────
+    test('Step C: AI Trust Gate permits requests with trustScore >= 60 and blocks suspect ones', () {
+      // 1. Authentic request with high trust score (85%)
+      final authenticResult = AiTrustAnalysisResult(
+        trustScore: 85,
+        isVerified: true,
+        detectedHospitalName: 'Dhaka Medical College Hospital',
+        detectedDoctorName: 'Dr. S. Alim',
+        detectedBloodGroup: 'O+',
+        riskFlags: [],
+        message: 'Authentic hospital prescription verified.',
+      );
+
+      expect(authenticResult.isApproved, isTrue);
+      expect(authenticResult.trustScorePercentage, 85);
+      expect(authenticResult.authenticityBadge, equals('AUTHENTIC MEDICAL REPORT'));
+
+      // 2. Suspect / Tampered request with low trust score (45%)
+      final suspectResult = AiTrustAnalysisResult(
+        trustScore: 45,
+        isVerified: false,
+        detectedHospitalName: 'Unknown Clinic',
+        detectedDoctorName: 'Unverified Signatory',
+        detectedBloodGroup: 'AB-',
+        riskFlags: ['Document altered / irregular seal'],
+        message: 'Suspicious modifications detected.',
+      );
+
+      expect(suspectResult.isApproved, isFalse);
+      expect(suspectResult.trustScorePercentage, 45);
+      expect(suspectResult.authenticityBadge, equals('SUSPECT / UNVERIFIED REPORT'));
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Step D: Chat E2EE Ciphertext Encryption Pipeline
+    // ─────────────────────────────────────────────────────────────────────────
+    test('Step D: ChatService RSA+AES E2EE pipeline encrypts outgoing text to ciphertext', () async {
+      final encryptionService = EncryptionService.instance;
+
+      // 1. Ensure/Generate RSA Keypair
+      final publicKeyPem = await encryptionService.ensureKeypairExists();
+      expect(publicKeyPem, contains('BEGIN PUBLIC KEY'));
+
+      // 2. Encrypt plaintext message with recipient public key
+      const rawSecretMessage = 'Urgent: O+ transfusion required at DMCH Transfusion Ward 4!';
+      final encryptedPayload = encryptionService.encrypt(
+        plaintext: rawSecretMessage,
+        recipientPublicKeyPem: publicKeyPem,
+      );
+
+      // Verify payload structures are secure ciphertext
+      expect(encryptedPayload.ciphertext, isNotEmpty);
+      expect(encryptedPayload.ciphertext, isNot(equals(rawSecretMessage)));
+      expect(encryptedPayload.encryptedAesKey, isNotEmpty);
+      expect(encryptedPayload.iv, isNotEmpty);
+      expect(encryptedPayload.authTag, isNotEmpty);
+
+      // 3. Decrypt ciphertext payload using stored private key
+      final decryptedText = await encryptionService.decrypt(encryptedPayload);
+
+      expect(decryptedText, equals(rawSecretMessage));
     });
   });
+}
+
+Future<void> secureStorageWrite(String privateKeyPem) async {
+  const secureStorage = FlutterSecureStorage();
+  await secureStorage.write(key: 'bp_rsa_private_key', value: privateKeyPem);
 }

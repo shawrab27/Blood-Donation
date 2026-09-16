@@ -7,12 +7,12 @@ import '../features/auth/presentation/screens/registration_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
 
 // Main Shell & Emergency Request
-import '../features/shell/presentation/screens/responsive_app_shell.dart';
+import '../features/shell/presentation/screens/main_shell_screen.dart';
 import '../features/blood_request/presentation/screens/emergency_request_screen.dart';
 
 // Notifications & Chat
 import '../features/notifications/presentation/screens/notification_center_screen.dart';
-import '../features/chat/presentation/screens/chat_screen.dart';
+import '../views/chat/chat_screen.dart';
 import '../features/donor/presentation/screens/donor_map_screen.dart';
 
 // Admin Screens
@@ -27,6 +27,14 @@ import '../features/health_hub/presentation/screens/blood_compatibility_screen.d
 import '../features/health_hub/presentation/screens/donation_guide_screen.dart';
 import '../features/health_hub/presentation/screens/resources_hub_screen.dart';
 import '../features/health_hub/presentation/screens/recovery_aftercare_screen.dart';
+
+// Community Screens
+import '../features/communities/presentation/widgets/register_club_form_view.dart';
+import '../features/communities/presentation/widgets/local_club_profile_view.dart';
+import '../features/communities/domain/models/community_models.dart';
+
+// Profile Screens
+import '../features/profile/presentation/screens/edit_profile_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -52,7 +60,11 @@ final appRouter = GoRouter(
     // ── Main Shell (5-Tabs) ───────────────────────────────────────────────────
     GoRoute(
       path: '/dashboard',
-      builder: (context, state) => const ResponsiveAppShell(),
+      builder: (context, state) => const MainShellScreen(),
+    ),
+    GoRoute(
+      path: '/feed',
+      builder: (context, state) => const MainShellScreen(),
     ),
 
     // ── Notifications ─────────────────────────────────────────────────────────
@@ -117,6 +129,24 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/health-hub/recovery',
       builder: (context, state) => const RecoveryAftercareScreen(),
+    ),
+    // ── Community Screens ─────────────────────────────────────────────────────
+    GoRoute(
+      path: '/communities/club/:id',
+      builder: (context, state) {
+        final club = state.extra as LocalClub;
+        return LocalClubProfileView(club: club);
+      },
+    ),
+    GoRoute(
+      path: '/communities/register-club',
+      builder: (context, state) => const RegisterClubFormView(),
+    ),
+
+    // ── Profile ───────────────────────────────────────────────────────────────
+    GoRoute(
+      path: '/edit-profile',
+      builder: (context, state) => const EditProfileScreen(),
     ),
   ],
 );

@@ -6,9 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
-import '../../domain/services/ai_trust_detector_service.dart';
+import '../../../../services/ai_trust_detector_service.dart';
 import '../providers/blood_request_provider.dart';
 
 enum UrgencyLevel { critical, moderate }
@@ -206,11 +205,8 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
         showBackButton: true,
         onBack: () => context.go('/dashboard'),
       ),
-      body: ResponsiveLayout(
-        backgroundColor: AppColors.surface,
-        padding: EdgeInsets.zero,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
           child: Form(
             key: _formKey,
             child: Column(
@@ -274,7 +270,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
             ),
           ),
         ),
-      ),
     );
   }
 

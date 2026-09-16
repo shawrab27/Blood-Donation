@@ -33,36 +33,50 @@ class AppLogoSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = backgroundColor ?? Colors.transparent;
-
-    return Container(
+    Widget imageWidget = Image.asset(
+      'assets/images/blood_pulse_logo.png',
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: bg,
-        shape: BoxShape.circle,
-        boxShadow: showShadow
-            ? [
-                BoxShadow(
-                  color: AppColors.primary.withAlpha(50),
-                  blurRadius: 16,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: ClipOval(
-        child: Image.asset(
-          'assets/images/Blood Pulse logo.jpg',
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return Image.asset(
+          'assets/images/app_logo.png',
           width: size,
           height: size,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return _BpHeartPulseFallback(size: size);
           },
-        ),
+        );
+      },
+    );
+
+    if (backgroundColor == null && !showShadow) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: imageWidget,
+      );
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? Colors.transparent,
+        shape: BoxShape.circle,
+        boxShadow: showShadow
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withAlpha(40),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
+      child: imageWidget,
     );
   }
 }

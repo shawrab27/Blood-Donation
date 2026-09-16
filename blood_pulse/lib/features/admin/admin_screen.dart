@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/blood_pulse_app_bar.dart';
-import '../../core/widgets/responsive_layout.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -16,11 +15,9 @@ class AdminScreen extends StatelessWidget {
         showBackButton: true,
         onBack: () => context.go('/dashboard'),
       ),
-      body: ResponsiveLayout(
-        padding: EdgeInsets.zero,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
@@ -113,7 +110,6 @@ class AdminScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BloodPulse - Register Your Club</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-container": "#656464",
+                      "background": "#fff8f7",
+                      "on-secondary-fixed-variant": "#474746",
+                      "inverse-on-surface": "#ffecee",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#24191a",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-container": "#c30121",
+                      "tertiary": "#004b7e",
+                      "primary-fixed": "#ffdad7",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#e4e2e1",
+                      "secondary-container": "#e4e2e1",
+                      "surface-bright": "#fff8f7",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "surface-variant": "#f3dde0",
+                      "surface-container": "#fee9eb",
+                      "surface-container-low": "#fff0f1",
+                      "error": "#ba1a1a",
+                      "surface-container-high": "#f8e3e5",
+                      "inverse-primary": "#ffb3ae",
+                      "on-tertiary-fixed": "#001d35",
+                      "tertiary-fixed": "#d1e4ff",
+                      "inverse-surface": "#3a2d2f",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-container-highest": "#f3dde0",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "tertiary-container": "#0063a4",
+                      "surface": "#fff8f7",
+                      "error-container": "#ffdad6",
+                      "primary": "#960017",
+                      "on-primary-container": "#ffd1cd",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#410005",
+                      "outline-variant": "#e6bdba",
+                      "surface-tint": "#c00020",
+                      "on-tertiary-container": "#c3ddff",
+                      "outline": "#916f6c",
+                      "on-background": "#24191a",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#ead5d7",
+                      "secondary": "#5f5e5e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "xs": "4px",
+                      "unit": "4px",
+                      "margin-mobile": "16px",
+                      "xl": "32px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Georgia"
+                      ],
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Georgia"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .form-input {
+            @apply w-full bg-surface-container-lowest border border-outline rounded-[12px] px-md py-sm font-body-md text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors;
+        }
+        .form-label {
+            @apply block font-label-md text-on-surface-variant mb-xs;
+        }
+      </style>
+</head>
+<body class="bg-background text-on-surface flex min-h-screen">
+<nav class="hidden md:flex flex-col h-screen w-64 left-0 sticky bg-surface-container-low dark:bg-inverse-surface border-r border-outline-variant dark:border-outline shadow-sm py-xl px-md gap-md">
+<div class="mb-lg px-md"><div class="flex items-center gap-sm mb-xs"><img alt="BloodPulse Logo" class="w-8 h-8 object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ"/><h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">BloodPulse</h1></div><p class="font-body-sm text-body-sm text-on-surface-variant">Clinical Excellence</p></div>
+<ul class="flex flex-col gap-sm flex-1 font-body-md text-body-md">
+<li class="">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dynamic_feed">dynamic_feed</span>
+                    Feed
+                </a>
+</li>
+<li class="">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="bloodtype">bloodtype</span>
+                    Blood Hub
+                </a>
+</li>
+<li class="">
+<a class="flex items-center gap-md bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-full px-lg py-md Active: translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+                    Community
+                </a>
+</li>
+<li class="">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="health_and_safety">health_and_safety</span>
+                    Health Hub
+                </a>
+</li>
+<li class="">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-lg py-md hover:bg-surface-variant dark:hover:bg-secondary-fixed-dim rounded-full transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+                    Profile
+                </a>
+</li>
+</ul>
+<div class="mt-auto px-md">
+</div>
+</nav>
+<main class="flex-1 max-w-[1280px] mx-auto px-margin-desktop py-lg w-full">
+<header class="mb-lg">
+<div class="flex items-center gap-md mb-md text-on-surface-variant">
+<a class="flex items-center hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">arrow_back</span>
+</a>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Community</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Register Your Club</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm max-w-2xl">Join the BloodPulse network to streamline your community efforts and connect with donors in your area.</p><p class="font-label-lg text-primary mt-xs italic">"You give today, they live today"</p>
+</header>
+<form class="bg-surface-container-lowest rounded-[16px] shadow-[0_4px_12px_rgba(142,125,127,0.04)] p-lg border border-outline-variant/30"><div class="space-y-xl">
+<!-- Basic Information Sector -->
+<section class="bg-surface-container-low p-lg rounded-[16px] border border-outline-variant/30">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-lg flex items-center gap-sm">
+<span class="material-symbols-outlined">info</span> Basic Information
+    </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="md:col-span-2">
+<label class="form-label font-bold text-on-surface">Club Name</label>
+<input class="form-input" placeholder="Enter full club name" type="text"/>
+</div>
+<div>
+<label class="form-label font-bold text-on-surface">Est. Year</label>
+<input class="form-input" placeholder="YYYY" type="number"/>
+</div>
+<div>
+<label class="form-label font-bold text-on-surface">Club Type</label>
+<select class="form-input">
+<option>University Club</option>
+<option>Community Org</option>
+<option>Corporate Group</option>
+</select>
+</div>
+<div class="md:col-span-2">
+<label class="form-label font-bold text-on-surface">Slogan</label>
+<input class="form-input" type="text" value="You give today, they live today"/>
+</div>
+<div class="md:col-span-2">
+<label class="form-label font-bold text-on-surface">About the Club</label>
+<textarea class="form-input h-32 resize-none" placeholder="Describe your mission and activities..."></textarea>
+</div>
+<div class="grid grid-cols-3 gap-md md:col-span-2 mt-md"><div><label class="form-label font-bold text-on-surface">Division</label><select class="form-input"><option>Select...</option><option>Dhaka</option></select></div><div><label class="form-label font-bold text-on-surface">District</label><select class="form-input"><option>Select...</option></select></div><div><label class="form-label font-bold text-on-surface">Upazila</label><select class="form-input"><option>Select...</option></select></div></div>
+<div class="md:col-span-2 mt-md"><label class="form-label font-bold text-on-surface">Club Cover Photo</label><div class="border-2 border-dashed border-outline-variant rounded-[12px] p-lg text-center bg-surface-container-lowest hover:bg-surface-variant transition-colors cursor-pointer"><span class="material-symbols-outlined text-headline-lg text-on-surface-variant mb-xs block">image</span><p class="font-body-sm text-on-surface">Upload a cover photo for your club profile</p><p class="font-label-md text-on-surface-variant mt-xs">Recommended: 1200x400px</p></div></div></div>
+</section>
+<!-- Contact & Location Sector -->
+<section class="bg-surface-container p-lg rounded-[16px] border border-outline-variant/30">
+<h3 class="font-headline-sm text-headline-sm text-primary mb-lg flex items-center gap-sm">
+<span class="material-symbols-outlined">location_on</span> Contact &amp; Location
+    </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg"><div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-md"><div class="bg-surface-container-lowest p-md rounded-[12px] border border-outline-variant/50 flex flex-col gap-sm"><div class="relative w-20 h-20 mx-auto mb-xs"><img class="w-full h-full rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida/AEtjO1U8wqN7mC-aI7nsuU2bfCk48iZjV7tUA30sFP-wDzitc28a6GBFIw3Cq_w1rWKMx6F9G5EG5Yni1Kq-DVaadBxAAKuh59Dccd4WglBmL4F_Rcxbd2j6T7Df3q3WOIPV3gbXKi0Q4KsfSFpsXDgcOqnA9DjHkVzmYvxaHRUesdwvxC-SiQ6MUvwYVARNRZFHSd7LL4Xa2yfXmE5VGfO92TC8IoosnHo2BPGvAPtV0Lz5kS63dbW3o8XTsn0"/><button class="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-1 shadow-sm" type="button"><span class="material-symbols-outlined text-sm">photo_camera</span></button></div><div class="space-y-xs"><label class="form-label font-bold">President / Leader</label><input class="form-input" placeholder="Full Name" type="text"/><input class="form-input mt-xs" placeholder="Contact Number" type="tel"/></div></div><div class="bg-surface-container-lowest p-md rounded-[12px] border border-outline-variant/50 flex flex-col gap-sm"><div class="relative w-20 h-20 mx-auto mb-xs"><img class="w-full h-full rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida/AEtjO1U8wqN7mC-aI7nsuU2bfCk48iZjV7tUA30sFP-wDzitc28a6GBFIw3Cq_w1rWKMx6F9G5EG5Yni1Kq-DVaadBxAAKuh59Dccd4WglBmL4F_Rcxbd2j6T7Df3q3WOIPV3gbXKi0Q4KsfSFpsXDgcOqnA9DjHkVzmYvxaHRUesdwvxC-SiQ6MUvwYVARNRZFHSd7LL4Xa2yfXmE5VGfO92TC8IoosnHo2BPGvAPtV0Lz5kS63dbW3o8XTsn0"/><button class="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-1 shadow-sm" type="button"><span class="material-symbols-outlined text-sm">photo_camera</span></button></div><div class="space-y-xs"><label class="form-label font-bold">General Secretary</label><input class="form-input" placeholder="Full Name" type="text"/><input class="form-input mt-xs" placeholder="Contact Number" type="tel"/></div></div><div class="bg-surface-container-lowest p-md rounded-[12px] border border-outline-variant/50 flex flex-col gap-sm"><div class="relative w-20 h-20 mx-auto mb-xs"><img class="w-full h-full rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida/AEtjO1U8wqN7mC-aI7nsuU2bfCk48iZjV7tUA30sFP-wDzitc28a6GBFIw3Cq_w1rWKMx6F9G5EG5Yni1Kq-DVaadBxAAKuh59Dccd4WglBmL4F_Rcxbd2j6T7Df3q3WOIPV3gbXKi0Q4KsfSFpsXDgcOqnA9DjHkVzmYvxaHRUesdwvxC-SiQ6MUvwYVARNRZFHSd7LL4Xa2yfXmE5VGfO92TC8IoosnHo2BPGvAPtV0Lz5kS63dbW3o8XTsn0"/><button class="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-1 shadow-sm" type="button"><span class="material-symbols-outlined text-sm">photo_camera</span></button></div><div class="space-y-xs"><label class="form-label font-bold">Treasurer</label><input class="form-input" placeholder="Full Name" type="text"/><input class="form-input mt-xs" placeholder="Contact Number" type="tel"/></div></div></div></div>
+</section>
+<!-- Media Sector -->
+<!-- Executive Committee Sector -->
+<section class="bg-surface-container p-lg rounded-[16px] border border-outline-variant/30">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-headline-sm text-headline-sm text-primary flex items-center gap-sm">
+<span class="material-symbols-outlined">groups</span> Executive Committee
+      </h3>
+<button class="flex items-center gap-xs text-primary font-button text-button hover:underline" type="button">
+<span class="material-symbols-outlined text-sm">add</span> Add Member
+      </button>
+</div>
+<div class="bg-surface-container-lowest rounded-[12px] p-xl border border-outline-variant/50">
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center">No executive members added yet. Add members to showcase your team.</p>
+</div>
+</section>
+<!-- Form Actions -->
+<div class="flex justify-end gap-md pt-md">
+<button class="px-lg py-md font-button text-button text-primary border-2 border-primary rounded-full hover:bg-primary-container transition-colors" type="button">
+      Save Draft
+    </button>
+<button class="px-lg py-md font-button text-button bg-primary text-on-primary rounded-full hover:opacity-90 transition-opacity shadow-sm" type="submit">
+      Submit Registration
+    </button>
+</div>
+</div></form>
+</main>
+</body></html>

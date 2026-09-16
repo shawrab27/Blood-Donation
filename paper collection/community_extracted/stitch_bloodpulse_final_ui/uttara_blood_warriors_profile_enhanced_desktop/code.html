@@ -1,0 +1,385 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BloodPulse - Local Club Profile &amp; EC Hierarchy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georgia:wght@400;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-container": "#656464",
+                      "background": "#fff8f7",
+                      "on-secondary-fixed-variant": "#474746",
+                      "inverse-on-surface": "#ffecee",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#24191a",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-container": "#c30121",
+                      "tertiary": "#004b7e",
+                      "primary-fixed": "#ffdad7",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed": "#e4e2e1",
+                      "secondary-container": "#e4e2e1",
+                      "surface-bright": "#fff8f7",
+                      "on-surface-variant": "#5c3f3d",
+                      "tertiary-fixed-dim": "#9dcaff",
+                      "surface-variant": "#f3dde0",
+                      "surface-container": "#fee9eb",
+                      "surface-container-low": "#fff0f1",
+                      "error": "#ba1a1a",
+                      "surface-container-high": "#f8e3e5",
+                      "inverse-primary": "#ffb3ae",
+                      "on-tertiary-fixed": "#001d35",
+                      "tertiary-fixed": "#d1e4ff",
+                      "inverse-surface": "#3a2d2f",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#ffb3ae",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary-fixed-variant": "#930016",
+                      "surface-container-highest": "#f3dde0",
+                      "on-tertiary-fixed-variant": "#00497b",
+                      "tertiary-container": "#0063a4",
+                      "surface": "#fff8f7",
+                      "error-container": "#ffdad6",
+                      "primary": "#960017",
+                      "on-primary-container": "#ffd1cd",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#410005",
+                      "outline-variant": "#e6bdba",
+                      "surface-tint": "#c00020",
+                      "on-tertiary-container": "#c3ddff",
+                      "outline": "#916f6c",
+                      "on-background": "#24191a",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#ead5d7",
+                      "secondary": "#5f5e5e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "64px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "xs": "4px",
+                      "unit": "4px",
+                      "margin-mobile": "16px",
+                      "xl": "32px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Georgia"
+                      ],
+                      "headline-lg": [
+                              "Georgia"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Georgia"
+                      ],
+                      "headline-md": [
+                              "Georgia"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Shadows for depth */
+        .shadow-level-1 {
+            box-shadow: 0px 4px 12px rgba(142, 125, 127, 0.04);
+        }
+        .shadow-level-2 {
+            box-shadow: 0px 8px 24px rgba(43, 43, 43, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-64 left-0 sticky bg-surface-container-low border-r border-outline-variant shadow-sm py-xl px-md gap-md z-40">
+<!-- Brand Header -->
+<div class="flex items-center gap-md px-lg mb-xl">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container"><img alt="BloodPulse Logo" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida/AEtjO1X58St8agslqRMupJ2py7p8dlfTUWLGf5njq7EgNKLI6IFXUky6Bv3i6jU1rTANLNs6XA9v7f8VsMHzbrCIdRoj8JBDFzd5YQfMu_JyS5o5jxQ4DvkOm2EvHObfATI89FhVyedLRkWQ5LjgoAYFh5n9jbOHrhEDBeSkUKGQYf42mm6d34u1OrE7ueyoL-sagkPecreu682PN8kiDmpeoFxAicSBIeCKWe8X_eGeTmYDQSZJHnXB-vJM8eWK9bqMGuKr4k9yfev1yQ"></div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary font-display-lg">BloodPulse</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Clinical Excellence</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-sm flex-grow">
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">dynamic_feed</span>
+<span class="font-button text-button">Feed</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">bloodtype</span>
+<span class="font-button text-button">Blood Hub</span>
+</a>
+<!-- Active State -->
+<a class="flex items-center gap-md bg-primary-container text-on-primary-container rounded-full px-lg py-md translate-x-1 duration-150 shadow-sm" href="#">
+<span class="material-symbols-outlined fill">groups</span>
+<span class="font-button text-button font-bold">Community</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">health_and_safety</span>
+<span class="font-button text-button">Health Hub</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-variant rounded-full transition-all" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-button text-button">Profile</span>
+</a>
+</nav>
+<!-- CTA Bottom -->
+
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-background pb-margin-desktop">
+<!-- Top Bar -->
+<header class="h-20 border-b border-outline-variant/30 bg-surface-container-lowest flex items-center justify-end md:justify-between px-margin-mobile md:px-margin-desktop sticky top-0 z-30">
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full hover:bg-surface-variant flex items-center justify-center text-on-surface transition-colors relative">
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="flex items-center gap-sm hover:bg-surface-variant rounded-full p-unit transition-colors">
+</button>
+</div>
+</header>
+<!-- Content Container -->
+<div class="w-full max-w-[1280px] mx-auto px-margin-mobile md:px-margin-desktop pt-lg md:pt-xl space-y-lg md:space-y-xl flex-grow mb-xl">
+<!-- Hero Section -->
+<section class="relative w-full rounded-2xl overflow-hidden bg-surface-container-lowest shadow-level-1 border border-outline-variant/30 flex flex-col md:flex-row">
+<div class="w-full md:w-2/5 p-lg md:p-xl flex flex-col justify-center bg-gradient-to-br from-surface-container-lowest to-surface-container z-10">
+<div class="inline-flex items-center gap-xs px-sm py-xs bg-tertiary-container/10 text-tertiary rounded-full w-fit mb-md">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Verified Club</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-primary mb-sm">Uttara Blood Warriors</h1>
+<p class="font-headline-sm text-headline-sm text-on-surface-variant mb-lg italic">"You give today, they live today"</p>
+<div class="flex flex-wrap gap-md mt-auto pt-lg">
+<button class="bg-primary text-on-primary font-button text-button rounded-full px-lg py-sm hover:-translate-y-0.5 transition-transform flex items-center gap-xs shadow-sm">
+<span class="material-symbols-outlined text-[20px]">bloodtype</span> Donate Now
+                        </button>
+<button class="bg-transparent border-2 border-primary text-primary font-button text-button rounded-full px-lg py-sm hover:bg-primary/5 transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[20px]">person_add</span> Join Club
+                        </button>
+</div>
+</div>
+<div class="w-full md:w-3/5 h-64 md:h-auto relative min-h-[300px]">
+<div class="absolute inset-0 bg-gradient-to-r from-surface-container-lowest via-transparent to-transparent z-10 hidden md:block"></div>
+<img alt="Uttara Blood Warriors Team" class="w-full h-full object-cover" data-alt="A diverse group of cheerful volunteers in matching red polo shirts organizing a blood drive in a bright, modern community hall. The scene is illuminated by soft, natural daylight, reflecting a positive, engaging, and professional medical community atmosphere with a clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBycbckSyIeCEJ91-1YIymdQkwT-ABtQXnyhdim06aLjUTtimpBoY2f3vzscQsQiwo2SkipXSJ-hkoo8Aqqt2lDNhYrTHHzCfz-2NzqMa1U-_Mv29mdxNBlKR0cx-a7zj58sfFfa_Z8KvobdWyKM99LkEDopfnnoiGPgMcU30Oht3v0s8_QqU-1ygk0aAOsVxKucu_poCPyV5dTnaOoLL_KwiM8zSP5SWm3m1AwBtYOEh9-2exMsWe9">
+</div>
+</section>
+<!-- Executive Committee -->
+<section class="space-y-md">
+<div class="flex flex-col mb-lg">
+<h2 class="font-headline-md text-headline-md text-primary mb-xs">Executive Committee</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Leadership team for the current session.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Dr. Rafiqul Islam -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30 relative">
+<div class="w-24 h-24 rounded-full mb-md p-1 border-2 border-primary-container relative">
+<img alt="Dr. Rafiqul Islam" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5rwSxE_aq1lFmiQkp2VBeA5GhFvpalvsMuUT3aN9txEWL55470Yay-YtHXk_qHh4_uq9tptG8lNrU8muZzVFKuCY7B-_vTVDrU9xgcrJVGDHqCDhWQEjM8drYRfxnK1ji2705ohzHLB8BKdlH5Eu07vRnTWATn7AA0ye_yzyBR-8mvcbGW-RF6Pu3EJnOX9OkSeL2lxhDs4Sfb5SinnWEqQudCehO1swLm5HDk7xFPN1m-I3ioVYS">
+<div class="absolute bottom-0 right-0 bg-primary text-on-primary w-6 h-6 rounded-full flex items-center justify-center border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+</div>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Dr. Rafiqul Islam</h3>
+<div class="bg-tertiary-container/10 text-tertiary px-sm py-xs rounded-full font-label-md text-label-md mb-sm">Admin</div>
+<p class="font-label-lg text-label-lg text-primary mb-sm">President</p>
+
+<a href="#" class="mt-md font-label-md text-label-md text-primary hover:bg-primary/5 px-md py-xs rounded-full transition-colors">View Profile</a></div>
+<!-- Anika Tabassum -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-20 h-20 rounded-full mb-md p-1 border-2 border-surface-variant">
+<img alt="Anika Tabassum" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBF5jtJBfJcBUP7u1_3lDvmk7tpf6L_Oik9FHEWDv7tlqtflWajOdK7ix7pPCj-kzh5skEb-SX5YcDeuyfx6_Iz7qtJLXNhdOHGDZhEjkO5GBJS30sOLIMbmFsMb6DquG4vijDDffEX04A41HbdMuqd7FJFu_SwiKwOk19uub0YjmUr3kTcsUYzdb_Nz7pdRDL4n7gjpHh_msl_HNOFLlTOSkCqhO-Dwd90NZM7FdEDHulsSqZVBs5l">
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Anika Tabassum</h3>
+<p class="font-label-lg text-label-lg text-primary">Vice President</p>
+<a href="#" class="mt-md font-label-md text-label-md text-primary hover:bg-primary/5 px-md py-xs rounded-full transition-colors">View Profile</a></div>
+<!-- Mahmud Hasan -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-20 h-20 rounded-full mb-md p-1 border-2 border-surface-variant">
+<img alt="Mahmud Hasan" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZarYZ4Rdv7AA_y3HN-5G47HnZ4jqkKYMttNwrZ6n-CGoYcs1a2jvD90Nybtlsj1UrSiO7hfIVmxEYtdJpha7xoih461Q5zygkeuRoOU4NS9RFfJ2oeuizh_NOvCwcQG2JxdN0FlRMAliW4EjAYinXYJ9-5swQsHSyv6ufztPA7zJnzM4StzemPm2VkcCDR2qJIc5YRw41dFKh1cbLZdltJ75MT7zYMytfTppRISqg04JxYcbCygjs">
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Mahmud Hasan</h3>
+<p class="font-label-lg text-label-lg text-primary">General Secretary</p>
+<a href="#" class="mt-md font-label-md text-label-md text-primary hover:bg-primary/5 px-md py-xs rounded-full transition-colors">View Profile</a></div>
+<!-- Sadia Rahman -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-20 h-20 rounded-full mb-md p-1 border-2 border-surface-variant">
+<img alt="Sadia Rahman" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUzv0pEvDcqV1fIgS0VGc9UH3Z_PXsCRUe1p6WytEdvFVrdPTXop6fXDT4ydo01M7uvjvzalkXDxLf2g_KUcpgdsHqPQLuqc10SgMsO_VT9a5Jl3uUClf8zd6QS6ZtuH6Yq5pYcDpqx-V7JJjQxt7kz06WYf0ldWssnTNEWjzjPU9zjTC52TLlNTOSnXfxuCy8znHk585gFogN4X9kumQjRiESvyw6Dx8NBADBL0L3F6EYnlz1e1O3">
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Sadia Rahman</h3>
+<p class="font-label-lg text-label-lg text-primary">Treasurer</p>
+<a href="#" class="mt-md font-label-md text-label-md text-primary hover:bg-primary/5 px-md py-xs rounded-full transition-colors">View Profile</a></div>
+</div>
+<div class="flex justify-center mt-lg pt-md">
+<button class="bg-transparent border-2 border-outline-variant hover:border-primary text-primary font-button text-button rounded-full px-xl py-sm hover:bg-primary/5 transition-colors flex items-center gap-sm">
+            View All Members <span class="material-symbols-outlined text-[20px]">group</span>
+</button>
+</div>
+</section>
+</div>
+<!-- Expanded Footer -->
+<footer class="w-full bg-surface-container-low border-t border-outline-variant/30 py-xl px-margin-mobile md:px-margin-desktop mt-auto">
+<div class="w-full max-w-[1280px] mx-auto space-y-lg md:space-y-xl">
+<!-- About Us Section -->
+<section class="bg-surface-container-lowest rounded-2xl p-lg md:p-xl shadow-level-1 border border-outline-variant/30">
+<h2 class="font-headline-md text-headline-md text-primary mb-md">About Us</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+        Dedicated to saving lives in Uttara since 2015, the Uttara Blood Warriors is a community-driven network of altruistic donors focused on ensuring a safe and reliable blood supply. Our mission is to bridge the gap between donors and patients through collective empathy and clinical responsibility.
+    </p>
+</section>
+<!-- Impact Statistics Grid -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-md md:gap-lg">
+<!-- Stat 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-[#C30121] mb-md">
+<span class="material-symbols-outlined text-[28px]">groups</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-[#C30121] mb-xs">1.2k+</h3>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Total Donors</p>
+</div>
+<!-- Stat 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-[#C30121] mb-md">
+<span class="material-symbols-outlined text-[28px]">volunteer_activism</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-[#C30121] mb-xs">850+</h3>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Active Donors</p>
+</div>
+<!-- Stat 3 -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-[#C30121] mb-md">
+<span class="material-symbols-outlined text-[28px]">bloodtype</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-[#C30121] mb-xs">5k+</h3>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Contributions</p>
+</div>
+<!-- Stat 4 -->
+<div class="bg-surface-container-lowest rounded-2xl p-lg flex flex-col items-center text-center shadow-level-1 border border-outline-variant/30">
+<div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-[#C30121] mb-md">
+<span class="material-symbols-outlined text-[28px]">event</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-[#C30121] mb-xs">2015</h3>
+<p class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Established</p>
+</div>
+</section>
+</div>
+</footer>
+</main>
+
+
+</body></html>

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
-import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../providers/health_calculators_provider.dart';
 
@@ -85,10 +84,9 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ResponsiveLayout(
+      body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: ListView(
-          children: [
+        children: [
             const SizedBox(height: 8),
 
             // ── Featured Priority Header Card (Smooth Gradient & Heart Icon) ─
@@ -130,7 +128,6 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
             const SizedBox(height: 40),
           ],
         ),
-      ),
     );
   }
 

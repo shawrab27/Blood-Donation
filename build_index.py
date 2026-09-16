@@ -1,0 +1,4 @@
+# generator
+import os
+
+parts = []

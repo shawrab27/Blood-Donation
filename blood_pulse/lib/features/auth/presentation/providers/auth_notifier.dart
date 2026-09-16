@@ -21,6 +21,7 @@ class UserProfile {
     this.lastDonationDate,
     required this.totalBagsDonated,
     this.isOtpVerified = false,
+    this.nidHash,
   });
 
   final String fullName;
@@ -36,6 +37,7 @@ class UserProfile {
   final DateTime? lastDonationDate;
   final int totalBagsDonated;
   final bool isOtpVerified;
+  final String? nidHash;
 
   UserProfile copyWith({
     String? fullName,
@@ -51,6 +53,7 @@ class UserProfile {
     DateTime? lastDonationDate,
     int? totalBagsDonated,
     bool? isOtpVerified,
+    String? nidHash,
   }) {
     return UserProfile(
       fullName:         fullName         ?? this.fullName,
@@ -66,6 +69,7 @@ class UserProfile {
       lastDonationDate: lastDonationDate ?? this.lastDonationDate,
       totalBagsDonated: totalBagsDonated ?? this.totalBagsDonated,
       isOtpVerified:    isOtpVerified    ?? this.isOtpVerified,
+      nidHash:          nidHash          ?? this.nidHash,
     );
   }
 }
@@ -157,6 +161,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       'blood_group': profile.bloodGroup,
       'district': district,
       'phone_number': profile.primaryPhone,
+      if (profile.nidHash != null && profile.nidHash!.isNotEmpty)
+        'nid_hash': profile.nidHash,
       'last_donation_date': profile.lastDonationDate?.toIso8601String().split('T').first,
       'is_verified': profile.isOtpVerified,
       'full_name': profile.fullName,
@@ -226,6 +232,72 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         user: state.user!.copyWith(isOtpVerified: verified),
       );
+    }
+  }
+
+  /// Social authentication (Google)
+  Future<bool> loginWithGoogle() async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      final user = UserProfile(
+        fullName: 'Google Altruist',
+        email: 'donor@gmail.com',
+        primaryPhone: '+8801700000001',
+        age: 24,
+        gender: 'Male',
+        bloodGroup: 'B+',
+        category: 'civilian',
+        categoryDetails: const {'provider': 'Google'},
+        neverDonated: false,
+        totalBagsDonated: 3,
+        isOtpVerified: true,
+      );
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: user,
+        errorMessage: null,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Failed to sign in with Google: $e',
+      );
+      return false;
+    }
+  }
+
+  /// Social authentication (Facebook)
+  Future<bool> loginWithFacebook() async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      final user = UserProfile(
+        fullName: 'Facebook Altruist',
+        email: 'donor@facebook.com',
+        primaryPhone: '+8801800000002',
+        age: 26,
+        gender: 'Female',
+        bloodGroup: 'A+',
+        category: 'civilian',
+        categoryDetails: const {'provider': 'Facebook'},
+        neverDonated: false,
+        totalBagsDonated: 2,
+        isOtpVerified: true,
+      );
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: user,
+        errorMessage: null,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Failed to sign in with Facebook: $e',
+      );
+      return false;
     }
   }
 
