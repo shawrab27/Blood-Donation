@@ -19,6 +19,8 @@ from .serializers import (
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.contrib.auth.models import User
+from .permissions import IsProfileComplete
+from .utils import send_blood_request_notification
 
 class DonorProfileViewSet(viewsets.ModelViewSet):
     queryset = DonorProfile.objects.all()
@@ -102,6 +104,15 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
 class BloodRequestViewSet(viewsets.ModelViewSet):
     queryset = BloodRequest.objects.filter(is_active=True).order_by('-created_at')
     serializer_class = BloodRequestSerializer
+
+    def get_permissions(self):
+        if self.action in ['create']:
+            return [IsProfileComplete()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        send_blood_request_notification(instance)
 
 class SocialPostViewSet(viewsets.ModelViewSet):
     queryset = SocialPost.objects.all().order_by('-created_at')

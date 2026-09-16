@@ -18,6 +18,7 @@ class DonorProfile(models.Model):
     nid_hash = models.CharField(max_length=64, unique=True, null=True, blank=True)
     last_donation_date = models.DateField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
+    is_profile_complete = models.BooleanField(default=False)
     
     # Profile Extensions
     bio = models.TextField(blank=True, null=True, help_text="User's biography or story.")

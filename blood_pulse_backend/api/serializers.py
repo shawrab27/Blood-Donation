@@ -71,9 +71,9 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'first_name', 'last_name', 'email', 'blood_group', 
             'district', 'phone_number', 'nid_hash', 'last_donation_date', 'is_verified', 
-            'latitude', 'longitude', 'bio', 'institute', 'address', 'total_bags_donated', 
-            'profile_picture', 'manual_rank_override', 'donation_history', 'recent_logs',
-            'global_rank', 'badge'
+            'is_profile_complete', 'latitude', 'longitude', 'bio', 'institute', 'address', 
+            'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
+            'recent_logs', 'global_rank', 'badge'
         ]
     def validate_phone_number(self, value):
         if not value:
