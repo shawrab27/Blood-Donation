@@ -1,38 +1,33 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:blood_pulse/l10n/app_localizations.dart';
+import 'firebase_options.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/app_router.dart';
 import 'core/constants.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize async services safely in parallel with a strict timeout
-  Future<void> initServices() async {
-    try {
-      await Hive.initFlutter().timeout(const Duration(seconds: 2));
-      await Hive.openBox('notifications_box').timeout(const Duration(seconds: 2));
-    } catch (e) {
-      debugPrint('Hive initialization warning: $e');
-    }
-
-    try {
-      if (!kIsWeb) {
-        await Firebase.initializeApp().timeout(const Duration(seconds: 2));
-      }
-    } catch (e) {
-      debugPrint('Firebase initialization warning: $e');
-    }
+  // Firebase ইনিশিয়ালাইজেশন
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization warning: $e');
   }
 
-  // Fire services init in background
-  initServices();
+  try {
+    await Hive.initFlutter();
+    await Hive.openBox('notifications_box');
+  } catch (e) {
+    debugPrint('Hive initialization warning: $e');
+  }
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
