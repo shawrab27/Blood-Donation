@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/capsule_button.dart';
+import '../../../../core/widgets/app_logo.dart';
 import '../providers/locale_provider.dart';
 
 /// Language Selection Bottom Sheet Modal matching reference layout.
@@ -27,43 +28,13 @@ class LanguageModal extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Circular clipped logo at top ──
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(12),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(4),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/Blood Pulse logo.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
+              // ── Official BloodPulse Logo & Brand Name ─────────
+              const BloodPulseLogo(
+                direction: Axis.vertical,
+                iconSize: 56.0,
+                fontSize: 26.0,
+                spacing: 12.0,
               ),
-
-              const SizedBox(height: 12),
-
-              // ── BloodPulse Title ──
-              const Text(
-                'BloodPulse',
-                style: TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFC30121),
-                ),
-              ),
-
               const SizedBox(height: 24),
 
               // ── Outer Card Wrapper ──

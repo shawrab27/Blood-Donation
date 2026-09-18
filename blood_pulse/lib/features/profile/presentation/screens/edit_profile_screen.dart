@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../domain/providers/profile_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -74,15 +75,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFC30121)),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('Edit Profile', style: TextStyle(color: Color(0xFFC30121), fontFamily: 'Georgia', fontWeight: FontWeight.bold)),
-        centerTitle: true,
+      appBar: const CustomAppBar(
+        subtitle: 'Edit Profile',
+        showLogo: true,
+        showBackButton: true,
+        showNotification: false,
+        showProfile: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -99,7 +97,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       CircleAvatar(
                         radius: 50,
                         backgroundImage: profile?.profilePicture != null 
-                            ? NetworkImage('https://bloodpulse-proxy.vercel.app${profile!.profilePicture}') 
+                            ? NetworkImage('https://blood-donation-liard.vercel.app${profile!.profilePicture}') 
                             : const NetworkImage('https://ui-avatars.com/api/?name=User&background=random') as ImageProvider,
 
                       ),

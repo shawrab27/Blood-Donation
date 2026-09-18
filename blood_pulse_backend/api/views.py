@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.http import HttpResponse
 from .models import (
-    DonorProfile, BloodRequest, SocialPost, Hospital, FakeAccountFlag, AdminAction, 
+    DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, Hospital, FakeAccountFlag, AdminAction, 
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep
 )
 from .serializers import (
-    DonorProfileSerializer, BloodRequestSerializer, SocialPostSerializer, 
+    DonorProfileSerializer, BloodRequestSerializer, SocialPostSerializer, CommentSerializer,
     HospitalSerializer, FakeAccountFlagSerializer, AdminActionSerializer,
     DivisionSerializer, DistrictSerializer, UpazilaSerializer,
     NationalCommunitySerializer, MedicalPartnerSerializer, LocalClubSerializer, 
@@ -117,6 +117,73 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 class SocialPostViewSet(viewsets.ModelViewSet):
     queryset = SocialPost.objects.all().order_by('-created_at')
     serializer_class = SocialPostSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        author = getattr(self.request.user, 'donorprofile', None)
+        if not author:
+            author, _ = DonorProfile.objects.get_or_create(
+                user=self.request.user,
+                defaults={'phone_number': self.request.user.username}
+            )
+        serializer.save(author=author)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def react(self, request, pk=None):
+        post = self.get_object()
+        reaction, created = PostReaction.objects.get_or_create(post=post, user=request.user)
+        if not created:
+            reaction.delete()
+            is_reacted = False
+        else:
+            is_reacted = True
+        react_count = post.reactions.count()
+        post.likes_count = react_count
+        post.save(update_fields=['likes_count'])
+        return Response({'react_count': react_count, 'is_reacted': is_reacted})
+
+    @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
+    def comments(self, request, pk=None):
+        post = self.get_object()
+        if request.method == 'GET':
+            comments_qs = post.comments.all().order_by('created_at')
+            serializer = CommentSerializer(comments_qs, many=True)
+            return Response(serializer.data)
+        
+        text = request.data.get('text', '').strip()
+        if not text:
+            return Response({'error': 'Comment text cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+        comment = Comment.objects.create(post=post, user=request.user, text=text)
+        author_name = request.user.get_full_name().strip() or request.user.username
+        return Response({
+            'id': comment.id,
+            'post': post.id,
+            'author': author_name,
+            'text': comment.text,
+            'created_at': comment.created_at.isoformat()
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def repost(self, request, pk=None):
+        original = self.get_object()
+        author = getattr(request.user, 'donorprofile', None)
+        if not author:
+            author, _ = DonorProfile.objects.get_or_create(
+                user=request.user,
+                defaults={'phone_number': request.user.username}
+            )
+        repost_instance = SocialPost.objects.create(
+            author=author,
+            text_content=original.text_content,
+            original_post=original
+        )
+        serializer = self.get_serializer(repost_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class HospitalViewSet(viewsets.ModelViewSet):
     queryset = Hospital.objects.all()
@@ -293,7 +360,8 @@ class RecoveryTimelineStepViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = RecoveryTimelineStepSerializer
 
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -320,10 +388,7 @@ class GeminiReportAnalyzeView(APIView):
         if not api_key:
             return Response({'error': 'Gemini API Key not configured on the server.'}, status=500)
 
-        genai.configure(api_key=api_key)
-        
-        # gemini-1.5-flash is extremely fast and multimodal
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        client = genai.Client(api_key=api_key)
         
         prompt = """
         You are a medical AI assistant.
@@ -351,7 +416,13 @@ class GeminiReportAnalyzeView(APIView):
         """
         
         try:
-            response = model.generate_content([prompt, image])
+            response = client.models.generate_content(
+                model='gemini-3-flash-preview',
+                contents=[prompt, image],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                )
+            )
             text = response.text.strip()
             if text.startswith("```json"):
                 text = text[7:-3].strip()

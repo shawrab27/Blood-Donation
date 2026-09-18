@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
 class PhoneLoginScreen extends ConsumerStatefulWidget {
   const PhoneLoginScreen({super.key});
@@ -49,11 +50,12 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: Row(
+      appBar: CustomAppBar(
+        showLogo: false,
+        showBackButton: true,
+        showNotification: false,
+        showProfile: false,
+        titleWidget: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.verified_user, color: AppColors.success, size: 20),

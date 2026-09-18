@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../../services/api_client.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
@@ -166,29 +167,14 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF271816),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/feed');
-            }
-          },
-        ),
-        title: const Text(
-          'Complete Your Profile',
-          style: TextStyle(
-            fontFamily: 'Georgia',
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
+      appBar: const CustomAppBar(
+        title: 'Complete Your Profile',
+        titleColor: Colors.white,
+        backgroundColor: Color(0xFF271816),
+        showLogo: false,
+        showBackButton: true,
+        showNotification: false,
+        showProfile: false,
       ),
       body: SafeArea(
         child: ResponsiveCenterWrapper(

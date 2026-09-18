@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
 class DonorRegistrationScreen extends ConsumerStatefulWidget {
   const DonorRegistrationScreen({super.key});
@@ -43,13 +44,13 @@ class _DonorRegistrationScreenState extends ConsumerState<DonorRegistrationScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).textTheme.bodyMedium?.color),
-          onPressed: () => context.go('/login'),
-        ),
+      appBar: CustomAppBar(
+        title: 'Become a Donor',
+        showLogo: false,
+        showBackButton: true,
+        onBack: () => context.go('/login'),
+        showNotification: false,
+        showProfile: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

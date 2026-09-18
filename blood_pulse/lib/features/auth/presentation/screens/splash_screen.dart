@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../widgets/language_modal.dart';
 
@@ -127,7 +129,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   height: 140,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withAlpha(15),
@@ -136,10 +138,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.all(16),
-                  child: Image.asset(
-                    'assets/images/Blood Pulse logo.jpg',
-                    fit: BoxFit.contain,
+                  child: const Center(
+                    child: BloodPulseMark(
+                      size: 96,
+                    ),
                   ),
                 ),
               ),
@@ -149,14 +151,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               // ── Title ──
               FadeTransition(
                 opacity: _titleFade,
-                child: const Text(
-                  'BloodPulse',
-                  style: TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFC30121),
-                    letterSpacing: -0.5,
+                child: RichText(
+                  text: const TextSpan(
+                    style: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Blood',
+                        style: TextStyle(color: AppColors.burgundy),
+                      ),
+                      TextSpan(
+                        text: 'Pulse',
+                        style: TextStyle(color: AppColors.primary),
+                      ),
+                    ],
                   ),
                 ),
               ),

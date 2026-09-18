@@ -77,6 +77,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildMobileLayout(bool isBangla) {
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
 class ReportScannerScreen extends StatefulWidget {
   const ReportScannerScreen({super.key});
@@ -25,12 +26,11 @@ class _ReportScannerScreenState extends State<ReportScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Lab Report AI Scanner'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
-        ),
+      appBar: CustomAppBar(
+        showLogo: true,
+        subtitle: 'AI Scanner',
+        showBackButton: true,
+        onBack: () => context.go('/dashboard'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.padding),

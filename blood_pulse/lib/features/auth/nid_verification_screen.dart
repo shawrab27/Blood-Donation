@@ -1,35 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
-class NidVerificationScreen extends ConsumerStatefulWidget {
+class NidVerificationScreen extends StatefulWidget {
   const NidVerificationScreen({super.key});
 
   @override
-  ConsumerState<NidVerificationScreen> createState() => _NidVerificationScreenState();
+  State<NidVerificationScreen> createState() => _NidVerificationScreenState();
 }
 
-class _NidVerificationScreenState extends ConsumerState<NidVerificationScreen> {
+class _NidVerificationScreenState extends State<NidVerificationScreen> {
+  XFile? _image;
   bool _isProcessing = false;
   bool _isVerified = false;
 
-  void _simulateUploadAndOcr() {
-    setState(() => _isProcessing = true);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-          _isVerified = true;
-        });
+  void _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: source);
+    setState(() {
+      _image = image;
+      if (_image != null) {
+        _processOCR();
       }
     });
+  }
+
+  void _simulateUploadAndOcr() {
+    _pickImage(ImageSource.gallery);
+  }
+
+  void _processOCR() async {
+    setState(() => _isProcessing = true);
+    // Simulate Gemini OCR extraction
+    await Future.delayed(const Duration(seconds: 3));
+    setState(() {
+      _isProcessing = false;
+      _isVerified = true;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('NID successfully extracted and verified!')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NID Verification')),
+      appBar: const CustomAppBar(
+        showLogo: true,
+        subtitle: 'Verification',
+        showBackButton: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(

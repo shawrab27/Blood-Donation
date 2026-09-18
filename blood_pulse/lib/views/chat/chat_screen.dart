@@ -11,8 +11,8 @@ import '../../features/auth/presentation/providers/auth_notifier.dart';
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({
     super.key,
-    this.chatRoomId = 'general_emergency',
-    this.chatRecipientName = 'Emergency Responder',
+    required this.chatRoomId,
+    required this.chatRecipientName,
   });
 
   final String chatRoomId;

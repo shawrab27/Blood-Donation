@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/app_logo.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -39,23 +40,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
               // Pulsating Blood Drop Logo
               Center(
                 child: ScaleTransition(
-                  scale: Tween(begin: 0.9, end: 1.1).animate(
+                  scale: Tween(begin: 0.95, end: 1.05).animate(
                     CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryNavy,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryRed.withValues(alpha: 0.3),
-                          blurRadius: 40,
-                          spreadRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.water_drop, size: 80, color: AppColors.primaryRed),
+                  child: const BloodPulseLogo.hero(
+                    height: 120,
                   ),
                 ),
               ),

@@ -14,7 +14,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     fetchProfile();
   }
 
-  final String _baseUrl = 'https://bloodpulse-proxy.vercel.app/api';
+  final String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
 
 
   Future<void> fetchProfile() async {

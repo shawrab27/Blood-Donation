@@ -29,7 +29,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
   int? _selectedUpazilaId;
 
   bool _isSubmitting = false;
-  static const String _baseUrl = 'https://bloodpulse-proxy.vercel.app/api';
+  static const String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
 
   @override
   void dispose() {

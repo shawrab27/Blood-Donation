@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 abstract final class AppColors {
   // ── Brand ──────────────────────────────────────────────────────────────────
   static const Color primary   = Color(0xFFC30121); // Deep Blood Red
+  static const Color burgundy  = Color(0xFF641C2D); // Official Deep Burgundy
   static const Color secondary = Color(0xFF2B2B2B); // Dark Slate
   static const Color tertiary  = Color(0xFF0D68AA); // Medical Tech Blue
   static const Color neutral   = Color(0xFF8E7D7F); // Warm Taupe

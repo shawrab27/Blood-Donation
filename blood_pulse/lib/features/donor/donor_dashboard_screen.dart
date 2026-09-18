@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
 class DonorDashboardScreen extends ConsumerStatefulWidget {
   const DonorDashboardScreen({super.key});
@@ -16,14 +17,9 @@ class _DonorDashboardScreenState extends ConsumerState<DonorDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Donor Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {}, // Navigate to settings
-          ),
-        ],
+      appBar: const CustomAppBar(
+        subtitle: 'Donor Dashboard',
+        showBackButton: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.padding),

@@ -94,9 +94,33 @@ class SocialPost(models.Model):
     text_content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     likes_count = models.IntegerField(default=0)
+    original_post = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='reposts')
     
     def __str__(self):
         return f"Post by {self.author.user.username}"
+
+
+class PostReaction(models.Model):
+    post = models.ForeignKey(SocialPost, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} reacted to Post #{self.post_id}"
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(SocialPost, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on Post #{self.post_id}"
+
 
 
 class FakeAccountFlag(models.Model):

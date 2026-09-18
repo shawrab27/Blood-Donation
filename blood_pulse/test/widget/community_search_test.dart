@@ -17,9 +17,11 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('National Community'), findsOneWidget);
-    expect(find.text('Local Community'), findsOneWidget);
-    expect(find.text('National Volunteer Networks'), findsOneWidget);
+    expect(find.text('Communities'), findsOneWidget);
+    expect(find.text('National'), findsOneWidget);
+    expect(find.text('Local'), findsOneWidget);
+    expect(find.text('Organizations'), findsOneWidget);
+    expect(find.text('Medical Partners'), findsWidgets);
   });
 }
 

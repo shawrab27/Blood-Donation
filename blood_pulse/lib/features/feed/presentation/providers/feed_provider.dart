@@ -1,5 +1,7 @@
-import 'dart:typed_data';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../services/api_client.dart';
 
 class FeedComment {
   const FeedComment({
@@ -235,7 +237,44 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
     ),
   ];
 
-  void addPost({
+  final ApiClient _apiClient = ApiClient();
+
+  Future<void> fetchPosts() async {
+    try {
+      final response = await _apiClient.get('posts/');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final List<dynamic> list = jsonDecode(response.body) as List<dynamic>;
+        if (list.isNotEmpty) {
+          final fetched = list.map((item) {
+            final commentsList = (item['comments'] as List<dynamic>?)?.map((c) => FeedComment(
+              id: c['id'].toString(),
+              authorName: c['author']?.toString() ?? 'Community Member',
+              text: c['text']?.toString() ?? '',
+              timestamp: 'Recent',
+            )).toList() ?? <FeedComment>[];
+
+            return FeedPostItem(
+              id: item['id'].toString(),
+              authorName: item['author_name']?.toString() ?? 'Blood Donor',
+              authorRole: AuthorRole.donor,
+              roleBadgeText: item['original_post'] != null ? 'Reposted Story' : 'Donor Story',
+              timestamp: 'Recent',
+              content: item['text_content']?.toString() ?? '',
+              reactCount: item['likes_count'] as int? ?? (item['reactions_count'] as int? ?? 0),
+              commentCount: item['comments_count'] as int? ?? commentsList.length,
+              comments: commentsList,
+              repostCount: 0,
+            );
+          }).toList();
+          state = [...fetched, ..._initialPosts];
+        }
+      }
+    } catch (e) {
+      debugPrint('[FeedNotifier] Error fetching posts: $e');
+    }
+  }
+
+  Future<bool> addPost({
     required String authorName,
     required String content,
     Uint8List? imageBytes,
@@ -243,69 +282,163 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
     String? location,
     String? urgentNeedBadge,
     String? bloodGroupBadge,
-  }) {
-    final newPost = FeedPostItem(
-      id: 'post_${DateTime.now().millisecondsSinceEpoch}',
-      authorName: authorName,
-      authorRole: AuthorRole.donor,
-      roleBadgeText: 'Donor Story',
-      timestamp: 'Just now',
-      content: content,
-      imageBytes: imageBytes,
-      imageUrl: imageUrl,
-      location: location,
-      urgentNeedBadge: urgentNeedBadge,
-      bloodGroupBadge: bloodGroupBadge,
-      reactCount: 0,
-      commentCount: 0,
-      repostCount: 0,
-    );
+    void Function(String error)? onError,
+  }) async {
+    try {
+      final response = await _apiClient.post('posts/', body: {
+        'text_content': content,
+      });
 
-    state = [newPost, ...state];
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        final newPost = FeedPostItem(
+          id: data['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}',
+          authorName: data['author_name']?.toString() ?? authorName,
+          authorRole: AuthorRole.donor,
+          roleBadgeText: 'Donor Story',
+          timestamp: 'Just now',
+          content: content,
+          imageBytes: imageBytes,
+          imageUrl: imageUrl,
+          location: location,
+          urgentNeedBadge: urgentNeedBadge,
+          bloodGroupBadge: bloodGroupBadge,
+          reactCount: 0,
+          commentCount: 0,
+          repostCount: 0,
+        );
+        state = [newPost, ...state];
+        return true;
+      } else {
+        final err = 'Failed to post [${response.statusCode}]: ${response.body}';
+        onError?.call(err);
+        return false;
+      }
+    } catch (e) {
+      final err = 'Error creating post: $e';
+      onError?.call(err);
+      return false;
+    }
   }
 
-  void toggleReact(String postId) {
+  Future<bool> toggleReact(String postId, {void Function(String error)? onError}) async {
+    try {
+      final response = await _apiClient.post('posts/$postId/react/');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        final int reactCount = data['react_count'] as int? ?? 0;
+        final bool isReacted = data['is_reacted'] as bool? ?? false;
+        state = [
+          for (final post in state)
+            if (post.id == postId)
+              post.copyWith(
+                reactCount: reactCount,
+                isReacted: isReacted,
+              )
+            else
+              post,
+        ];
+        return true;
+      } else {
+        final err = 'Failed to react [${response.statusCode}]: ${response.body}';
+        onError?.call(err);
+        return false;
+      }
+    } catch (e) {
+      final err = 'Error reacting to post: $e';
+      onError?.call(err);
+      return false;
+    }
+  }
+
+  Future<bool> toggleRepost(String postId, {void Function(String error)? onError}) async {
+    return repost(postId, onError: onError);
+  }
+
+  Future<bool> repost(String postId, {void Function(String error)? onError}) async {
+    try {
+      final response = await _apiClient.post('posts/$postId/repost/');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        final newPost = FeedPostItem(
+          id: data['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}',
+          authorName: data['author_name']?.toString() ?? 'Community Member',
+          authorRole: AuthorRole.donor,
+          roleBadgeText: 'Reposted Story',
+          timestamp: 'Just now',
+          content: data['text_content']?.toString() ?? '',
+          reactCount: 0,
+          commentCount: 0,
+          repostCount: 0,
+        );
+        state = [
+          newPost,
+          for (final post in state)
+            if (post.id == postId)
+              post.copyWith(
+                repostCount: post.repostCount + 1,
+                isReposted: true,
+              )
+            else
+              post,
+        ];
+        return true;
+      } else {
+        final err = 'Failed to repost [${response.statusCode}]: ${response.body}';
+        onError?.call(err);
+        return false;
+      }
+    } catch (e) {
+      final err = 'Error reposting: $e';
+      onError?.call(err);
+      return false;
+    }
+  }
+
+  Future<bool> addComment(String postId, String text, {void Function(String error)? onError}) async {
+    if (text.trim().isEmpty) return false;
+    try {
+      final response = await _apiClient.post(
+        'posts/$postId/comments/',
+        body: {'text': text.trim()},
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body);
+        final newComment = FeedComment(
+          id: data['id']?.toString() ?? 'comment_${DateTime.now().millisecondsSinceEpoch}',
+          authorName: data['author']?.toString() ?? 'Community Member',
+          text: data['text']?.toString() ?? text.trim(),
+          timestamp: 'Just now',
+        );
+        state = [
+          for (final post in state)
+            if (post.id == postId)
+              post.copyWith(
+                commentCount: post.commentCount + 1,
+                comments: [...post.comments, newComment],
+              )
+            else
+              post,
+        ];
+        return true;
+      } else {
+        final err = 'Failed to add comment [${response.statusCode}]: ${response.body}';
+        onError?.call(err);
+        return false;
+      }
+    } catch (e) {
+      final err = 'Error adding comment: $e';
+      onError?.call(err);
+      return false;
+    }
+  }
+
+  void incrementShare(String postId) {
     state = [
       for (final post in state)
         if (post.id == postId)
           post.copyWith(
-            isReacted: !post.isReacted,
-            reactCount: post.isReacted ? post.reactCount - 1 : post.reactCount + 1,
-          )
-        else
-          post,
-    ];
-  }
-
-  void toggleRepost(String postId) {
-    state = [
-      for (final post in state)
-        if (post.id == postId)
-          post.copyWith(
-            isReposted: !post.isReposted,
-            repostCount: post.isReposted ? post.repostCount - 1 : post.repostCount + 1,
-          )
-        else
-          post,
-    ];
-  }
-
-  void addComment(String postId, String authorName, String text) {
-    if (text.trim().isEmpty) return;
-
-    final newComment = FeedComment(
-      id: 'comment_${DateTime.now().millisecondsSinceEpoch}',
-      authorName: authorName,
-      text: text.trim(),
-      timestamp: 'Just now',
-    );
-
-    state = [
-      for (final post in state)
-        if (post.id == postId)
-          post.copyWith(
-            commentCount: post.commentCount + 1,
-            comments: [...post.comments, newComment],
+            shareCount: post.shareCount + 1,
           )
         else
           post,

@@ -55,7 +55,7 @@ class ProfileView extends ConsumerWidget {
             CircleAvatar(
               radius: 50,
               backgroundImage: profile.profilePicture != null 
-                  ? NetworkImage('https://bloodpulse-proxy.vercel.app${profile.profilePicture}') 
+                  ? NetworkImage('https://blood-donation-liard.vercel.app${profile.profilePicture}') 
                   : const NetworkImage('https://ui-avatars.com/api/?name=User&background=random') as ImageProvider,
 
             ),
@@ -159,7 +159,7 @@ class ProfileView extends ConsumerWidget {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () async {
-          final url = Uri.parse('https://bloodpulse-proxy.vercel.app/api/donor_profiles/${profile.id}/certificate/');
+          final url = Uri.parse('https://blood-donation-liard.vercel.app/api/donor_profiles/${profile.id}/certificate/');
 
           if (await canLaunchUrl(url)) {
             await launchUrl(url);

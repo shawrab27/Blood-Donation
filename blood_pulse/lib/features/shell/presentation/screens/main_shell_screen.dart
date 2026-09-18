@@ -37,18 +37,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       const _ProfileTab(),
     ];
 
-    final List<String> tabTitles = [
-      l10n?.navFeed ?? 'Feed',
-      l10n?.navBloodHub ?? 'Blood Hub',
-      l10n?.navCommunities ?? 'Communities',
-      l10n?.navHealthHub ?? 'Health Hub',
-      l10n?.navProfile ?? 'Profile',
-    ];
-
     return Scaffold(
-      appBar: BloodPulseAppBar(
-        subtitle: tabTitles[_activeTabIndex],
-      ),
+      appBar: const BloodPulseAppBar(),
       body: tabs[_activeTabIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

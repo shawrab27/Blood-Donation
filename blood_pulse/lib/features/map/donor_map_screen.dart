@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
 class DonorMapScreen extends StatelessWidget {
   const DonorMapScreen({super.key});
@@ -7,7 +8,10 @@ class DonorMapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Live Map (64 Districts)')),
+      appBar: const CustomAppBar(
+        showLogo: true,
+        showBackButton: true,
+      ),
       body: Stack(
         children: [
           Container(

@@ -11,6 +11,7 @@ class HealthHubDashboardScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return ListView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
           const SizedBox(height: 8),

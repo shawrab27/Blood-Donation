@@ -19,12 +19,12 @@ class ApiException implements Exception {
 
 /// BloodPulse REST API Client with automatic crash-hardening, token management, and retry logic.
 class ApiClient {
-  /// Production via Vercel Reverse Proxy: `https://bloodpulse-proxy.vercel.app/api/`
+  /// Production via Vercel Reverse Proxy: `https://blood-donation-liard.vercel.app/api/`
   /// Override via `--dart-define=API_BASE_URL=https://...`
-  static const String defaultServerUrl = 'https://bloodpulse-proxy.vercel.app';
+  static const String defaultServerUrl = 'https://blood-donation-liard.vercel.app';
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://bloodpulse-proxy.vercel.app/api/',
+    defaultValue: 'https://blood-donation-liard.vercel.app/api/',
   );
 
 
@@ -317,7 +317,13 @@ class ApiClient {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-    final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
+    var base = baseUrl.trim();
+    if (!base.endsWith('/')) {
+      base = '$base/';
+    }
+    if (!base.endsWith('/api/') && !path.startsWith('api/')) {
+      base = '${base}api/';
+    }
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
     return '$base$cleanPath';
   }

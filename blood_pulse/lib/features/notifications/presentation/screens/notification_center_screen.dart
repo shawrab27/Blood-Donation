@@ -108,6 +108,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     switch (_selectedFilterIndex) {
       case 0:
         return ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           children: [
             ...cachedWidgets,
             const _NotificationItemTile(
@@ -130,6 +131,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         );
       case 1:
         return ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           children: [
             ...cachedWidgets,
             _NotificationItemTile(
@@ -154,6 +156,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         );
       case 2:
         return ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           children: [
             ...cachedWidgets,
             _NotificationItemTile(
@@ -179,6 +182,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       case 3:
       default:
         return ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           children: [
             ...cachedWidgets,
             const _NotificationItemTile(

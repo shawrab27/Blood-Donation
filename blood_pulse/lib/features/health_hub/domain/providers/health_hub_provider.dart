@@ -1,10 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../models/health_hub_models.dart';
 
-const String _baseUrl = 'https://bloodpulse-proxy.vercel.app/api/health-hub';
+const String _apiBase = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://blood-donation-liard.vercel.app/api',
+);
+
+String get _baseUrl {
+  final clean = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
+  return clean.endsWith('/health-hub') ? clean : '$clean/health-hub';
+}
 
 
 final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) async {
@@ -53,9 +61,17 @@ final recoveryTimelineProvider = FutureProvider<List<RecoveryTimelineStep>>((ref
 });
 
 class AiAnalysisService {
-  static Future<AiReportResult> analyzeReport(File imageFile) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/analyze-report/'));
-    request.files.add(await http.MultipartFile.fromPath('report', imageFile.path));
+  static Future<AiReportResult> analyzeReport(XFile imageFile) async {
+    final bytes = await imageFile.readAsBytes();
+    final uri = Uri.parse('$_baseUrl/analyze-report/');
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'report',
+        bytes,
+        filename: imageFile.name.isNotEmpty ? imageFile.name : 'report.jpg',
+      ),
+    );
     
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
@@ -63,8 +79,16 @@ class AiAnalysisService {
     if (response.statusCode == 200) {
       return AiReportResult.fromJson(json.decode(response.body));
     } else {
-      final error = json.decode(response.body)['error'] ?? 'Unknown error occurred';
-      throw Exception('Failed to analyze report: $error');
+      try {
+        final body = json.decode(response.body);
+        final error = body['error'] ?? body['detail'] ?? 'Analysis failed (${response.statusCode})';
+        throw Exception(error);
+      } catch (e) {
+        if (e is Exception && !e.toString().contains('FormatException')) {
+          rethrow;
+        }
+        throw Exception('Server returned ${response.statusCode}: ${response.body}');
+      }
     }
   }
 }

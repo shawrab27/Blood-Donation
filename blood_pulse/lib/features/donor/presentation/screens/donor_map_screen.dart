@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../services/api_client.dart';
 import '../../../../services/location_mapping_service.dart';
 
@@ -131,16 +132,9 @@ class _DonorMapScreenState extends State<DonorMapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: const Text('Live Donor Radar',
-            style: TextStyle(
-                fontFamily: 'Georgia',
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primary),
-        centerTitle: true,
+      appBar: const CustomAppBar(
+        showLogo: true,
+        showBackButton: true,
       ),
       body: Stack(
         children: [

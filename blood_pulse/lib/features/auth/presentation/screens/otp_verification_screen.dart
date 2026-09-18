@@ -5,7 +5,7 @@ import 'package:blood_pulse/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
-import '../../../../core/widgets/app_logo_slot.dart';
+import '../../../../core/widgets/app_logo.dart';
 import '../providers/auth_notifier.dart';
 import '../providers/otp_provider.dart';
 
@@ -66,16 +66,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const AppLogoSlot(size: AppLogoSize.card),
-              const SizedBox(height: 12),
-              Text(
-                l10n?.appName ?? 'BloodPulse',
-                style: const TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+              const BloodPulseLogo(
+                direction: Axis.vertical,
+                iconSize: 56.0,
+                fontSize: 26.0,
+                spacing: 12.0,
               ),
               const SizedBox(height: 20),
 

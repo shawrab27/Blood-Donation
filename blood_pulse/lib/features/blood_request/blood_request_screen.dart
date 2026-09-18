@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 import 'presentation/providers/blood_request_provider.dart';
 
 class BloodRequestScreen extends ConsumerStatefulWidget {
@@ -64,12 +65,11 @@ class _BloodRequestScreenState extends ConsumerState<BloodRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Emergency Sourcing'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
-        ),
+      appBar: CustomAppBar(
+        showLogo: true,
+        subtitle: 'Emergency',
+        showBackButton: true,
+        onBack: () => context.go('/dashboard'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppConstants.padding),

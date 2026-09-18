@@ -5,7 +5,7 @@ import 'package:blood_pulse/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
-import '../../../../core/widgets/app_logo_slot.dart';
+import '../../../../core/widgets/app_logo.dart';
 import '../providers/auth_notifier.dart';
 
 /// Login Screen — Phone/Username + Password.
@@ -117,21 +117,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 20),
-                        // ── Logo ──────────────────────────────────────────
-                        const AppLogoSlot(size: AppLogoSize.card),
-                        const SizedBox(height: 20),
-                        // ── Title ─────────────────────────────────────────
-                        Text(
-                          l10n?.appName ?? 'BloodPulse',
-                          style: const TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
+                        const SizedBox(height: 24),
+                        // ── Official BloodPulse Logo & Brand Name ─────────
+                        const BloodPulseLogo(
+                          direction: Axis.vertical,
+                          iconSize: 64.0,
+                          fontSize: 32.0,
+                          spacing: 12.0,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Text(
                           l10n?.loginSubtitle ?? 'Welcome back to the community.\nYour donation matters.',
                           textAlign: TextAlign.center,

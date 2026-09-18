@@ -257,6 +257,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: ListView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: const EdgeInsets.all(20),
         children: [
                 // ── Section 1: Header, Avatar & Badge Tier ───────────────────────
@@ -530,6 +531,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                     children: [
                       // Tab 1: Requests Chart
                       ListView(
+                        physics: const BouncingScrollPhysics(),
                         children: const [
                           _ActivityTile(
                             icon: Icons.emergency_rounded,
@@ -550,6 +552,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
                       // Tab 2: User Posts Log
                       ListView(
+                        physics: const BouncingScrollPhysics(),
                         children: [
                           CapsuleButton(
                             label: 'Add Post',
@@ -574,6 +577,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
                       // Tab 3: Donation History Log
                       ListView(
+                        physics: const BouncingScrollPhysics(),
                         children: const [
                           _ActivityTile(
                             icon: Icons.verified_rounded,

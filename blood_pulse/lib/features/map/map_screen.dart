@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
+import '../../core/widgets/custom_app_bar.dart';
 
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
@@ -8,12 +9,10 @@ class MapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Live Donor Map'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
-        ),
+      appBar: CustomAppBar(
+        showLogo: true,
+        showBackButton: true,
+        onBack: () => context.go('/dashboard'),
       ),
       body: Stack(
         children: [

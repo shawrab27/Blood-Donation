@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Hospital, DonorProfile, BloodRequest, SocialPost, FakeAccountFlag, AdminAction,
+    Hospital, DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, FakeAccountFlag, AdminAction,
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
     DonationHistory, RecentLog
@@ -110,13 +110,35 @@ class BloodRequestSerializer(serializers.ModelSerializer):
         model = BloodRequest
         fields = '__all__'
 
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'post', 'user', 'author', 'text', 'created_at']
+        read_only_fields = ['id', 'post', 'user', 'author', 'created_at']
+
+    def get_author(self, obj):
+        full_name = obj.user.get_full_name().strip()
+        return full_name if full_name else obj.user.username
+
+
 class SocialPostSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.user.username', read_only=True)
     author_blood_group = serializers.CharField(source='author.blood_group', read_only=True)
+    reactions_count = serializers.IntegerField(source='reactions.count', read_only=True)
+    comments_count = serializers.IntegerField(source='comments.count', read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
     
     class Meta:
         model = SocialPost
-        fields = ['id', 'author_name', 'author_blood_group', 'text_content', 'created_at', 'likes_count']
+        fields = [
+            'id', 'author_name', 'author_blood_group', 'text_content', 
+            'created_at', 'likes_count', 'reactions_count', 'comments_count', 
+            'comments', 'original_post'
+        ]
+        read_only_fields = ['id', 'created_at', 'likes_count', 'reactions_count', 'comments_count', 'comments']
+
 
 class FakeAccountFlagSerializer(serializers.ModelSerializer):
     donor_username = serializers.CharField(source='donor.user.username', read_only=True)

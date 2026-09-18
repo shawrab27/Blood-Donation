@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,7 +16,7 @@ class AiReportAnalysisScreen extends StatefulWidget {
 
 class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
   final _picker = ImagePicker();
-  File? _reportFile;
+  XFile? _reportFile;
   bool _isAnalyzing = false;
   bool _hasAnalyzed = false;
   AiReportResult? _analysisResult;
@@ -28,7 +27,7 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
       final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
       if (picked != null && mounted) {
         setState(() {
-          _reportFile = File(picked.path);
+          _reportFile = picked;
           _hasAnalyzed = false;
           _analysisResult = null;
           _errorMessage = null;
@@ -81,7 +80,6 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: BloodPulseAppBar(
-        subtitle: 'AI Report Analysis',
         showBackButton: true,
         onBack: () => context.pop(),
       ),

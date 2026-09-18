@@ -192,6 +192,7 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
         ref.invalidate(medicalPartnersProvider);
       },
       child: ListView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           // Sub-filter pill buttons: [Organizations] [Medical Partners]
@@ -723,6 +724,7 @@ class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
     final guidesAsync = ref.watch(areaGuidesProvider);
 
     return ListView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
         // Search Input: 🔍 Search by division, district, or upazila...
