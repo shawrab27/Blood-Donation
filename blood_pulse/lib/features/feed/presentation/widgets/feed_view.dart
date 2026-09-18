@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../providers/feed_provider.dart';
@@ -54,6 +55,7 @@ class _FeedViewState extends ConsumerState<FeedView> {
           if (index == 0) {
             return Column(
               children: [
+                const _ProfileCompletionBanner(),
                 _PostCreatorCard(picker: _picker),
                 const SizedBox(height: 10),
               ],
@@ -1232,4 +1234,112 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
 ),
 );
 }
+}
+
+class _ProfileCompletionBanner extends ConsumerWidget {
+  const _ProfileCompletionBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider).user;
+    if (user == null || user.isProfileComplete) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7F8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF5C8D0), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFC30121).withAlpha(12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: Color(0xFFC30121), size: 18),
+              const SizedBox(width: 8),
+              const Text(
+                'Complete Your Profile',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFC30121),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE5E9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'RECOMMENDED',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFC30121),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Declare your blood group, phone number, and district to request blood, view verified donor contacts, and join local communities.',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: Color(0xFF555555),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton(
+              onPressed: () => context.push('/complete-profile'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC30121),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Complete Profile',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(Icons.arrow_forward_rounded, size: 16),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

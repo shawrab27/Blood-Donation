@@ -101,6 +101,35 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class ProfileCompletionStatusView(APIView):
+    """
+    GET /api/profile/completion-status/
+    Returns {is_complete: bool, missing_fields: list[str]} for the requesting user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        profile = getattr(user, 'donorprofile', None)
+        if not profile:
+            profile = DonorProfile.objects.filter(user=user).first()
+
+        if not profile:
+            return Response({
+                "is_complete": False,
+                "missing_fields": ["blood_group", "district", "phone_number", "full_name"]
+            }, status=status.HTTP_200_OK)
+
+        is_complete, missing_fields = profile.check_is_complete()
+        if profile.is_profile_complete != is_complete:
+            profile.is_profile_complete = is_complete
+            profile.save(update_fields=['is_profile_complete'])
+
+        return Response({
+            "is_complete": is_complete,
+            "missing_fields": missing_fields
+        }, status=status.HTTP_200_OK)
+
 class BloodRequestViewSet(viewsets.ModelViewSet):
     queryset = BloodRequest.objects.filter(is_active=True).order_by('-created_at')
     serializer_class = BloodRequestSerializer

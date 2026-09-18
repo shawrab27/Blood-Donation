@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/profile_completion_gate.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/otp_provider.dart';
 
@@ -111,7 +112,10 @@ class _BloodHubTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const BloodHubView();
+    return const ProfileCompletionGate(
+      featureName: 'Blood Hub & Emergency Requests',
+      child: BloodHubView(),
+    );
   }
 }
 
@@ -267,7 +271,10 @@ class _CommunitiesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CommunitiesView();
+    return const ProfileCompletionGate(
+      featureName: 'Community Donors & Clubs',
+      child: CommunitiesView(),
+    );
   }
 }
 

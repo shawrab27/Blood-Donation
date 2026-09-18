@@ -48,6 +48,34 @@ class DonorProfile(models.Model):
         if rank == 3: return "Bronze Donor"
         return "Green Donor"
 
+    def check_is_complete(self):
+        missing = []
+        full_name = ""
+        if self.user:
+            full_name = f"{self.user.first_name or ''} {self.user.last_name or ''}".strip()
+        if not full_name:
+            missing.append("full_name")
+
+        phone = (self.phone_number or "").strip()
+        if not phone or (phone.startswith('+8800000') and len(phone) == 12):
+            missing.append("phone_number")
+
+        bg = (self.blood_group or "").strip()
+        valid_bgs = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+        if not bg or bg not in valid_bgs:
+            missing.append("blood_group")
+
+        dist = (self.district or "").strip()
+        if not dist:
+            missing.append("district")
+
+        return len(missing) == 0, missing
+
+    def save(self, *args, **kwargs):
+        is_comp, _ = self.check_is_complete()
+        self.is_profile_complete = is_comp
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username} ({self.blood_group})"
 

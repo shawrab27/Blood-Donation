@@ -161,21 +161,51 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             ...cachedWidgets,
             _NotificationItemTile(
               icon: Icons.chat_bubble_rounded,
+              iconColor: AppColors.primary,
+              title: 'Sarah Jenkins',
+              subtitle: 'request for O- blood at Central General. Is the donation slot still open for 3 PM?',
+              time: '10:45 AM',
+              isUnread: true,
+              onTap: () => context.push(
+                '/chat',
+                extra: {
+                  'chatRecipientName': 'Sarah Jenkins',
+                  'bloodGroup': 'O-',
+                  'chatRoomId': 'sarah_jenkins_o_minus',
+                },
+              ),
+            ),
+            _NotificationItemTile(
+              icon: Icons.chat_bubble_rounded,
               iconColor: AppColors.tertiary,
               title: 'Dr. Alim (Transfusion Unit)',
-              subtitle: '"Can you reach DMCH Gate 2 by 4:00 PM for verification?"',
+              subtitle: '"Can you reach Central General Hospital by 4:00 PM for verification?"',
               time: '15 mins ago',
-              isUnread: true,
-              onTap: () => context.push('/chat'),
+              isUnread: false,
+              onTap: () => context.push(
+                '/chat',
+                extra: {
+                  'chatRecipientName': 'Dr. Alim',
+                  'bloodGroup': 'AB+',
+                  'chatRoomId': 'dr_alim',
+                },
+              ),
             ),
             _NotificationItemTile(
               icon: Icons.person_search_rounded,
               iconColor: const Color(0xFF1B8A4E),
-              title: 'Badhan DU Coordinator',
+              title: 'BloodPulse Dispatch Coordinator',
               subtitle: '"Thank you for accepting the voluntary dispatch request!"',
               time: '1 hour ago',
               isUnread: false,
-              onTap: () => context.push('/chat'),
+              onTap: () => context.push(
+                '/chat',
+                extra: {
+                  'chatRecipientName': 'BloodPulse Coordinator',
+                  'bloodGroup': 'A+',
+                  'chatRoomId': 'coordinator',
+                },
+              ),
             ),
           ],
         );

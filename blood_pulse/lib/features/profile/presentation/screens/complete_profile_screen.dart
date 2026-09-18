@@ -121,26 +121,17 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
 
       await ref.read(profileProvider.notifier).fetchProfile();
 
-      final currentUser = ref.read(authProvider).user;
-      if (currentUser != null) {
-        ref.read(authProvider.notifier).registerUser(
-          currentUser.copyWith(
-            bloodGroup: _selectedBloodGroup,
-            primaryPhone: _phoneCtrl.text.trim(),
-            isProfileComplete: true,
-            categoryDetails: {
-              ...currentUser.categoryDetails,
-              'district': city,
-            },
-          ),
-        );
-      }
+      ref.read(authProvider.notifier).updateCompletedProfile(
+        bloodGroup: _selectedBloodGroup!,
+        district: city,
+        phone: _phoneCtrl.text.trim(),
+      );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profile completed successfully!', style: TextStyle(fontFamily: 'Inter')),
+          content: Text('Profile completed successfully! All features unlocked.', style: TextStyle(fontFamily: 'Inter')),
           backgroundColor: Color(0xFF1B8A4E),
           behavior: SnackBarBehavior.floating,
         ),
@@ -148,9 +139,8 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
 
       if (context.canPop()) {
         context.pop();
-        context.push('/emergency-request');
       } else {
-        context.go('/emergency-request');
+        context.go('/feed');
       }
     } catch (e) {
       setState(() {

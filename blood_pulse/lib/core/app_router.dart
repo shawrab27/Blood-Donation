@@ -79,16 +79,29 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/chat',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        final chatRoomId = extra?['chatRoomId'] as String? ??
-            state.uri.queryParameters['roomId'] ??
-            'general_emergency';
-        final chatRecipientName = extra?['chatRecipientName'] as String? ??
-            state.uri.queryParameters['name'] ??
-            'Emergency Responder';
+        final extra = state.extra;
+        String chatRoomId = 'sarah_jenkins_o_minus';
+        String chatRecipientName = 'Sarah Jenkins';
+        String bloodGroup = 'O-';
+
+        if (extra is Map<String, dynamic>) {
+          chatRoomId = extra['chatRoomId'] as String? ?? chatRoomId;
+          chatRecipientName = extra['chatRecipientName'] as String? ??
+              extra['recipientName'] as String? ??
+              chatRecipientName;
+          bloodGroup = extra['bloodGroup'] as String? ?? bloodGroup;
+        } else if (extra is String) {
+          chatRoomId = extra;
+        } else {
+          chatRoomId = state.uri.queryParameters['roomId'] ?? chatRoomId;
+          chatRecipientName = state.uri.queryParameters['name'] ?? chatRecipientName;
+          bloodGroup = state.uri.queryParameters['bloodGroup'] ?? bloodGroup;
+        }
+
         return ChatScreen(
           chatRoomId: chatRoomId,
           chatRecipientName: chatRecipientName,
+          bloodGroup: bloodGroup,
         );
       },
     ),

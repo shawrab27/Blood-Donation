@@ -361,6 +361,48 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Checks whether user profile is complete from backend GET /api/profile/completion-status/
+  Future<bool> checkProfileCompletion() async {
+    try {
+      final res = await _apiClient.get('profile/completion-status/');
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final isComplete = data['is_complete'] == true;
+        if (state.user != null) {
+          state = state.copyWith(
+            user: state.user!.copyWith(isProfileComplete: isComplete),
+          );
+        }
+        return isComplete;
+      }
+      return state.user?.isProfileComplete ?? false;
+    } catch (e) {
+      debugPrint('[AuthNotifier] checkProfileCompletion error: $e');
+      return state.user?.isProfileComplete ?? false;
+    }
+  }
+
+  /// Explicitly update the completed profile fields and mark profile complete
+  void updateCompletedProfile({
+    required String bloodGroup,
+    required String district,
+    required String phone,
+  }) {
+    if (state.user != null) {
+      state = state.copyWith(
+        user: state.user!.copyWith(
+          bloodGroup: bloodGroup,
+          primaryPhone: phone,
+          isProfileComplete: true,
+          categoryDetails: {
+            ...state.user!.categoryDetails,
+            'district': district,
+          },
+        ),
+      );
+    }
+  }
+
   void logout() {
     _apiClient.clearTokens();
     state = const AuthState();
