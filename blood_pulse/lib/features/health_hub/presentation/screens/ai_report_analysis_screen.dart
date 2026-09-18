@@ -226,7 +226,17 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
                 children: [
                   Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
                   SizedBox(width: 8),
-                  Text('AI Health Summary', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                  Expanded(
+                    child: Text(
+                      'AI Health Summary',
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -247,11 +257,7 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
           const SizedBox(height: 24),
           const Text('Dietary Action Plan', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary)),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: result.dietaryActionPlan.map((item) => _buildDietaryPill(item)).toList(),
-          ),
+          ...result.dietaryActionPlan.map((item) => _buildDietaryPill(item)),
         ],
         const SizedBox(height: 32),
       ],
@@ -278,7 +284,12 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(item.testName, style: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.secondary)),
+              Expanded(
+                child: Text(
+                  item.testName,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.secondary),
+                ),
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -298,8 +309,16 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
               Text(item.value, style: TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.bold, color: statusColor)),
               const SizedBox(width: 4),
               Text(item.unit, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral)),
-              const Spacer(),
-              Text('Range: ${item.referenceRange}', style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Range: ${item.referenceRange}',
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
+                ),
+              ),
             ],
           ),
         ],
@@ -309,20 +328,33 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
 
   Widget _buildDietaryPill(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F7FA),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE4E9F2)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.restaurant_menu, size: 14, color: AppColors.tertiary),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.secondary),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.restaurant_menu, size: 15, color: AppColors.tertiary),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.secondary,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),

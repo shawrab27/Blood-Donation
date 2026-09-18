@@ -243,29 +243,38 @@ class BloodPulseLogo extends StatelessWidget {
             iconWidget,
             SizedBox(width: spacing),
           ],
-          if (showText) textWidget,
+          if (showText)
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: textWidget,
+              ),
+            ),
           if (subtitle != null && subtitle!.isNotEmpty) ...[
             const SizedBox(width: 6),
-            Container(
-              constraints: const BoxConstraints(maxWidth: 90),
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: primaryColor.withValues(alpha: 0.2),
-                  width: 1,
+            Flexible(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 80),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: primaryColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
-              ),
-              child: Text(
-                subtitle!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: primaryColor,
+                child: Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: primaryColor,
+                  ),
                 ),
               ),
             ),

@@ -78,11 +78,10 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
-      titleSpacing: 16,
+      titleSpacing: 8,
       centerTitle: centerTitle,
       bottom: bottom,
       title: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           // ── Optional Back Button ──
           if (showBackButton) ...[
@@ -96,8 +95,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     }
                   },
               child: Container(
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: (backgroundColor != null &&
                           backgroundColor!.computeLuminance() < 0.3)
@@ -117,7 +116,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 child: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  size: 16,
+                  size: 14,
                   color: (backgroundColor != null &&
                           backgroundColor!.computeLuminance() < 0.3)
                       ? Colors.white
@@ -125,11 +124,11 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 6),
           ],
 
           // ── Left Title / Logo ──
-          Flexible(
+          Expanded(
             child: titleWidget != null
                 ? titleWidget!
                 : (title != null && !showLogo)
@@ -139,7 +138,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Georgia',
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: titleColor ?? AppColors.secondary,
                           letterSpacing: -0.3,
@@ -148,7 +147,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     : showLogo
                         ? BloodPulseLogo(
                             height: logoSize,
-                            subtitle: subtitle,
+                            subtitle: showBackButton ? null : subtitle,
                             onTap: () {
                               if (context.mounted) {
                                 context.go('/feed');
@@ -161,7 +160,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'Georgia',
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: titleColor ?? AppColors.primary,
                             ),
@@ -178,13 +177,15 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
             alignment: Alignment.center,
             children: [
               IconButton(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 icon: Icon(
                   Icons.notifications_outlined,
                   color: (backgroundColor != null &&
                           backgroundColor!.computeLuminance() < 0.3)
                       ? Colors.white
                       : AppColors.secondary,
-                  size: 24,
+                  size: 22,
                 ),
                 tooltip: 'Notifications',
                 onPressed: () {
@@ -197,11 +198,11 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
               if (notificationCount > 0)
                 Positioned(
-                  right: 8,
-                  top: 10,
+                  right: 4,
+                  top: 6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
                     decoration: BoxDecoration(
                       color: AppColors.primary,
                       borderRadius: BorderRadius.circular(10),
@@ -212,7 +213,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         '$notificationCount',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 9,
+                          fontSize: 8.5,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Inter',
                           height: 1.0,
@@ -236,6 +237,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ),
+        const SizedBox(width: 6),
 
         // ── 3. Menu Options (3-Dot Popup Menu) ──
         if (showMenu)
