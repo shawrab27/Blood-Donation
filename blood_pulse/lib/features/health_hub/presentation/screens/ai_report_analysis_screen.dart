@@ -67,9 +67,17 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
     } catch (e) {
       debugPrint('[AiReportAnalysis] Analysis error: $e');
       if (mounted) {
+        String displayError = e.toString().replaceAll('Exception: ', '');
+        if (displayError.contains('ClientException') ||
+            displayError.contains('Failed to fetch') ||
+            displayError.contains('XMLHttpRequest') ||
+            displayError.contains('SocketException') ||
+            displayError.contains('TimeoutException')) {
+          displayError = 'Unable to complete AI analysis. Please check your connection and try again.';
+        }
         setState(() {
           _isAnalyzing = false;
-          _errorMessage = e.toString();
+          _errorMessage = displayError;
         });
       }
     }
@@ -158,7 +166,7 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
 
             if (!_hasAnalyzed && !_isAnalyzing)
               CapsuleButton(
-                label: 'Analyze with Gemini AI',
+                label: 'Analyse with Ai',
                 onPressed: _runAnalysis,
               ),
 

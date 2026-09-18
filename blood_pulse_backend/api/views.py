@@ -364,25 +364,40 @@ from google import genai
 from google.genai import types
 from django.conf import settings
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from PIL import Image
 import json
 import os
 
 class GeminiReportAnalyzeView(APIView):
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     permission_classes = [AllowAny] # Using AllowAny for easy testing, switch to IsAuthenticated later if needed.
 
     def post(self, request, *args, **kwargs):
         file_obj = request.FILES.get('report')
-        if not file_obj:
-            return Response({'error': 'No report file provided.'}, status=400)
-            
-        try:
-            image = Image.open(file_obj)
-        except Exception as e:
-            return Response({'error': 'Invalid image file. Please upload a JPG or PNG.'}, status=400)
+        image = None
+
+        if file_obj:
+            try:
+                image = Image.open(file_obj)
+            except Exception:
+                return Response({'error': 'Invalid image file. Please upload a JPG or PNG.'}, status=400)
+        else:
+            report_base64 = request.data.get('report_base64') or request.data.get('image')
+            if report_base64:
+                try:
+                    import base64
+                    import io
+                    if ',' in report_base64:
+                        report_base64 = report_base64.split(',', 1)[1]
+                    decoded_bytes = base64.b64decode(report_base64)
+                    image = Image.open(io.BytesIO(decoded_bytes)).convert("RGB")
+                except Exception:
+                    return Response({'error': 'Invalid base64 image data. Please upload a valid JPG or PNG.'}, status=400)
+
+        if not image:
+            return Response({'error': 'No report file provided. Please upload an image or base64 report.'}, status=400)
 
         api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
         if not api_key:
