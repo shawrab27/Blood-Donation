@@ -43,6 +43,12 @@ class FeedPostItem {
     this.repostCount = 0,
     this.isReposted = false,
     this.shareCount = 0,
+    this.repostedBy,
+    this.originalAuthor,
+    this.originalContent,
+    this.originalLocation,
+    this.originalImageUrl,
+    this.originalImageBytes,
   });
 
   final String id;
@@ -65,6 +71,12 @@ class FeedPostItem {
   final int repostCount;
   final bool isReposted;
   final int shareCount;
+  final String? repostedBy;
+  final String? originalAuthor;
+  final String? originalContent;
+  final String? originalLocation;
+  final String? originalImageUrl;
+  final Uint8List? originalImageBytes;
 
   FeedPostItem copyWith({
     int? reactCount,
@@ -74,6 +86,12 @@ class FeedPostItem {
     int? repostCount,
     bool? isReposted,
     int? shareCount,
+    String? repostedBy,
+    String? originalAuthor,
+    String? originalContent,
+    String? originalLocation,
+    String? originalImageUrl,
+    Uint8List? originalImageBytes,
   }) {
     return FeedPostItem(
       id: id,
@@ -96,6 +114,12 @@ class FeedPostItem {
       repostCount: repostCount ?? this.repostCount,
       isReposted: isReposted ?? this.isReposted,
       shareCount: shareCount ?? this.shareCount,
+      repostedBy: repostedBy ?? this.repostedBy,
+      originalAuthor: originalAuthor ?? this.originalAuthor,
+      originalContent: originalContent ?? this.originalContent,
+      originalLocation: originalLocation ?? this.originalLocation,
+      originalImageUrl: originalImageUrl ?? this.originalImageUrl,
+      originalImageBytes: originalImageBytes ?? this.originalImageBytes,
     );
   }
 }
@@ -253,6 +277,8 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
               timestamp: 'Recent',
             )).toList() ?? <FeedComment>[];
 
+            final String? repostedBy = item['reposted_by']?.toString();
+            final String? originalAuthor = item['original_author_name']?.toString();
             return FeedPostItem(
               id: item['id'].toString(),
               authorName: item['author_name']?.toString() ?? 'Blood Donor',
@@ -264,6 +290,9 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
               commentCount: item['comments_count'] as int? ?? commentsList.length,
               comments: commentsList,
               repostCount: 0,
+              repostedBy: repostedBy,
+              originalAuthor: originalAuthor,
+              originalContent: repostedBy != null ? (item['text_content']?.toString() ?? '') : null,
             );
           }).toList();
           state = [...fetched, ..._initialPosts];
@@ -351,22 +380,40 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
     }
   }
 
-  Future<bool> toggleRepost(String postId, {void Function(String error)? onError}) async {
-    return repost(postId, onError: onError);
+  Future<bool> toggleRepost(String postId, {String? reposterName, void Function(String error)? onError}) async {
+    return repost(postId, reposterName: reposterName, onError: onError);
   }
 
-  Future<bool> repost(String postId, {void Function(String error)? onError}) async {
+  Future<bool> repost(String postId, {String? reposterName, void Function(String error)? onError}) async {
+    final originalIndex = state.indexWhere((p) => p.id == postId);
+    final original = originalIndex != -1 ? state[originalIndex] : null;
+    final fallbackReposter = reposterName ?? 'You';
+
     try {
       final response = await _apiClient.post('posts/$postId/repost/');
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body);
+        final effectiveReposter = data['reposted_by']?.toString() ?? fallbackReposter;
         final newPost = FeedPostItem(
-          id: data['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}',
-          authorName: data['author_name']?.toString() ?? 'Community Member',
-          authorRole: AuthorRole.donor,
-          roleBadgeText: 'Reposted Story',
+          id: data['id']?.toString() ?? 'repost_${DateTime.now().millisecondsSinceEpoch}',
+          authorName: original?.authorName ?? (data['original_author_name']?.toString() ?? 'Community Member'),
+          authorAvatar: original?.authorAvatar,
+          authorRole: original?.authorRole ?? AuthorRole.donor,
+          roleBadgeText: original?.roleBadgeText ?? 'Donor Story',
           timestamp: 'Just now',
-          content: data['text_content']?.toString() ?? '',
+          content: original?.content ?? (data['text_content']?.toString() ?? ''),
+          location: original?.location,
+          imageUrl: original?.imageUrl,
+          imageBytes: original?.imageBytes,
+          urgentNeedBadge: original?.urgentNeedBadge,
+          bloodGroupBadge: original?.bloodGroupBadge,
+          achievementBadge: original?.achievementBadge,
+          repostedBy: effectiveReposter,
+          originalAuthor: original?.authorName ?? data['original_author_name']?.toString(),
+          originalContent: original?.content ?? data['text_content']?.toString(),
+          originalLocation: original?.location,
+          originalImageUrl: original?.imageUrl,
+          originalImageBytes: original?.imageBytes,
           reactCount: 0,
           commentCount: 0,
           repostCount: 0,

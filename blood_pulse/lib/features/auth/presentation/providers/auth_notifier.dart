@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
@@ -225,7 +226,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } catch (e) {
-      final msg = e.toString().replaceAll('Exception: ', '');
+      String msg = e.toString().replaceAll('Exception: ', '');
+      if (kIsWeb && msg.contains('Null check operator')) {
+        msg = 'Google Sign-In on Web requires a Google Cloud Web Client ID. Please test Google Sign-In on your mobile device (flutter run), or log in with Username/Password.';
+      }
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: msg,

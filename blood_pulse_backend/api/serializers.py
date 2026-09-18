@@ -124,20 +124,41 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class SocialPostSerializer(serializers.ModelSerializer):
-    author_name = serializers.CharField(source='author.user.username', read_only=True)
+    author_name = serializers.SerializerMethodField()
     author_blood_group = serializers.CharField(source='author.blood_group', read_only=True)
     reactions_count = serializers.IntegerField(source='reactions.count', read_only=True)
     comments_count = serializers.IntegerField(source='comments.count', read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    reposted_by = serializers.SerializerMethodField()
+    original_author_name = serializers.SerializerMethodField()
     
     class Meta:
         model = SocialPost
         fields = [
             'id', 'author_name', 'author_blood_group', 'text_content', 
             'created_at', 'likes_count', 'reactions_count', 'comments_count', 
-            'comments', 'original_post'
+            'comments', 'original_post', 'reposted_by', 'original_author_name'
         ]
-        read_only_fields = ['id', 'created_at', 'likes_count', 'reactions_count', 'comments_count', 'comments']
+        read_only_fields = ['id', 'created_at', 'likes_count', 'reactions_count', 'comments_count', 'comments', 'reposted_by', 'original_author_name']
+
+    def get_author_name(self, obj):
+        if obj.author and obj.author.user:
+            fn = obj.author.user.get_full_name().strip()
+            return fn if fn else obj.author.user.username
+        return 'Blood Donor'
+
+    def get_reposted_by(self, obj):
+        if obj.original_post:
+            if obj.author and obj.author.user:
+                fn = obj.author.user.get_full_name().strip()
+                return fn if fn else obj.author.user.username
+        return None
+
+    def get_original_author_name(self, obj):
+        if obj.original_post and obj.original_post.author and obj.original_post.author.user:
+            fn = obj.original_post.author.user.get_full_name().strip()
+            return fn if fn else obj.original_post.author.user.username
+        return None
 
 
 class FakeAccountFlagSerializer(serializers.ModelSerializer):

@@ -458,7 +458,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   Widget build(BuildContext context) {
     final state = ref.watch(profileCountdownProvider);
     final user = state.user;
+    final authUser = ref.watch(authProvider).user;
+    final allPosts = ref.watch(feedProvider);
     final l10n = AppLocalizations.of(context);
+
+    final currentUserName = (authUser?.fullName.isNotEmpty == true)
+        ? authUser!.fullName
+        : (user?.name ?? 'Dr. S. M. Shawrab');
+
+    final userTimelinePosts = allPosts.where((p) {
+      final isAuthor = p.authorName == currentUserName ||
+          (authUser != null && p.authorName == authUser.fullName) ||
+          (user != null && p.authorName == user.name);
+      final isReposter = p.repostedBy != null &&
+          (p.repostedBy == currentUserName ||
+              (authUser != null && p.repostedBy == authUser.fullName) ||
+              (user != null && p.repostedBy == user.name) ||
+              p.repostedBy == 'You');
+      return isAuthor || isReposter;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -767,13 +785,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                             onPressed: _showAddPostModal,
                           ),
                           const SizedBox(height: 12),
-                          const _ActivityTile(
-                            icon: Icons.article_outlined,
-                            color: AppColors.tertiary,
-                            title: 'Voluntary Donation Awareness',
-                            subtitle: '"Donated blood today at Badhan DU unit!"',
-                            status: '12 Likes',
-                          ),
+                          if (userTimelinePosts.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: const Column(
+                                children: [
+                                  Icon(Icons.feed_outlined, size: 36, color: Color(0xFFC30121)),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'No posts or reposts yet',
+                                    style: TextStyle(
+                                      fontFamily: 'Georgia',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.secondary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Share your donation journey or repost urgent calls from the feed to showcase them here!',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            for (final p in userTimelinePosts)
+                              _ActivityTile(
+                                icon: p.repostedBy != null ? Icons.repeat_rounded : Icons.article_outlined,
+                                color: p.repostedBy != null ? const Color(0xFF1B8A4E) : AppColors.tertiary,
+                                title: p.repostedBy != null ? '🔁 Reposted • ${p.timestamp}' : 'Story • ${p.timestamp}',
+                                subtitle: p.content,
+                                status: '${p.reactCount} Likes',
+                              ),
                         ],
                       ),
 
