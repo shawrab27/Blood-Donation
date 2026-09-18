@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:blood_pulse/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/capsule_button.dart';
@@ -844,65 +843,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                             title: 'Bangabandhu Sheikh Mujib Med. University',
                             subtitle: '10 Feb 2026 • 1 Bag (O+)',
                             status: 'Verified Badge',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ── Section 6: Admin Operations Access (For authorized roles) ──
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.tertiary.withAlpha(50)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.admin_panel_settings_outlined, color: AppColors.tertiary, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Administrative Tools',
-                            style: TextStyle(fontFamily: 'Georgia', fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Access the moderator & administrative control center to review flagged accounts and verify requests.',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppColors.tertiary),
-                                shape: const StadiumBorder(),
-                              ),
-                              onPressed: () => context.push('/admin'),
-                              icon: const Icon(Icons.security_rounded, size: 16, color: AppColors.tertiary),
-                              label: const Text('Admin Ops', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.tertiary, fontSize: 12)),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: const StadiumBorder(),
-                              ),
-                              onPressed: () => context.push('/admin-dashboard'),
-                              icon: const Icon(Icons.dashboard_outlined, size: 16, color: Colors.white),
-                              label: const Text('Dashboard', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12)),
-                            ),
                           ),
                         ],
                       ),
