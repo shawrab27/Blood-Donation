@@ -134,6 +134,51 @@ class ApiClient {
     }
   }
 
+  /// Exchanges Firebase ID token with backend POST /api/auth/firebase/, returning JWT tokens and saving them to secure storage.
+  Future<Map<String, dynamic>> loginWithFirebase({
+    required String idToken,
+  }) async {
+    try {
+      final uri = Uri.parse(_normalizeUrl('auth/firebase/'));
+      final response = await _client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'id_token': idToken,
+            }),
+          )
+          .timeout(connectTimeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final access = data['access'] as String?;
+        final refresh = data['refresh'] as String?;
+
+        if (access != null && refresh != null) {
+          await saveTokens(access: access, refresh: refresh);
+        }
+        return data;
+      } else {
+        throw ApiException(
+          'Firebase login failed [${response.statusCode}]: ${_extractErrorMessage(response.body)}',
+          statusCode: response.statusCode,
+          rawError: response.body,
+        );
+      }
+    } on ApiException {
+      rethrow;
+    } on SocketException catch (e) {
+      throw ApiException('Network unreachable. Please check your internet connection.', rawError: e);
+    } on TimeoutException catch (e) {
+      throw ApiException('Connection timed out. Server took too long to respond.', rawError: e);
+    } on FormatException catch (e) {
+      throw ApiException('Malformed response received from server.', rawError: e);
+    } catch (e) {
+      throw ApiException('Unexpected authentication error: $e', rawError: e);
+    }
+  }
+
   /// Exchanges Google OAuth token with the backend, returning JWT tokens and saving them to secure storage.
   Future<Map<String, dynamic>> loginWithGoogle({
     required String accessToken,

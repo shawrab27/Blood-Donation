@@ -11,6 +11,9 @@ local.properties
 key.properties
 *.jks
 *.keystore
+*firebase*adminsdk*.json
+*service-account*.json
+firebase-credentials.json
 
 # ── Python / Django Backend ───────────────
 venv/

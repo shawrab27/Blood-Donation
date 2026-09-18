@@ -82,6 +82,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
+  Future<void> _onGoogleSignIn() async {
+    _idFocus.unfocus();
+    _pwFocus.unfocus();
+
+    final success = await ref.read(authProvider.notifier).signInWithGoogle();
+
+    if (!mounted) return;
+    if (success) {
+      context.go('/dashboard');
+    } else {
+      final err = ref.read(authProvider).errorMessage;
+      if (err != null && err.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err, style: const TextStyle(fontFamily: 'Inter')),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: const StadiumBorder(),
+          ),
+        );
+      }
+    }
+  }
+
   void _openForgotPasswordSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -238,52 +262,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                                        side: const BorderSide(color: Color(0xFFE2E2E2)),
-                                      ),
-                                      icon: const Icon(Icons.g_mobiledata, size: 20, color: Color(0xFF2B2B2B)),
-                                      label: const Text(
-                                        'Google',
-                                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
-                                      ),
-                                      onPressed: () async {
-                                        final success = await ref.read(authProvider.notifier).loginWithGoogle();
-                                        if (!mounted) return;
-                                        if (success) {
-                                          context.go('/feed');
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                                        side: const BorderSide(color: Color(0xFFE2E2E2)),
-                                      ),
-                                      icon: const Icon(Icons.facebook, size: 18, color: Color(0xFF2B2B2B)),
-                                      label: const Text(
-                                        'Facebook',
-                                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2B2B2B)),
-                                      ),
-                                      onPressed: () async {
-                                        final success = await ref.read(authProvider.notifier).loginWithFacebook();
-                                        if (!mounted) return;
-                                        if (success) {
-                                          context.go('/feed');
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
+                              CapsuleButton(
+                                label: 'Continue with Google',
+                                isOutlined: true,
+                                icon: Icons.g_mobiledata_rounded,
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.secondary,
+                                isLoading: auth.isLoading,
+                                height: 50,
+                                onPressed: auth.isLoading ? null : _onGoogleSignIn,
                               ),
                             ],
                           ),

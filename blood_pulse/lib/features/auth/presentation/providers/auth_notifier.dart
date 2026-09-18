@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import '../../../../services/api_client.dart';
 
 /// Authentication status for BloodPulse.
@@ -171,22 +172,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return false;
       }
 
-      final GoogleSignInAuthentication auth = await account.authentication;
-      final accessToken = auth.accessToken ?? auth.idToken ?? '';
+      final GoogleSignInAuthentication googleAuth = await account.authentication;
 
-      final authData = await _apiClient.loginWithGoogle(
-        accessToken: accessToken,
-        idToken: auth.idToken,
-        email: account.email,
-        displayName: account.displayName,
+      // Authenticate with Firebase using Google credentials
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        throw ApiException('Failed to retrieve Firebase user profile.');
+      }
+
+      final String? firebaseIdToken = await firebaseUser.getIdToken();
+      if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+        throw ApiException('Failed to retrieve Firebase ID token.');
+      }
+
+      // Exchange Firebase ID token with backend POST /api/auth/firebase/
+      final authData = await _apiClient.loginWithFirebase(
+        idToken: firebaseIdToken,
       );
 
       final userData = authData['user'] as Map<String, dynamic>?;
       final bool isProfileComplete = userData?['is_profile_complete'] == true;
 
       final user = UserProfile(
-        fullName: account.displayName ?? 'Google Donor',
-        email: account.email,
+        fullName: firebaseUser.displayName ?? account.displayName ?? 'Google Donor',
+        email: firebaseUser.email ?? account.email,
         primaryPhone: userData?['phone_number'] ?? '',
         age: 25,
         gender: 'Not specified',

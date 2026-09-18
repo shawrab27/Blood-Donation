@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "404989190662",
+    "project_id": "bloodpulse-283dc",
+    "storage_bucket": "bloodpulse-283dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404989190662:android:4f22536e4a57c949e25987",
+        "android_client_info": {
+          "package_name": "com.bloodpulse.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEwLrHATWvcr-JNKxun99Y74YDrhqiNCA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

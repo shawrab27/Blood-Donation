@@ -512,3 +512,122 @@ class GoogleAuthView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
+
+def _get_firebase_app():
+    import os
+    import json
+    from django.conf import settings
+    import firebase_admin
+    from firebase_admin import credentials
+
+    if not firebase_admin._apps:
+        project_id = os.environ.get('FIREBASE_PROJECT_ID', 'bloodpulse-283dc')
+        options = {'projectId': project_id}
+
+        cred_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
+        cred_path = os.environ.get('FIREBASE_CREDENTIALS_PATH')
+        if cred_json:
+            try:
+                cred_dict = json.loads(cred_json)
+                cred = credentials.Certificate(cred_dict)
+                return firebase_admin.initialize_app(cred, options=options)
+            except Exception:
+                pass
+        if cred_path and os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            return firebase_admin.initialize_app(cred, options=options)
+
+        default_file = os.path.join(settings.BASE_DIR, 'firebase-service-account.json')
+        if os.path.exists(default_file):
+            cred = credentials.Certificate(default_file)
+            return firebase_admin.initialize_app(cred, options=options)
+
+        return firebase_admin.initialize_app(options=options)
+    return firebase_admin.get_app()
+
+
+class FirebaseAuthView(APIView):
+    """
+    POST /api/auth/firebase/
+    Verifies Firebase ID token server-side via Firebase Admin SDK,
+    finds or creates User & DonorProfile, and returns SimpleJWT token pair.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        id_token = request.data.get('id_token')
+        if not id_token:
+            return Response(
+                {'error': 'id_token is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from firebase_admin import auth as firebase_auth
+            _get_firebase_app()
+            decoded_token = firebase_auth.verify_id_token(id_token)
+            uid = decoded_token.get('uid')
+            email = decoded_token.get('email')
+            name = decoded_token.get('name', '')
+
+            if not email:
+                return Response(
+                    {'error': 'Firebase ID token does not contain an email address.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Find or create Django User
+            user = User.objects.filter(email=email).first()
+            if not user:
+                base_username = email.split('@')[0]
+                username = base_username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+
+                first_name = name.split(' ')[0] if name else username
+                last_name = ' '.join(name.split(' ')[1:]) if name and len(name.split(' ')) > 1 else ''
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+
+            profile, _ = DonorProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'blood_group': '',
+                    'district': '',
+                    'phone_number': f"+880{user.id:08d}",
+                    'is_profile_complete': False,
+                }
+            )
+
+            from rest_framework_simplejwt.tokens import RefreshToken
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'is_profile_complete': profile.is_profile_complete,
+                    'blood_group': profile.blood_group,
+                    'district': profile.district,
+                    'phone_number': profile.phone_number,
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to verify Firebase ID token: {str(e)}'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+

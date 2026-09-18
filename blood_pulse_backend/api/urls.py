@@ -8,7 +8,7 @@ from .views import (
     RegisterClubView,
     BloodScienceArticleViewSet, CompatibilityRuleViewSet, DonationGuideSectionViewSet, 
     EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView,
-    GoogleAuthView
+    GoogleAuthView, FirebaseAuthView
 )
 
 router = DefaultRouter()
@@ -43,4 +43,5 @@ urlpatterns = [
     path('clubs/register/', RegisterClubView.as_view(), name='register-club'),
     path('health-hub/analyze-report/', GeminiReportAnalyzeView.as_view(), name='analyze-report'),
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
+    path('auth/firebase/', FirebaseAuthView.as_view(), name='firebase-auth'),
 ]
