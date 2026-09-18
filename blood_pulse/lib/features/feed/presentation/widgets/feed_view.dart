@@ -356,22 +356,42 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
               const SizedBox(width: 10),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
+                    color: const Color(0xFFFFF6F6),
                     borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: const Color(0xFFC30121).withValues(alpha: 0.35), width: 1.2),
+                    border: Border.all(color: const Color(0xFFC30121), width: 1.8),
                   ),
                   child: TextField(
                     controller: _textCtrl,
-                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF2B2B2B)),
+                    cursorColor: const Color(0xFFC30121),
+                    cursorWidth: 2.0,
+                    cursorRadius: const Radius.circular(2),
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13.5, color: Color(0xFF2B2B2B)),
                     decoration: const InputDecoration(
-                      hintText: "What's on your mind?",
-                      hintStyle: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF8E7D7F)),
+                      hintText: "What's on your mind?...",
+                      hintStyle: TextStyle(fontFamily: 'Inter', fontSize: 13.5, color: Color(0xFF9E9E9E)),
                       border: InputBorder.none,
                       isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 9),
                     ),
                     maxLines: null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _onPost,
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    child: const Icon(
+                      Icons.send_rounded,
+                      color: Color(0xFFC30121),
+                      size: 24,
+                    ),
                   ),
                 ),
               ),
