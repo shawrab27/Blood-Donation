@@ -570,15 +570,20 @@ class _MedicalPartnerCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      partner.name,
-                      style: const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
+                    Expanded(
+                      child: Text(
+                        partner.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -747,19 +752,23 @@ class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
         const SizedBox(height: 12),
 
         // Stepper: ❶ Division > ❷ District > ❸ Upazila
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _StepBadge(number: '1', label: 'Division', isActive: true),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.neutral),
-            const SizedBox(width: 8),
-            _StepBadge(number: '2', label: 'District', isActive: _selectedDivisionId != null),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.neutral),
-            const SizedBox(width: 8),
-            _StepBadge(number: '3', label: 'Upazila', isActive: _selectedUpazilaId != null),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _StepBadge(number: '1', label: 'Division', isActive: true),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.neutral),
+              const SizedBox(width: 8),
+              _StepBadge(number: '2', label: 'District', isActive: _selectedDivisionId != null),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.neutral),
+              const SizedBox(width: 8),
+              _StepBadge(number: '3', label: 'Upazila', isActive: _selectedUpazilaId != null),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
 
@@ -1139,6 +1148,8 @@ class _GuideCard extends StatelessWidget {
               children: [
                 Text(
                   guide.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: 'Georgia',
                     fontSize: 15,
@@ -1148,6 +1159,8 @@ class _GuideCard extends StatelessWidget {
                 ),
                 Text(
                   guide.areaName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,

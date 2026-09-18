@@ -125,10 +125,16 @@ class DonorPin {
     required this.location,
     required this.bloodGroup,
     required this.isVerified,
+    this.isAvailable = true,
+    this.name,
+    this.phone,
   });
 
   final String id;
   final LatLng location;
   final String bloodGroup;
   final bool isVerified;
+  final bool isAvailable;
+  final String? name;
+  final String? phone;
 }

@@ -19,6 +19,7 @@ class DonorProfile(models.Model):
     last_donation_date = models.DateField(null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     is_profile_complete = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=True)
     
     # Profile Extensions
     bio = models.TextField(blank=True, null=True, help_text="User's biography or story.")

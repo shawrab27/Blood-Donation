@@ -6,8 +6,10 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/capsule_button.dart';
 import '../../../../services/api_client.dart';
 import '../../../../services/location_mapping_service.dart';
+import 'package:go_router/go_router.dart';
 
 /// Interactive OpenStreetMap showing nearby donors fetched via GET /api/donors-nearby/.
 class DonorMapScreen extends StatefulWidget {
@@ -86,12 +88,20 @@ class _DonorMapScreenState extends State<DonorMapScreen> {
               final rawLocation = LatLng(lat, lng);
               final fuzzedLocation =
                   LocationMappingService.instance.fuzzLocation(rawLocation);
+              final firstName = item['first_name']?.toString() ?? '';
+              final lastName = item['last_name']?.toString() ?? '';
+              final fullName = ('$firstName $lastName').trim();
               fetchedDonors.add(
                 DonorPin(
                   id: item['id']?.toString() ?? 'donor_${fetchedDonors.length}',
                   location: fuzzedLocation,
                   bloodGroup: item['blood_group'] ?? 'O+',
                   isVerified: item['is_verified'] ?? false,
+                  isAvailable: item['is_available'] ?? true,
+                  name: fullName.isNotEmpty
+                      ? fullName
+                      : (item['username']?.toString() ?? 'Community Donor'),
+                  phone: item['phone_number']?.toString(),
                 ),
               );
             }
@@ -222,19 +232,12 @@ class _DonorMapScreenState extends State<DonorMapScreen> {
 
   Widget _buildDonorMarker(DonorPin donor) {
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Selected Donor: ${donor.bloodGroup} (Privacy radius applied)'),
-            backgroundColor: AppColors.secondary,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
+      onTap: () => _showDonorProfileSheet(context, donor),
       child: Container(
         decoration: BoxDecoration(
-          color: donor.isVerified ? AppColors.tertiary : Colors.grey.shade600,
+          color: donor.isAvailable
+              ? (donor.isVerified ? AppColors.primary : AppColors.tertiary)
+              : Colors.grey.shade500,
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 2),
           boxShadow: [
@@ -252,6 +255,195 @@ class _DonorMapScreenState extends State<DonorMapScreen> {
                 fontWeight: FontWeight.bold,
                 fontSize: 12),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showDonorProfileSheet(BuildContext context, DonorPin donor) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDE8E9),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primary, width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      donor.bloodGroup,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        donor.name ?? 'Community Donor',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (donor.isVerified) ...[
+                            const Icon(Icons.verified_rounded, size: 15, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Verified Donor',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ] else ...[
+                            const Icon(Icons.shield_outlined, size: 15, color: AppColors.neutral),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Registered Donor',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                color: AppColors.neutral,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: donor.isAvailable ? const Color(0xFFE8F8F0) : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: donor.isAvailable ? AppColors.success : Colors.grey,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        donor.isAvailable ? 'Available' : 'Resting',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: donor.isAvailable ? AppColors.success : Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.security_rounded, size: 16, color: AppColors.neutral),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Location randomized by ~500m to protect donor home privacy.',
+                      style: TextStyle(fontFamily: 'Inter', fontSize: 11.5, color: AppColors.neutral),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: CapsuleButton(
+                    label: 'Message',
+                    icon: Icons.chat_bubble_outline_rounded,
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      context.push('/chat');
+                    },
+                  ),
+                ),
+                if (donor.phone != null && donor.phone!.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFFE8F8F0),
+                      padding: const EdgeInsets.all(12),
+                    ),
+                    icon: const Icon(Icons.phone_rounded, color: AppColors.success),
+                    tooltip: 'Call Donor',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Calling ${donor.name} (${donor.phone})...'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ],
         ),
       ),
     );

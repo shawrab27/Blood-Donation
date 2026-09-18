@@ -6,6 +6,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/capsule_button.dart';
 import '../../core/widgets/custom_input_field.dart';
 import '../../providers/profile_countdown_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../features/feed/presentation/providers/feed_provider.dart';
+import '../../features/auth/presentation/providers/auth_notifier.dart';
 
 /// Interactive Profile Screen with Edit Profile Modal, Date Picker for Last Donation Date,
 /// 120-Day Countdown Widget, Admin-Locked Blood Group Banner, and Activity Feed.
@@ -70,6 +73,209 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
             const SizedBox(height: 12),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddPostModal() {
+    final textCtrl = TextEditingController();
+    XFile? pickedImage;
+    bool isSubmitting = false;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 24),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Share a Story or Update',
+                        style: TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20, color: AppColors.neutral),
+                        onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: TextField(
+                      controller: textCtrl,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        hintText: 'Share your donation experience, motivation, or need...',
+                        hintStyle: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  if (pickedImage != null) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.image_rounded, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            pickedImage!.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.cancel_rounded, size: 16, color: Colors.grey),
+                          onPressed: () => setModalState(() => pickedImage = null),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          shape: const StadiumBorder(),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final img = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 80,
+                            maxWidth: 1080,
+                            maxHeight: 720,
+                          );
+                          if (img != null) {
+                            setModalState(() => pickedImage = img);
+                          }
+                        },
+                        icon: const Icon(Icons.add_photo_alternate_outlined, size: 16, color: AppColors.primary),
+                        label: const Text('Add Photo', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary)),
+                      ),
+                      const Spacer(),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: const StadiumBorder(),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          elevation: 0,
+                        ),
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                final text = textCtrl.text.trim();
+                                if (text.isEmpty && pickedImage == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please enter text or select a photo.'),
+                                      backgroundColor: AppColors.error,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                setModalState(() => isSubmitting = true);
+                                try {
+                                  final user = ref.read(authProvider).user;
+                                  final authorName = user?.fullName.isNotEmpty == true
+                                      ? user!.fullName
+                                      : 'Blood Donor';
+                                  final imageBytes = pickedImage != null ? await pickedImage!.readAsBytes() : null;
+
+                                  final success = await ref.read(feedProvider.notifier).addPost(
+                                        authorName: authorName,
+                                        content: text,
+                                        imageBytes: imageBytes,
+                                      );
+
+                                  if (!mounted) return;
+                                  if (sheetContext.mounted) {
+                                    Navigator.pop(sheetContext);
+                                  }
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('🎉 Post published to community feed!'),
+                                        backgroundColor: AppColors.success,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  setModalState(() => isSubmitting = false);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to publish post: $e'),
+                                        backgroundColor: AppColors.error,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        child: isSubmitting
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text(
+                                'Publish Post',
+                                style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -558,11 +764,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                             label: 'Add Post',
                             icon: Icons.add_rounded,
                             height: 40,
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('✏️ Post creation dialog opened!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating),
-                              );
-                            },
+                            onPressed: _showAddPostModal,
                           ),
                           const SizedBox(height: 12),
                           const _ActivityTile(
