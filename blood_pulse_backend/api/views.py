@@ -106,10 +106,29 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user and request.user.is_authenticated:
+            if not request.user.is_staff and instance.user != request.user:
+                return Response({'detail': 'You do not have permission to delete this account.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        user = instance.user
+        self.perform_destroy(instance)
+        if user:
+            user.delete()
+        return Response({'detail': 'Account and donor profile permanently deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get', 'delete'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """GET /api/donors/me/ — returns the profile of the currently authenticated user."""
+        """GET or DELETE /api/donors/me/ — retrieves or deletes the currently authenticated user's account."""
         profile = DonorProfile.objects.filter(user=request.user).first()
+        if request.method == 'DELETE':
+            user = request.user
+            if profile:
+                profile.delete()
+            user.delete()
+            return Response({'detail': 'Your account and donor records have been permanently deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
         if not profile:
             return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(profile)

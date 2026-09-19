@@ -36,10 +36,11 @@ import '../features/communities/presentation/widgets/local_club_profile_view.dar
 import '../features/communities/presentation/widgets/division_detail_screen.dart';
 import '../features/communities/domain/models/community_models.dart';
 
-// Profile Screens
+// Profile & Settings Screens
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/complete_profile_screen.dart';
 import '../features/profile/presentation/screens/user_profile_screen.dart';
+import '../features/settings/presentation/screens/settings_screen.dart';
 import 'widgets/blood_pulse_app_bar.dart';
 
 /// Standalone profile screen rendered when user taps the top-bar avatar.
@@ -261,6 +262,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => const _StandaloneProfileScreen(),
+    ),
+    // /settings — Settings & Security Screen
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );

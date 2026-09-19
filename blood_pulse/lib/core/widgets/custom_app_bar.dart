@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import 'app_logo.dart';
+import 'profile_drawer.dart';
 import '../../features/profile/domain/providers/profile_provider.dart';
 import '../../features/notifications/domain/providers/notification_provider.dart';
 
@@ -233,7 +234,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         // ── 2. Profile Avatar ──
         if (showProfile)
           GestureDetector(
-            onTap: () => context.go('/profile'),
+            onTap: () => ProfileDrawer.show(context),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: _TopBarProfileAvatar(

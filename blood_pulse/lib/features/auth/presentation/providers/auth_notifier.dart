@@ -427,6 +427,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
   }
 
+  Future<bool> deleteAccount({void Function(String error)? onError}) async {
+    try {
+      final response = await _apiClient.delete('donors/me/');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        logout();
+        return true;
+      } else {
+        final err = _extractErrorMessage(response.body);
+        onError?.call(err);
+        return false;
+      }
+    } catch (e) {
+      onError?.call('Error deleting account: $e');
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }
