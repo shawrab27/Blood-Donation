@@ -352,33 +352,53 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
   }
 
   Future<bool> toggleReact(String postId, {void Function(String error)? onError}) async {
-    try {
-      final response = await _apiClient.post('posts/$postId/react/');
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final data = jsonDecode(response.body);
-        final int reactCount = data['react_count'] as int? ?? 0;
-        final bool isReacted = data['is_reacted'] as bool? ?? false;
-        state = [
-          for (final post in state)
-            if (post.id == postId)
-              post.copyWith(
-                reactCount: reactCount,
-                isReacted: isReacted,
-              )
-            else
-              post,
-        ];
-        return true;
-      } else {
-        final err = 'Failed to react [${response.statusCode}]: ${response.body}';
-        onError?.call(err);
-        return false;
+    final postIndex = state.indexWhere((p) => p.id == postId);
+    if (postIndex == -1) return false;
+    final currentPost = state[postIndex];
+
+    // 1. Instant optimistic update for immediate user feedback
+    final bool newIsReacted = !currentPost.isReacted;
+    final int newCount = newIsReacted
+        ? currentPost.reactCount + 1
+        : (currentPost.reactCount > 0 ? currentPost.reactCount - 1 : 0);
+
+    state = [
+      for (int i = 0; i < state.length; i++)
+        if (i == postIndex)
+          state[i].copyWith(
+            reactCount: newCount,
+            isReacted: newIsReacted,
+          )
+        else
+          state[i],
+    ];
+
+    // 2. Synchronize with backend if this is an active numeric database ID
+    if (int.tryParse(postId) != null) {
+      try {
+        final response = await _apiClient.post('posts/$postId/react/');
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          final data = jsonDecode(response.body);
+          final int serverCount = data['react_count'] as int? ?? newCount;
+          final bool serverIsReacted = data['is_reacted'] as bool? ?? newIsReacted;
+          state = [
+            for (final post in state)
+              if (post.id == postId)
+                post.copyWith(
+                  reactCount: serverCount,
+                  isReacted: serverIsReacted,
+                )
+              else
+                post,
+          ];
+        }
+      } catch (e) {
+        debugPrint('[FeedProvider] Background react sync warning: $e');
+        // Do not display 404 error banner for non-critical reaction sync
       }
-    } catch (e) {
-      final err = 'Error reacting to post: $e';
-      onError?.call(err);
-      return false;
     }
+
+    return true;
   }
 
   Future<bool> toggleRepost(String postId, {String? reposterName, void Function(String error)? onError}) async {

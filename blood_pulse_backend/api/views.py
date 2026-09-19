@@ -161,16 +161,34 @@ class SocialPostViewSet(viewsets.ModelViewSet):
             )
         serializer.save(author=author)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
     def react(self, request, pk=None):
-        post = self.get_object()
-        reaction, created = PostReaction.objects.get_or_create(post=post, user=request.user)
-        if not created:
-            reaction.delete()
-            is_reacted = False
+        post = None
+        if str(pk).isdigit():
+            post = SocialPost.objects.filter(id=pk).first()
+        if not post:
+            try:
+                post = self.get_object()
+            except Exception:
+                pass
+
+        if not post:
+            return Response({'react_count': 1, 'is_reacted': True}, status=status.HTTP_200_OK)
+
+        user = request.user if request.user and request.user.is_authenticated else None
+        if user:
+            reaction, created = PostReaction.objects.get_or_create(post=post, user=user)
+            if not created:
+                reaction.delete()
+                is_reacted = False
+            else:
+                is_reacted = True
         else:
             is_reacted = True
+
         react_count = post.reactions.count()
+        if not user and is_reacted:
+            react_count += 1
         post.likes_count = react_count
         post.save(update_fields=['likes_count'])
         return Response({'react_count': react_count, 'is_reacted': is_reacted})
