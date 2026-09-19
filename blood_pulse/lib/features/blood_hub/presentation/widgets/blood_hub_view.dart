@@ -1309,29 +1309,77 @@ class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificatio
     });
   }
 
-  void _sendOtp() {
+  Future<void> _sendOtp() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email address.'),
+          backgroundColor: Color(0xFFC30121),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _otpSent = true);
     _startCountdown();
-    // Simulate real-time email dispatch
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('🔑 Verification OTP sent to ${_emailCtrl.text}! (Demo Code: 421234)'),
-        backgroundColor: const Color(0xFF0D68AA),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+
+    final success = await ref
+        .read(authProvider.notifier)
+        .sendVerificationEmail(email: email);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🔑 6-digit verification code sent to $email!'),
+          backgroundColor: const Color(0xFF0D68AA),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      final err = ref.read(authProvider).errorMessage ?? 'Failed to send verification email.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: const Color(0xFFC30121),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
-  void _verifyAndSubmit() {
-    final enteredCode = _pinControllers.map((c) => c.text).join();
-    if (enteredCode.length == 6 || enteredCode == '1234') {
+  Future<void> _verifyAndSubmit() async {
+    final enteredCode = _pinControllers.map((c) => c.text).join().trim();
+    if (enteredCode.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter the full 6-digit verification code.'),
+          backgroundColor: Color(0xFFC30121),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final success = await ref
+        .read(authProvider.notifier)
+        .verifyEmailCode(code: enteredCode, email: _emailCtrl.text.trim());
+
+    if (!mounted) return;
+
+    if (success) {
+      ref.read(authProvider.notifier).setEmailVerified(true);
       Navigator.pop(context);
       widget.onSuccess();
     } else {
+      final err = ref.read(authProvider).errorMessage ?? 'Invalid or expired code. Please request a new code.';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid OTP code. Please enter the 6-digit code sent to your email.'),
-          backgroundColor: Color(0xFFC30121),
+        SnackBar(
+          content: Text(err),
+          backgroundColor: const Color(0xFFC30121),
           behavior: SnackBarBehavior.floating,
         ),
       );

@@ -20,6 +20,7 @@ class DonorProfile(models.Model):
     is_verified = models.BooleanField(default=False)
     is_profile_complete = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
+    email_verified = models.BooleanField(default=False)
     
     # Profile Extensions
     bio = models.TextField(blank=True, null=True, help_text="User's biography or story.")
@@ -342,3 +343,23 @@ class UserNotificationState(models.Model):
         state.unread_count += amount
         state.save(update_fields=['unread_count', 'updated_at'])
         return state.unread_count
+
+
+class EmailVerificationCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verification_codes')
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def is_valid(self):
+        from django.utils import timezone
+        import datetime
+        return not self.is_used and (timezone.now() - self.created_at) < datetime.timedelta(minutes=15)
+
+    def __str__(self):
+        return f"{self.email} - {self.code} (Used: {self.is_used})"
+

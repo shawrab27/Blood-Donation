@@ -25,6 +25,7 @@ class UserProfile {
     required this.totalBagsDonated,
     this.isOtpVerified = false,
     this.isProfileComplete = false,
+    this.isEmailVerified = false,
     this.nidHash,
   });
 
@@ -42,6 +43,7 @@ class UserProfile {
   final int totalBagsDonated;
   final bool isOtpVerified;
   final bool isProfileComplete;
+  final bool isEmailVerified;
   final String? nidHash;
 
   UserProfile copyWith({
@@ -59,6 +61,7 @@ class UserProfile {
     int? totalBagsDonated,
     bool? isOtpVerified,
     bool? isProfileComplete,
+    bool? isEmailVerified,
     String? nidHash,
   }) {
     return UserProfile(
@@ -76,6 +79,7 @@ class UserProfile {
       totalBagsDonated: totalBagsDonated ?? this.totalBagsDonated,
       isOtpVerified:    isOtpVerified    ?? this.isOtpVerified,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      isEmailVerified:  isEmailVerified  ?? this.isEmailVerified,
       nidHash:          nidHash          ?? this.nidHash,
     );
   }
@@ -387,9 +391,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         final isComplete = data['is_complete'] == true;
+        final isEmailVerified = data['email_verified'] == true;
         if (state.user != null) {
           state = state.copyWith(
-            user: state.user!.copyWith(isProfileComplete: isComplete),
+            user: state.user!.copyWith(
+              isProfileComplete: isComplete,
+              isEmailVerified: isEmailVerified,
+            ),
           );
         }
         return isComplete;
@@ -398,6 +406,67 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       debugPrint('[AuthNotifier] checkProfileCompletion error: $e');
       return state.user?.isProfileComplete ?? false;
+    }
+  }
+
+  /// Sends 6-digit email verification OTP via backend POST /api/auth/send-verification-email/
+  Future<bool> sendVerificationEmail({String? email}) async {
+    try {
+      final targetEmail = email ?? state.user?.email ?? '';
+      final response = await _apiClient.post(
+        'auth/send-verification-email/',
+        body: {'email': targetEmail},
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return true;
+      }
+      final err = _extractErrorMessage(response.body);
+      state = state.copyWith(errorMessage: err);
+      return false;
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Failed to send verification code: $e');
+      return false;
+    }
+  }
+
+  /// Verifies 6-digit email OTP via backend POST /api/auth/verify-email-code/
+  Future<bool> verifyEmailCode({required String code, String? email}) async {
+    try {
+      final payload = {
+        'code': code.trim(),
+        if (email != null && email.isNotEmpty) 'email': email.trim(),
+      };
+      final response = await _apiClient.post(
+        'auth/verify-email-code/',
+        body: payload,
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (state.user != null) {
+          state = state.copyWith(
+            user: state.user!.copyWith(
+              isEmailVerified: true,
+              email: email ?? state.user!.email,
+            ),
+            errorMessage: null,
+          );
+        }
+        return true;
+      }
+      final err = _extractErrorMessage(response.body);
+      state = state.copyWith(errorMessage: err);
+      return false;
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Verification failed: $e');
+      return false;
+    }
+  }
+
+  /// Local manual setter for email verification status
+  void setEmailVerified(bool verified) {
+    if (state.user != null) {
+      state = state.copyWith(
+        user: state.user!.copyWith(isEmailVerified: verified),
+      );
     }
   }
 

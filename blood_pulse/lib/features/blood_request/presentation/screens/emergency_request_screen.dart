@@ -7,7 +7,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/email_verification_modal.dart';
 import '../../../../services/ai_trust_detector_service.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../providers/blood_request_provider.dart';
 
 enum UrgencyLevel { critical, moderate }
@@ -133,6 +135,22 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     if (!_aiResult!.isApproved) {
       _showSnackBar('SUBMISSION BLOCKED: AI model flagged high fraud risk / suspect report.', isError: true);
       return;
+    }
+
+    // Enforce email verification
+    final authUser = ref.read(authProvider).user;
+    if (authUser == null || !authUser.isEmailVerified) {
+      final verified = await EmailVerificationModal.show(
+        context,
+        initialEmail: authUser?.email,
+      );
+      if (verified != true) {
+        _showSnackBar(
+          'Email verification is required before submitting an emergency blood request.',
+          isError: true,
+        );
+        return;
+      }
     }
 
     final hospitalLoc = _districtCtrl.text.isNotEmpty

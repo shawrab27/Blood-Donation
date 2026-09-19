@@ -8,7 +8,8 @@ from .views import (
     RegisterClubView,
     BloodScienceArticleViewSet, CompatibilityRuleViewSet, DonationGuideSectionViewSet, 
     EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView,
-    GoogleAuthView, FirebaseAuthView, ProfileCompletionStatusView, UnreadNotificationCountView
+    GoogleAuthView, FirebaseAuthView, ProfileCompletionStatusView, UnreadNotificationCountView,
+    SendVerificationEmailView, VerifyEmailCodeView
 )
 
 router = DefaultRouter()
@@ -47,4 +48,6 @@ urlpatterns = [
     path('profile/completion-status/', ProfileCompletionStatusView.as_view(), name='profile-completion-status'),
     path('notifications/unread-count/', UnreadNotificationCountView.as_view(), name='unread-notification-count'),
     path('notifications/mark-read/', UnreadNotificationCountView.as_view(), name='mark-notifications-read'),
+    path('auth/send-verification-email/', SendVerificationEmailView.as_view(), name='send-verification-email'),
+    path('auth/verify-email-code/', VerifyEmailCodeView.as_view(), name='verify-email-code'),
 ]
