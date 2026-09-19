@@ -44,7 +44,7 @@ import 'widgets/blood_pulse_app_bar.dart';
 /// Standalone profile screen rendered when user taps the top-bar avatar.
 /// Fixes GoException: no routes for location: /profile
 class _StandaloneProfileScreen extends StatelessWidget {
-  const _StandaloneProfileScreen({super.key});
+  const _StandaloneProfileScreen();
 
   @override
   Widget build(BuildContext context) {

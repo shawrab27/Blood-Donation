@@ -61,6 +61,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'bloodpulse-283dc.firebasestorage.app',
     iosBundleId: 'com.example.bloodPulse',
   );
+
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCShzXhwOg-dzviWjcXMylDyWREU-HrVcU',
     appId: '1:404989190662:web:d93054d0554ce384e25987',

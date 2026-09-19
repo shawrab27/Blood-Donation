@@ -12,7 +12,20 @@
           "package_name": "com.bloodpulse.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "404989190662-af6i82g8u3s5f0o288h8d5u5vp8oi3hp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bloodpulse.app",
+            "certificate_hash": "428715c4dac5e760839d1d606cc1504d238b87c1"
+          }
+        },
+        {
+          "client_id": "404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBEwLrHATWvcr-JNKxun99Y74YDrhqiNCA"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "404989190662-p33t3ecds8n1ekqav3qoj93q79rg5h49.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bloodPulse"
+              }
+            }
+          ]
         }
       }
     }
