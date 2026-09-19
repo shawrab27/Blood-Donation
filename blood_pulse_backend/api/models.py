@@ -324,3 +324,21 @@ class RecoveryTimelineStep(models.Model):
         ordering = ['hour_mark']
 
     def __str__(self): return f"{self.hour_mark}h: {self.title}"
+
+
+class UserNotificationState(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='notification_state')
+    unread_count = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.unread_count} unread"
+
+    @classmethod
+    def increment_for_user(cls, user, amount=1):
+        if not user or not getattr(user, 'is_authenticated', True):
+            return 0
+        state, _ = cls.objects.get_or_create(user=user)
+        state.unread_count += amount
+        state.save(update_fields=['unread_count', 'updated_at'])
+        return state.unread_count

@@ -6,7 +6,8 @@ from django.http import HttpResponse
 from .models import (
     DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, Hospital, FakeAccountFlag, AdminAction, 
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
-    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep
+    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
+    UserNotificationState
 )
 from .serializers import (
     DonorProfileSerializer, BloodRequestSerializer, SocialPostSerializer, CommentSerializer,
@@ -238,6 +239,8 @@ class SocialPostViewSet(viewsets.ModelViewSet):
             react_count += 1
         post.likes_count = react_count
         post.save(update_fields=['likes_count'])
+        if user and is_reacted and post.author and post.author.user and post.author.user != user:
+            UserNotificationState.increment_for_user(post.author.user)
         return Response({'react_count': react_count, 'is_reacted': is_reacted})
 
     @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
@@ -252,6 +255,8 @@ class SocialPostViewSet(viewsets.ModelViewSet):
         if not text:
             return Response({'error': 'Comment text cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
         comment = Comment.objects.create(post=post, user=request.user, text=text)
+        if post.author and post.author.user and post.author.user != request.user:
+            UserNotificationState.increment_for_user(post.author.user)
         author_name = request.user.get_full_name().strip() or request.user.username
         return Response({
             'id': comment.id,
@@ -285,6 +290,8 @@ class SocialPostViewSet(viewsets.ModelViewSet):
             text_content=text,
             original_post=original
         )
+        if original and original.author and original.author.user and (not request.user or original.author.user != request.user):
+            UserNotificationState.increment_for_user(original.author.user)
         serializer = self.get_serializer(repost_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -780,5 +787,26 @@ class FirebaseAuthView(APIView):
                 {'error': f'Failed to verify Firebase ID token: {str(e)}'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class UnreadNotificationCountView(APIView):
+    """
+    GET /api/notifications/unread-count/
+    Returns real-time unread notification count for the authenticated user.
+    
+    POST /api/notifications/mark-read/
+    Resets unread notification count to 0 when user views notifications.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        state, _ = UserNotificationState.objects.get_or_create(user=request.user)
+        return Response({'unread_count': state.unread_count}, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        state, _ = UserNotificationState.objects.get_or_create(user=request.user)
+        state.unread_count = 0
+        state.save(update_fields=['unread_count', 'updated_at'])
+        return Response({'unread_count': 0, 'status': 'marked_read'}, status=status.HTTP_200_OK)
 
 
