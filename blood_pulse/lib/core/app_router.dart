@@ -6,6 +6,7 @@ import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/registration_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
+import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 
 // Main Shell & Emergency Request
 import '../features/shell/presentation/screens/main_shell_screen.dart';
@@ -74,6 +75,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) {
+        final stepParam = state.uri.queryParameters['step'];
+        final step = stepParam != null ? int.tryParse(stepParam) ?? 0 : 0;
+        return OnboardingScreen(initialStep: step);
+      },
     ),
     GoRoute(
       path: '/login',
