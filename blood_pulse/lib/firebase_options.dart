@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -56,7 +53,6 @@ class DefaultFirebaseOptions {
     projectId: 'bloodpulse-283dc',
     storageBucket: 'bloodpulse-283dc.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBWTbP-HY9qzyEXY76aOXQywg_lxyDmveY',
     appId: '1:404989190662:ios:57b7b9a8eb0aebe2e25987',
@@ -64,5 +60,14 @@ class DefaultFirebaseOptions {
     projectId: 'bloodpulse-283dc',
     storageBucket: 'bloodpulse-283dc.firebasestorage.app',
     iosBundleId: 'com.example.bloodPulse',
+  );
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyCShzXhwOg-dzviWjcXMylDyWREU-HrVcU',
+    appId: '1:404989190662:web:d93054d0554ce384e25987',
+    messagingSenderId: '404989190662',
+    projectId: 'bloodpulse-283dc',
+    authDomain: 'bloodpulse-283dc.firebaseapp.com',
+    storageBucket: 'bloodpulse-283dc.firebasestorage.app',
+    measurementId: 'G-YF60Y0LHDB',
   );
 }

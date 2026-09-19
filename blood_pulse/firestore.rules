@@ -19,10 +19,7 @@ service cloud.firestore {
 
     // ── 1. USER PROFILES COLLECTION (/users/{userId}) ─────────────────────────
     match /users/{userId} {
-      // Publicly readable for authenticated users (required for donor matching & search)
       allow read: if isAuthenticated();
-
-      // Enforce Admin-Lock Rule on bloodGroup field
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) 
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['bloodGroup']) || isAdmin());
@@ -32,27 +29,32 @@ service cloud.firestore {
     // ── 2. BLOOD REQUESTS COLLECTION (/requests/{requestId}) ──────────────────
     match /requests/{requestId} {
       allow read: if isAuthenticated();
-      
-      // Enforce AI Trust Score Gatekeeper (aiTrustScore >= 60) prior to publishing
-      allow create: if isAuthenticated() 
-        && request.resource.data.aiTrustScore >= 60
-        && request.resource.data.patientName != null
-        && request.resource.data.bloodGroup != null
-        && request.resource.data.location != null;
-
-      // Only request creator or admin can update status (e.g. Active -> Fulfilled)
+      allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() 
         && (resource.data.requesterUid == request.auth.uid || isAdmin());
     }
 
-    // ── 3. CHAT THREADS & MESSAGES (/chats/{chatId}/messages/{messageId}) ─────
-    match /chats/{chatId} {
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participants;
+    // ── 3. CHAT ROOMS (/chat_rooms/{roomId}/messages/{messageId}) ─────────────
+    match /chat_rooms/{roomId} {
+      allow read, write: if isAuthenticated();
       
       match /messages/{messageId} {
-        allow read, write: if isAuthenticated() 
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow read, write: if isAuthenticated();
       }
+    }
+
+    // ── 4. CHATS (/chats/{chatId}/messages/{messageId}) ───────────────────────
+    match /chats/{chatId} {
+      allow read, write: if isAuthenticated();
+      
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // ── 5. TEST / VERIFICATION ────────────────────────────────────────────────
+    match /test_verification/{docId} {
+      allow read, write: if true;
     }
   }
 }
