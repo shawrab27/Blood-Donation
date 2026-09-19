@@ -31,23 +31,61 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def perform_create(self, serializer):
-        user = self.request.user if self.request.user and self.request.user.is_authenticated else None
+    def create(self, request, *args, **kwargs):
+        """
+        Upsert: if a DonorProfile already exists for this user (or this phone),
+        update it instead of returning a 400/500 duplicate error.
+        """
+        user = request.user if request.user and request.user.is_authenticated else None
+
+        # Resolve or create the Django user for unauthenticated registrations
         if not user:
-            phone = self.request.data.get('phone_number') or self.request.data.get('username') or 'donor_guest'
+            phone = request.data.get('phone_number') or request.data.get('username') or 'donor_guest'
             username = str(phone).replace('+', '').replace(' ', '')
+            # Update first/last name fields on the user record if provided
+            full_name = request.data.get('full_name', '')
+            first_name = full_name.split(' ')[0] if full_name else request.data.get('first_name', '')
+            last_name = ' '.join(full_name.split(' ')[1:]) if full_name and len(full_name.split(' ')) > 1 else request.data.get('last_name', '')
             user, created = User.objects.get_or_create(
                 username=username,
                 defaults={
-                    'email': self.request.data.get('email', ''),
-                    'first_name': self.request.data.get('first_name', ''),
-                    'last_name': self.request.data.get('last_name', '')
+                    'email': request.data.get('email', ''),
+                    'first_name': first_name,
+                    'last_name': last_name,
                 }
             )
-            raw_password = self.request.data.get('password') or 'password123'
+            if not created and (first_name or last_name):
+                if first_name:
+                    user.first_name = first_name
+                if last_name:
+                    user.last_name = last_name
+                user.save()
+            raw_password = request.data.get('password') or 'password123'
             user.set_password(raw_password)
             user.save()
+        else:
+            # Authenticated user: update Django user name from registration payload
+            full_name = request.data.get('full_name', '')
+            if full_name:
+                parts = full_name.split(' ', 1)
+                user.first_name = parts[0]
+                user.last_name = parts[1] if len(parts) > 1 else ''
+                user.save()
+
+        # Upsert DonorProfile
+        existing = DonorProfile.objects.filter(user=user).first()
+        if existing:
+            # Profile already exists → update fields and return 200
+            serializer = self.get_serializer(existing, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # No profile yet → create
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         serializer.save(user=user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -65,6 +103,15 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         instance.user.save()
         
         self.perform_update(serializer)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        """GET /api/donors/me/ — returns the profile of the currently authenticated user."""
+        profile = DonorProfile.objects.filter(user=request.user).first()
+        if not profile:
+            return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(profile)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
@@ -407,6 +454,22 @@ class CompatibilityRuleViewSet(viewsets.ReadOnlyModelViewSet):
 class DonationGuideSectionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DonationGuideSection.objects.all()
     serializer_class = DonationGuideSectionSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        if qs.exists():
+            serializer = self.get_serializer(qs, many=True)
+            return Response(serializer.data)
+        # Return built-in static guide data when the DB table is empty
+        static_data = [
+            {"id": 1, "category": "Before Donation", "title": "Hydrate Well", "content": "Drink at least 16 oz of water before donating. Staying hydrated helps your veins become more visible and makes the donation process smoother.", "order": 1},
+            {"id": 2, "category": "Before Donation", "title": "Eat a Healthy Meal", "content": "Have a nutritious meal at least 2 hours before donating. Avoid fatty foods which can affect blood tests.", "order": 2},
+            {"id": 3, "category": "During Donation", "title": "Stay Relaxed", "content": "Take deep breaths and stay calm. The process takes only 8–10 minutes. Inform the staff if you feel dizzy or uncomfortable.", "order": 3},
+            {"id": 4, "category": "After Donation", "title": "Rest & Recover", "content": "Rest for at least 10–15 minutes after donating. Avoid strenuous activity for 24 hours.", "order": 4},
+            {"id": 5, "category": "After Donation", "title": "Replenish Iron", "content": "Eat iron-rich foods like leafy greens, red meat, beans, and fortified cereals to help your body recover faster.", "order": 5},
+        ]
+        return Response(static_data)
 
 class EmergencyContactViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EmergencyContact.objects.all()
@@ -463,15 +526,23 @@ class GeminiReportAnalyzeView(APIView):
         client = genai.Client(api_key=api_key)
         
         prompt = """
-        You are a medical AI assistant.
-        Extract the following information from the provided blood report (CBC) image:
-        - Identify all test values (WBC, Hemoglobin, Platelets, RBC, etc.).
-        - Compare each with standard reference ranges.
-        - Flag them as 'Normal', 'Low', or 'High'.
-        - Provide a short, simple summary of the overall health status.
-        - Suggest a dietary action plan if there are abnormal values (e.g. eat iron-rich foods for low hemoglobin).
+        You are a medical AI assistant that only analyzes blood and lab reports.
         
-        Return the result strictly as a JSON object with this exact structure (do not use markdown blocks, just raw JSON):
+        FIRST: Determine if the image is actually a medical blood report or lab report.
+        Look for: patient information, test names (WBC, Hemoglobin, Platelets, RBC, etc.), 
+        reference ranges, lab values, or medical terminology.
+        
+        If the image does NOT appear to be a medical blood or lab report, return ONLY this JSON:
+        {"not_a_report": true, "error": "This doesn't appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report."}
+        
+        If it IS a valid blood/lab report, extract:
+        - All test values (WBC, Hemoglobin, Platelets, RBC, etc.)
+        - Compare each with standard reference ranges
+        - Flag them as 'Normal', 'Low', or 'High'
+        - Provide a short summary of overall health status
+        - Suggest a dietary action plan for abnormal values
+        
+        Return the result strictly as a JSON object (no markdown blocks):
         {
           "summary": "Overall health summary string...",
           "dietary_action_plan": ["Spinach", "Red Meat", "Vitamin C"],
@@ -489,22 +560,30 @@ class GeminiReportAnalyzeView(APIView):
         
         try:
             response = client.models.generate_content(
-                model='gemini-3-flash-preview',
+                model='gemini-2.0-flash',
                 contents=[prompt, image],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
             )
             text = response.text.strip()
             if text.startswith("```json"):
-                text = text[7:-3].strip()
+                text = text[7:].strip()
+                if text.endswith("```"):
+                    text = text[:-3].strip()
             elif text.startswith("```"):
-                text = text[3:-3].strip()
+                text = text[3:].strip()
+                if text.endswith("```"):
+                    text = text[:-3].strip()
                 
             data = json.loads(text)
+            
+            # Handle the non-medical-image case
+            if data.get('not_a_report'):
+                return Response(
+                    {'error': data.get('error', 'This does not appear to be a valid blood or lab report.')},
+                    status=400
+                )
             return Response(data)
         except json.JSONDecodeError:
-            return Response({'error': 'Failed to parse AI response into JSON. Please try again.'}, status=500)
+            return Response({'error': 'Failed to parse AI response. Please try again with a clearer image.'}, status=500)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
