@@ -28,6 +28,7 @@ import '../features/health_hub/presentation/screens/blood_compatibility_screen.d
 import '../features/health_hub/presentation/screens/donation_guide_screen.dart';
 import '../features/health_hub/presentation/screens/resources_hub_screen.dart';
 import '../features/health_hub/presentation/screens/recovery_aftercare_screen.dart';
+import '../features/health_hub/presentation/screens/health_accessories_screen.dart';
 
 // Community Screens
 import '../features/communities/presentation/widgets/register_club_form_view.dart';
@@ -191,6 +192,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/health-hub/recovery',
       builder: (context, state) => const RecoveryAftercareScreen(),
+    ),
+    GoRoute(
+      path: '/health-hub/accessories',
+      builder: (context, state) => const HealthAccessoriesScreen(),
     ),
     // ── Community Screens ─────────────────────────────────────────────────────
     GoRoute(

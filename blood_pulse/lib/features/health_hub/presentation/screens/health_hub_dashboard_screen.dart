@@ -174,6 +174,13 @@ class HealthHubDashboardScreen extends StatelessWidget {
         bgColor: const Color(0xFFF3E5F5),
         route: '/health-hub/recovery',
       ),
+      _FeatureShortcut(
+        title: 'Health Accessories',
+        icon: Icons.medical_services_outlined,
+        color: const Color(0xFF00796B),
+        bgColor: const Color(0xFFE0F2F1),
+        route: '/health-hub/accessories',
+      ),
     ];
 
     return GridView.builder(

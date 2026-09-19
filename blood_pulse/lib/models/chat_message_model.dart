@@ -1,4 +1,5 @@
 /// ChatMessageModel representing sent & received messages in real-time emergency chats.
+/// Includes WhatsApp-style delivery status ('sent', 'delivered', 'read').
 class ChatMessageModel {
   const ChatMessageModel({
     required this.messageId,
@@ -9,6 +10,7 @@ class ChatMessageModel {
     this.attachmentUrl,
     required this.timestamp,
     this.isRead = false,
+    this.status = 'sent',
   });
 
   final String messageId;
@@ -19,6 +21,11 @@ class ChatMessageModel {
   final String? attachmentUrl;
   final DateTime timestamp;
   final bool isRead;
+  final String status; // 'sent' | 'delivered' | 'read'
+
+  bool get isSent => status == 'sent';
+  bool get isDelivered => status == 'delivered';
+  bool get isReadReceipt => status == 'read' || isRead;
 
   ChatMessageModel copyWith({
     String? messageId,
@@ -29,6 +36,7 @@ class ChatMessageModel {
     String? attachmentUrl,
     DateTime? timestamp,
     bool? isRead,
+    String? status,
   }) {
     return ChatMessageModel(
       messageId:     messageId ?? this.messageId,
@@ -39,6 +47,7 @@ class ChatMessageModel {
       attachmentUrl: attachmentUrl ?? this.attachmentUrl,
       timestamp:     timestamp ?? this.timestamp,
       isRead:        isRead ?? this.isRead,
+      status:        status ?? this.status,
     );
   }
 
@@ -52,10 +61,13 @@ class ChatMessageModel {
       'attachmentUrl': attachmentUrl,
       'timestamp': timestamp.toIso8601String(),
       'isRead': isRead,
+      'status': status,
     };
   }
 
   factory ChatMessageModel.fromMap(Map<String, dynamic> map) {
+    final rawIsRead = map['isRead'] as bool? ?? false;
+    final rawStatus = map['status'] as String? ?? (rawIsRead ? 'read' : 'sent');
     return ChatMessageModel(
       messageId: map['messageId'] as String,
       chatId: map['chatId'] as String,
@@ -64,7 +76,8 @@ class ChatMessageModel {
       text: map['text'] as String,
       attachmentUrl: map['attachmentUrl'] as String?,
       timestamp: DateTime.parse(map['timestamp'] as String),
-      isRead: map['isRead'] as bool? ?? false,
+      isRead: rawIsRead || rawStatus == 'read',
+      status: rawStatus,
     );
   }
 }

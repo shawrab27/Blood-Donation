@@ -42,6 +42,7 @@ abstract final class _Fields {
   static const String attachmentUrl  = 'attachmentUrl';
   static const String timestamp      = 'timestamp';
   static const String isRead         = 'isRead';
+  static const String status         = 'status';
   static const String encryptedAesKey = 'encryptedAesKey';
   static const String ciphertext     = 'ciphertext';
   static const String iv             = 'iv';
@@ -65,7 +66,6 @@ class ChatService {
   final StreamController<List<ChatMessageModel>> _mockStreamController =
       StreamController<List<ChatMessageModel>>.broadcast();
   final List<ChatMessageModel> _localMessageCache = [];
-  bool _mockInitialized = false;
 
   // ── Collection References ───────────────────────────────────────────────
 
@@ -153,6 +153,7 @@ class ChatService {
       _Fields.receiverId:    receiverId,
       _Fields.timestamp:     now,
       _Fields.isRead:        false,
+      _Fields.status:        'sent',
       _Fields.attachmentUrl: attachmentUrl,
       // If encrypted, store ciphertext + AES envelope; otherwise plaintext.
       if (encrypted != null) ...{
@@ -187,6 +188,7 @@ class ChatService {
       attachmentUrl: attachmentUrl,
       timestamp:     DateTime.now(),
       isRead:        false,
+      status:        'sent',
     ));
   }
 
@@ -197,7 +199,7 @@ class ChatService {
   /// Ordered by [timestamp] ascending (oldest first, like WhatsApp).
   ///
   /// When the stream is subscribed (i.e., the ChatScreen opens), all unread
-  /// incoming messages for [currentUserId] are auto-marked as read.
+  /// incoming messages for [currentUserId] are auto-marked as read ('read' double blue tick).
   ///
   /// Falls back to a local mock stream if Firestore is unreachable.
   Stream<List<ChatMessageModel>> getMessagesStream(
@@ -218,7 +220,7 @@ class ChatService {
           messages.add(msg);
         }
 
-        // Auto-mark incoming messages as read in real time.
+        // Auto-mark incoming messages as read in real time for recipient.
         if (currentUserId != null && snapshot.docs.isNotEmpty) {
           _batchMarkAsRead(chatId, snapshot, currentUserId);
         }
@@ -234,11 +236,10 @@ class ChatService {
     }
   }
 
-  // ── Auto Read Receipts ─────────────────────────────────────────────────
+  // ── Auto Read Receipts (WhatsApp-Style) ─────────────────────────────────
 
-  /// Marks all incoming unread messages as `isRead = true` in Firestore.
-  ///
-  /// Uses a batched write for efficiency (max 500 ops/batch — safe for chats).
+  /// Marks all incoming unread messages as `isRead = true` and `status = 'read'` in Firestore.
+  /// Uses a batched write for efficiency.
   void _batchMarkAsRead(
     String chatId,
     QuerySnapshot<Map<String, dynamic>> snapshot,
@@ -246,31 +247,63 @@ class ChatService {
   ) {
     final unread = snapshot.docs.where((doc) {
       final data = doc.data();
+      final isRead = data[_Fields.isRead] as bool? ?? false;
+      final status = data[_Fields.status] as String? ?? '';
       return data[_Fields.receiverId] == currentUserId &&
-          data[_Fields.isRead] == false;
+          (!isRead || status != 'read');
     }).toList();
 
     if (unread.isEmpty) return;
 
     final batch = _db.batch();
     for (final doc in unread) {
-      batch.update(doc.reference, {_Fields.isRead: true});
+      batch.update(doc.reference, {
+        _Fields.isRead: true,
+        _Fields.status: 'read',
+      });
+      final roomRef = _roomMessages(chatId).doc(doc.id);
+      batch.update(roomRef, {
+        _Fields.isRead: true,
+        _Fields.status: 'read',
+      });
     }
     batch.commit().catchError((Object e) {
       debugPrint('[ChatService] batch read receipt error: $e');
     });
   }
 
+  /// Marks unread messages as 'delivered' when the recipient app is online or syncs.
+  Future<void> markMessagesAsDelivered(String chatId, String currentUserId) async {
+    try {
+      final query = await _messages(chatId)
+          .where(_Fields.receiverId, isEqualTo: currentUserId)
+          .where(_Fields.status, isEqualTo: 'sent')
+          .get();
+
+      if (query.docs.isEmpty) return;
+
+      final batch = _db.batch();
+      for (final doc in query.docs) {
+        batch.update(doc.reference, {_Fields.status: 'delivered'});
+        final roomRef = _roomMessages(chatId).doc(doc.id);
+        batch.update(roomRef, {_Fields.status: 'delivered'});
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('[ChatService] error marking delivered: $e');
+    }
+  }
+
   /// Marks all unread messages in the local mock cache as read for [currentUserId].
-  ///
-  /// Maintains backward compatibility with the existing [ChatScreen] call site.
   void markAllAsRead(String chatId, String currentUserId) {
     var updated = false;
     for (var i = 0; i < _localMessageCache.length; i++) {
       if (_localMessageCache[i].receiverId == currentUserId &&
           !_localMessageCache[i].isRead) {
-        _localMessageCache[i] =
-            _localMessageCache[i].copyWith(isRead: true);
+        _localMessageCache[i] = _localMessageCache[i].copyWith(
+          isRead: true,
+          status: 'read',
+        );
         updated = true;
       }
     }
@@ -288,19 +321,20 @@ class ChatService {
   // ── Internal: Firestore helpers ────────────────────────────────────────
 
   /// Decodes a Firestore document into a [ChatMessageModel], decrypting
-  /// E2EE fields if present.
+  /// E2EE fields if present and parsing delivery status.
   Future<ChatMessageModel> _decodeDocument(
     Map<String, dynamic> data,
   ) async {
-    final messageId    = data[_Fields.messageId]    as String? ?? '';
-    final chatId       = data[_Fields.chatId]       as String? ?? '';
-    final senderId     = data[_Fields.senderId]     as String? ?? '';
-    final receiverId   = data[_Fields.receiverId]   as String? ?? '';
+    final messageId     = data[_Fields.messageId]    as String? ?? '';
+    final chatId        = data[_Fields.chatId]       as String? ?? '';
+    final senderId      = data[_Fields.senderId]     as String? ?? '';
+    final receiverId    = data[_Fields.receiverId]   as String? ?? '';
     final attachmentUrl = data[_Fields.attachmentUrl] as String?;
-    final isRead       = data[_Fields.isRead]       as bool? ?? false;
+    final isRead        = data[_Fields.isRead]       as bool? ?? false;
+    final status        = data[_Fields.status]       as String? ?? (isRead ? 'read' : 'sent');
 
-    final Timestamp? ts  = data[_Fields.timestamp] as Timestamp?;
-    final timestamp      = ts?.toDate() ?? DateTime.now();
+    final Timestamp? ts = data[_Fields.timestamp] as Timestamp?;
+    final timestamp     = ts?.toDate() ?? DateTime.now();
 
     // ── Try E2EE decryption ──────────────────────────────────────────────
     String text;
@@ -326,7 +360,8 @@ class ChatService {
       text:          text,
       attachmentUrl: attachmentUrl,
       timestamp:     timestamp,
-      isRead:        isRead,
+      isRead:        isRead || status == 'read',
+      status:        status,
     );
   }
 
@@ -340,61 +375,12 @@ class ChatService {
     }
   }
 
-  // ── Internal: Mock / Fallback Stream ──────────────────────────────────
+  // ── Internal: Local Fallback Stream (No fake bot/mock messages) ─────────
 
   Stream<List<ChatMessageModel>> _getMockStream(String chatId) {
-    if (!_mockInitialized) {
-      _mockInitialized = true;
-      _initMockData(chatId);
-    }
     Future.microtask(() =>
         _mockStreamController.add(List.from(_localMessageCache)));
     return _mockStreamController.stream;
-  }
-
-  void _initMockData(String chatId) {
-    _localMessageCache.addAll([
-      ChatMessageModel(
-        messageId:  'm1',
-        chatId:     chatId,
-        senderId:   'req_202',
-        receiverId: 'usr_101',
-        text: 'Assalamu Alaikum. Emergency request for O+ blood at '
-            'Dhaka Medical College Hospital (Ward 4).',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 25)),
-        isRead:    true,
-      ),
-      ChatMessageModel(
-        messageId:  'm2',
-        chatId:     chatId,
-        senderId:   'usr_101',
-        receiverId: 'req_202',
-        text: 'Walaikum Assalam. I am an eligible O+ donor and available '
-            'to donate today.',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
-        isRead:    true,
-      ),
-      ChatMessageModel(
-        messageId:  'm3',
-        chatId:     chatId,
-        senderId:   'req_202',
-        receiverId: 'usr_101',
-        text: 'Alhamdulillah! Please attach the hospital requisition form '
-            'for verification.',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
-        isRead:    true,
-      ),
-      ChatMessageModel(
-        messageId:     'm4',
-        chatId:        chatId,
-        senderId:      'usr_101',
-        receiverId:    'req_202',
-        text:          'Attached DMCH Prescription Report.',
-        attachmentUrl: 'https://bloodpulse.org/reports/DMCH_Requisition_Form.pdf',
-        timestamp:     DateTime.now().subtract(const Duration(minutes: 10)),
-        isRead:        true,
-      ),
-    ]);
   }
 
   void _addToMockCache(ChatMessageModel msg) {

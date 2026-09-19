@@ -2,42 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/responsive_center_wrapper.dart';
+import '../../models/chat_message_model.dart';
+import '../../services/chat_service.dart';
+import '../../features/auth/presentation/providers/auth_notifier.dart';
 
-/// Data model representing an in-chat message or appointment card.
-class ChatMessageItem {
-  final String id;
-  final bool isMe;
-  final String text;
-  final String time;
-  final bool isDelivered;
-  final bool isCard;
-  final String? cardTitle;
-  final String? cardSubtitle;
-  final String? hospital;
-  final String? room;
-
-  const ChatMessageItem({
-    required this.id,
-    this.isMe = false,
-    this.text = '',
-    required this.time,
-    this.isDelivered = true,
-    this.isCard = false,
-    this.cardTitle,
-    this.cardSubtitle,
-    this.hospital,
-    this.room,
-  });
-}
-
-/// 1-on-1 Interactive Real-Time Chat Screen
-/// Rebuilt to precisely align with the reference mockup:
+/// 1-on-1 Real-Time Chat Screen
+/// Rebuilt to precisely align with BloodPulse Stitch UI & WhatsApp read receipt convention:
 /// - Light warm theme (#FAF7F7)
 /// - Doctor / Donor Header with Online status & blood group badge
-/// - Pre-seeded authentic conversation matching reference
-/// - Interactive 'Appointment Confirmed' card with view modal
+/// - Real person-to-person only: NO automated bots or simulated replies
+/// - WhatsApp-style read receipts:
+///     1. 'sent' -> Single grey tick
+///     2. 'delivered' -> Double grey tick
+///     3. 'read' -> Double cyan-blue tick (#34B7F1)
+/// - Sender listens for status updates in real time via Firestore stream
 /// - Full capsule input bar with paperclip, emoji, and red send button
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({
@@ -45,11 +26,13 @@ class ChatScreen extends ConsumerStatefulWidget {
     this.chatRoomId = 'sarah_jenkins_o_minus',
     this.chatRecipientName = 'Sarah Jenkins',
     this.bloodGroup = 'O-',
+    this.recipientId = 'sarah_jenkins',
   });
 
   final String chatRoomId;
   final String chatRecipientName;
   final String bloodGroup;
+  final String recipientId;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -60,48 +43,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   bool _showEmojiPicker = false;
 
-  late List<ChatMessageItem> _messages;
-
   @override
   void initState() {
     super.initState();
-    _messages = [
-      const ChatMessageItem(
-        id: '1',
-        isMe: false,
-        text: 'request for O- blood at Central General. Is the donation slot still open for 3 PM?',
-        time: '10:45 AM',
-      ),
-      const ChatMessageItem(
-        id: '2',
-        isMe: true,
-        text: 'Hi Sarah! Yes, the slot is still open. We really appreciate you reaching out so quickly. The patient is undergoing surgery tomorrow.',
-        time: '10:47 AM',
-        isDelivered: true,
-      ),
-      const ChatMessageItem(
-        id: '3',
-        isMe: false,
-        text: "Understood. I've just confirmed the appointment through the BloodPulse app. I'll make sure to hydrate and have a good meal beforehand.",
-        time: '10:48 AM',
-      ),
-      const ChatMessageItem(
-        id: '4',
-        isCard: true,
-        cardTitle: 'Appointment Confirmed',
-        cardSubtitle: 'Central General Hospital • Room 402',
-        hospital: 'Central General Hospital',
-        room: 'Room 402, Blood Bank & Transfusion Wing',
-        time: '10:48 AM',
-      ),
-      const ChatMessageItem(
-        id: '5',
-        isMe: true,
-        text: "Perfect! Please bring your ID. I'll be there to meet you at the reception. See you then!",
-        time: '10:49 AM',
-        isDelivered: true,
-      ),
-    ];
+    // When screen initializes, notify that recipient is online/synced
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
+          user?.primaryPhone ??
+          'current_user';
+      ChatService.instance.markMessagesAsDelivered(widget.chatRoomId, currentUserId);
+    });
   }
 
   @override
@@ -123,158 +75,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    final nowTime = DateFormat('h:mm a').format(DateTime.now());
-    final newMsg = ChatMessageItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      isMe: true,
-      text: text,
-      time: nowTime,
-      isDelivered: true,
-    );
+    final user = ref.read(authProvider).user;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
+        user?.primaryPhone ??
+        'current_user';
 
-    setState(() {
-      _messages.add(newMsg);
-      _textController.clear();
-      _showEmojiPicker = false;
-    });
+    _textController.clear();
+    setState(() => _showEmojiPicker = false);
+
+    // Write real message to Firestore with status = 'sent' (single grey tick)
+    await ChatService.instance.sendMessage(
+      chatId: widget.chatRoomId,
+      senderId: currentUserId,
+      receiverId: widget.recipientId,
+      text: text,
+    );
 
     _scrollToBottom();
-
-    // Friendly automated donor response simulation
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        final replyTime = DateFormat('h:mm a').format(DateTime.now());
-        setState(() {
-          _messages.add(
-            ChatMessageItem(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              isMe: false,
-              text: "Got it! See you at 3:00 PM. I'm ready to donate.",
-              time: replyTime,
-            ),
-          );
-        });
-        _scrollToBottom();
-      }
-    });
-  }
-
-  void _showAppointmentDetails(ChatMessageItem item) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFE5E8),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.emergency_rounded, color: AppColors.primary, size: 24),
-                ),
-                const SizedBox(width: 14),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Appointment Confirmed',
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2B2B2B),
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Verified Voluntary Blood Donor Slot',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: Color(0xFF666666),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const Divider(height: 32),
-            _buildDetailRow(Icons.local_hospital_outlined, 'Hospital', item.hospital ?? 'Central General Hospital'),
-            const SizedBox(height: 12),
-            _buildDetailRow(Icons.meeting_room_outlined, 'Location', item.room ?? 'Room 402, Blood Bank & Transfusion Wing'),
-            const SizedBox(height: 12),
-            _buildDetailRow(Icons.access_time_rounded, 'Slot Time', 'Today at 3:00 PM'),
-            const SizedBox(height: 12),
-            _buildDetailRow(Icons.bloodtype_outlined, 'Blood Needed', '${widget.bloodGroup} Negative'),
-            const SizedBox(height: 12),
-            _buildDetailRow(Icons.person_outline_rounded, 'Donor', widget.chatRecipientName),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                ),
-                child: const Text(
-                  'Dismiss',
-                  style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String title, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: AppColors.primary),
-        const SizedBox(width: 10),
-        Text(
-          '$title: ',
-          style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF444444)),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF111111)),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
   }
 
   void _handleAttachment() {
@@ -347,6 +168,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
+        user?.primaryPhone ??
+        'current_user';
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9F9),
       appBar: AppBar(
@@ -487,19 +313,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           maxWidth: 720,
           child: Column(
             children: [
-              // Message Stream List
+              // Real-Time Live Message Stream from Firestore
               Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    final item = _messages[index];
-                    if (item.isCard) {
-                      return _buildAppointmentCard(item);
+                child: StreamBuilder<List<ChatMessageModel>>(
+                  stream: ChatService.instance.getMessagesStream(
+                    widget.chatRoomId,
+                    currentUserId: currentUserId,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      );
                     }
-                    return _buildMessageBubble(item);
+
+                    final messages = snapshot.data ?? [];
+                    if (messages.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent + 60,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    });
+
+                    return ListView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        final isMe = msg.senderId == currentUserId;
+                        return _buildMessageBubble(msg, isMe);
+                      },
+                    );
                   },
                 ),
               ),
@@ -516,8 +369,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessageItem msg) {
-    final isMe = msg.isMe;
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF0F1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: AppColors.primary,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Chat with ${widget.chatRecipientName}',
+              style: const TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2B2B2B),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Coordinate voluntary blood donations securely and in real time.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                color: Color(0xFF757575),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessageModel msg, bool isMe) {
+    final timeStr = DateFormat('h:mm a').format(msg.timestamp);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -562,7 +461,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                msg.time,
+                timeStr,
                 style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 11,
@@ -571,11 +470,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               if (isMe) ...[
                 const SizedBox(width: 4),
-                const Icon(
-                  Icons.done_all_rounded,
-                  size: 14,
-                  color: Color(0xFF3584E4),
-                ),
+                _buildStatusTickIcon(msg.status, msg.isRead),
               ],
             ],
           ),
@@ -584,104 +479,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildAppointmentCard(ChatMessageItem item) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFF0E4E4), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Pink Circle with Red Asterisk/Medical Cross
-            Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFE5E8),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text(
-                  '✱',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    item.cardTitle ?? 'Appointment Confirmed',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1E1E),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.cardSubtitle ?? 'Central General Hospital • Room 402',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11.5,
-                      color: Color(0xFF6E6E6E),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-
-            // Red Capsule "View" Button
-            ElevatedButton(
-              onPressed: () => _showAppointmentDetails(item),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'View',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  /// Strict WhatsApp tick convention:
+  /// 1. 'sent' -> Single grey tick
+  /// 2. 'delivered' -> Double grey tick
+  /// 3. 'read' -> Double cyan-blue tick (#34B7F1)
+  Widget _buildStatusTickIcon(String status, bool isRead) {
+    if (status == 'read' || isRead) {
+      return const Icon(
+        Icons.done_all_rounded,
+        size: 15,
+        color: Color(0xFF34B7F1), // WhatsApp cyan blue
+      );
+    } else if (status == 'delivered') {
+      return const Icon(
+        Icons.done_all_rounded,
+        size: 15,
+        color: Color(0xFF8E8E93), // Double grey tick
+      );
+    } else {
+      // 'sent' or default
+      return const Icon(
+        Icons.check,
+        size: 14,
+        color: Color(0xFF8E8E93), // Single grey tick
+      );
+    }
   }
 
   Widget _buildEmojiPicker() {
