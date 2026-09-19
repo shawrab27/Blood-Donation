@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import 'app_logo.dart';
 import '../../features/profile/domain/providers/profile_provider.dart';
+import '../../features/notifications/domain/providers/notification_provider.dart';
 
 /// Centralized, reusable Custom AppBar for BloodPulse.
 ///
@@ -21,7 +22,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final double logoSize;
   final bool showBackButton;
   final VoidCallback? onBack;
-  final int notificationCount;
+  final int? notificationCount;
   final bool showNotification;
   final VoidCallback? onNotificationTap;
   final bool showProfile;
@@ -41,7 +42,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.logoSize = 32.0,
     this.showBackButton = false,
     this.onBack,
-    this.notificationCount = 3,
+    this.notificationCount,
     this.showNotification = true,
     this.onNotificationTap,
     this.showProfile = true,
@@ -59,6 +60,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final liveUnreadCount = ref.watch(notificationCountProvider);
+    final effectiveNotificationCount = notificationCount ?? liveUnreadCount;
+
     final profileAsync = ref.watch(profileProvider);
     String? avatarUrl;
     String? firstLetter;
@@ -189,6 +193,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 ),
                 tooltip: 'Notifications',
                 onPressed: () {
+                  ref.read(notificationCountProvider.notifier).markAsRead();
                   if (onNotificationTap != null) {
                     onNotificationTap!();
                   } else {
@@ -196,7 +201,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   }
                 },
               ),
-              if (notificationCount > 0)
+              if (effectiveNotificationCount > 0)
                 Positioned(
                   right: 4,
                   top: 6,
@@ -210,7 +215,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                     child: Center(
                       child: Text(
-                        '$notificationCount',
+                        effectiveNotificationCount > 99 ? '99+' : '$effectiveNotificationCount',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8.5,
