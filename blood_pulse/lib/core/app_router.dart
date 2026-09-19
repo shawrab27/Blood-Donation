@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 // Auth
+import '../splash_video_screen.dart';
 import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/registration_screen.dart';
@@ -74,6 +75,10 @@ final appRouter = GoRouter(
     // ── Auth ──────────────────────────────────────────────────────────────────
     GoRoute(
       path: '/',
+      builder: (context, state) => const SplashVideoScreen(),
+    ),
+    GoRoute(
+      path: '/splash',
       builder: (context, state) => const SplashScreen(),
     ),
     GoRoute(

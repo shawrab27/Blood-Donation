@@ -66,6 +66,7 @@ dependencies:
   google_sign_in: ^6.2.2
   firebase_auth: ^6.7.0
   share_plus: ^13.3.0
+  video_player: ^2.8.6
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +100,7 @@ flutter:
   # Assets declaration for BloodPulse
   assets:
     - assets/images/
+    - assets/vedio/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
