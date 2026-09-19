@@ -72,10 +72,39 @@ class ChatService {
   CollectionReference<Map<String, dynamic>> _messages(String chatId) =>
       _db.collection('chats').doc(chatId).collection('messages');
 
+  CollectionReference<Map<String, dynamic>> _roomMessages(String roomId) =>
+      _db.collection('chat_rooms').doc(roomId).collection('messages');
+
+  // ── Room Initialization with Participants ───────────────────────────────
+
+  /// Ensures both `chat_rooms/{roomId}` and `chats/{chatId}` documents exist
+  /// with the [participants] array listing the two user IDs.
+  Future<void> createOrGetRoom({
+    required String roomId,
+    required String user1Id,
+    required String user2Id,
+  }) async {
+    final data = {
+      'roomId': roomId,
+      'chatId': roomId,
+      'participants': [user1Id, user2Id],
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    try {
+      await Future.wait([
+        _db.collection('chat_rooms').doc(roomId).set(data, SetOptions(merge: true)),
+        _db.collection('chats').doc(roomId).set(data, SetOptions(merge: true)),
+      ]);
+    } catch (e) {
+      debugPrint('[ChatService] Error ensuring room participants: $e');
+    }
+  }
+
   // ── Send Message ────────────────────────────────────────────────────────
 
   /// Encrypts [text] with the recipient's RSA public key and pushes the
-  /// ciphertext to Firestore `chats/{chatId}/messages`.
+  /// ciphertext to Firestore `chats/{chatId}/messages` and `chat_rooms/{chatId}/messages`.
   ///
   /// If E2EE keys are not available (development mode), writes plaintext.
   ///
@@ -91,9 +120,17 @@ class ChatService {
     required String text,
     String? attachmentUrl,
   }) async {
-    final docRef  = _messages(chatId).doc();
-    final docId   = docRef.id;
-    final now     = Timestamp.now();
+    final docRef     = _messages(chatId).doc();
+    final roomDocRef = _roomMessages(chatId).doc(docRef.id);
+    final docId      = docRef.id;
+    final now        = Timestamp.now();
+
+    // ── Ensure parent room documents exist with participants ─────────────
+    await createOrGetRoom(
+      roomId: chatId,
+      user1Id: senderId,
+      user2Id: receiverId,
+    );
 
     // ── Try E2EE encryption ──────────────────────────────────────────────
     EncryptedMessagePayload? encrypted;
@@ -130,7 +167,10 @@ class ChatService {
     };
 
     try {
-      await docRef.set(data);
+      await Future.wait([
+        docRef.set(data),
+        roomDocRef.set(data),
+      ]);
     } catch (e) {
       debugPrint('[ChatService] Firestore set document error: $e');
     }
