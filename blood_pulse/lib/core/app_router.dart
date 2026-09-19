@@ -138,7 +138,20 @@ final appRouter = GoRouter(
     // ── OpenStreetMap Donor Mapping ───────────────────────────────────────────
     GoRoute(
       path: '/map',
-      builder: (context, state) => const DonorMapScreen(),
+      builder: (context, state) {
+        final mode = state.uri.queryParameters['mode'];
+        final extra = state.extra as Map<String, dynamic>?;
+        return DonorMapScreen(
+          initialMode: mode ?? extra?['mode'] as String?,
+          patientName: extra?['patientName'] as String?,
+          hospitalName: extra?['hospitalName'] as String?,
+          bloodGroup: extra?['bloodGroup'] as String?,
+          donorName: extra?['donorName'] as String?,
+          donorPhone: extra?['donorPhone'] as String?,
+          destinationLat: (extra?['destinationLat'] as num?)?.toDouble(),
+          destinationLng: (extra?['destinationLng'] as num?)?.toDouble(),
+        );
+      },
     ),
 
     // ── Emergency Blood Request & Profile Completion ────────────────────────
