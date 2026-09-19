@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 import 'services/api_client.dart';
@@ -20,6 +21,8 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
   @override
   void initState() {
     super.initState();
+    // Enable immersive full screen during splash
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _initializeAndPlayVideo();
   }
 
@@ -60,6 +63,9 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
 
+    // Restore standard UI mode
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
     // Check if user is already authenticated to choose next destination
     try {
       final token = await ApiClient().getAccessToken();
@@ -79,6 +85,7 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller.removeListener(_videoListener);
     _controller.dispose();
     super.dispose();
@@ -94,27 +101,35 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
         behavior: HitTestBehavior.opaque,
         onTap: _navigateToNext, // Tap anywhere to skip
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            Center(
+            // ── Full-Screen Video Player ────────────────────────────────────
+            SizedBox.expand(
               child: _controller.value.isInitialized
-                  ? AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: VideoPlayer(_controller),
+                  ? FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _controller.value.size.width,
+                        height: _controller.value.size.height,
+                        child: VideoPlayer(_controller),
+                      ),
                     )
                   : _isError
                       ? const SizedBox.shrink()
-                      : const CircularProgressIndicator(
-                          color: Color(0xFFC30121),
+                      : const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFC30121),
+                          ),
                         ),
             ),
             // Skip button in top-right corner
             Positioned(
-              top: MediaQuery.paddingOf(context).top + 12,
+              top: MediaQuery.paddingOf(context).top + 16,
               right: 16,
               child: TextButton(
                 onPressed: _navigateToNext,
                 style: TextButton.styleFrom(
-                  backgroundColor: Colors.black.withAlpha(80),
+                  backgroundColor: Colors.black.withAlpha(90),
                   shape: const StadiumBorder(),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
