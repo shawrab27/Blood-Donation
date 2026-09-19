@@ -8,6 +8,7 @@ import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/profile_completion_gate.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/otp_provider.dart';
+import '../../../feed/presentation/providers/feed_provider.dart';
 
 import '../../../feed/presentation/widgets/feed_view.dart';
 import '../../../blood_hub/presentation/widgets/blood_hub_view.dart';
@@ -24,10 +25,9 @@ class MainShellScreen extends ConsumerStatefulWidget {
 }
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
-  int _activeTabIndex = 0;
-
   @override
   Widget build(BuildContext context) {
+    final activeTabIndex = ref.watch(shellTabProvider);
     final l10n = AppLocalizations.of(context);
 
     final List<Widget> tabs = [
@@ -40,7 +40,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
     return Scaffold(
       appBar: const BloodPulseAppBar(),
-      body: tabs[_activeTabIndex],
+      body: tabs[activeTabIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -52,8 +52,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: _activeTabIndex,
-          onTap: (index) => setState(() => _activeTabIndex = index),
+          currentIndex: activeTabIndex,
+          onTap: (index) => ref.read(shellTabProvider.notifier).state = index,
           type: BottomNavigationBarType.fixed,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.neutral,

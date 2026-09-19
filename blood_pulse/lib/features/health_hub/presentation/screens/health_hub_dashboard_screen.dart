@@ -175,7 +175,7 @@ class HealthHubDashboardScreen extends StatelessWidget {
         route: '/health-hub/recovery',
       ),
       _FeatureShortcut(
-        title: 'Health Accessories',
+        title: 'Blood & Health Accessories',
         icon: Icons.medical_services_outlined,
         color: const Color(0xFF00796B),
         bgColor: const Color(0xFFE0F2F1),

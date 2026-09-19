@@ -11,6 +11,7 @@ import '../../../../core/widgets/custom_input_field.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
 import '../../../blood_request/presentation/providers/blood_request_provider.dart';
+import '../../../feed/presentation/providers/feed_provider.dart';
 import '../providers/donor_search_provider.dart';
 
 const Map<String, List<String>> _divisionDistricts = {
@@ -217,6 +218,35 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           ),
           buttonText: isBangla ? 'অনুরোধ পোস্ট করুন ➔' : 'Post Request ➔',
           onTap: () => setState(() => _activeMode = 2),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Card 3: Blood Donation Campaigns ──
+        _buildActionOptionCard(
+          icon: Icons.campaign_rounded,
+          iconBgColor: const Color(0xFFE8F1F8),
+          iconColor: const Color(0xFF0D68AA),
+          title: isBangla ? 'রক্তদান ক্যাম্পেইন' : 'Blood Donation Campaigns',
+          subtitle: isBangla
+              ? 'আসন্ন রক্তদান ক্যাম্পেইন, ড্রাইভ এবং সমাজকল্যাণমূলক ইভেন্টগুলো দেখুন ও অংশগ্রহণ করুন।'
+              : 'Discover upcoming donation drives, university camps, and community blood collection events.',
+          badgeWidget: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F1F8),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'ACTIVE DRIVES',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
+            ),
+          ),
+          buttonText: isBangla ? 'ক্যাম্পেইন দেখুন ➔' : 'View Campaigns ➔',
+          onTap: () {
+            ref.read(feedFilterProvider.notifier).state = 'campaign';
+            ref.read(shellTabProvider.notifier).state = 0; // Switches directly to Feed tab
+          },
         ),
 
         const SizedBox(height: 24),

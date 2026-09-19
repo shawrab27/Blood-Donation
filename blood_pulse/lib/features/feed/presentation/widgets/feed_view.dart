@@ -41,7 +41,12 @@ class _FeedViewState extends ConsumerState<FeedView> {
   // MOBILE FEED LAYOUT
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildMobileLayout() {
-    final posts = ref.watch(feedProvider);
+    final allPosts = ref.watch(feedProvider);
+    final filter = ref.watch(feedFilterProvider);
+
+    final posts = filter == null
+        ? allPosts
+        : allPosts.where((p) => p.postType == filter).toList();
 
     return RefreshIndicator(
       color: const Color(0xFFC30121),
@@ -50,9 +55,72 @@ class _FeedViewState extends ConsumerState<FeedView> {
       child: ListView.builder(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        itemCount: posts.length + 1,
+        itemCount: posts.length + (filter != null ? (posts.isEmpty ? 2 : 1) : 1),
         itemBuilder: (context, index) {
           if (index == 0) {
+            if (filter != null) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE9EB),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFC30121).withAlpha(50)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.campaign_rounded, color: Color(0xFFC30121), size: 24),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              filter == 'campaign'
+                                  ? 'Blood Donation Campaigns'
+                                  : 'Filtered Feed: $filter',
+                              style: const TextStyle(
+                                fontFamily: 'Georgia',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Color(0xFFC30121),
+                              ),
+                            ),
+                            Text(
+                              'Showing active public drives & campaigns',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => ref.read(feedFilterProvider.notifier).state = null,
+                        style: TextButton.styleFrom(
+                          backgroundColor: const Color(0xFFC30121),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        child: const Text(
+                          'Show All',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
             return Column(
               children: [
                 const _ProfileCompletionBanner(),
@@ -61,6 +129,35 @@ class _FeedViewState extends ConsumerState<FeedView> {
               ],
             );
           }
+
+          if (filter != null && posts.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(32),
+              margin: const EdgeInsets.symmetric(vertical: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.campaign_outlined, size: 48, color: Colors.grey.shade400),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'No campaigns found right now',
+                    style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Check back soon or view all community posts.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            );
+          }
+
           final post = posts[index - 1];
           final isLast = index == posts.length;
           return Padding(
@@ -935,6 +1032,93 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                           style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666)),
                         ),
                       ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Campaign Drive Info & Progress Card ──
+          if (post.campaign != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F7FA),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF0D68AA).withAlpha(60)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.campaign_rounded, color: Color(0xFF0D68AA), size: 22),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          post.campaign!.title,
+                          style: const TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0D68AA),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF666666)),
+                      const SizedBox(width: 4),
+                      Text(
+                        post.campaign!.startDate,
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF666666)),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${post.campaign!.currentUnits} / ${post.campaign!.targetUnits} bags',
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: (post.campaign!.currentUnits / post.campaign!.targetUnits).clamp(0.0, 1.0),
+                      minHeight: 7,
+                      backgroundColor: Colors.grey.shade300,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D68AA)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Pledged to donate at ${post.campaign!.title}! Details sent to your notifications.'),
+                            backgroundColor: const Color(0xFF0D68AA),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.volunteer_activism_rounded, size: 16, color: Colors.white),
+                      label: const Text(
+                        'Pledge Blood Donation',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0D68AA),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 ],

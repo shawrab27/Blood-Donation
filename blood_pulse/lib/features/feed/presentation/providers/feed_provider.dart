@@ -19,6 +19,30 @@ class FeedComment {
   final String? authorAvatar;
 }
 
+class Campaign {
+  const Campaign({
+    required this.id,
+    required this.title,
+    required this.organizer,
+    required this.venue,
+    required this.startDate,
+    required this.targetUnits,
+    required this.currentUnits,
+    this.bannerAsset,
+    this.description,
+  });
+
+  final String id;
+  final String title;
+  final String organizer;
+  final String venue;
+  final String startDate;
+  final int targetUnits;
+  final int currentUnits;
+  final String? bannerAsset;
+  final String? description;
+}
+
 enum AuthorRole { official, verifiedClinic, goldDonor, donor, system }
 
 class FeedPostItem {
@@ -49,6 +73,8 @@ class FeedPostItem {
     this.originalLocation,
     this.originalImageUrl,
     this.originalImageBytes,
+    this.postType = 'general',
+    this.campaign,
   });
 
   final String id;
@@ -77,6 +103,8 @@ class FeedPostItem {
   final String? originalLocation;
   final String? originalImageUrl;
   final Uint8List? originalImageBytes;
+  final String postType;
+  final Campaign? campaign;
 
   FeedPostItem copyWith({
     String? id,
@@ -93,6 +121,8 @@ class FeedPostItem {
     String? originalLocation,
     String? originalImageUrl,
     Uint8List? originalImageBytes,
+    String? postType,
+    Campaign? campaign,
   }) {
     return FeedPostItem(
       id: id ?? this.id,
@@ -121,6 +151,8 @@ class FeedPostItem {
       originalLocation: originalLocation ?? this.originalLocation,
       originalImageUrl: originalImageUrl ?? this.originalImageUrl,
       originalImageBytes: originalImageBytes ?? this.originalImageBytes,
+      postType: postType ?? this.postType,
+      campaign: campaign ?? this.campaign,
     );
   }
 }
@@ -259,6 +291,62 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
       reactCount: 95,
       commentCount: 6,
       repostCount: 21,
+    ),
+
+    // Campaign Post 1: Grand University Blood Drive 2026
+    const FeedPostItem(
+      id: 'campaign_1',
+      authorName: 'National Red Crescent Society',
+      authorRole: AuthorRole.official,
+      roleBadgeText: 'Official Campaign',
+      timestamp: 'Active Now',
+      content: '🩸 Grand University Blood Drive 2026: Join us in saving lives! We are hosting a 3-day donation camp with certified phlebotomists, refreshment packs, and donor recognition certificates. Every unit matters!',
+      imageUrl: 'assets/images/campaign_banner.jpg',
+      location: 'City Community Convention Hall',
+      urgentNeedBadge: 'CAMPAIGN',
+      reactCount: 412,
+      commentCount: 53,
+      repostCount: 89,
+      postType: 'campaign',
+      campaign: Campaign(
+        id: 'camp_1',
+        title: 'Grand University Blood Drive 2026',
+        organizer: 'National Red Crescent Society',
+        venue: 'City Community Convention Hall',
+        startDate: 'Tomorrow, 9:00 AM - 5:00 PM',
+        targetUnits: 500,
+        currentUnits: 320,
+        bannerAsset: 'assets/images/campaign_banner.jpg',
+        description: '3-day major drive to support regional trauma centers and pediatric surgery units.',
+      ),
+    ),
+
+    // Campaign Post 2: Thalassemia Care Hope Drive
+    const FeedPostItem(
+      id: 'campaign_2',
+      authorName: 'Thalassemia Hope Foundation',
+      authorRole: AuthorRole.verifiedClinic,
+      roleBadgeText: 'Verified Drive',
+      timestamp: 'Starts This Friday',
+      content: 'Regular transfusions are a lifeline for children fighting thalassemia. Our weekend donation drive aims to secure 200 bags of rare and common blood groups. Sign up or walk in!',
+      imageUrl: 'assets/images/clinic_feed_photo.jpg',
+      location: 'Central Medical Plaza, Auditorium A',
+      urgentNeedBadge: 'CAMPAIGN',
+      reactCount: 289,
+      commentCount: 31,
+      repostCount: 45,
+      postType: 'campaign',
+      campaign: Campaign(
+        id: 'camp_2',
+        title: 'Thalassemia Care Hope Drive',
+        organizer: 'Thalassemia Hope Foundation',
+        venue: 'Central Medical Plaza, Auditorium A',
+        startDate: 'Friday, 10:00 AM - 6:00 PM',
+        targetUnits: 200,
+        currentUnits: 85,
+        bannerAsset: 'assets/images/clinic_feed_photo.jpg',
+        description: 'Special blood collection for pediatric thalassemia patients requiring monthly transfusions.',
+      ),
     ),
   ];
 
@@ -576,3 +664,11 @@ final topDonorsProvider = Provider<List<TopDonorItem>>((ref) {
     TopDonorItem(id: 'd3', name: 'Marcus Thorne', donationsCount: 35, avatarInitials: 'MT', bloodGroup: 'B+'),
   ];
 });
+
+/// Active Navigation Shell Tab Provider
+/// 0: Feed, 1: Blood Hub, 2: Communities, 3: Health Hub, 4: Profile
+final shellTabProvider = StateProvider<int>((ref) => 0);
+
+/// Feed Pre-filter Provider (e.g. 'campaign', null for all posts)
+final feedFilterProvider = StateProvider<String?>((ref) => null);
+
