@@ -75,9 +75,8 @@ MIDDLEWARE = [
 ]
 
 # CORS Configuration
-# Set CORS_ALLOW_ALL_ORIGINS=True in .env only during local debugging if needed.
-# Defaults to False so the allowlist secures the API in production.
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
+# Defaults to False so strict origin whitelisting secures the API in production.
+CORS_ALLOW_ALL_ORIGINS = False
 
 _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 CORS_ALLOWED_ORIGINS = [
