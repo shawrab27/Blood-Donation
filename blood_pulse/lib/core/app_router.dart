@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 // Auth
@@ -37,6 +38,32 @@ import '../features/communities/domain/models/community_models.dart';
 // Profile Screens
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/complete_profile_screen.dart';
+import '../features/profile/presentation/screens/user_profile_screen.dart';
+import 'widgets/blood_pulse_app_bar.dart';
+
+/// Standalone profile screen rendered when user taps the top-bar avatar.
+/// Fixes GoException: no routes for location: /profile
+class _StandaloneProfileScreen extends StatelessWidget {
+  const _StandaloneProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF8F7),
+      appBar: BloodPulseAppBar(
+        showBackButton: true,
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/dashboard');
+          }
+        },
+      ),
+      body: const ProfileView(),
+    );
+  }
+}
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -223,6 +250,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/edit-profile',
       builder: (context, state) => const EditProfileScreen(),
+    ),
+    // /profile — standalone screen for top-bar avatar tap
+    // Fixes: GoException: no routes for location: /profile
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const _StandaloneProfileScreen(),
     ),
   ],
 );

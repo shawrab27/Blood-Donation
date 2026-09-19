@@ -17,6 +17,9 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
   final String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
 
 
+  /// Fetches the current authenticated user's own profile via GET /api/donors/me/
+  /// This prevents the bug where data[0] of the list always returned the first
+  /// user in the database (Dr. S.M. Shawrab) regardless of who was logged in.
   Future<void> fetchProfile() async {
     try {
       state = const AsyncValue.loading();
@@ -27,6 +30,23 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
         return;
       }
 
+      // First try the /me/ endpoint for the exact current user
+      final meResponse = await http.get(
+        Uri.parse('$_baseUrl/donors/me/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (meResponse.statusCode == 200) {
+        final data = jsonDecode(meResponse.body) as Map<String, dynamic>;
+        final profile = ProfileModel.fromJson(data);
+        state = AsyncValue.data(profile);
+        return;
+      }
+
+      // Fallback: try legacy /donor_profiles/ list and filter by token
       final response = await http.get(
         Uri.parse('$_baseUrl/donor_profiles/'),
         headers: {
@@ -38,8 +58,6 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         if (data.isNotEmpty) {
-          // Assuming the user fetches their own profile list which is filtered to 1
-          // or we just find the first one. For a real app, it might be /donor_profiles/me/
           final profile = ProfileModel.fromJson(data[0]);
           state = AsyncValue.data(profile);
         } else {

@@ -162,18 +162,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
 
     try {
+      debugPrint('[GoogleSignIn] ▶ Starting Google Sign-In flow...');
+
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
       );
 
+      debugPrint('[GoogleSignIn] Calling googleSignIn.signIn()...');
       final GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account == null) {
         // User aborted the sign in dialog
+        debugPrint('[GoogleSignIn] ✗ User cancelled sign-in dialog.');
         state = state.copyWith(status: AuthStatus.unauthenticated);
         return false;
       }
+      debugPrint('[GoogleSignIn] ✓ Got account: ${account.email}');
 
+      debugPrint('[GoogleSignIn] Getting Google auth tokens...');
       final GoogleSignInAuthentication googleAuth = await account.authentication;
+      debugPrint('[GoogleSignIn] accessToken present: ${googleAuth.accessToken != null}');
+      debugPrint('[GoogleSignIn] idToken present: ${googleAuth.idToken != null}');
 
       // Authenticate with Firebase using Google credentials
       final AuthCredential credential = GoogleAuthProvider.credential(
@@ -181,23 +189,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
         idToken: googleAuth.idToken,
       );
 
+      debugPrint('[GoogleSignIn] Calling FirebaseAuth.signInWithCredential...');
       final UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
       final User? firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
+        debugPrint('[GoogleSignIn] ✗ FirebaseAuth returned null user.');
         throw ApiException('Failed to retrieve Firebase user profile.');
       }
+      debugPrint('[GoogleSignIn] ✓ Firebase user: ${firebaseUser.email}, uid: ${firebaseUser.uid}');
 
+      debugPrint('[GoogleSignIn] Fetching Firebase ID token...');
       final String? firebaseIdToken = await firebaseUser.getIdToken();
       if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+        debugPrint('[GoogleSignIn] ✗ Firebase ID token is null/empty.');
         throw ApiException('Failed to retrieve Firebase ID token.');
       }
+      debugPrint('[GoogleSignIn] ✓ Firebase ID token obtained (${firebaseIdToken.length} chars)');
 
       // Exchange Firebase ID token with backend POST /api/auth/firebase/
+      debugPrint('[GoogleSignIn] Calling backend /api/auth/firebase/ ...');
       final authData = await _apiClient.loginWithFirebase(
         idToken: firebaseIdToken,
       );
+      debugPrint('[GoogleSignIn] ✓ Backend returned: ${authData.keys.toList()}');
 
       final userData = authData['user'] as Map<String, dynamic>?;
       final bool isProfileComplete = userData?['is_profile_complete'] == true;
@@ -224,8 +240,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
         errorMessage: null,
       );
+      debugPrint('[GoogleSignIn] ✓ Sign-in complete. isProfileComplete: $isProfileComplete');
       return true;
     } catch (e) {
+      debugPrint('[GoogleSignIn] ✗ ERROR: $e');
+      debugPrint('[GoogleSignIn] Error type: ${e.runtimeType}');
       String msg = e.toString().replaceAll('Exception: ', '');
       if (kIsWeb && msg.contains('Null check operator')) {
         msg = 'Google Sign-In on Web requires a Google Cloud Web Client ID. Please test Google Sign-In on your mobile device (flutter run), or log in with Username/Password.';
