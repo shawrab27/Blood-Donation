@@ -81,3 +81,26 @@ class ChatMessageModel {
     );
   }
 }
+
+/// Summary of a real-time conversation room between two users in Firestore.
+class ChatRoomSummary {
+  final String roomId;
+  final List<String> participants;
+  final String otherParticipantName;
+  final String otherParticipantId;
+  final String otherParticipantBloodGroup;
+  final String lastMessage;
+  final DateTime updatedAt;
+  final bool hasUnread;
+
+  const ChatRoomSummary({
+    required this.roomId,
+    required this.participants,
+    required this.otherParticipantName,
+    required this.otherParticipantId,
+    this.otherParticipantBloodGroup = 'O+',
+    required this.lastMessage,
+    required this.updatedAt,
+    this.hasUnread = false,
+  });
+}

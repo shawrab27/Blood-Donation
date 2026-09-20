@@ -52,6 +52,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
           user?.primaryPhone ??
           'current_user';
+      final currentUserName = user?.fullName.trim().isNotEmpty == true
+          ? user!.fullName.trim()
+          : (FirebaseAuth.instance.currentUser?.displayName ?? 'Blood Donor');
+
+      ChatService.instance.createOrGetRoom(
+        roomId: widget.chatRoomId,
+        user1Id: currentUserId,
+        user2Id: widget.recipientId,
+        user1Name: currentUserName,
+        user2Name: widget.chatRecipientName,
+        bloodGroup: widget.bloodGroup,
+      );
+
       ChatService.instance.markMessagesAsDelivered(widget.chatRoomId, currentUserId);
     });
   }
@@ -83,6 +96,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
         user?.primaryPhone ??
         'current_user';
+    final currentUserName = user?.fullName.trim().isNotEmpty == true
+        ? user!.fullName.trim()
+        : (FirebaseAuth.instance.currentUser?.displayName ?? 'Blood Donor');
 
     _textController.clear();
     setState(() => _showEmojiPicker = false);
@@ -93,6 +109,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       senderId: currentUserId,
       receiverId: widget.recipientId,
       text: text,
+      senderName: currentUserName,
+      receiverName: widget.chatRecipientName,
+      bloodGroup: widget.bloodGroup,
     );
 
     _scrollToBottom();

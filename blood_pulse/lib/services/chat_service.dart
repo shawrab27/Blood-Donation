@@ -83,12 +83,18 @@ class ChatService {
     required String roomId,
     required String user1Id,
     required String user2Id,
+    String? user1Name,
+    String? user2Name,
+    String? bloodGroup,
   }) async {
-    final data = {
+    final data = <String, dynamic>{
       'roomId': roomId,
       'chatId': roomId,
       'participants': [user1Id, user2Id],
       'updatedAt': FieldValue.serverTimestamp(),
+      if (user1Name != null && user1Name.isNotEmpty) 'userName_$user1Id': user1Name,
+      if (user2Name != null && user2Name.isNotEmpty) 'userName_$user2Id': user2Name,
+      if (bloodGroup != null && bloodGroup.isNotEmpty) 'bloodGroup': bloodGroup,
     };
 
     try {
@@ -98,6 +104,72 @@ class ChatService {
       ]);
     } catch (e) {
       debugPrint('[ChatService] Error ensuring room participants: $e');
+    }
+  }
+
+  /// Returns a real-time stream of all chat rooms where [currentUserId] is an active participant.
+  /// If [currentUserId] is empty or has no active rooms, the stream cleanly returns an empty list.
+  Stream<List<ChatRoomSummary>> getUserChatRoomsStream(String currentUserId) {
+    if (currentUserId.isEmpty) {
+      return Stream.value(<ChatRoomSummary>[]);
+    }
+    try {
+      return _db
+          .collection('chat_rooms')
+          .where('participants', arrayContains: currentUserId)
+          .snapshots()
+          .map((snapshot) {
+        final rooms = <ChatRoomSummary>[];
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          final roomId = doc.id;
+          final participants = List<String>.from(data['participants'] as List? ?? []);
+          final otherId = participants.firstWhere(
+            (id) => id != currentUserId,
+            orElse: () => '',
+          );
+
+          String otherName = '';
+          if (otherId.isNotEmpty && data['userName_$otherId'] != null) {
+            otherName = data['userName_$otherId'].toString();
+          }
+          if (otherName.isEmpty && data['recipientName'] != null) {
+            otherName = data['recipientName'].toString();
+          }
+          if (otherName.isEmpty) {
+            otherName = otherId.isNotEmpty ? otherId : 'Blood Donor / Requester';
+          }
+
+          final bloodGroup = data['bloodGroup'] as String? ?? 'O+';
+          final lastMsg = data['lastMessage'] as String? ?? '';
+          final lastReceiverId = data['lastReceiverId'] as String? ?? '';
+          final isRead = data['isRead'] as bool? ?? true;
+          final hasUnread = (lastReceiverId == currentUserId) && !isRead;
+
+          final Timestamp? ts = data['lastMessageTimestamp'] as Timestamp? ??
+              data['updatedAt'] as Timestamp?;
+          final updatedAt = ts?.toDate() ?? DateTime.now();
+
+          rooms.add(ChatRoomSummary(
+            roomId: roomId,
+            participants: participants,
+            otherParticipantName: otherName,
+            otherParticipantId: otherId,
+            otherParticipantBloodGroup: bloodGroup,
+            lastMessage: lastMsg.isNotEmpty ? lastMsg : 'Conversation active',
+            updatedAt: updatedAt,
+            hasUnread: hasUnread,
+          ));
+        }
+        rooms.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        return rooms;
+      }).handleError((error) {
+        debugPrint('[ChatService] getUserChatRoomsStream error: $error');
+        return <ChatRoomSummary>[];
+      });
+    } catch (e) {
+      debugPrint('[ChatService] Error setting up getUserChatRoomsStream: $e');
+      return Stream.value(<ChatRoomSummary>[]);
     }
   }
 
@@ -118,6 +190,9 @@ class ChatService {
     required String senderId,
     required String receiverId,
     required String text,
+    String? senderName,
+    String? receiverName,
+    String? bloodGroup,
     String? attachmentUrl,
   }) async {
     final docRef     = _messages(chatId).doc();
@@ -130,6 +205,9 @@ class ChatService {
       roomId: chatId,
       user1Id: senderId,
       user2Id: receiverId,
+      user1Name: senderName,
+      user2Name: receiverName,
+      bloodGroup: bloodGroup,
     );
 
     // ── Try E2EE encryption ──────────────────────────────────────────────
@@ -174,6 +252,24 @@ class ChatService {
       ]);
     } catch (e) {
       debugPrint('[ChatService] Firestore set document error: $e');
+    }
+
+    // Update parent room document with last message summary
+    final roomSummary = <String, dynamic>{
+      'lastMessage': text.isNotEmpty ? text : (attachmentUrl != null ? '📷 Image' : 'Message'),
+      'lastSenderId': senderId,
+      'lastReceiverId': receiverId,
+      'lastMessageTimestamp': now,
+      'updatedAt': now,
+      'isRead': false,
+    };
+    try {
+      await Future.wait([
+        _db.collection('chat_rooms').doc(chatId).set(roomSummary, SetOptions(merge: true)),
+        _db.collection('chats').doc(chatId).set(roomSummary, SetOptions(merge: true)),
+      ]);
+    } catch (e) {
+      debugPrint('[ChatService] Error updating room summary: $e');
     }
 
     // Also update the mock stream so the UI reflects the sent message even

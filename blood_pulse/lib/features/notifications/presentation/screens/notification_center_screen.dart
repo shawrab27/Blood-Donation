@@ -1,9 +1,15 @@
 import 'package:blood_pulse/l10n/app_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../models/chat_message_model.dart';
+import '../../../../services/chat_service.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import 'notification_wallpaper_overlay.dart';
 
 /// Notification Center Screen implementing the Notification Exception Rule.
@@ -13,14 +19,14 @@ import 'notification_wallpaper_overlay.dart';
 ///   2. Request (Emergency blood request alerts)
 ///   3. Messages (P2P donor chats)
 ///   4. Profile (Cooldown countdown & badges)
-class NotificationCenterScreen extends StatefulWidget {
+class NotificationCenterScreen extends ConsumerStatefulWidget {
   const NotificationCenterScreen({super.key});
 
   @override
-  State<NotificationCenterScreen> createState() => _NotificationCenterScreenState();
+  ConsumerState<NotificationCenterScreen> createState() => _NotificationCenterScreenState();
 }
 
-class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
+class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScreen> {
   int _selectedFilterIndex = 0; // 0: Feed, 1: Request, 2: Messages, 3: Profile
 
   @override
@@ -155,63 +161,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           ],
         );
       case 2:
-        return ListView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          children: [
-            ...cachedWidgets,
-            _NotificationItemTile(
-              icon: Icons.chat_bubble_rounded,
-              iconColor: AppColors.primary,
-              title: 'Sarah Jenkins (Blood Requester)',
-              subtitle: '"Request for O- blood at Central General Hospital. Is the donation slot still open for 3 PM?"',
-              time: '10:45 AM',
-              isUnread: true,
-              onTap: () => context.push(
-                '/chat',
-                extra: {
-                  'chatRecipientName': 'Sarah Jenkins',
-                  'bloodGroup': 'O-',
-                  'chatRoomId': 'sarah_jenkins_o_minus',
-                  'recipientId': 'sarah_jenkins',
-                },
-              ),
-            ),
-            _NotificationItemTile(
-              icon: Icons.chat_bubble_rounded,
-              iconColor: AppColors.tertiary,
-              title: 'Dr. Alim (Transfusion Unit)',
-              subtitle: '"Can you reach Central General Hospital by 4:00 PM for verification?"',
-              time: '15 mins ago',
-              isUnread: false,
-              onTap: () => context.push(
-                '/chat',
-                extra: {
-                  'chatRecipientName': 'Dr. Alim',
-                  'bloodGroup': 'AB+',
-                  'chatRoomId': 'dr_alim',
-                  'recipientId': 'dr_alim',
-                },
-              ),
-            ),
-            _NotificationItemTile(
-              icon: Icons.chat_bubble_rounded,
-              iconColor: const Color(0xFF1B8A4E),
-              title: 'Tanvir Ahmed (Volunteer Donor)',
-              subtitle: '"I have arrived at the hospital reception. Where should I meet you?"',
-              time: '1 hour ago',
-              isUnread: false,
-              onTap: () => context.push(
-                '/chat',
-                extra: {
-                  'chatRecipientName': 'Tanvir Ahmed',
-                  'bloodGroup': 'A+',
-                  'chatRoomId': 'tanvir_ahmed',
-                  'recipientId': 'tanvir_ahmed',
-                },
-              ),
-            ),
-          ],
-        );
+        return _buildMessagesTab(cachedWidgets);
       case 3:
       default:
         return ListView(
@@ -354,6 +304,135 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     }
 
     return widgets;
+  }
+
+  Widget _buildMessagesTab(List<Widget> cachedWidgets) {
+    final user = ref.watch(authProvider).user;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
+        user?.primaryPhone ??
+        '';
+
+    if (currentUserId.isEmpty) {
+      if (cachedWidgets.isNotEmpty) {
+        return ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          children: cachedWidgets,
+        );
+      }
+      return _buildEmptyMessagesState();
+    }
+
+    return StreamBuilder<List<ChatRoomSummary>>(
+      stream: ChatService.instance.getUserChatRoomsStream(currentUserId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && cachedWidgets.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
+        }
+
+        final rooms = snapshot.data ?? [];
+
+        if (rooms.isEmpty && cachedWidgets.isEmpty) {
+          return _buildEmptyMessagesState();
+        }
+
+        return ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          children: [
+            ...cachedWidgets,
+            ...rooms.map((room) {
+              return _NotificationItemTile(
+                icon: Icons.chat_bubble_rounded,
+                iconColor: AppColors.tertiary,
+                title: room.otherParticipantName.isNotEmpty
+                    ? room.otherParticipantName
+                    : 'Blood Donor (${room.otherParticipantBloodGroup})',
+                subtitle: room.lastMessage.isNotEmpty
+                    ? room.lastMessage
+                    : 'Tap to open chat',
+                time: _formatRelativeTime(room.updatedAt),
+                isUnread: room.hasUnread,
+                onTap: () {
+                  context.push(
+                    '/chat',
+                    extra: {
+                      'chatRecipientName': room.otherParticipantName.isNotEmpty
+                          ? room.otherParticipantName
+                          : 'Blood Donor',
+                      'bloodGroup': room.otherParticipantBloodGroup.isNotEmpty
+                          ? room.otherParticipantBloodGroup
+                          : 'Blood Donor',
+                      'chatRoomId': room.roomId,
+                      'recipientId': room.otherParticipantId,
+                    },
+                  );
+                },
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyMessagesState() {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(20),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 48,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Conversations Yet',
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.secondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'When you connect with donors or recipients, your real conversations will appear here.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: AppColors.neutral,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime? dt) {
+    if (dt == null) return 'Recent';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return DateFormat('MMM d').format(dt);
   }
 }
 
