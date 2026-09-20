@@ -81,61 +81,58 @@ class FcmService {
   // ── Initialise ─────────────────────────────────────────────────────────
 
   /// Bootstraps FCM, requests permissions, wires foreground & tap handlers,
-  /// initializes local notifications, and subscribes to the user's blood-group topic.
+  /// initializes local notifications, and logs the device FCM token.
   ///
-  /// [context]         — Must be mounted. Used to show [NotificationWallpaperOverlay].
-  /// [userUid]         — Logged-in user UID (for token association).
-  /// [district]        — User's district slug, e.g. `"dhaka"`.
-  /// [bloodGroupSlug]  — Normalised blood-group slug, e.g. `"o_positive"`.
-  ///                     Pass `null` to skip topic subscription.
+  /// Can be called early in `main()` without a [context] to bootstrap notifications,
+  /// or from a mounted widget with [context] to enable in-app overlay routing.
   Future<void> initialize({
-    required BuildContext context,
-    required String userUid,
+    BuildContext? context,
+    String? userUid,
     String district = 'dhaka',
     String? bloodGroupSlug,
   }) async {
     if (_isInitialized) return;
     _isInitialized = true;
 
-    // Register background handler first
+    // 1. Register background handler first (top-level entry-point)
     FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
-    // ── Local Notifications Plugin Init (for Foreground Banners) ──
+    // 2. Local Notifications Plugin Init (for Foreground Banners & Channels)
     await _initLocalNotifications(context);
 
-    // ── Permission Request ──────────────────────────────────────────────
+    // 3. Permission Request
     await _requestPermissions();
 
-    // ── Token Retrieval ─────────────────────────────────────────────────
+    // 4. Token Retrieval & Logging
     await _logToken(userUid);
 
-    // ── Topic Subscription ──────────────────────────────────────────────
-    await subscribeToRegion(district: district);
-    if (bloodGroupSlug != null) {
+    // 5. Topic Subscription (if district or blood group specified)
+    if (district.isNotEmpty) {
+      await subscribeToRegion(district: district);
+    }
+    if (bloodGroupSlug != null && bloodGroupSlug.isNotEmpty) {
       await subscribeToBloodGroup(
         district: district,
         bloodGroupSlug: bloodGroupSlug,
       );
     }
 
-    // ── Foreground Message Handler ──────────────────────────────────────
+    // 6. Foreground Message Handler
     FirebaseMessaging.onMessage.listen((RemoteMessage msg) {
-      if (context.mounted) {
-        _handleForegroundMessage(msg, context);
-      }
+      _handleForegroundMessage(msg);
     });
 
-    // ── Notification-Tap Handler (background → opened) ──────────────────
+    // 7. Notification-Tap Handler (background → opened)
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {
-      if (context.mounted) {
+      if (context != null && context.mounted) {
         _handleNotificationTap(msg, context);
       }
     });
 
-    // ── Check if app was launched from a terminated-state notification ──
+    // 8. Check if app was launched from a terminated-state notification
     final RemoteMessage? initialMessage =
         await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null && context.mounted) {
+    if (initialMessage != null && context != null && context.mounted) {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (context.mounted) {
         _handleNotificationTap(initialMessage, context);
@@ -143,9 +140,19 @@ class FcmService {
     }
   }
 
+  /// Explicit helper to retrieve or refresh the device FCM token.
+  Future<String?> getDeviceToken() async {
+    try {
+      return await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      debugPrint('[FCM] getDeviceToken error: $e');
+      return null;
+    }
+  }
+
   // ── Local Notifications Setup ──────────────────────────────────────────
 
-  Future<void> _initLocalNotifications(BuildContext context) async {
+  Future<void> _initLocalNotifications([BuildContext? context]) async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -163,7 +170,7 @@ class FcmService {
       await _localNotifications.initialize(
         initSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
-          if (response.payload != null && context.mounted) {
+          if (response.payload != null && context != null && context.mounted) {
             try {
               final payload = jsonDecode(response.payload!) as Map<String, dynamic>;
               handleBackgroundNotificationPayload(payload, context);
@@ -211,13 +218,19 @@ class FcmService {
 
   // ── Token Retrieval ────────────────────────────────────────────────────
 
-  Future<void> _logToken(String userUid) async {
+  Future<void> _logToken([String? userUid]) async {
     try {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         await FirebaseMessaging.instance.getAPNSToken();
       }
       final token = await FirebaseMessaging.instance.getToken();
-      debugPrint('[FCM] device token for $userUid: $token');
+      debugPrint('\n════════════════════════════════════════════════════════════');
+      debugPrint('🔥 [BLOODPULSE FCM DEVICE TOKEN]');
+      if (userUid != null && userUid.isNotEmpty) {
+        debugPrint('👤 User UID: $userUid');
+      }
+      debugPrint('🔑 Token: $token');
+      debugPrint('════════════════════════════════════════════════════════════\n');
     } catch (e) {
       debugPrint('[FCM] token fetch error: $e');
     }
@@ -271,9 +284,9 @@ class FcmService {
 
   /// Called when a message arrives while the app is in the foreground.
   void _handleForegroundMessage(
-    RemoteMessage message,
-    BuildContext context,
-  ) {
+    RemoteMessage message, [
+    BuildContext? context,
+  ]) {
     final data = message.data;
     final notification = message.notification;
     final type = data['type'] as String? ?? '';
@@ -299,8 +312,8 @@ class FcmService {
       payload: data,
     );
 
-    // 2. If high urgency emergency, also display the emergency overlay
-    if (isEmergency && context.mounted) {
+    // 2. If high urgency emergency, also display the emergency overlay if context is mounted
+    if (isEmergency && context != null && context.mounted) {
       _showEmergencyOverlay(data, context);
     }
   }

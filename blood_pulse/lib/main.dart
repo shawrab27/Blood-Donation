@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'firebase_options.dart';
+import 'services/fcm_service.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
@@ -19,8 +20,10 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    // Initialize production-grade FCM push notifications & background messaging
+    await FcmService.instance.initialize();
   } catch (e) {
-    debugPrint('Firebase initialization warning: $e');
+    debugPrint('Firebase/FCM initialization warning: $e');
   }
 
   try {
