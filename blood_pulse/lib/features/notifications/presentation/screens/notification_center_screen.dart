@@ -308,9 +308,13 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
 
   Widget _buildMessagesTab(List<Widget> cachedWidgets) {
     final user = ref.watch(authProvider).user;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
-        user?.primaryPhone ??
-        '';
+    String currentUserId = '';
+    try {
+      currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    } catch (_) {}
+    if (currentUserId.isEmpty) {
+      currentUserId = user?.primaryPhone ?? '';
+    }
 
     if (currentUserId.isEmpty) {
       if (cachedWidgets.isNotEmpty) {

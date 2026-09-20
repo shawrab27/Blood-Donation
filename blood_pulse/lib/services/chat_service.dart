@@ -60,7 +60,19 @@ class ChatService {
   ChatService._();
   static final ChatService instance = ChatService._();
 
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  FirebaseFirestore? _customDb;
+
+  @visibleForTesting
+  set firestoreInstance(FirebaseFirestore? db) => _customDb = db;
+
+  FirebaseFirestore? get _db {
+    if (_customDb != null) return _customDb;
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // Local in-memory cache used as the fallback dev/mock stream.
   final StreamController<List<ChatMessageModel>> _mockStreamController =
@@ -69,11 +81,11 @@ class ChatService {
 
   // ── Collection References ───────────────────────────────────────────────
 
-  CollectionReference<Map<String, dynamic>> _messages(String chatId) =>
-      _db.collection('chats').doc(chatId).collection('messages');
+  CollectionReference<Map<String, dynamic>>? _messages(String chatId) =>
+      _db?.collection('chats').doc(chatId).collection('messages');
 
-  CollectionReference<Map<String, dynamic>> _roomMessages(String roomId) =>
-      _db.collection('chat_rooms').doc(roomId).collection('messages');
+  CollectionReference<Map<String, dynamic>>? _roomMessages(String roomId) =>
+      _db?.collection('chat_rooms').doc(roomId).collection('messages');
 
   // ── Room Initialization with Participants ───────────────────────────────
 
@@ -97,10 +109,12 @@ class ChatService {
       if (bloodGroup != null && bloodGroup.isNotEmpty) 'bloodGroup': bloodGroup,
     };
 
+    final db = _db;
+    if (db == null) return;
     try {
       await Future.wait([
-        _db.collection('chat_rooms').doc(roomId).set(data, SetOptions(merge: true)),
-        _db.collection('chats').doc(roomId).set(data, SetOptions(merge: true)),
+        db.collection('chat_rooms').doc(roomId).set(data, SetOptions(merge: true)),
+        db.collection('chats').doc(roomId).set(data, SetOptions(merge: true)),
       ]);
     } catch (e) {
       debugPrint('[ChatService] Error ensuring room participants: $e');
@@ -113,8 +127,12 @@ class ChatService {
     if (currentUserId.isEmpty) {
       return Stream.value(<ChatRoomSummary>[]);
     }
+    final db = _db;
+    if (db == null) {
+      return Stream.value(<ChatRoomSummary>[]);
+    }
     try {
-      return _db
+      return db
           .collection('chat_rooms')
           .where('participants', arrayContains: currentUserId)
           .snapshots()
@@ -195,8 +213,25 @@ class ChatService {
     String? bloodGroup,
     String? attachmentUrl,
   }) async {
-    final docRef     = _messages(chatId).doc();
-    final roomDocRef = _roomMessages(chatId).doc(docRef.id);
+    final messagesRef = _messages(chatId);
+    final roomMessagesRef = _roomMessages(chatId);
+    if (messagesRef == null || roomMessagesRef == null) {
+      _addToMockCache(ChatMessageModel(
+        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        chatId: chatId,
+        senderId: senderId,
+        receiverId: receiverId,
+        text: text,
+        attachmentUrl: attachmentUrl,
+        timestamp: DateTime.now(),
+        isRead: false,
+        status: 'sent',
+      ));
+      return;
+    }
+
+    final docRef     = messagesRef.doc();
+    final roomDocRef = roomMessagesRef.doc(docRef.id);
     final docId      = docRef.id;
     final now        = Timestamp.now();
 
@@ -263,13 +298,16 @@ class ChatService {
       'updatedAt': now,
       'isRead': false,
     };
-    try {
-      await Future.wait([
-        _db.collection('chat_rooms').doc(chatId).set(roomSummary, SetOptions(merge: true)),
-        _db.collection('chats').doc(chatId).set(roomSummary, SetOptions(merge: true)),
-      ]);
-    } catch (e) {
-      debugPrint('[ChatService] Error updating room summary: $e');
+    final db = _db;
+    if (db != null) {
+      try {
+        await Future.wait([
+          db.collection('chat_rooms').doc(chatId).set(roomSummary, SetOptions(merge: true)),
+          db.collection('chats').doc(chatId).set(roomSummary, SetOptions(merge: true)),
+        ]);
+      } catch (e) {
+        debugPrint('[ChatService] Error updating room summary: $e');
+      }
     }
 
     // Also update the mock stream so the UI reflects the sent message even
@@ -302,9 +340,13 @@ class ChatService {
     String chatId, {
     String? currentUserId,
   }) {
+    final messagesRef = _messages(chatId);
+    if (messagesRef == null) {
+      return _getMockStream(chatId);
+    }
     // Primary: live Firestore stream with E2EE decryption.
     try {
-      return _messages(chatId)
+      return messagesRef
           .orderBy(_Fields.timestamp, descending: false)
           .snapshots()
           .asyncMap((snapshot) async {
@@ -341,6 +383,8 @@ class ChatService {
     QuerySnapshot<Map<String, dynamic>> snapshot,
     String currentUserId,
   ) {
+    final db = _db;
+    if (db == null) return;
     final unread = snapshot.docs.where((doc) {
       final data = doc.data();
       final isRead = data[_Fields.isRead] as bool? ?? false;
@@ -351,17 +395,19 @@ class ChatService {
 
     if (unread.isEmpty) return;
 
-    final batch = _db.batch();
+    final batch = db.batch();
     for (final doc in unread) {
       batch.update(doc.reference, {
         _Fields.isRead: true,
         _Fields.status: 'read',
       });
-      final roomRef = _roomMessages(chatId).doc(doc.id);
-      batch.update(roomRef, {
-        _Fields.isRead: true,
-        _Fields.status: 'read',
-      });
+      final roomRef = _roomMessages(chatId)?.doc(doc.id);
+      if (roomRef != null) {
+        batch.update(roomRef, {
+          _Fields.isRead: true,
+          _Fields.status: 'read',
+        });
+      }
     }
     batch.commit().catchError((Object e) {
       debugPrint('[ChatService] batch read receipt error: $e');
@@ -370,19 +416,24 @@ class ChatService {
 
   /// Marks unread messages as 'delivered' when the recipient app is online or syncs.
   Future<void> markMessagesAsDelivered(String chatId, String currentUserId) async {
+    final messagesRef = _messages(chatId);
+    final db = _db;
+    if (messagesRef == null || db == null) return;
     try {
-      final query = await _messages(chatId)
+      final query = await messagesRef
           .where(_Fields.receiverId, isEqualTo: currentUserId)
           .where(_Fields.status, isEqualTo: 'sent')
           .get();
 
       if (query.docs.isEmpty) return;
 
-      final batch = _db.batch();
+      final batch = db.batch();
       for (final doc in query.docs) {
         batch.update(doc.reference, {_Fields.status: 'delivered'});
-        final roomRef = _roomMessages(chatId).doc(doc.id);
-        batch.update(roomRef, {_Fields.status: 'delivered'});
+        final roomRef = _roomMessages(chatId)?.doc(doc.id);
+        if (roomRef != null) {
+          batch.update(roomRef, {_Fields.status: 'delivered'});
+        }
       }
       await batch.commit();
     } catch (e) {
@@ -462,8 +513,10 @@ class ChatService {
   }
 
   Future<String?> _fetchRecipientPublicKey(String recipientUid) async {
+    final db = _db;
+    if (db == null) return null;
     try {
-      final doc = await _db.collection('users').doc(recipientUid).get();
+      final doc = await db.collection('users').doc(recipientUid).get();
       return doc.data()?['publicKey'] as String?;
     } catch (e) {
       debugPrint('[ChatService] could not fetch public key for $recipientUid: $e');

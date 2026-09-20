@@ -123,9 +123,18 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
 
-  AuthNotifier({ApiClient? apiClient})
+  AuthNotifier({ApiClient? apiClient, AuthState? initialState})
       : _apiClient = apiClient ?? ApiClient(),
-        super(const AuthState());
+        super(initialState ?? const AuthState());
+
+  /// Sets user state directly for testing
+  @visibleForTesting
+  void setUserForTesting(UserProfile user) {
+    state = state.copyWith(
+      status: AuthStatus.authenticated,
+      user: user,
+    );
+  }
 
   /// Login using ApiClient.login(identifier, password).
   Future<bool> loginWithCredentials({
