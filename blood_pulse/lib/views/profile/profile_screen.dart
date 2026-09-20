@@ -36,6 +36,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     super.dispose();
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: source, imageQuality: 85);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        ref.read(authProvider.notifier).updateAvatar(bytes);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✓ Profile picture updated!', style: TextStyle(fontFamily: 'Inter')),
+              backgroundColor: Color(0xFF1B8A4E),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not load image: $e', style: const TextStyle(fontFamily: 'Inter')),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   void _showImagePickerModal() {
     showModalBottomSheet<void>(
       context: context,
@@ -54,9 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               title: const Text('Take Photo', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
               onTap: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('📷 Camera launched for profile photo!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating),
-                );
+                _pickImage(ImageSource.camera);
               },
             ),
             ListTile(
@@ -64,13 +92,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
               title: const Text('Choose from Gallery', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
               onTap: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('🖼️ Gallery opened for profile photo!'), backgroundColor: AppColors.tertiary, behavior: SnackBarBehavior.floating),
-                );
+                _pickImage(ImageSource.gallery);
               },
             ),
             const SizedBox(height: 12),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackInitial(String name) {
+    final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
+    return Center(
+      child: Text(
+        initial,
+        style: const TextStyle(
+          fontFamily: 'Georgia',
+          fontSize: 40,
+          fontWeight: FontWeight.bold,
+          color: AppColors.primary,
         ),
       ),
     );
@@ -463,7 +504,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
 
     final currentUserName = (authUser?.fullName.isNotEmpty == true)
         ? authUser!.fullName
-        : (user?.name ?? 'Dr. S. M. Shawrab');
+        : (user?.name.isNotEmpty == true && user!.name != 'Dr. S. M. Shawrab' ? user.name : 'Blood Donor');
 
     final userTimelinePosts = allPosts.where((p) {
       final isAuthor = p.authorName == currentUserName ||
@@ -495,11 +536,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           color: const Color(0xFFF3DDE0),
                           border: Border.all(color: AppColors.primary, width: 3),
                         ),
-                        child: Center(
-                          child: Text(
-                            user?.name.isNotEmpty == true ? user!.name.substring(0, 1).toUpperCase() : 'U',
-                            style: const TextStyle(fontFamily: 'Georgia', fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
-                          ),
+                        child: ClipOval(
+                          child: (authUser?.avatarBytes != null)
+                              ? Image.memory(
+                                  authUser!.avatarBytes!,
+                                  width: 104,
+                                  height: 104,
+                                  fit: BoxFit.cover,
+                                )
+                              : (authUser?.photoUrl != null && authUser!.photoUrl!.isNotEmpty)
+                                  ? Image.network(
+                                      authUser.photoUrl!,
+                                      width: 104,
+                                      height: 104,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => _buildFallbackInitial(currentUserName),
+                                    )
+                                  : _buildFallbackInitial(currentUserName),
                         ),
                       ),
 
@@ -546,7 +599,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         children: [
                           Flexible(
                             child: Text(
-                              user?.name ?? 'Dr. S. M. Shawrab',
+                              currentUserName,
                               style: const TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -568,7 +621,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                           border: Border.all(color: const Color(0xFFD0E4FF)),
                         ),
                         child: Text(
-                          '${user?.role ?? "Student"} • ${user?.institution ?? "Department of CSE"}',
+                          '${authUser?.category == "student" ? "Student" : (user?.role ?? "Altruist")} • ${authUser?.categoryDetails["district"] ?? user?.institution ?? "BloodPulse Community"}',
                           style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.tertiary),
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,

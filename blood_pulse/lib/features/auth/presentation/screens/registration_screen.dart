@@ -193,7 +193,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       lastDonationDate: _neverDonated ? null : _lastDonationDate,
       totalBagsDonated: _neverDonated ? 0 : _totalBags,
       isOtpVerified: false,
+      isProfileComplete: true,
       nidHash: nidHash,
+      avatarBytes: _avatarBytes,
     );
 
     final success = await ref.read(authProvider.notifier).registerUser(profile);

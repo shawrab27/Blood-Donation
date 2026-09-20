@@ -139,7 +139,10 @@ class AiTrustDetectorService {
         await textRecognizer.close();
 
         if (rawText.trim().isEmpty) {
-          return _fallbackResult(selectedBloodGroup, 'No readable text found in document.');
+          return _fallbackResult(
+            selectedBloodGroup,
+            '⚠️ The uploaded image does not contain readable text or appear to be a medical report. Please upload a clear photo of an official hospital prescription or requisition slip.',
+          );
         }
 
         // ── Stage 1.5: On-device PII Redaction ──
@@ -171,13 +174,16 @@ class AiTrustDetectorService {
 
       final prompt = '''
 You are a Medical Report Verification AI for the "BloodPulse" blood donation app.
-Analyze the following raw OCR text extracted from a hospital prescription or medical report.
+Analyze the following raw OCR text extracted from an image uploaded as a hospital prescription or medical report.
 
 Claimed Required Blood Group: $selectedBloodGroup
 
-Extract the data and calculate a Trust Score (0-100).
+CRITICAL RULE FOR NON-MEDICAL OR WRONG PICTURES:
+If the text is clearly not from a medical document (e.g. random text, screenshot of chat, social media post, menu, selfie description, landscape, non-medical document, meme, or receipt), set "trustScore": 10, "isVerified": false, and "message": "⚠️ The uploaded image is not a recognized medical document. Please upload a clear photo of an official hospital blood requisition slip or doctor's prescription."
+
+Otherwise, extract the data and calculate a Trust Score (0-100).
 A high score (>60) requires evidence of a hospital name, doctor's name or reg number, and a blood request.
-A low score indicates a generic, empty, or potentially fake document.
+A low score indicates a generic, empty, or unverified document.
 
 Respond ONLY with a valid JSON object strictly matching this schema:
 {
@@ -213,6 +219,30 @@ $redactedText
   /// Backup heuristic if Gemini API is missing or fails.
   static AiDetectionResult _localHeuristicFallback(String rawText, String claimedBlood) {
     final lower = rawText.toLowerCase();
+
+    // Check if the document has ANY recognizable medical terminology
+    final medicalKeywords = [
+      'hospital', 'clinic', 'medical', 'dr.', 'doctor', 'mbbs', 'blood',
+      'transfusion', 'patient', 'report', 'lab', 'test', 'cbc', 'hemoglobin',
+      'prescription', 'rx', 'diagnostic', 'ward', 'bed', 'health', 'specimen',
+      'donor', 'serology', 'pathology'
+    ];
+    final hasAnyMedical = medicalKeywords.any((k) => lower.contains(k));
+    if (!hasAnyMedical && !rawText.startsWith('[Document uploaded')) {
+      return AiDetectionResult(
+        trustScore: 10,
+        isVerified: false,
+        detectedHospitalName: 'None (Non-Medical Image)',
+        detectedDoctorName: 'None',
+        detectedBloodGroup: claimedBlood,
+        riskFlags: const [
+          'The uploaded image is not a medical report, prescription, or clinical requisition.',
+          'Missing hospital header, doctor seal, diagnostic markers, or medical terminology.',
+        ],
+        message: '⚠️ Invalid document: The uploaded picture does not appear to be a medical report or prescription. Please upload a clear photo of an official hospital blood requisition slip.',
+      );
+    }
+
     int score = 20; // Base score
     final flags = <String>[];
 
@@ -259,10 +289,10 @@ $redactedText
     return AiDetectionResult(
       trustScore: 10,
       isVerified: false,
-      detectedHospitalName: 'Error',
-      detectedDoctorName: 'Error',
+      detectedHospitalName: 'Unrecognized',
+      detectedDoctorName: 'Unrecognized',
       detectedBloodGroup: bg,
-      riskFlags: ['System Error'],
+      riskFlags: const ['Invalid or unverified document'],
       message: errorMsg,
     );
   }

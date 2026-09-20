@@ -1294,7 +1294,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                   onTap: () async {
                     final messenger = ScaffoldMessenger.of(context);
                     final authUser = ref.read(authProvider).user;
-                    final reposterName = authUser?.fullName.isNotEmpty == true ? authUser!.fullName : 'Dr. S. M. Shawrab';
+                    final reposterName = authUser?.fullName.isNotEmpty == true ? authUser!.fullName : 'You';
                     final success = await ref.read(feedProvider.notifier).repost(
                       post.id,
                       reposterName: reposterName,

@@ -1,9 +1,11 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import 'app_logo.dart';
 import 'profile_drawer.dart';
+import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/profile/domain/providers/profile_provider.dart';
 import '../../features/notifications/domain/providers/notification_provider.dart';
 
@@ -65,16 +67,24 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     final effectiveNotificationCount = notificationCount ?? liveUnreadCount;
 
     final profileAsync = ref.watch(profileProvider);
-    String? avatarUrl;
-    String? firstLetter;
+    final authUser = ref.watch(authProvider).user;
+    String? avatarUrl = authUser?.photoUrl;
+    Uint8List? avatarBytes = authUser?.avatarBytes;
+    String? firstLetter = (authUser?.fullName.isNotEmpty == true)
+        ? authUser!.fullName.trim()[0].toUpperCase()
+        : null;
 
     profileAsync.whenData((profile) {
       if (profile != null) {
-        avatarUrl = profile.profilePicture;
+        if (profile.profilePicture != null && profile.profilePicture!.isNotEmpty) {
+          avatarUrl = profile.profilePicture;
+        }
         final name = profile.firstName?.isNotEmpty == true
             ? profile.firstName!
             : profile.username ?? '';
-        firstLetter = name.isNotEmpty ? name[0].toUpperCase() : null;
+        if (name.isNotEmpty && firstLetter == null) {
+          firstLetter = name[0].toUpperCase();
+        }
       }
     });
 
@@ -244,6 +254,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: _TopBarProfileAvatar(
                       avatarUrl: avatarUrl,
+                      avatarBytes: avatarBytes,
                       firstLetter: firstLetter,
                     ),
                   ),
@@ -333,8 +344,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
 }
 
 class _TopBarProfileAvatar extends StatelessWidget {
-  const _TopBarProfileAvatar({this.avatarUrl, this.firstLetter});
+  const _TopBarProfileAvatar({this.avatarUrl, this.avatarBytes, this.firstLetter});
   final String? avatarUrl;
+  final Uint8List? avatarBytes;
   final String? firstLetter;
 
   @override
@@ -354,6 +366,12 @@ class _TopBarProfileAvatar extends StatelessWidget {
   }
 
   Widget _buildContent() {
+    if (avatarBytes != null) {
+      return Image.memory(
+        avatarBytes!,
+        fit: BoxFit.cover,
+      );
+    }
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return Image.network(
         avatarUrl!,

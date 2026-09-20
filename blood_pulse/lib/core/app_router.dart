@@ -133,6 +133,7 @@ final appRouter = GoRouter(
         String chatRoomId = 'sarah_jenkins_o_minus';
         String chatRecipientName = 'Sarah Jenkins';
         String bloodGroup = 'O-';
+        String recipientId = 'sarah_jenkins';
 
         if (extra is Map<String, dynamic>) {
           chatRoomId = extra['chatRoomId'] as String? ?? chatRoomId;
@@ -140,18 +141,25 @@ final appRouter = GoRouter(
               extra['recipientName'] as String? ??
               chatRecipientName;
           bloodGroup = extra['bloodGroup'] as String? ?? bloodGroup;
+          recipientId = extra['recipientId'] as String? ??
+              extra['receiverId'] as String? ??
+              extra['senderId'] as String? ??
+              chatRoomId;
         } else if (extra is String) {
           chatRoomId = extra;
+          recipientId = extra;
         } else {
           chatRoomId = state.uri.queryParameters['roomId'] ?? chatRoomId;
           chatRecipientName = state.uri.queryParameters['name'] ?? chatRecipientName;
           bloodGroup = state.uri.queryParameters['bloodGroup'] ?? bloodGroup;
+          recipientId = state.uri.queryParameters['recipientId'] ?? recipientId;
         }
 
         return ChatScreen(
           chatRoomId: chatRoomId,
           chatRecipientName: chatRecipientName,
           bloodGroup: bloodGroup,
+          recipientId: recipientId,
         );
       },
     ),

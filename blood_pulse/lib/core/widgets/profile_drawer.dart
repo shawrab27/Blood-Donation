@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -282,17 +283,21 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
     final themeMode = ref.watch(themeModeProvider);
     final themeNotifier = ref.read(themeModeProvider.notifier);
 
-    String displayName = authState.user?.fullName.trim().isNotEmpty == true
-        ? authState.user!.fullName
-        : 'Sarah Jenkins';
-    String displayInitials = 'SJ';
+    final authUser = authState.user;
+    final Uint8List? avatarBytes = authUser?.avatarBytes;
+    final String? photoUrl = authUser?.photoUrl;
+
+    String displayName = authUser?.fullName.trim().isNotEmpty == true
+        ? authUser!.fullName
+        : 'Blood Donor';
+    String displayInitials = 'BD';
 
     profileAsync.whenData((p) {
       if (p != null) {
         final name = '${p.firstName ?? ''} ${p.lastName ?? ''}'.trim();
-        if (name.isNotEmpty) {
+        if (name.isNotEmpty && name != 'Dr. S. M. Shawrab') {
           displayName = name;
-        } else if (p.username != null && p.username!.isNotEmpty) {
+        } else if (p.username != null && p.username!.isNotEmpty && p.username != 'Dr. S. M. Shawrab') {
           displayName = p.username!;
         }
       }
@@ -416,15 +421,22 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: Colors.white,
-                            child: Text(
-                              displayInitials,
-                              style: const TextStyle(
-                                fontFamily: 'Georgia',
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF850014),
-                              ),
-                            ),
+                            backgroundImage: (avatarBytes != null)
+                                ? MemoryImage(avatarBytes)
+                                : (photoUrl != null && photoUrl.isNotEmpty)
+                                    ? NetworkImage(photoUrl) as ImageProvider
+                                    : null,
+                            child: (avatarBytes == null && (photoUrl == null || photoUrl.isEmpty))
+                                ? Text(
+                                    displayInitials,
+                                    style: const TextStyle(
+                                      fontFamily: 'Georgia',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF850014),
+                                    ),
+                                  )
+                                : null,
                           ),
                           const SizedBox(width: 10),
                           Expanded(

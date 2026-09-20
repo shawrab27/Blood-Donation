@@ -463,6 +463,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                       'chatRoomId': 'dispatch_tanvir',
                       'chatRecipientName': 'Tanvir Ahmed',
                       'bloodGroup': 'O-',
+                      'recipientId': 'tanvir_ahmed',
                     },
                   );
                 },

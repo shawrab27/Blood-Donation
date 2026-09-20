@@ -46,26 +46,9 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
         return;
       }
 
-      // Fallback: try legacy /donor_profiles/ list and filter by token
-      final response = await http.get(
-        Uri.parse('$_baseUrl/donor_profiles/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        if (data.isNotEmpty) {
-          final profile = ProfileModel.fromJson(data[0]);
-          state = AsyncValue.data(profile);
-        } else {
-          state = const AsyncValue.data(null);
-        }
-      } else {
-        state = AsyncValue.error('Failed to load profile: ${response.statusCode}', StackTrace.current);
-      }
+      // Fallback: If /donors/me/ is not available, do not blindly assign data[0] (which is Dr. S.M. Shawrab)
+      // Return null so the app gracefully uses the authenticated user's verified identity from authProvider.
+      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

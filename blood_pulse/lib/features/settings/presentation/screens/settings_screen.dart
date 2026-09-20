@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -449,17 +450,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final currentLocale = ref.watch(localeProvider);
     final isBangla = currentLocale.languageCode == 'bn';
 
-    String displayName = authState.user?.fullName.trim().isNotEmpty == true
-        ? authState.user!.fullName
-        : 'Sarah Jenkins';
-    String bloodGroup = authState.user?.bloodGroup ?? 'O+';
-    int totalDonations = authState.user?.totalBagsDonated ?? 4;
-    String? photoUrl;
+    final authUser = authState.user;
+    final Uint8List? avatarBytes = authUser?.avatarBytes;
+    String? photoUrl = authUser?.photoUrl;
+    String displayName = authUser?.fullName.trim().isNotEmpty == true
+        ? authUser!.fullName
+        : 'Blood Donor';
+    String bloodGroup = authUser?.bloodGroup.isNotEmpty == true ? authUser!.bloodGroup : 'O+';
+    int totalDonations = authUser?.totalBagsDonated ?? 0;
 
     profileAsync.whenData((p) {
       if (p != null) {
         final name = '${p.firstName ?? ''} ${p.lastName ?? ''}'.trim();
-        if (name.isNotEmpty) {
+        if (name.isNotEmpty && name != 'Dr. S. M. Shawrab') {
           displayName = name;
         }
         if (p.bloodGroup != null && p.bloodGroup!.isNotEmpty) {
@@ -468,7 +471,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (p.totalBagsDonated > 0) {
           totalDonations = p.totalBagsDonated;
         }
-        photoUrl = p.profilePicture;
+        if (p.profilePicture != null && p.profilePicture!.isNotEmpty) {
+          photoUrl = p.profilePicture;
+        }
       }
     });
 
@@ -514,11 +519,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: const Color(0xFFFEE9EB),
-                    backgroundImage: photoUrl != null && photoUrl!.isNotEmpty
-                        ? NetworkImage(photoUrl!)
-                        : null,
-                    child: photoUrl == null || photoUrl!.isEmpty
-                        ? const Icon(Icons.person_rounded, color: AppColors.primary, size: 26)
+                    backgroundImage: (avatarBytes != null)
+                        ? MemoryImage(avatarBytes)
+                        : (photoUrl != null && photoUrl!.isNotEmpty)
+                            ? NetworkImage(photoUrl!) as ImageProvider
+                            : null,
+                    child: (avatarBytes == null && (photoUrl == null || photoUrl!.isEmpty))
+                        ? Text(
+                            displayName.isNotEmpty ? displayName[0].toUpperCase() : 'D',
+                            style: const TextStyle(
+                              fontFamily: 'Georgia',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: AppColors.primary,
+                            ),
+                          )
                         : null,
                   ),
                   const SizedBox(width: 14),

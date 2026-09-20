@@ -90,7 +90,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     if (!mounted) return;
     if (success) {
-      context.go('/dashboard');
+      final user = ref.read(authProvider).user;
+      final bool isProfileComplete = user?.isProfileComplete == true &&
+          (user?.bloodGroup.isNotEmpty ?? false) &&
+          (user?.primaryPhone.isNotEmpty ?? false);
+      if (isProfileComplete) {
+        context.go('/dashboard');
+      } else {
+        context.go('/complete-profile');
+      }
     } else {
       final err = ref.read(authProvider).errorMessage;
       if (err != null && err.isNotEmpty) {

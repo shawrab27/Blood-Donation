@@ -162,8 +162,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             _NotificationItemTile(
               icon: Icons.chat_bubble_rounded,
               iconColor: AppColors.primary,
-              title: 'Sarah Jenkins',
-              subtitle: 'request for O- blood at Central General. Is the donation slot still open for 3 PM?',
+              title: 'Sarah Jenkins (Blood Requester)',
+              subtitle: '"Request for O- blood at Central General Hospital. Is the donation slot still open for 3 PM?"',
               time: '10:45 AM',
               isUnread: true,
               onTap: () => context.push(
@@ -172,6 +172,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                   'chatRecipientName': 'Sarah Jenkins',
                   'bloodGroup': 'O-',
                   'chatRoomId': 'sarah_jenkins_o_minus',
+                  'recipientId': 'sarah_jenkins',
                 },
               ),
             ),
@@ -188,22 +189,24 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
                   'chatRecipientName': 'Dr. Alim',
                   'bloodGroup': 'AB+',
                   'chatRoomId': 'dr_alim',
+                  'recipientId': 'dr_alim',
                 },
               ),
             ),
             _NotificationItemTile(
-              icon: Icons.person_search_rounded,
+              icon: Icons.chat_bubble_rounded,
               iconColor: const Color(0xFF1B8A4E),
-              title: 'BloodPulse Dispatch Coordinator',
-              subtitle: '"Thank you for accepting the voluntary dispatch request!"',
+              title: 'Tanvir Ahmed (Volunteer Donor)',
+              subtitle: '"I have arrived at the hospital reception. Where should I meet you?"',
               time: '1 hour ago',
               isUnread: false,
               onTap: () => context.push(
                 '/chat',
                 extra: {
-                  'chatRecipientName': 'BloodPulse Coordinator',
+                  'chatRecipientName': 'Tanvir Ahmed',
                   'bloodGroup': 'A+',
-                  'chatRoomId': 'coordinator',
+                  'chatRoomId': 'tanvir_ahmed',
+                  'recipientId': 'tanvir_ahmed',
                 },
               ),
             ),
@@ -319,7 +322,29 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
             if (!mounted) return;
             if (type.contains('CHAT')) {
-              context.push('/chat');
+              final senderName = raw['sender_name']?.toString() ??
+                  raw['senderName']?.toString() ??
+                  title.replaceAll('New message from ', '');
+              final roomId = raw['chat_room_id']?.toString() ??
+                  raw['chatRoomId']?.toString() ??
+                  raw['room_id']?.toString() ??
+                  'sarah_jenkins_o_minus';
+              final bGroup = raw['blood_group']?.toString() ??
+                  raw['bloodGroup']?.toString() ??
+                  'O-';
+              final rId = raw['sender_id']?.toString() ??
+                  raw['senderId']?.toString() ??
+                  raw['recipientId']?.toString() ??
+                  roomId;
+              context.push(
+                '/chat',
+                extra: {
+                  'chatRecipientName': senderName,
+                  'bloodGroup': bGroup,
+                  'chatRoomId': roomId,
+                  'recipientId': rId,
+                },
+              );
             } else if (type.contains('EMERGENCY')) {
               NotificationWallpaperOverlay.show(context);
             }

@@ -157,7 +157,15 @@ class NotificationWallpaperOverlay extends StatelessWidget {
                     icon: Icons.chat_rounded,
                     onPressed: () {
                       Navigator.pop(context);
-                      context.push('/chat', extra: chatId);
+                      context.push(
+                        '/chat',
+                        extra: {
+                          'chatRoomId': chatId,
+                          'chatRecipientName': patientName,
+                          'bloodGroup': bloodGroup,
+                          'recipientId': requesterPhone.isNotEmpty ? requesterPhone : chatId,
+                        },
+                      );
                     },
                   ),
                 ),

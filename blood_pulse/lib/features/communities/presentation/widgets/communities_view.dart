@@ -283,7 +283,7 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => widget.onSubFilterChanged(1),
                   child: const Text(
                     'View All',
                     style: TextStyle(

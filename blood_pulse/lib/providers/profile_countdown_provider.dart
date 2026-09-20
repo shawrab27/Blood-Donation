@@ -36,11 +36,11 @@ class ProfileCountdownNotifier extends StateNotifier<ProfileCountdownState> {
           ProfileCountdownState(
             user: UserModel(
               uid: 'usr_101',
-              name: 'Dr. S. M. Shawrab',
-              email: 'shawrab@bloodpulse.org',
-              phonePrimary: '+880 1711-223344',
-              role: 'Student',
-              institution: 'Department of CSE',
+              name: 'Blood Donor',
+              email: 'donor@bloodpulse.org',
+              phonePrimary: '+880 1700-000000',
+              role: 'Altruist',
+              institution: 'BloodPulse Community',
               division: 'Dhaka',
               district: 'Dhaka',
               upazila: 'Dhanmondi',
@@ -51,6 +51,20 @@ class ProfileCountdownNotifier extends StateNotifier<ProfileCountdownState> {
             ),
           ),
         );
+
+  /// Synchronizes countdown user model with currently authenticated UserProfile
+  void syncWithAuthUser(String? name, String? email, String? bloodGroup, String? phone) {
+    if (state.user != null) {
+      state = state.copyWith(
+        user: state.user!.copyWith(
+          name: (name != null && name.isNotEmpty) ? name : state.user!.name,
+          email: (email != null && email.isNotEmpty) ? email : state.user!.email,
+          phonePrimary: (phone != null && phone.isNotEmpty) ? phone : state.user!.phonePrimary,
+          bloodGroup: (bloodGroup != null && bloodGroup.isNotEmpty) ? bloodGroup : state.user!.bloodGroup,
+        ),
+      );
+    }
+  }
 
   /// Attempts to update user blood group, enforcing the Admin-Lock security rule.
   bool updateBloodGroup(String newBloodGroup, {bool isAdmin = false}) {

@@ -97,12 +97,25 @@ class AiAnalysisService {
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           return AiReportResult.fromJson(data);
+        } else if (response.statusCode == 400) {
+          try {
+            final body = json.decode(response.body);
+            final error = body['error'] ?? body['detail'] ?? body['message'];
+            if (error != null) {
+              throw Exception(error.toString());
+            }
+          } catch (e) {
+            if (e is Exception && !e.toString().contains('FormatException')) {
+              rethrow;
+            }
+          }
+          throw Exception("This doesn't appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.");
         } else {
           try {
             final body = json.decode(response.body);
             final error = body['error'] ?? body['detail'];
             if (error != null) {
-              throw Exception(error);
+              throw Exception(error.toString());
             }
           } catch (decodeErr) {
             if (decodeErr is Exception && !decodeErr.toString().contains('FormatException')) {
@@ -113,6 +126,15 @@ class AiAnalysisService {
         }
       } catch (e) {
         lastError = e;
+        final errStr = e.toString();
+        if (errStr.contains("doesn't appear to be a valid") ||
+            errStr.contains('not a valid blood') ||
+            errStr.contains('not appear to be a valid') ||
+            errStr.contains('not a medical') ||
+            errStr.contains('Wrong image') ||
+            errStr.contains('invalid report')) {
+          rethrow;
+        }
       }
     }
 
@@ -133,9 +155,31 @@ class AiAnalysisService {
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           return AiReportResult.fromJson(data);
+        } else if (response.statusCode == 400) {
+          try {
+            final body = json.decode(response.body);
+            final error = body['error'] ?? body['detail'] ?? body['message'];
+            if (error != null) {
+              throw Exception(error.toString());
+            }
+          } catch (e) {
+            if (e is Exception && !e.toString().contains('FormatException')) {
+              rethrow;
+            }
+          }
+          throw Exception("This doesn't appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.");
         }
       } catch (e) {
         lastError = e;
+        final errStr = e.toString();
+        if (errStr.contains("doesn't appear to be a valid") ||
+            errStr.contains('not a valid blood') ||
+            errStr.contains('not appear to be a valid') ||
+            errStr.contains('not a medical') ||
+            errStr.contains('Wrong image') ||
+            errStr.contains('invalid report')) {
+          rethrow;
+        }
       }
     }
 

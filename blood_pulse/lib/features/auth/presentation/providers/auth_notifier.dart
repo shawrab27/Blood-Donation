@@ -27,6 +27,8 @@ class UserProfile {
     this.isProfileComplete = false,
     this.isEmailVerified = false,
     this.nidHash,
+    this.photoUrl,
+    this.avatarBytes,
   });
 
   final String fullName;
@@ -45,6 +47,8 @@ class UserProfile {
   final bool isProfileComplete;
   final bool isEmailVerified;
   final String? nidHash;
+  final String? photoUrl;
+  final Uint8List? avatarBytes;
 
   UserProfile copyWith({
     String? fullName,
@@ -63,6 +67,8 @@ class UserProfile {
     bool? isProfileComplete,
     bool? isEmailVerified,
     String? nidHash,
+    String? photoUrl,
+    Uint8List? avatarBytes,
   }) {
     return UserProfile(
       fullName:         fullName         ?? this.fullName,
@@ -81,6 +87,8 @@ class UserProfile {
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
       isEmailVerified:  isEmailVerified  ?? this.isEmailVerified,
       nidHash:          nidHash          ?? this.nidHash,
+      photoUrl:         photoUrl         ?? this.photoUrl,
+      avatarBytes:      avatarBytes      ?? this.avatarBytes,
     );
   }
 }
@@ -233,15 +241,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       debugPrint('[GoogleSignIn] ✓ Backend returned: ${authData.keys.toList()}');
 
       final userData = authData['user'] as Map<String, dynamic>?;
-      final bool isProfileComplete = userData?['is_profile_complete'] == true;
+      final String? photoUrl = firebaseUser.photoURL ?? account.photoUrl;
+      final bloodGroup = (userData?['blood_group'] as String?) ?? '';
+      final phoneNumber = (userData?['phone_number'] as String?) ?? '';
+      final bool isProfileComplete = userData?['is_profile_complete'] == true ||
+          (bloodGroup.isNotEmpty && phoneNumber.isNotEmpty);
 
       final user = UserProfile(
         fullName: firebaseUser.displayName ?? account.displayName ?? 'Google Donor',
         email: firebaseUser.email ?? account.email,
-        primaryPhone: userData?['phone_number'] ?? '',
+        primaryPhone: phoneNumber,
         age: 25,
         gender: 'Not specified',
-        bloodGroup: userData?['blood_group'] ?? '',
+        bloodGroup: bloodGroup,
         category: 'civilian',
         categoryDetails: {
           'district': userData?['district'] ?? 'Dhaka',
@@ -250,6 +262,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         totalBagsDonated: 0,
         isOtpVerified: true,
         isProfileComplete: isProfileComplete,
+        photoUrl: photoUrl,
       );
 
       state = state.copyWith(
@@ -279,25 +292,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Sets the user profile upon registration and posts to `/api/donors/`.
   Future<bool> registerUser(UserProfile profile) async {
-    state = state.copyWith(status: AuthStatus.loading, errorMessage: null, user: profile);
+    final completeProfile = profile.copyWith(isProfileComplete: true);
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null, user: completeProfile);
 
-    final district = profile.categoryDetails['district'] ??
-        profile.categoryDetails['division'] ??
+    final district = completeProfile.categoryDetails['district'] ??
+        completeProfile.categoryDetails['division'] ??
         'Dhaka';
 
     final payload = {
-      'blood_group': profile.bloodGroup,
+      'blood_group': completeProfile.bloodGroup,
       'district': district,
-      'phone_number': profile.primaryPhone,
-      if (profile.nidHash != null && profile.nidHash!.isNotEmpty)
-        'nid_hash': profile.nidHash,
-      'last_donation_date': profile.lastDonationDate?.toIso8601String().split('T').first,
-      'is_verified': profile.isOtpVerified,
-      'full_name': profile.fullName,
-      'email': profile.email,
-      'age': profile.age,
-      'gender': profile.gender,
-      'category': profile.category,
+      'phone_number': completeProfile.primaryPhone,
+      if (completeProfile.nidHash != null && completeProfile.nidHash!.isNotEmpty)
+        'nid_hash': completeProfile.nidHash,
+      'last_donation_date': completeProfile.lastDonationDate?.toIso8601String().split('T').first,
+      'is_verified': completeProfile.isOtpVerified,
+      'full_name': completeProfile.fullName,
+      'email': completeProfile.email,
+      'age': completeProfile.age,
+      'gender': completeProfile.gender,
+      'category': completeProfile.category,
     };
 
     try {
@@ -305,7 +319,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
-          user: profile,
+          user: completeProfile,
           errorMessage: null,
         );
         return true;
@@ -332,7 +346,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (state.user != null) {
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        user: state.user!.copyWith(isOtpVerified: isOtpVerified),
+        user: state.user!.copyWith(
+          isOtpVerified: isOtpVerified,
+          isProfileComplete: true,
+        ),
       );
     } else {
       state = state.copyWith(
@@ -349,6 +366,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           neverDonated: true,
           totalBagsDonated: 0,
           isOtpVerified: isOtpVerified,
+          isProfileComplete: true,
         ),
       );
     }
@@ -500,6 +518,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
             'district': district,
           },
         ),
+      );
+    }
+  }
+
+  /// Updates local avatar bytes for instant preview and app-wide sync
+  void updateAvatar(Uint8List avatarBytes) {
+    if (state.user != null) {
+      state = state.copyWith(
+        user: state.user!.copyWith(avatarBytes: avatarBytes),
+      );
+    }
+  }
+
+  /// Updates user full name
+  void updateProfileName(String fullName) {
+    if (state.user != null) {
+      state = state.copyWith(
+        user: state.user!.copyWith(fullName: fullName),
       );
     }
   }
