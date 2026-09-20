@@ -157,7 +157,7 @@ class LanguageModal extends ConsumerWidget {
                         showGlow: true,
                         onPressed: () {
                           Navigator.of(context).pop();
-                          context.go('/onboarding');
+                          context.go('/login');
                         },
                       ),
                     ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 // Auth
 import '../splash_video_screen.dart';
 import '../features/auth/presentation/screens/splash_screen.dart';
+import '../features/auth/presentation/screens/language_selection_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/registration_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
@@ -90,6 +91,10 @@ final appRouter = GoRouter(
         final step = stepParam != null ? int.tryParse(stepParam) ?? 0 : 0;
         return OnboardingScreen(initialStep: step);
       },
+    ),
+    GoRoute(
+      path: '/language',
+      builder: (context, state) => const LanguageSelectionScreen(),
     ),
     GoRoute(
       path: '/login',

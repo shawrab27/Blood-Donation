@@ -86,7 +86,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _finishOnboarding() {
-    context.go('/login');
+    context.go('/language');
   }
 
   @override
