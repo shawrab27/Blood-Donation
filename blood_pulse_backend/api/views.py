@@ -787,6 +787,7 @@ class FirebaseAuthView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        try:
             # Find or create Django User
             user = User.objects.filter(email=email).first()
             if not user:
