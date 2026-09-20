@@ -173,81 +173,87 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
         ],
       ),
-      actions: [
-        ...?actions,
+      actions: (!showNotification &&
+              !showProfile &&
+              !showMenu &&
+              (actions == null || actions!.isEmpty))
+          ? null
+          : [
+              ...?actions,
 
-        // ── 1. Notification Bell with Badge Count ──
-        if (showNotification)
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                padding: const EdgeInsets.all(4),
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                icon: Icon(
-                  Icons.notifications_outlined,
-                  color: (backgroundColor != null &&
-                          backgroundColor!.computeLuminance() < 0.3)
-                      ? Colors.white
-                      : AppColors.secondary,
-                  size: 22,
-                ),
-                tooltip: 'Notifications',
-                onPressed: () {
-                  ref.read(notificationCountProvider.notifier).markAsRead();
-                  if (onNotificationTap != null) {
-                    onNotificationTap!();
-                  } else {
-                    context.push('/notifications');
-                  }
-                },
-              ),
-              if (effectiveNotificationCount > 0)
-                Positioned(
-                  right: 4,
-                  top: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                    constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 1.5),
+              // ── 1. Notification Bell with Badge Count ──
+              if (showNotification)
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      icon: Icon(
+                        Icons.notifications_outlined,
+                        color: (backgroundColor != null &&
+                                backgroundColor!.computeLuminance() < 0.3)
+                            ? Colors.white
+                            : AppColors.secondary,
+                        size: 22,
+                      ),
+                      tooltip: 'Notifications',
+                      onPressed: () {
+                        ref.read(notificationCountProvider.notifier).markAsRead();
+                        if (onNotificationTap != null) {
+                          onNotificationTap!();
+                        } else {
+                          context.push('/notifications');
+                        }
+                      },
                     ),
-                    child: Center(
-                      child: Text(
-                        effectiveNotificationCount > 99 ? '99+' : '$effectiveNotificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Inter',
-                          height: 1.0,
+                    if (effectiveNotificationCount > 0)
+                      Positioned(
+                        right: 4,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                          constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Center(
+                            child: Text(
+                              effectiveNotificationCount > 99 ? '99+' : '$effectiveNotificationCount',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Inter',
+                                height: 1.0,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+                  ],
+                ),
+
+              // ── 2. Profile Avatar ──
+              if (showProfile)
+                GestureDetector(
+                  onTap: () => ProfileDrawer.show(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _TopBarProfileAvatar(
+                      avatarUrl: avatarUrl,
+                      firstLetter: firstLetter,
                     ),
                   ),
                 ),
-            ],
-          ),
+              if (showNotification || showProfile || showMenu)
+                const SizedBox(width: 6),
 
-        // ── 2. Profile Avatar ──
-        if (showProfile)
-          GestureDetector(
-            onTap: () => ProfileDrawer.show(context),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: _TopBarProfileAvatar(
-                avatarUrl: avatarUrl,
-                firstLetter: firstLetter,
-              ),
-            ),
-          ),
-        const SizedBox(width: 6),
-
-        // ── 3. Menu Options (3-Dot Popup Menu) ──
-        if (showMenu)
-          PopupMenuButton<String>(
+              // ── 3. Menu Options (3-Dot Popup Menu) ──
+              if (showMenu)
+                PopupMenuButton<String>(
             icon: Icon(
               Icons.more_vert_rounded,
               color: (backgroundColor != null &&

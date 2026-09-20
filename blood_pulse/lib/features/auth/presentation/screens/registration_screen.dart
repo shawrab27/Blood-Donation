@@ -326,6 +326,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       subtitle: 'Register',
       showNotification: false,
       showProfile: false,
+      showMenu: false,
+      actions: const [],
     );
   }
 

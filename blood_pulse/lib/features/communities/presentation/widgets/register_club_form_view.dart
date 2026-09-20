@@ -129,6 +129,10 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
       appBar: const BloodPulseAppBar(
         showBackButton: true,
         subtitle: 'Register Your Club',
+        showNotification: false,
+        showProfile: false,
+        showMenu: false,
+        actions: [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
