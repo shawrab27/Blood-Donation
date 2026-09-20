@@ -137,6 +137,8 @@ class ApiClient {
   /// Exchanges Firebase ID token with backend POST /api/auth/firebase/, returning JWT tokens and saving them to secure storage.
   Future<Map<String, dynamic>> loginWithFirebase({
     required String idToken,
+    String? email,
+    String? displayName,
   }) async {
     try {
       final uri = Uri.parse(_normalizeUrl('auth/firebase/'));
@@ -146,6 +148,8 @@ class ApiClient {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'id_token': idToken,
+              if (email != null && email.isNotEmpty) 'email': email,
+              if (displayName != null && displayName.isNotEmpty) 'name': displayName,
             }),
           )
           .timeout(connectTimeout);

@@ -324,6 +324,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       showBackButton: true,
       onBack: () => context.go('/login'),
       subtitle: 'Register',
+      showNotification: false,
+      showProfile: false,
     );
   }
 

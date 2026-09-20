@@ -212,11 +212,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
       debugPrint('[GoogleSignIn] ✓ Firebase ID token obtained (${firebaseIdToken.length} chars)');
 
-      // Exchange Firebase ID token with backend POST /api/auth/firebase/
-      debugPrint('[GoogleSignIn] Calling backend /api/auth/firebase/ ...');
-      final authData = await _apiClient.loginWithFirebase(
-        idToken: firebaseIdToken,
-      );
+      // Exchange token with backend: Try Firebase first, fallback to Google endpoint
+      Map<String, dynamic> authData;
+      try {
+        debugPrint('[GoogleSignIn] Calling backend /api/auth/firebase/ ...');
+        authData = await _apiClient.loginWithFirebase(
+          idToken: firebaseIdToken,
+          email: firebaseUser.email ?? account.email,
+          displayName: firebaseUser.displayName ?? account.displayName,
+        );
+      } catch (fbErr) {
+        debugPrint('[GoogleSignIn] Firebase backend failed ($fbErr), trying /api/auth/google/ fallback...');
+        authData = await _apiClient.loginWithGoogle(
+          accessToken: googleAuth.accessToken ?? '',
+          idToken: googleAuth.idToken,
+          email: firebaseUser.email ?? account.email,
+          displayName: firebaseUser.displayName ?? account.displayName,
+        );
+      }
       debugPrint('[GoogleSignIn] ✓ Backend returned: ${authData.keys.toList()}');
 
       final userData = authData['user'] as Map<String, dynamic>?;

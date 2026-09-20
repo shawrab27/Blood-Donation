@@ -106,43 +106,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Brand Logo + Title
-                    Row(
-                      children: [
-                        ClipOval(
-                          child: Image.asset(
-                            'assets/images/Blood Pulse logo.jpg',
-                            width: 32,
-                            height: 32,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              width: 32,
-                              height: 32,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.water_drop_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'BloodPulse',
-                          style: TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                      ],
-                    ),
+                    // Logo removed per user instruction
+                    const SizedBox.shrink(),
 
                     // Skip CTA Button (fades out on final step)
                     AnimatedOpacity(
