@@ -655,10 +655,11 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                     elevation: 0,
                   ),
                   onPressed: () {
+                    setState(() => _activeMode = 2);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Direct blood request sent to ${donor.name}!'),
-                        backgroundColor: const Color(0xFF1B8A4E),
+                        content: Text('Requesting ${donor.bloodGroup} blood from ${donor.name}'),
+                        backgroundColor: const Color(0xFF0D68AA),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -699,7 +700,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
               ),
               TextButton.icon(
-                onPressed: () => context.push('/map'),
+                onPressed: () => context.push('/live-dispatch'),
                 icon: const Icon(Icons.fullscreen_rounded, size: 16, color: Color(0xFFC30121)),
                 label: const Text('Full Screen Map', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
               ),
@@ -1000,6 +1001,16 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
           ),
         );
         widget.onSuccessSubmitted();
+        context.push(
+          '/live-dispatch',
+          extra: {
+            'patientName': patientName,
+            'hospitalName': hospital.isNotEmpty ? hospital : 'City General Trauma Wing',
+            'bloodGroup': bloodGroup,
+            'donorName': 'Tanvir Ahmed',
+            'donorPhone': '+8801711223344',
+          },
+        );
       }
     }
   }

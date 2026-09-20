@@ -197,7 +197,29 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               Navigator.pop(ctx);
               context.go('/dashboard');
             },
-            child: const Text('Return to Feed', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.primary)),
+            child: const Text('Return to Feed', style: TextStyle(fontFamily: 'Inter', color: Color(0xFF666666))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              elevation: 0,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.go(
+                '/live-dispatch',
+                extra: {
+                  'patientName': _patientNameCtrl.text.trim(),
+                  'hospitalName': hospitalLoc.isNotEmpty ? hospitalLoc : 'City General Trauma Wing',
+                  'bloodGroup': _selectedBloodGroup!,
+                  'donorName': 'Tanvir Ahmed',
+                  'donorPhone': '+8801711223344',
+                },
+              );
+            },
+            child: const Text('Track Live Dispatch ➔', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
           ),
         ],
       ),

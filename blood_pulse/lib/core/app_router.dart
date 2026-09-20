@@ -17,6 +17,8 @@ import '../features/blood_request/presentation/screens/emergency_request_screen.
 import '../features/notifications/presentation/screens/notification_center_screen.dart';
 import '../views/chat/chat_screen.dart';
 import '../features/donor/presentation/screens/donor_map_screen.dart';
+import '../features/blood_request/presentation/screens/identity_verification_screen.dart';
+import '../features/donor/presentation/screens/live_dispatch_screen.dart';
 
 // Admin Screens
 import '../features/admin/admin_screen.dart';
@@ -180,6 +182,34 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/complete-profile',
       builder: (context, state) => const CompleteProfileScreen(),
+    ),
+    GoRoute(
+      path: '/identity-verification',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return IdentityVerificationScreen(
+          patientName: extra?['patientName'] as String?,
+          bloodGroup: extra?['bloodGroup'] as String?,
+          urgencyLevel: extra?['urgencyLevel'] as String?,
+          hospitalLocation: extra?['hospitalLocation'] as String?,
+          contactNumber: extra?['contactNumber'] as String?,
+          returnRoute: extra?['returnRoute'] as String? ?? '/live-dispatch',
+        );
+      },
+    ),
+    GoRoute(
+      path: '/live-dispatch',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return LiveDispatchScreen(
+          patientName: extra?['patientName'] as String? ?? 'Sarah Jenkins',
+          hospitalName: extra?['hospitalName'] as String? ?? 'City General Trauma Wing',
+          bloodGroup: extra?['bloodGroup'] as String? ?? 'O-',
+          donorName: extra?['donorName'] as String? ?? 'Tanvir Ahmed',
+          donorPhone: extra?['donorPhone'] as String? ?? '+8801711223344',
+          initialRole: extra?['role'] == 'donor' ? DispatchRole.donor : DispatchRole.requester,
+        );
+      },
     ),
 
     // ── Admin Panel ───────────────────────────────────────────────────────────
