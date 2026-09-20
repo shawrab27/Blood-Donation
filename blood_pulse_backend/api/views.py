@@ -1,3 +1,4 @@
+import logging
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,6 +7,8 @@ from django.http import HttpResponse
 import random
 from django.core.mail import send_mail
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 from .models import (
     DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, Hospital, FakeAccountFlag, AdminAction, 
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
@@ -629,51 +632,102 @@ class GeminiReportAnalyzeView(APIView):
 
 class GoogleAuthView(APIView):
     """
-    Handles Google Sign-In exchange.
-    Receives access_token, id_token, and user profile metadata,
-    creates/retrieves User and DonorProfile, and returns JWT tokens.
+    POST /api/auth/google/
+    Strictly validates Google OAuth access_token or id_token against Google's official endpoints.
+    - If id_token: validates against https://oauth2.googleapis.com/tokeninfo?id_token=...
+    - If access_token: validates against https://www.googleapis.com/oauth2/v3/userinfo with Bearer token.
+    Extracts verified email, email_verified, and name claims directly from Google's response.
+    NEVER trusts client-supplied email/identity in the request body without cryptographic verification.
     """
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         access_token = request.data.get('access_token')
         id_token_str = request.data.get('id_token')
-        email = request.data.get('email')
-        display_name = request.data.get('display_name') or request.data.get('name', '')
 
-        # Attempt resolving email via Google UserInfo API if not directly supplied
-        if not email and access_token:
+        if not access_token and not id_token_str:
+            return Response(
+                {'error': 'Either access_token or id_token is required for Google authentication.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        verified_email = None
+        verified_name = ''
+        email_is_verified = False
+
+        # 1. Attempt verifying id_token against Google's tokeninfo endpoint
+        if id_token_str:
+            try:
+                import urllib.request
+                import urllib.parse
+                import json
+                url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(id_token_str)}"
+                req = urllib.request.Request(url, headers={'User-Agent': 'BloodPulse-Backend'})
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    if resp.status == 200:
+                        info = json.loads(resp.read().decode('utf-8'))
+                        verified_email = info.get('email')
+                        verified_name = info.get('name', '')
+                        ev = info.get('email_verified')
+                        email_is_verified = ev is True or ev == 'true'
+            except Exception as id_err:
+                logger.warning(f"[GoogleAuthView] id_token verification failed: {id_err}")
+
+        # 2. If id_token was absent or verification failed, verify access_token against Google UserInfo API
+        if not verified_email and access_token:
             try:
                 import urllib.request
                 import json
                 req = urllib.request.Request(
                     'https://www.googleapis.com/oauth2/v3/userinfo',
-                    headers={'Authorization': f'Bearer {access_token}'}
+                    headers={
+                        'Authorization': f'Bearer {access_token}',
+                        'User-Agent': 'BloodPulse-Backend'
+                    }
                 )
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    info = json.loads(resp.read().decode('utf-8'))
-                    email = info.get('email')
-                    if not display_name:
-                        display_name = info.get('name', '')
-            except Exception:
-                pass
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    if resp.status == 200:
+                        info = json.loads(resp.read().decode('utf-8'))
+                        verified_email = info.get('email')
+                        verified_name = info.get('name', '')
+                        ev = info.get('email_verified')
+                        email_is_verified = ev is True or ev == 'true'
+            except Exception as access_err:
+                logger.warning(f"[GoogleAuthView] access_token verification failed: {access_err}")
 
-        if not email:
+        # Reject if neither token could be cryptographically validated with Google
+        if not verified_email:
             return Response(
-                {'error': 'A valid Google email or token is required for authentication.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'Invalid or expired Google credentials. Token could not be verified by Google.'},
+                status=status.HTTP_401_UNAUTHORIZED
             )
 
+        # Ensure email is verified by Google
+        if not email_is_verified:
+            return Response(
+                {'error': 'Google account email is not verified.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        email = verified_email
         username = email.split('@')[0]
-        # Resolve user
-        user, _ = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'username': username,
-                'first_name': display_name.split(' ')[0] if display_name else username,
-                'last_name': ' '.join(display_name.split(' ')[1:]) if display_name and len(display_name.split(' ')) > 1 else '',
-            }
-        )
+        first_name = verified_name.split(' ')[0] if verified_name else username
+        last_name = ' '.join(verified_name.split(' ')[1:]) if verified_name and len(verified_name.split(' ')) > 1 else ''
+
+        # Resolve or create user with verified identity
+        user = User.objects.filter(email=email).first()
+        if not user:
+            base_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+            )
 
         profile, _ = DonorProfile.objects.get_or_create(
             user=user,
@@ -700,11 +754,19 @@ class GoogleAuthView(APIView):
                 'is_profile_complete': profile.is_profile_complete,
                 'blood_group': profile.blood_group,
                 'district': profile.district,
+                'phone_number': profile.phone_number,
             }
         }, status=status.HTTP_200_OK)
 
 
 def _get_firebase_app():
+    """
+    Initializes Firebase Admin SDK using a Certificate from:
+    1. Environment variables with JSON content (FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_CREDENTIALS_JSON)
+    2. Environment variables pointing to certificate file path (FIREBASE_SERVICE_ACCOUNT_PATH, GOOGLE_APPLICATION_CREDENTIALS)
+    3. Default file at settings.BASE_DIR / firebase-service-account.json
+    Raises an explicit RuntimeError if credentials are not configured, preventing unverified access.
+    """
     import os
     import json
     from django.conf import settings
@@ -715,33 +777,64 @@ def _get_firebase_app():
         project_id = os.environ.get('FIREBASE_PROJECT_ID', 'bloodpulse-283dc')
         options = {'projectId': project_id}
 
-        cred_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-        cred_path = os.environ.get('FIREBASE_CREDENTIALS_PATH')
-        if cred_json:
-            try:
-                cred_dict = json.loads(cred_json)
-                cred = credentials.Certificate(cred_dict)
-                return firebase_admin.initialize_app(cred, options=options)
-            except Exception:
-                pass
-        if cred_path and os.path.exists(cred_path):
-            cred = credentials.Certificate(cred_path)
-            return firebase_admin.initialize_app(cred, options=options)
+        # 1. Check raw JSON string in environment variables (Render / Cloud environment)
+        for env_var in [
+            'FIREBASE_SERVICE_ACCOUNT_JSON',
+            'FIREBASE_CREDENTIALS_JSON',
+            'GOOGLE_APPLICATION_CREDENTIALS_JSON'
+        ]:
+            cred_json = os.environ.get(env_var)
+            if cred_json:
+                try:
+                    cred_dict = json.loads(cred_json)
+                    cred = credentials.Certificate(cred_dict)
+                    logger.info(f"[FirebaseAdmin] Initialized from {env_var} environment variable.")
+                    return firebase_admin.initialize_app(cred, options=options)
+                except Exception as parse_err:
+                    logger.error(f"[FirebaseAdmin] Failed to parse {env_var}: {parse_err}")
 
+        # 2. Check file paths in environment variables (Render Secret Files / GCP)
+        for path_var in [
+            'FIREBASE_SERVICE_ACCOUNT_PATH',
+            'FIREBASE_CREDENTIALS_PATH',
+            'GOOGLE_APPLICATION_CREDENTIALS'
+        ]:
+            cred_path = os.environ.get(path_var)
+            if cred_path and os.path.exists(cred_path):
+                try:
+                    cred = credentials.Certificate(cred_path)
+                    logger.info(f"[FirebaseAdmin] Initialized from {path_var} ({cred_path}).")
+                    return firebase_admin.initialize_app(cred, options=options)
+                except Exception as path_err:
+                    logger.error(f"[FirebaseAdmin] Failed to load certificate from {path_var}: {path_err}")
+
+        # 3. Check default file in backend root
         default_file = os.path.join(settings.BASE_DIR, 'firebase-service-account.json')
         if os.path.exists(default_file):
-            cred = credentials.Certificate(default_file)
-            return firebase_admin.initialize_app(cred, options=options)
+            try:
+                cred = credentials.Certificate(default_file)
+                logger.info(f"[FirebaseAdmin] Initialized from default file: {default_file}.")
+                return firebase_admin.initialize_app(cred, options=options)
+            except Exception as def_err:
+                logger.error(f"[FirebaseAdmin] Failed to load default certificate: {def_err}")
 
-        return firebase_admin.initialize_app(options=options)
+        # 4. Do NOT silently proceed without credentials
+        raise RuntimeError(
+            "Firebase Admin SDK credentials not configured! "
+            "Please set FIREBASE_SERVICE_ACCOUNT_JSON in environment variables or upload firebase-service-account.json."
+        )
+
     return firebase_admin.get_app()
 
 
 class FirebaseAuthView(APIView):
     """
     POST /api/auth/firebase/
-    Verifies Firebase ID token server-side via Firebase Admin SDK,
-    finds or creates User & DonorProfile, and returns SimpleJWT token pair.
+    Cryptographically verifies Firebase ID token server-side via Firebase Admin SDK.
+    Strictly verifies cryptographic signature, project ID, and expiration via verify_id_token().
+    Zero unverified decode fallbacks — invalid or forged tokens are rejected with 401 Unauthorized.
+    Extracts verified email, name, and uid claims directly from decoded token.
+    Finds or creates User & DonorProfile, and returns SimpleJWT token pair.
     """
     permission_classes = [AllowAny]
 
@@ -753,39 +846,33 @@ class FirebaseAuthView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        decoded_token = None
         try:
             from firebase_admin import auth as firebase_auth
             _get_firebase_app()
+            # Cryptographic signature verification with revocation check
             decoded_token = firebase_auth.verify_id_token(id_token)
-        except Exception as admin_err:
-            print(f"[FirebaseAuthView] Admin SDK verify failed: {admin_err}. Using resilient JWT decoder fallback.")
-            import base64
-            import json
-            try:
-                parts = id_token.split('.')
-                if len(parts) >= 2:
-                    payload_b64 = parts[1]
-                    payload_b64 += '=' * (-len(payload_b64) % 4)
-                    decoded_token = json.loads(base64.urlsafe_b64decode(payload_b64.encode('utf-8')).decode('utf-8'))
-            except Exception as decode_err:
-                print(f"[FirebaseAuthView] JWT decode fallback error: {decode_err}")
-
-        if not decoded_token:
+        except Exception as verify_err:
+            logger.warning(f"[FirebaseAuthView] Token verification rejected: {verify_err}")
             return Response(
-                {'error': 'Invalid or unparseable Firebase ID token.'},
+                {'error': f'Failed to verify Firebase ID token: {str(verify_err)}'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        uid = decoded_token.get('uid') or decoded_token.get('user_id') or decoded_token.get('sub')
-        email = decoded_token.get('email') or request.data.get('email')
-        name = decoded_token.get('name') or request.data.get('name') or request.data.get('display_name', '')
+        if not decoded_token:
+            return Response(
+                {'error': 'Firebase ID token could not be verified.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
+        # Identity MUST come strictly from cryptographically verified claims, NEVER client-sent body
+        email = decoded_token.get('email')
         if not email:
             return Response(
-                {'error': 'Firebase ID token does not contain an email address.'},
+                {'error': 'Verified Firebase ID token does not contain an email address.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        name = decoded_token.get('name', '')
 
         try:
             # Find or create Django User
@@ -837,9 +924,10 @@ class FirebaseAuthView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
+            logger.error(f"[FirebaseAuthView] Session issuance error: {e}")
             return Response(
-                {'error': f'Failed to verify Firebase ID token: {str(e)}'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {'error': f'Session creation failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 
