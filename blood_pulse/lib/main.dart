@@ -7,6 +7,7 @@ import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'firebase_options.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
 import 'core/app_router.dart';
 import 'core/constants.dart';
 
@@ -58,8 +59,8 @@ class BloodPulseApp extends ConsumerWidget {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.lightTheme,
-      themeMode: ThemeMode.light,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ref.watch(themeModeProvider),
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
     );

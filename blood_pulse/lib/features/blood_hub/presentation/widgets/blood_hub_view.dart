@@ -13,6 +13,7 @@ import '../../../auth/presentation/providers/locale_provider.dart';
 import '../../../blood_request/presentation/providers/blood_request_provider.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../providers/donor_search_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const Map<String, List<String>> _divisionDistricts = {
   'Dhaka': ['Dhaka', 'Gazipur', 'Narayanganj', 'Tangail', 'Faridpur', 'Manikganj', 'Munshiganj', 'Narsingdi', 'Gopalganj', 'Kishoreganj', 'Madaripur', 'Rajbari', 'Shariatpur'],
@@ -172,6 +173,11 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
 
         const SizedBox(height: 20),
 
+        // ── LIVE DONOR TRACKING & DISPATCH SEGMENT ──
+        _buildLiveDonorTrackingCard(isBangla),
+
+        const SizedBox(height: 20),
+
         // ── Card 1: Search for Donor ──
         _buildActionOptionCard(
           icon: Icons.person_search_rounded,
@@ -220,34 +226,10 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           onTap: () => setState(() => _activeMode = 2),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // ── Card 3: Blood Donation Campaigns ──
-        _buildActionOptionCard(
-          icon: Icons.campaign_rounded,
-          iconBgColor: const Color(0xFFE8F1F8),
-          iconColor: const Color(0xFF0D68AA),
-          title: isBangla ? 'রক্তদান ক্যাম্পেইন' : 'Blood Donation Campaigns',
-          subtitle: isBangla
-              ? 'আসন্ন রক্তদান ক্যাম্পেইন, ড্রাইভ এবং সমাজকল্যাণমূলক ইভেন্টগুলো দেখুন ও অংশগ্রহণ করুন।'
-              : 'Discover upcoming donation drives, university camps, and community blood collection events.',
-          badgeWidget: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F1F8),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'ACTIVE DRIVES',
-              style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
-            ),
-          ),
-          buttonText: isBangla ? 'ক্যাম্পেইন দেখুন ➔' : 'View Campaigns ➔',
-          onTap: () {
-            ref.read(feedFilterProvider.notifier).state = 'campaign';
-            ref.read(shellTabProvider.notifier).state = 0; // Switches directly to Feed tab
-          },
-        ),
+        // ── ACTIVE CAMPAIGN SEGMENT (LIVE DRIVES & PLEDGES) ──
+        _buildActiveCampaignsSegment(isBangla),
 
         const SizedBox(height: 24),
 
@@ -274,6 +256,387 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
               : 'Track your active requests and review past successful matches in your dashboard.',
         ),
       ],
+    );
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final uri = Uri(scheme: 'tel', path: phoneNumber);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Dialer unavailable for $phoneNumber')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open phone dialer: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildLiveDonorTrackingCard(bool isBangla) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFC30121).withAlpha(50), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFC30121).withAlpha(12),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE9EB),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFC30121),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isBangla ? 'সক্রিয় ট্র্যাকিং চলছে' : 'LIVE DISPATCH TRACKING',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: Color(0xFFC30121),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F1F8),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'ETA: 18 MINS',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0D68AA),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                radius: 20,
+                backgroundColor: Color(0xFFFEE9EB),
+                child: Icon(Icons.navigation_rounded, color: Color(0xFFC30121), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isBangla ? 'রক্তদাতা তানভীর আহমেদ (O-)' : 'Donor Tanvir Ahmed (O-)',
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2B2B2B),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isBangla
+                          ? 'মিরপুর রোড ➔ সিটি জেনারেল ট্রমা উইং (২.৪ কিমি বাকি)'
+                          : 'Mirpur Road ➔ City General Trauma Wing (2.4 km away)',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8F7),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFF3DDE0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.radio_button_checked, size: 14, color: Color(0xFFC30121)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    isBangla
+                        ? 'ধাপ ২ এর ৪: রাস্তায় আছেন (ট্রানজিট গতি ২৮ কিমি/ঘণ্টা)'
+                        : 'Step 2 of 4: On the Way (Transit speed 28 km/h)',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF24191A),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC30121),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 0,
+                  ),
+                  onPressed: () => context.push('/live-dispatch'),
+                  icon: const Icon(Icons.map_rounded, size: 16),
+                  label: Text(
+                    isBangla ? 'লাইভ ট্র্যাক করুন ➔' : 'Track Live Dispatch ➔',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFC30121)),
+                  foregroundColor: const Color(0xFFC30121),
+                  shape: const CircleBorder(),
+                  padding: const EdgeInsets.all(12),
+                ),
+                onPressed: () => _makePhoneCall('+8801711223344'),
+                child: const Icon(Icons.phone_rounded, size: 18),
+              ),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF0D68AA)),
+                  foregroundColor: const Color(0xFF0D68AA),
+                  shape: const CircleBorder(),
+                  padding: const EdgeInsets.all(12),
+                ),
+                onPressed: () {
+                  context.push(
+                    '/chat',
+                    extra: {
+                      'chatRoomId': 'dispatch_tanvir',
+                      'chatRecipientName': 'Tanvir Ahmed',
+                      'bloodGroup': 'O-',
+                    },
+                  );
+                },
+                child: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveCampaignsSegment(bool isBangla) {
+    final campaignPosts = ref.watch(activeCampaignsProvider);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD4E6F7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(6),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE8F1F8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.campaign_rounded, color: Color(0xFF0D68AA), size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isBangla ? 'রক্তদান ক্যাম্পেইন' : 'Active Blood Campaigns',
+                        style: const TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2B2B2B),
+                        ),
+                      ),
+                      Text(
+                        isBangla ? '${campaignPosts.length}টি ড্রাইভ চলছে' : '${campaignPosts.length} Drives Ongoing Near You',
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF0D68AA), fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () {
+                  ref.read(feedFilterProvider.notifier).state = 'campaign';
+                  ref.read(shellTabProvider.notifier).state = 0;
+                },
+                child: Text(
+                  isBangla ? 'সব দেখুন ➔' : 'View All ➔',
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (final post in campaignPosts) ...[
+            if (post.campaign != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FBFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE0EBF2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            post.campaign!.title,
+                            style: const TextStyle(
+                              fontFamily: 'Georgia',
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2B2B2B),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEDF4FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${post.campaign!.currentUnits} / ${post.campaign!.targetUnits} bags',
+                            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '📍 ${post.campaign!.venue} • 🗓️ ${post.campaign!.startDate}',
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666)),
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: (post.campaign!.currentUnits / post.campaign!.targetUnits).clamp(0.0, 1.0),
+                        minHeight: 6,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D68AA)),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            ref.read(feedProvider.notifier).pledgeCampaign(post.id);
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Thank you! You pledged to donate at ${post.campaign!.title}. Units: ${post.campaign!.currentUnits + 1}/${post.campaign!.targetUnits}'),
+                                backgroundColor: const Color(0xFF0D68AA),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.volunteer_activism_rounded, size: 14, color: Colors.white),
+                          label: Text(
+                            isBangla ? 'রক্তদানের অঙ্গীকার 🩸' : 'Pledge Donation 🩸',
+                            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0D68AA),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            visualDensity: VisualDensity.compact,
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
     );
   }
   // ─────────────────────────────────────────────────────────────────────────

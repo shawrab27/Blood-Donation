@@ -46,7 +46,9 @@ class _FeedViewState extends ConsumerState<FeedView> {
 
     final posts = filter == null
         ? allPosts
-        : allPosts.where((p) => p.postType == filter).toList();
+        : (filter == 'emergency'
+            ? allPosts.where((p) => p.urgentNeedBadge != null).toList()
+            : allPosts.where((p) => p.postType == filter || (filter == 'campaign' && p.campaign != null)).toList());
 
     return RefreshIndicator(
       color: const Color(0xFFC30121),
@@ -55,82 +57,87 @@ class _FeedViewState extends ConsumerState<FeedView> {
       child: ListView.builder(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        itemCount: posts.length + (filter != null ? (posts.isEmpty ? 2 : 1) : 1),
+        itemCount: posts.length + (posts.isEmpty ? 2 : 1),
         itemBuilder: (context, index) {
           if (index == 0) {
-            if (filter != null) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEE9EB),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFC30121).withAlpha(50)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.campaign_rounded, color: Color(0xFFC30121), size: 24),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              filter == 'campaign'
-                                  ? 'Blood Donation Campaigns'
-                                  : 'Filtered Feed: $filter',
-                              style: const TextStyle(
-                                fontFamily: 'Georgia',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Color(0xFFC30121),
-                              ),
-                            ),
-                            Text(
-                              'Showing active public drives & campaigns',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (filter == null) ...[
+                  const _ProfileCompletionBanner(),
+                  _PostCreatorCard(picker: _picker),
+                  const SizedBox(height: 12),
+                ],
+                _buildSegmentFilterBar(filter),
+                if (filter != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: filter == 'campaign' ? const Color(0xFFEDF4FF) : const Color(0xFFFEE9EB),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: filter == 'campaign' ? const Color(0xFF0D68AA).withAlpha(50) : const Color(0xFFC30121).withAlpha(50),
                       ),
-                      TextButton(
-                        onPressed: () => ref.read(feedFilterProvider.notifier).state = null,
-                        style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xFFC30121),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          visualDensity: VisualDensity.compact,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          filter == 'campaign' ? Icons.campaign_rounded : Icons.emergency_rounded,
+                          color: filter == 'campaign' ? const Color(0xFF0D68AA) : const Color(0xFFC30121),
+                          size: 20,
                         ),
-                        child: const Text(
-                          'Show All',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                filter == 'campaign' ? 'Blood Donation Campaigns & Drives' : 'Emergency Blood SOS Requests',
+                                style: TextStyle(
+                                  fontFamily: 'Georgia',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: filter == 'campaign' ? const Color(0xFF0D68AA) : const Color(0xFFC30121),
+                                ),
+                              ),
+                              Text(
+                                filter == 'campaign'
+                                    ? 'Pledge your donation to community drives near you'
+                                    : 'Urgent requests verified by attending hospitals',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 11,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        TextButton(
+                          onPressed: () => ref.read(feedFilterProvider.notifier).state = null,
+                          style: TextButton.styleFrom(
+                            backgroundColor: filter == 'campaign' ? const Color(0xFF0D68AA) : const Color(0xFFC30121),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          child: const Text(
+                            'Show All',
+                            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }
-            return Column(
-              children: [
-                const _ProfileCompletionBanner(),
-                _PostCreatorCard(picker: _picker),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+                ],
               ],
             );
           }
 
-          if (filter != null && posts.isEmpty) {
+          if (posts.isEmpty) {
             return Container(
               padding: const EdgeInsets.all(32),
               margin: const EdgeInsets.symmetric(vertical: 24),
@@ -141,11 +148,15 @@ class _FeedViewState extends ConsumerState<FeedView> {
               ),
               child: Column(
                 children: [
-                  Icon(Icons.campaign_outlined, size: 48, color: Colors.grey.shade400),
+                  Icon(
+                    filter == 'campaign' ? Icons.campaign_outlined : Icons.bloodtype_outlined,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'No campaigns found right now',
-                    style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    filter == 'campaign' ? 'No active campaigns found' : 'No emergency requests at this moment',
+                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -165,6 +176,54 @@ class _FeedViewState extends ConsumerState<FeedView> {
             child: _FeedPostCard(post: post),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSegmentFilterBar(String? currentFilter) {
+    final segments = [
+      {'id': null, 'label': 'All Updates', 'icon': Icons.dynamic_feed_rounded},
+      {'id': 'campaign', 'label': 'Campaigns & Drives 🩸', 'icon': Icons.campaign_rounded},
+      {'id': 'emergency', 'label': 'Emergency SOS 🚨', 'icon': Icons.emergency_rounded},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: segments.map((seg) {
+          final isSelected = currentFilter == seg['id'];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              avatar: Icon(
+                seg['icon'] as IconData,
+                size: 15,
+                color: isSelected ? Colors.white : const Color(0xFFC30121),
+              ),
+              label: Text(seg['label'] as String),
+              selected: isSelected,
+              onSelected: (selected) {
+                ref.read(feedFilterProvider.notifier).state = seg['id'] as String?;
+              },
+              selectedColor: const Color(0xFFC30121),
+              backgroundColor: Colors.white,
+              labelStyle: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF2B2B2B),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(50),
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFFC30121) : const Color(0xFFE5D5D5),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -1096,15 +1155,21 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  SizedBox(
+                    SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
+                        ref.read(feedProvider.notifier).pledgeCampaign(post.id);
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Pledged to donate at ${post.campaign!.title}! Details sent to your notifications.'),
-                            backgroundColor: const Color(0xFF0D68AA),
+                            content: Text(
+                              'Thank you! You pledged 1 unit to ${post.campaign!.title}. Current progress: ${post.campaign!.currentUnits + 1}/${post.campaign!.targetUnits} bags.',
+                              style: const TextStyle(fontFamily: 'Inter'),
+                            ),
+                            backgroundColor: const Color(0xFF1B8A4E),
                             behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 3),
                           ),
                         );
                       },

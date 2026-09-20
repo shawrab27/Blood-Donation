@@ -41,6 +41,30 @@ class Campaign {
   final int currentUnits;
   final String? bannerAsset;
   final String? description;
+
+  Campaign copyWith({
+    String? id,
+    String? title,
+    String? organizer,
+    String? venue,
+    String? startDate,
+    int? targetUnits,
+    int? currentUnits,
+    String? bannerAsset,
+    String? description,
+  }) {
+    return Campaign(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      organizer: organizer ?? this.organizer,
+      venue: venue ?? this.venue,
+      startDate: startDate ?? this.startDate,
+      targetUnits: targetUnits ?? this.targetUnits,
+      currentUnits: currentUnits ?? this.currentUnits,
+      bannerAsset: bannerAsset ?? this.bannerAsset,
+      description: description ?? this.description,
+    );
+  }
 }
 
 enum AuthorRole { official, verifiedClinic, goldDonor, donor, system }
@@ -615,6 +639,21 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
           post,
     ];
   }
+
+  /// Pledges a blood donation unit to an active campaign and updates the live unit count
+  void pledgeCampaign(String postId) {
+    state = [
+      for (final post in state)
+        if (post.id == postId && post.campaign != null)
+          post.copyWith(
+            campaign: post.campaign!.copyWith(
+              currentUnits: post.campaign!.currentUnits + 1,
+            ),
+          )
+        else
+          post,
+    ];
+  }
 }
 
 final feedProvider = StateNotifierProvider<FeedNotifier, List<FeedPostItem>>((ref) {
@@ -671,4 +710,10 @@ final shellTabProvider = StateProvider<int>((ref) => 0);
 
 /// Feed Pre-filter Provider (e.g. 'campaign', null for all posts)
 final feedFilterProvider = StateProvider<String?>((ref) => null);
+
+/// Active Blood Donation Campaigns Provider
+final activeCampaignsProvider = Provider<List<FeedPostItem>>((ref) {
+  final posts = ref.watch(feedProvider);
+  return posts.where((p) => p.postType == 'campaign' && p.campaign != null).toList();
+});
 
