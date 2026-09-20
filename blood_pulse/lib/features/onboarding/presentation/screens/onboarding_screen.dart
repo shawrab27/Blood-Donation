@@ -234,34 +234,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           const Spacer(flex: 1),
 
-          // Illustration Container with subtle soft background
+          // Illustration Container
           Center(
-            child: Container(
+            child: SizedBox(
               height: 290,
-              constraints: const BoxConstraints(maxWidth: 320),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  step.imagePath,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 260,
-                    height: 260,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFDE8E9),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: AppColors.primary.withAlpha(40), width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.volunteer_activism_rounded,
-                      color: AppColors.primary,
-                      size: 80,
-                    ),
+              child: Image.asset(
+                step.imagePath,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDE8E9),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: AppColors.primary.withAlpha(40), width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.volunteer_activism_rounded,
+                    color: AppColors.primary,
+                    size: 80,
                   ),
                 ),
               ),
