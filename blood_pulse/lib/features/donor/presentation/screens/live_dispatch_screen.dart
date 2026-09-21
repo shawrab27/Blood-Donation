@@ -13,11 +13,11 @@ enum DispatchRole { requester, donor }
 class LiveDispatchScreen extends StatefulWidget {
   const LiveDispatchScreen({
     super.key,
-    this.patientName = 'Sarah Jenkins',
-    this.hospitalName = 'City General Trauma Wing',
-    this.bloodGroup = 'O-',
-    this.donorName = 'Tanvir Ahmed',
-    this.donorPhone = '+8801711223344',
+    this.patientName = 'Emergency Requester',
+    this.hospitalName = 'Medical Center',
+    this.bloodGroup = '',
+    this.donorName = 'Matched Donor',
+    this.donorPhone = '',
     this.initialRole = DispatchRole.requester,
   });
 
@@ -1391,7 +1391,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                   onPressed: () => _openChat(
                     name: name,
                     bloodGroup: widget.bloodGroup,
-                    roomId: isRequester ? 'donor_tanvir_o_minus' : 'ward_sarah_o_minus',
+                    roomId: 'dispatch_${widget.bloodGroup.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase()}_${isRequester ? 'donor' : 'requester'}',
                   ),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 15),
                   label: const Text(

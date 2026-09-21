@@ -195,11 +195,11 @@ class _IdentityVerificationScreenState
         context.go(
           widget.returnRoute,
           extra: {
-            'patientName': widget.patientName ?? 'Sarah Jenkins',
-            'hospitalName': widget.hospitalLocation ?? 'City General Trauma Wing',
-            'bloodGroup': widget.bloodGroup ?? 'O-',
-            'donorName': 'Tanvir Ahmed',
-            'donorPhone': '+8801711223344',
+            'patientName': widget.patientName ?? 'Emergency Requester',
+            'hospitalName': widget.hospitalLocation ?? 'Medical Center',
+            'bloodGroup': widget.bloodGroup ?? '',
+            'donorName': 'Matched Volunteer Donor',
+            'donorPhone': '',
           },
         );
       }

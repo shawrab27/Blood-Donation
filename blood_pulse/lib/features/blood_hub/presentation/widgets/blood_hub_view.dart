@@ -281,6 +281,83 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
   }
 
   Widget _buildLiveDonorTrackingCard(bool isBangla) {
+    final bloodRequestState = ref.watch(bloodRequestProvider);
+    final activeRequest = bloodRequestState.requests.where((r) => r.isActive).firstOrNull;
+
+    if (activeRequest == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE8E8E8), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(6),
+              blurRadius: 14,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEE9EB),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.emergency_outlined, color: Color(0xFFC30121), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isBangla ? 'কোনো সক্রিয় ট্র্যাকিং নেই' : 'No Active Dispatch in Transit',
+                    style: const TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isBangla
+                        ? 'জরুরি রক্তের প্রয়োজনে নিচে অনুরোধ পোস্ট করুন'
+                        : 'Post an urgent request to start live donor dispatch',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: Color(0xFF757575),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => setState(() => _activeMode = 2),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC30121),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                elevation: 0,
+              ),
+              child: Text(
+                isBangla ? 'অনুরোধ' : 'Request',
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -334,14 +411,14 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F1F8),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'ETA: 18 MINS',
-                  style: TextStyle(
+                child: Text(
+                  activeRequest.urgencyLevel.toUpperCase(),
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -366,7 +443,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isBangla ? 'রক্তদাতা তানভীর আহমেদ (O-)' : 'Donor Tanvir Ahmed (O-)',
+                      '${activeRequest.patientName} (${activeRequest.bloodGroup})',
                       style: const TextStyle(
                         fontFamily: 'Georgia',
                         fontSize: 16,
@@ -376,9 +453,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isBangla
-                          ? 'মিরপুর রোড ➔ সিটি জেনারেল ট্রমা উইং (২.৪ কিমি বাকি)'
-                          : 'Mirpur Road ➔ City General Trauma Wing (2.4 km away)',
+                      activeRequest.hospitalLocation,
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
@@ -405,8 +480,8 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 Expanded(
                   child: Text(
                     isBangla
-                        ? 'ধাপ ২ এর ৪: রাস্তায় আছেন (ট্রানজিট গতি ২৮ কিমি/ঘণ্টা)'
-                        : 'Step 2 of 4: On the Way (Transit speed 28 km/h)',
+                        ? 'সক্রিয় অনুরোধ চলছে: রক্তদাতা সমন্বয় চলছে'
+                        : 'Active Request in Progress: Donor coordination underway',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 11,
@@ -430,7 +505,16 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     elevation: 0,
                   ),
-                  onPressed: () => context.push('/live-dispatch'),
+                  onPressed: () => context.push(
+                    '/live-dispatch',
+                    extra: {
+                      'patientName': activeRequest.patientName,
+                      'hospitalName': activeRequest.hospitalLocation,
+                      'bloodGroup': activeRequest.bloodGroup,
+                      'donorName': 'Matched Volunteer Donor',
+                      'donorPhone': activeRequest.contactNumber,
+                    },
+                  ),
                   icon: const Icon(Icons.map_rounded, size: 16),
                   label: Text(
                     isBangla ? 'লাইভ ট্র্যাক করুন ➔' : 'Track Live Dispatch ➔',
@@ -438,37 +522,39 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFC30121)),
-                  foregroundColor: const Color(0xFFC30121),
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(12),
+              if (activeRequest.contactNumber.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFC30121)),
+                    foregroundColor: const Color(0xFFC30121),
+                    shape: const CircleBorder(),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  onPressed: () => _makePhoneCall(activeRequest.contactNumber),
+                  child: const Icon(Icons.phone_rounded, size: 18),
                 ),
-                onPressed: () => _makePhoneCall('+8801711223344'),
-                child: const Icon(Icons.phone_rounded, size: 18),
-              ),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF0D68AA)),
-                  foregroundColor: const Color(0xFF0D68AA),
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(12),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF0D68AA)),
+                    foregroundColor: const Color(0xFF0D68AA),
+                    shape: const CircleBorder(),
+                    padding: const EdgeInsets.all(12),
+                  ),
+                  onPressed: () {
+                    context.push(
+                      '/chat',
+                      extra: {
+                        'chatRoomId': 'request_${activeRequest.id ?? 1}',
+                        'chatRecipientName': activeRequest.patientName,
+                        'bloodGroup': activeRequest.bloodGroup,
+                        'recipientId': activeRequest.contactNumber,
+                      },
+                    );
+                  },
+                  child: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
                 ),
-                onPressed: () {
-                  context.push(
-                    '/chat',
-                    extra: {
-                      'chatRoomId': 'dispatch_tanvir',
-                      'chatRecipientName': 'Tanvir Ahmed',
-                      'bloodGroup': 'O-',
-                      'recipientId': 'tanvir_ahmed',
-                    },
-                  );
-                },
-                child: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-              ),
+              ],
             ],
           ),
         ],
@@ -1369,10 +1455,10 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
           '/live-dispatch',
           extra: {
             'patientName': patientName,
-            'hospitalName': hospital.isNotEmpty ? hospital : 'City General Trauma Wing',
+            'hospitalName': hospital.isNotEmpty ? hospital : 'Medical Center',
             'bloodGroup': bloodGroup,
-            'donorName': 'Tanvir Ahmed',
-            'donorPhone': '+8801711223344',
+            'donorName': 'Matched Volunteer Donor',
+            'donorPhone': contact,
           },
         );
       }

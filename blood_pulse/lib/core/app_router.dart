@@ -130,10 +130,10 @@ final appRouter = GoRouter(
       path: '/chat',
       builder: (context, state) {
         final extra = state.extra;
-        String chatRoomId = 'sarah_jenkins_o_minus';
-        String chatRecipientName = 'Sarah Jenkins';
-        String bloodGroup = 'O-';
-        String recipientId = 'sarah_jenkins';
+        String chatRoomId = 'general_chat';
+        String chatRecipientName = 'Emergency Contact';
+        String bloodGroup = '';
+        String recipientId = '';
 
         if (extra is Map<String, dynamic>) {
           chatRoomId = extra['chatRoomId'] as String? ?? chatRoomId;
@@ -215,11 +215,11 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         return LiveDispatchScreen(
-          patientName: extra?['patientName'] as String? ?? 'Sarah Jenkins',
-          hospitalName: extra?['hospitalName'] as String? ?? 'City General Trauma Wing',
-          bloodGroup: extra?['bloodGroup'] as String? ?? 'O-',
-          donorName: extra?['donorName'] as String? ?? 'Tanvir Ahmed',
-          donorPhone: extra?['donorPhone'] as String? ?? '+8801711223344',
+          patientName: extra?['patientName'] as String? ?? 'Requester',
+          hospitalName: extra?['hospitalName'] as String? ?? 'Medical Center',
+          bloodGroup: extra?['bloodGroup'] as String? ?? '',
+          donorName: extra?['donorName'] as String? ?? 'Matched Donor',
+          donorPhone: extra?['donorPhone'] as String? ?? '',
           initialRole: extra?['role'] == 'donor' ? DispatchRole.donor : DispatchRole.requester,
         );
       },

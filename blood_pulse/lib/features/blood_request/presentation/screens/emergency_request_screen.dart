@@ -214,8 +214,8 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                   'patientName': _patientNameCtrl.text.trim(),
                   'hospitalName': hospitalLoc.isNotEmpty ? hospitalLoc : 'City General Trauma Wing',
                   'bloodGroup': _selectedBloodGroup!,
-                  'donorName': 'Tanvir Ahmed',
-                  'donorPhone': '+8801711223344',
+                  'donorName': 'Awaiting Donor Match',
+                  'donorPhone': '',
                 },
               );
             },
