@@ -2,7 +2,7 @@ import logging
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from django.http import HttpResponse
 import random
 from django.core.mail import send_mail
@@ -1065,6 +1065,22 @@ class VerifyEmailCodeView(APIView):
             "message": "Email verified successfully.",
             "email_verified": True
         }, status=status.HTTP_200_OK)
+
+
+# ── System Health Check ───────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(view=None, request=None, *args, **kwargs):
+    return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
+
+
+class HealthCheckView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
+
 
 
 

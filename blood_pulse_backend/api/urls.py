@@ -9,7 +9,8 @@ from .views import (
     BloodScienceArticleViewSet, CompatibilityRuleViewSet, DonationGuideSectionViewSet, 
     EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView,
     GoogleAuthView, FirebaseAuthView, ProfileCompletionStatusView, UnreadNotificationCountView,
-    SendVerificationEmailView, VerifyEmailCodeView
+    SendVerificationEmailView, VerifyEmailCodeView,
+    health_check, HealthCheckView
 )
 
 router = DefaultRouter()
@@ -39,6 +40,7 @@ router.register(r'health-hub/recovery-timeline', RecoveryTimelineStepViewSet, ba
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('health/', health_check, name='health-check'),
     path('verify-nid/', NIDVerificationView.as_view(), name='verify-nid'),
     path('donors-nearby/', NearbyDonorsView.as_view(), name='donors-nearby'),
     path('clubs/register/', RegisterClubView.as_view(), name='register-club'),
