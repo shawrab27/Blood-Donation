@@ -1069,7 +1069,7 @@ class VerifyEmailCodeView(APIView):
 
 # ── System Health Check ───────────────────────────────────────────────────────
 
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 @permission_classes([AllowAny])
 def health_check(view=None, request=None, *args, **kwargs):
     return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
@@ -1079,6 +1079,9 @@ class HealthCheckView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
+        return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
+
+    def head(self, request, *args, **kwargs):
         return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
 
 
