@@ -506,9 +506,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(50),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Material(
+        child: Material(
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(50),
@@ -544,7 +542,9 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
+
+
+
