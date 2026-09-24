@@ -2,6 +2,7 @@ import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/responsive_center_wrapper.dart';
 
 class HealthHubDashboardScreen extends StatelessWidget {
   const HealthHubDashboardScreen({super.key});
@@ -10,7 +11,8 @@ class HealthHubDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return ListView(
+    return ResponsiveCenterWrapper(
+      child: ListView(
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
@@ -62,9 +64,24 @@ class HealthHubDashboardScreen extends StatelessWidget {
           // ── Daily Wellness Tip Card ───────────────────────────────────────
           _buildWellnessTipCard(l10n),
 
+          const SizedBox(height: 32),
+
+          const Text(
+            'Latest Health Articles',
+            style: TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.secondary,
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          _buildArticlesList(context),
           const SizedBox(height: 40),
         ],
-      );
+      ),
+    );
   }
 
   Widget _buildHealthStatusCard(AppLocalizations? l10n) {
@@ -283,6 +300,87 @@ class HealthHubDashboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildArticlesList(BuildContext context) {
+    final articles = [
+      {
+        'title': 'Iron-Rich Foods to Eat Before Donating',
+        'subtitle': 'Boost your hemoglobin levels naturally.',
+        'icon': Icons.restaurant_menu,
+        'color': const Color(0xFFC30121)
+      },
+      {
+        'title': 'The Science of Blood Types',
+        'subtitle': 'Why O-Negative is the universal donor.',
+        'icon': Icons.science,
+        'color': const Color(0xFF0D68AA)
+      },
+      {
+        'title': 'Recovery Best Practices',
+        'subtitle': 'What to do in the 24 hours post-donation.',
+        'icon': Icons.hotel,
+        'color': const Color(0xFF1B8A4E)
+      }
+    ];
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: articles.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final article = articles[index];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: (article['color'] as Color).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(article['icon'] as IconData, color: article['color'] as Color),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article['title'] as String,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      article['subtitle'] as String,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: AppColors.neutral,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 }
 
 class _FeatureShortcut {
@@ -300,3 +398,5 @@ class _FeatureShortcut {
   final Color bgColor;
   final String route;
 }
+
+
