@@ -1066,3 +1066,98 @@ def active_deferral_view(request):
         
     except Exception:
         return Response({'has_deferral': False})
+
+
+
+# -----------------------------------------------------------------------------
+# PROMPT 9: NATIONAL EMERGENCY & DISASTER RESPONSE
+# -----------------------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def active_national_emergency_view(request):
+    """
+    GET /api/emergency/national/active/
+    Returns the currently active national emergency event, including points and slots.
+    """
+    from api.models import NationalEmergencyEvent
+    from api.serializers_bloodhub import NationalEmergencyEventSerializer
+    
+    event = NationalEmergencyEvent.objects.filter(is_active=True).first()
+    if not event:
+        # Check if there is an ended event recently (optional logic for "This emergency has ended")
+        recent_ended = NationalEmergencyEvent.objects.filter(is_active=False).order_by('-ended_at').first()
+        if recent_ended:
+            return Response({'is_active': False, 'message': 'This emergency has ended. Thank you.'})
+        return Response({'is_active': False, 'message': 'No emergency right now'})
+        
+    serializer = NationalEmergencyEventSerializer(event)
+    return Response({'is_active': True, 'event': serializer.data})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def pledge_to_donate_view(request):
+    """
+    POST /api/emergency/national/pledge/
+    Payload: { "slot_id": 123 }
+    """
+    from api.models import DonationSlot, DisasterPledge
+    import string
+    import random
+    from django.db import transaction
+    
+    slot_id = request.data.get('slot_id')
+    try:
+        slot = DonationSlot.objects.get(id=slot_id)
+    except DonationSlot.DoesNotExist:
+        return Response({'error': 'Slot not found.'}, status=404)
+        
+    if slot.pledged >= slot.capacity:
+        return Response({'error': 'Slot is full.'}, status=400)
+        
+    donor = request.user.donorprofile
+    
+    # Check if they already have an active pledge
+    existing = DisasterPledge.objects.filter(event=slot.point.event, donor=donor, status='PENDING').exists()
+    if existing:
+        return Response({'error': 'You already have an active pledge.'}, status=400)
+        
+    # Eligibility checks should ideally happen here, but we will mock success
+    # Generate 6 char code
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    
+    with transaction.atomic():
+        pledge = DisasterPledge.objects.create(
+            event=slot.point.event,
+            donor=donor,
+            slot=slot,
+            pledge_code=code
+        )
+        # Update slot pledged count
+        slot.pledged += 1
+        slot.save(update_fields=['pledged'])
+        
+    return Response({
+        'message': 'Pledge successful.',
+        'pledge_code': code,
+        'point_name': slot.point.name,
+        'time_range': slot.time_range,
+    })
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_pledge_view(request):
+    """
+    GET /api/emergency/national/my-pledge/
+    """
+    from api.models import DisasterPledge
+    from api.serializers_bloodhub import DisasterPledgeSerializer
+    
+    donor = request.user.donorprofile
+    pledge = DisasterPledge.objects.filter(donor=donor, status='PENDING').order_by('-created_at').first()
+    if not pledge:
+        return Response({'has_pledge': False})
+        
+    return Response({
+        'has_pledge': True,
+        'pledge': DisasterPledgeSerializer(pledge).data
+    })

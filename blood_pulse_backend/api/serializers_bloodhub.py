@@ -13,6 +13,10 @@ from api.models import (
     EmergencyNotification,
     FakeReport,
     DeferralRecord,
+    NationalEmergencyEvent,
+    DisasterResponsePoint,
+    DonationSlot,
+    DisasterPledge,
     DonationIssue,
     StandbyOffer,
     EmailOTP,
@@ -356,3 +360,46 @@ class EmailOTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(min_length=6, max_length=6)
 
+
+
+
+# -----------------------------------------------------------------------------
+# PROMPT 9: NATIONAL EMERGENCY & DISASTER RESPONSE
+# -----------------------------------------------------------------------------
+
+class DonationSlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DonationSlot
+        fields = ['id', 'time_range', 'capacity', 'pledged']
+
+class DisasterResponsePointSerializer(serializers.ModelSerializer):
+    slots = DonationSlotSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = DisasterResponsePoint
+        fields = [
+            'id', 'name', 'district', 'lat', 'lng', 'is_camp',
+            'target_bags', 'collected_bags', 'status', 'urgent_blood_groups',
+            'donors_on_the_way', 'last_updated', 'slots'
+        ]
+
+class NationalEmergencyEventSerializer(serializers.ModelSerializer):
+    points = DisasterResponsePointSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = NationalEmergencyEvent
+        fields = [
+            'id', 'title_en', 'title_bn', 'description_en', 'description_bn',
+            'poster_image', 'is_active', 'is_verified', 'started_at', 'ended_at',
+            'donation_interval_days', 'instructions_en', 'instructions_bn', 'points'
+        ]
+
+class DisasterPledgeSerializer(serializers.ModelSerializer):
+    slot = DonationSlotSerializer(read_only=True)
+    point_name = serializers.CharField(source='slot.point.name', read_only=True)
+    
+    class Meta:
+        model = DisasterPledge
+        fields = [
+            'id', 'pledge_code', 'status', 'created_at', 'slot', 'point_name'
+        ]

@@ -4,26 +4,24 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
+import '../../../../core/domain/entities/national_emergency.dart';
 
 const Color _kPrimary = Color(0xFFC30121);
 const Color _kSecondary = Color(0xFF2B2B2B);
 const Color _kTertiary = Color(0xFF0D68AA);
 const Color _kNeutral = Color(0xFF8E7D7F);
 
-// ─────────────────────────────────────────────────────────────────────────────
-// NATIONAL EMERGENCY OVERVIEW  (/emergency/national)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class NationalEmergencyScreen extends ConsumerWidget {
+class NationalEmergencyScreen extends ConsumerStatefulWidget {
   const NationalEmergencyScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncState = ref.watch(nationalEmergencyProvider);
+  ConsumerState<NationalEmergencyScreen> createState() => _NationalEmergencyScreenState();
+}
+
+class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final asyncEvent = ref.watch(activeNationalEmergencyProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
@@ -40,540 +38,30 @@ class NationalEmergencyScreen extends ConsumerWidget {
             color: _kSecondary,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: _kNeutral),
-            onPressed: () => ref.invalidate(nationalEmergencyProvider),
-            tooltip: 'Refresh',
-          ),
-        ],
       ),
-      body: SafeArea(
-        child: asyncState.when(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(activeNationalEmergencyProvider);
+          ref.invalidate(myDisasterPledgeProvider);
+        },
+        child: asyncEvent.when(
+          data: (event) {
+            if (event == null || !event.isActive) {
+              return const _FrozenState();
+            }
+            return _NationalBody(event: event);
+          },
           loading: () => const _Skeleton(),
-          error: (e, _) => _ErrorRetry(
-            message: '$e',
-            onRetry: () => ref.invalidate(nationalEmergencyProvider),
-          ),
-          data: (state) => _NationalBody(state: state),
+          error: (e, _) => Center(child: Text('Error: $e')),
         ),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BODY — switches between frozen and active
-// ─────────────────────────────────────────────────────────────────────────────
+class _FrozenState extends StatelessWidget {
+  const _FrozenState();
 
-class _NationalBody extends StatelessWidget {
-  const _NationalBody({required this.state});
-  final NationalEmergencyState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return ResponsiveCenterWrapper(
-      maxWidth: 560,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          if (state.isActive) ...[
-            SliverToBoxAdapter(child: _ActiveBanner(state: state)),
-            SliverToBoxAdapter(child: _ProgressSection(state: state)),
-          ] else ...[
-            SliverToBoxAdapter(child: _FrozenBanner()),
-          ],
-
-          // Emergency hotlines — always shown
-          const SliverToBoxAdapter(child: _HotlinesCard()),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FROZEN BANNER  (no active emergency)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _FrozenBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      child: Column(
-        children: [
-          // Status icon
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF5EE),
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: const Color(0xFF1A7A3F).withAlpha(60)),
-            ),
-            child: const Icon(
-              Icons.check_circle_rounded,
-              size: 40,
-              color: Color(0xFF1A7A3F),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'No Active Emergency',
-            style: TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: _kSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'All systems normal. No mass-casualty event or national blood '
-              'shortage is currently active in Bangladesh.',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                color: _kNeutral,
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Info strip
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE0DCDC)),
-            ),
-            child: const Column(
-              children: [
-                _InfoLine(
-                  icon: Icons.notifications_active_rounded,
-                  text:
-                      'You will receive an alert if a national emergency is declared.',
-                ),
-                SizedBox(height: 10),
-                _InfoLine(
-                  icon: Icons.shield_rounded,
-                  text:
-                      'BloodPulse coordinates with health authorities and disaster management agencies.',
-                ),
-                SizedBox(height: 10),
-                _InfoLine(
-                  icon: Icons.volunteer_activism_rounded,
-                  text:
-                      'Keep your donor profile up to date so you can respond instantly.',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoLine extends StatelessWidget {
-  const _InfoLine({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: _kTertiary),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              color: _kSecondary,
-              height: 1.5,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ACTIVE BANNER  (disaster declared)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ActiveBanner extends StatelessWidget {
-  const _ActiveBanner({required this.state});
-  final NationalEmergencyState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final pct = state.totalDonationsNeeded == 0
-        ? 0.0
-        : state.totalDonationsFulfilled / state.totalDonationsNeeded;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFAA0018), Color(0xFFC30121)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.crisis_alert_rounded,
-                  color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'NATIONAL EMERGENCY ACTIVE',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white70,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            state.title ?? 'Emergency Blood Drive',
-            style: const TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          if (state.subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              state.subtitle!,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                color: Colors.white70,
-                height: 1.4,
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          // Overall progress bar
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${state.totalDonationsFulfilled} / ${state.totalDonationsNeeded} units',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: LinearProgressIndicator(
-                        value: pct.clamp(0.0, 1.0),
-                        backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.white),
-                        minHeight: 8,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '${(pct * 100).toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HOSPITAL DEMAND PROGRESS BARS
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ProgressSection extends StatelessWidget {
-  const _ProgressSection({required this.state});
-  final NationalEmergencyState state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.hospitalNeeds.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEE8E8)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Text(
-              'Hospital Demand',
-              style: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: _kSecondary,
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFF0EAEA)),
-          ...state.hospitalNeeds.map(
-            (need) => Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      // Blood group badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _kPrimary,
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: Text(
-                          need.bloodGroup,
-                          style: const TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          need.hospitalName,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            color: _kSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        '${need.unitsFulfilled}/${need.unitsNeeded}',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          color: _kNeutral,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(50),
-                    child: LinearProgressIndicator(
-                      value: need.progress,
-                      backgroundColor: const Color(0xFFEEE8E8),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        need.progress >= 1.0
-                            ? const Color(0xFF1A7A3F)
-                            : _kPrimary,
-                      ),
-                      minHeight: 6,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EMERGENCY HOTLINES CARD — always shown
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _HotlinesCard extends StatelessWidget {
-  const _HotlinesCard();
-
-  static const _hotlines = [
-    ('National Emergency', '999', Icons.local_police_rounded),
-    ('Health Emergency', '16163', Icons.local_hospital_rounded),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEE8E8)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Row(
-              children: [
-                Icon(Icons.phone_rounded, size: 14, color: _kNeutral),
-                SizedBox(width: 6),
-                Text(
-                  'Emergency Hotlines',
-                  style: TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: _kSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFF0EAEA)),
-          ..._hotlines.map(
-            (h) => ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              leading: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE9EB),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(h.$3, color: _kPrimary, size: 18),
-              ),
-              title: Text(
-                h.$1,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: _kSecondary,
-                ),
-              ),
-              trailing: GestureDetector(
-                onTap: () async {
-                  final uri = Uri(scheme: 'tel', path: h.$2);
-                  if (await canLaunchUrl(uri)) await launchUrl(uri);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _kPrimary,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  child: Text(
-                    h.$2,
-                    style: const TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SKELETON & ERROR
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _Skeleton extends StatelessWidget {
-  const _Skeleton();
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(children: [
-        const SizedBox(height: 20),
-        _Bone(h: 120, r: 20),
-        const SizedBox(height: 12),
-        _Bone(h: 180, r: 16),
-        const SizedBox(height: 12),
-        _Bone(h: 120, r: 16),
-      ]),
-    );
-  }
-}
-
-class _Bone extends StatelessWidget {
-  const _Bone({required this.h, required this.r});
-  final double h;
-  final double r;
-  @override
-  Widget build(BuildContext context) => Container(
-        height: h,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEEE8E8),
-          borderRadius: BorderRadius.circular(r),
-        ),
-      );
-}
-
-class _ErrorRetry extends StatelessWidget {
-  const _ErrorRetry({required this.message, required this.onRetry});
-  final String message;
-  final VoidCallback onRetry;
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -582,28 +70,451 @@ class _ErrorRetry extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.cloud_off_rounded,
-                size: 48, color: Color(0xFFDDD0D0)),
+            const Icon(Icons.shield_outlined, size: 64, color: _kNeutral),
+            const SizedBox(height: 24),
+            const Text(
+              'No emergency right now',
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: _kSecondary,
+              ),
+            ),
             const SizedBox(height: 12),
-            Text(message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    color: _kNeutral)),
-            const SizedBox(height: 16),
+            const Text(
+              "You'll be alerted here when a national emergency is declared.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: _kNeutral,
+              ),
+            ),
+            const SizedBox(height: 32),
             ElevatedButton(
+              onPressed: null,
               style: ElevatedButton.styleFrom(
-                  backgroundColor: _kPrimary,
-                  foregroundColor: Colors.white,
-                  shape: const StadiumBorder()),
-              onPressed: onRetry,
-              child: const Text('Retry',
-                  style: TextStyle(fontFamily: 'Inter')),
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.grey.shade600,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Join Disaster Response', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _NationalBody extends ConsumerWidget {
+  const _NationalBody({required this.event});
+  final NationalEmergencyEvent event;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    int totalNeeded = 0;
+    int totalCollected = 0;
+    for (var p in event.points) {
+      totalNeeded += p.targetBags;
+      totalCollected += p.collectedBags;
+    }
+    final pct = totalNeeded == 0 ? 0.0 : (totalCollected / totalNeeded).clamp(0.0, 1.0);
+    final myPledgeAsync = ref.watch(myDisasterPledgeProvider);
+
+    return ResponsiveCenterWrapper(
+      maxWidth: 560,
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (event.isVerified)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: _kTertiary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified, color: _kTertiary, size: 14),
+                          const SizedBox(width: 4),
+                          Text('Verified by BloodPulse Admin', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: _kTertiary, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  Text(
+                    event.titleEn,
+                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 24, fontWeight: FontWeight.bold, color: _kPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    event.descriptionEn,
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: _kSecondary),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Disaster Progress', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: _kSecondary)),
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(
+                    value: pct,
+                    minHeight: 12,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: const AlwaysStoppedAnimation<Color>(_kPrimary),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Collected Bags $totalCollected/$totalNeeded', style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: _kNeutral, fontWeight: FontWeight.bold)),
+                  
+                  const SizedBox(height: 24),
+                  const Text('Official Instructions', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: _kSecondary)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFFFFF0F0), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFFBB8B8))),
+                    child: Text(
+                      event.instructionsEn.isNotEmpty ? event.instructionsEn : 'Follow official guidelines. Wait for verification before donating.',
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: _kSecondary),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Note: You must have a ${event.donationIntervalDays}-day gap from your last donation to be eligible.', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: _kNeutral)),
+                ],
+              ),
+            ),
+          ),
+          myPledgeAsync.when(
+            data: (pledge) {
+              if (pledge == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+              return SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: _kPrimary.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: _kPrimary.withOpacity(0.3))),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('My Pledge', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: _kPrimary)),
+                      const SizedBox(height: 8),
+                      Text('Point: ${pledge.pointName}', style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: _kSecondary)),
+                      if (pledge.slot != null) Text('Time: ${pledge.slot!.timeRange}', style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: _kSecondary)),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                        child: Text('Code: ${pledge.pledgeCode}', style: const TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2, color: _kPrimary)),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
+            loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+          ),
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text('Response Points', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: _kSecondary)),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final point = event.points[index];
+                return _PointCard(point: point);
+              },
+              childCount: event.points.length,
+            ),
+          ),
+          const SliverToBoxAdapter(child: _HotlinesCard()),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)), // Bottom padding for sticky button
+        ],
+      ),
+    );
+  }
+}
+
+class _PointCard extends ConsumerWidget {
+  const _PointCard({required this.point});
+  final DisasterResponsePoint point;
+
+  void _showPledgeSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _PledgeSheet(point: point),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statusColor = point.status == 'COVERED' ? const Color(0xFF1A7A3F) : _kPrimary;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(point.name, style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: _kSecondary)),
+                    Text(point.district, style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: _kNeutral)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(50)),
+                child: Text(point.status, style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)),
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (point.urgentBloodGroups.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: point.urgentBloodGroups.map((bg) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: _kPrimary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text(bg, style: const TextStyle(color: _kPrimary, fontWeight: FontWeight.bold, fontSize: 12)),
+              )).toList(),
+            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.people, size: 14, color: _kTertiary),
+              const SizedBox(width: 4),
+              Text('${point.donorsOnTheWay} donors on the way', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: _kTertiary, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (point.status == 'COVERED')
+            const Center(child: Text('Fully covered, thank you', style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF1A7A3F), fontWeight: FontWeight.bold)))
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: point.slots.isEmpty ? null : () => _showPledgeSheet(context, ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kPrimary,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text('Pledge to Donate (Select Slot)', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PledgeSheet extends ConsumerStatefulWidget {
+  const _PledgeSheet({required this.point});
+  final DisasterResponsePoint point;
+
+  @override
+  ConsumerState<_PledgeSheet> createState() => _PledgeSheetState();
+}
+
+class _PledgeSheetState extends ConsumerState<_PledgeSheet> {
+  int? _selectedSlotId;
+  bool _agreed = false;
+  bool _loading = false;
+  String? _successCode;
+
+  Future<void> _submitPledge() async {
+    if (_selectedSlotId == null || !_agreed) return;
+    setState(() => _loading = true);
+    try {
+      final res = await ref.read(bloodHubApiServiceProvider).pledgeToDonate(_selectedSlotId!);
+      ref.invalidate(myDisasterPledgeProvider);
+      ref.invalidate(activeNationalEmergencyProvider);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _successCode = res['pledge_code'];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_successCode != null) {
+      return Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: Color(0xFF1A7A3F), size: 64),
+            const SizedBox(height: 16),
+            const Text('Pledge Confirmed!', style: TextStyle(fontFamily: 'Georgia', fontSize: 24, fontWeight: FontWeight.bold, color: _kSecondary)),
+            const SizedBox(height: 16),
+            const Text('Show this code when you arrive:', style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: _kNeutral)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(color: _kPrimary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Text(_successCode!, style: const TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4, color: _kPrimary)),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(backgroundColor: _kSecondary, foregroundColor: Colors.white, shape: const StadiumBorder()),
+                child: const Text('Close'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 20),
+          Text('Select Slot for ${widget.point.name}', style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: _kSecondary)),
+          const SizedBox(height: 16),
+          ...widget.point.slots.map((slot) {
+            final isFull = slot.pledged >= slot.capacity;
+            return RadioListTile<int>(
+              title: Text(slot.timeRange, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
+              subtitle: Text(isFull ? 'Slot Full' : '${slot.capacity - slot.pledged} spots remaining'),
+              value: slot.id,
+              groupValue: _selectedSlotId,
+              onChanged: isFull ? null : (val) => setState(() => _selectedSlotId = val),
+              activeColor: _kPrimary,
+            );
+          }),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 8),
+          const Text('Eligibility Checklist', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: _kSecondary)),
+          const Text('DRAFT: to be reviewed with a doctor', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: _kPrimary, fontStyle: FontStyle.italic)),
+          const SizedBox(height: 8),
+          CheckboxListTile(
+            value: _agreed,
+            onChanged: (val) => setState(() => _agreed = val ?? false),
+            title: const Text('I am 18-60 years old, weigh > 50kg, feel well, have no fever/cough, and have not donated in the last 120 days.', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
+            activeColor: _kPrimary,
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: (_selectedSlotId != null && _agreed && !_loading) ? _submitPledge : null,
+              style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Confirm Pledge', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HotlinesCard extends StatelessWidget {
+  const _HotlinesCard();
+
+  Future<void> _call(String number) async {
+    final uri = Uri.parse('tel:$number');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: _kSecondary, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        children: [
+          const Text('Emergency Hotlines', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _HotlineButton(icon: Icons.local_police, label: '999', onTap: () => _call('999')),
+              _HotlineButton(icon: Icons.local_fire_department, label: '16163', onTap: () => _call('16163')),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class _HotlineButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HotlineButton({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Skeleton extends StatelessWidget {
+  const _Skeleton();
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: CircularProgressIndicator(color: _kPrimary));
   }
 }

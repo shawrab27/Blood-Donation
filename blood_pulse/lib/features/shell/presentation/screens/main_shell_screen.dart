@@ -15,6 +15,7 @@ import '../../../blood_hub/presentation/widgets/blood_hub_view.dart';
 import '../../../communities/presentation/widgets/communities_view.dart';
 import '../../../health_hub/presentation/screens/health_hub_dashboard_screen.dart';
 import '../../../profile/presentation/widgets/profile_view.dart';
+import '../../../blood_hub/presentation/widgets/global_live_banner.dart';
 
 /// The Main Responsive 5-Tab Navigation Shell of BloodPulse.
 class MainShellScreen extends ConsumerStatefulWidget {
@@ -40,7 +41,12 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
     return Scaffold(
       appBar: const BloodPulseAppBar(),
-      body: tabs[activeTabIndex],
+      body: Column(
+        children: [
+          const GlobalLiveBanner(),
+          Expanded(child: tabs[activeTabIndex]),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [

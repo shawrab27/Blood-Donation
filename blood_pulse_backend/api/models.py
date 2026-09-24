@@ -569,3 +569,73 @@ class EmailVerificationCode(models.Model):
     def __str__(self):
         return f"{self.email} - {self.code} (Used: {self.is_used})"
 
+
+
+
+# -----------------------------------------------------------------------------
+# PROMPT 9: NATIONAL EMERGENCY & DISASTER RESPONSE
+# -----------------------------------------------------------------------------
+
+class NationalEmergencyEvent(models.Model):
+    title_en = models.CharField(max_length=200)
+    title_bn = models.CharField(max_length=200)
+    description_en = models.TextField(blank=True)
+    description_bn = models.TextField(blank=True)
+    poster_image = models.ImageField(upload_to='emergency_posters/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_verified = models.BooleanField(default=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    donation_interval_days = models.PositiveIntegerField(default=90)
+    instructions_en = models.TextField(blank=True)
+    instructions_bn = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.title_en
+
+class DisasterResponsePoint(models.Model):
+    STATUS_CHOICES = [
+        ('NEEDED', 'Needed'),
+        ('PARTIAL', 'Partial'),
+        ('COVERED', 'Covered'),
+    ]
+    event = models.ForeignKey(NationalEmergencyEvent, on_delete=models.CASCADE, related_name='points')
+    name = models.CharField(max_length=200)
+    district = models.CharField(max_length=100)
+    lat = models.FloatField()
+    lng = models.FloatField()
+    is_camp = models.BooleanField(default=False)
+    target_bags = models.PositiveIntegerField(default=100)
+    collected_bags = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NEEDED')
+    urgent_blood_groups = models.JSONField(default=list)  # e.g., ["O+", "A-"]
+    donors_on_the_way = models.PositiveIntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.district}"
+
+class DonationSlot(models.Model):
+    point = models.ForeignKey(DisasterResponsePoint, on_delete=models.CASCADE, related_name='slots')
+    time_range = models.CharField(max_length=100)  # e.g., "10:00 AM - 11:00 AM"
+    capacity = models.PositiveIntegerField(default=10)
+    pledged = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.point.name} | {self.time_range}"
+
+class DisasterPledge(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('COMPLETED', 'Completed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+    event = models.ForeignKey(NationalEmergencyEvent, on_delete=models.CASCADE, related_name='pledges')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='disaster_pledges')
+    slot = models.ForeignKey(DonationSlot, on_delete=models.CASCADE, related_name='pledges')
+    pledge_code = models.CharField(max_length=10, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.pledge_code} - {self.donor.user.username}"

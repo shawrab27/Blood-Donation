@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/api_client.dart';
+import '../../../core/domain/entities/national_emergency.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODELS
@@ -655,66 +656,7 @@ class JourneyListItem {
 // NATIONAL EMERGENCY MODEL  (Prompt 4)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class HospitalNeed {
-  const HospitalNeed({
-    required this.hospitalName,
-    required this.bloodGroup,
-    required this.unitsNeeded,
-    required this.unitsFulfilled,
-  });
 
-  final String hospitalName;
-  final String bloodGroup;
-  final int unitsNeeded;
-  final int unitsFulfilled;
-
-  double get progress =>
-      unitsNeeded == 0 ? 0 : (unitsFulfilled / unitsNeeded).clamp(0.0, 1.0);
-
-  factory HospitalNeed.fromJson(Map<String, dynamic> j) {
-    return HospitalNeed(
-      hospitalName: (j['hospital_name'] as String?) ?? '',
-      bloodGroup: (j['blood_group'] as String?) ?? '',
-      unitsNeeded: (j['units_needed'] as num?)?.toInt() ?? 0,
-      unitsFulfilled: (j['units_fulfilled'] as num?)?.toInt() ?? 0,
-    );
-  }
-}
-
-class NationalEmergencyState {
-  const NationalEmergencyState({
-    required this.isActive,
-    this.title,
-    this.subtitle,
-    this.hospitalNeeds = const [],
-    this.totalDonationsNeeded = 0,
-    this.totalDonationsFulfilled = 0,
-  });
-
-  final bool isActive;
-  final String? title;
-  final String? subtitle;
-  final List<HospitalNeed> hospitalNeeds;
-  final int totalDonationsNeeded;
-  final int totalDonationsFulfilled;
-
-  factory NationalEmergencyState.fromJson(Map<String, dynamic> j) {
-    final needs = (j['hospital_needs'] as List<dynamic>? ?? [])
-        .map((e) => HospitalNeed.fromJson(e as Map<String, dynamic>))
-        .toList();
-    return NationalEmergencyState(
-      isActive: (j['is_active'] as bool?) ?? false,
-      title: j['title'] as String?,
-      subtitle: j['subtitle'] as String?,
-      hospitalNeeds: needs,
-      totalDonationsNeeded: (j['total_needed'] as num?)?.toInt() ?? 0,
-      totalDonationsFulfilled: (j['total_fulfilled'] as num?)?.toInt() ?? 0,
-    );
-  }
-
-  static NationalEmergencyState get noEmergency =>
-      const NationalEmergencyState(isActive: false);
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EXTENDED API SERVICE METHODS  (Prompt 4 additions)
@@ -811,18 +753,30 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
     }
   }
 
-  /// GET `/api/emergency/national/`
-  Future<NationalEmergencyState> fetchNationalEmergency() async {
-    try {
-      final response = await _api.get('emergency/national/');
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return NationalEmergencyState.fromJson(data as Map<String, dynamic>);
-      }
-      return NationalEmergencyState.noEmergency;
-    } catch (_) {
-      return NationalEmergencyState.noEmergency;
+  // ─── PROMPT 9 EMERGENCY METHODS ───────────────────────────────
+  Future<Map<String, dynamic>> getActiveNationalEmergency() async {
+    final response = await _api.get('emergency/national/active/');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
     }
+    return {'is_active': false, 'message': 'No emergency right now'};
+  }
+
+  Future<Map<String, dynamic>> pledgeToDonate(int slotId) async {
+    final response = await _api.post('emergency/national/pledge/', body: {'slot_id': slotId.toString()});
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(data['error'] ?? data['detail'] ?? 'Failed to pledge.');
+    }
+    return data;
+  }
+
+  Future<Map<String, dynamic>> getMyPledge() async {
+    final response = await _api.get('emergency/national/my-pledge/');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return {'has_pledge': false};
   }
 
   /// GET `/api/journeys/`
@@ -855,14 +809,34 @@ final standbyOfferProvider =
   return ref.read(bloodHubApiServiceProvider).fetchStandbyOffer(offerId);
 });
 
-/// National emergency provider — cached for 60 s.
-final nationalEmergencyProvider =
-    FutureProvider.autoDispose<NationalEmergencyState>((ref) {
-  return ref.read(bloodHubApiServiceProvider).fetchNationalEmergency();
-});
+
 
 /// Journey list provider (My Requests & My Donations)
 final journeyListProvider =
     FutureProvider.autoDispose<List<JourneyListItem>>((ref) {
   return ref.read(bloodHubApiServiceProvider).fetchJourneys();
+});
+
+
+
+
+
+
+
+final activeNationalEmergencyProvider = FutureProvider.autoDispose<NationalEmergencyEvent?>((ref) async {
+  final api = ref.watch(bloodHubApiServiceProvider);
+  final res = await api.getActiveNationalEmergency();
+  if (res['is_active'] == true && res['event'] != null) {
+    return NationalEmergencyEvent.fromJson(res['event']);
+  }
+  return null;
+});
+
+final myDisasterPledgeProvider = FutureProvider.autoDispose<DisasterPledge?>((ref) async {
+  final api = ref.watch(bloodHubApiServiceProvider);
+  final res = await api.getMyPledge();
+  if (res['has_pledge'] == true && res['pledge'] != null) {
+    return DisasterPledge.fromJson(res['pledge']);
+  }
+  return null;
 });
