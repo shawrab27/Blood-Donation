@@ -28,6 +28,7 @@ import '../features/admin/admin_dashboard_screen.dart';
 // Blood Hub v2 Screens
 import '../features/blood_hub/presentation/screens/blood_hub_search_screen.dart';
 import '../features/blood_hub/presentation/screens/direct_request_screen.dart';
+import '../features/blood_hub/presentation/screens/personal_emergency_screen.dart';
 import '../features/blood_hub/presentation/screens/emergency_hub_screen.dart';
 import '../features/blood_hub/presentation/screens/journey_detail_screen.dart';
 import '../features/blood_hub/presentation/screens/standby_offer_screen.dart';
@@ -264,7 +265,7 @@ final appRouter = GoRouter(
               ),
             ),
           ),
-          body: DirectRequestScreen(
+          body: PersonalEmergencyScreen(
             prefillBloodGroup: extra?['prefill_blood_group'] as String?,
             prefillComponent: extra?['prefill_component'] as String?,
             prefillDistrict: extra?['prefill_district'] as String?,
