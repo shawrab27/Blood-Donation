@@ -1,10 +1,11 @@
+from django.utils import timezone
 """
 Dedicated API views for BloodPulse Blood Hub v2.
 Handles search, map, hospital directory, request creation, wave progression, and acceptances.
 """
 
 from datetime import timedelta
-from django.utils import timezone
+
 from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -305,6 +306,15 @@ def emergency_request_accept_view(request, pk):
 
     donor = request.user.donorprofile
 
+    # Check 90 days eligibility
+    if donor.last_donation_date:
+        
+        days_since_last = (timezone.now().date() - donor.last_donation_date).days
+        if days_since_last < 90:
+            return Response({
+                'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
     existing_acceptance = RequestAcceptance.objects.filter(
         request=blood_req,
         donor=donor,
@@ -496,7 +506,8 @@ def journey_status_transition_view(request, pk):
         donor.fulfilled_count = (donor.fulfilled_count or 0) + 1
         donor.total_bags_donated = (donor.total_bags_donated or 0) + (blood_req.units_needed or 1)
         donor.last_donation_date = now.date()
-        donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date'])
+        donor.is_available = False
+        donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date', 'is_available'])
 
         # Record donation history
         from api.models import DonationHistory
@@ -654,6 +665,16 @@ def standby_offer_respond_view(request, pk):
 
     if offer.donor.user_id != request.user.id:
         return Response({'error': 'Unauthorized.'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Check 90 days eligibility
+    donor = offer.donor
+    if donor.last_donation_date:
+        
+        days_since_last = (timezone.now().date() - donor.last_donation_date).days
+        if days_since_last < 90:
+            return Response({
+                'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     action = request.data.get('action', '').strip().upper()
     if action not in ('ACCEPT', 'DECLINE'):
@@ -1043,7 +1064,7 @@ def active_deferral_view(request):
     Returns the currently active deferral (if any) for the logged-in donor.
     """
     from api.models import DeferralRecord
-    from django.utils import timezone
+    
     
     try:
         donor = request.user.donorprofile
@@ -1115,6 +1136,15 @@ def pledge_to_donate_view(request):
         return Response({'error': 'Slot is full.'}, status=400)
         
     donor = request.user.donorprofile
+    
+    # Check 90 days eligibility
+    if donor.last_donation_date:
+        
+        days_since_last = (timezone.now().date() - donor.last_donation_date).days
+        if days_since_last < 90:
+            return Response({
+                'error': f'You are not eligible to pledge. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+            }, status=400)
     
     # Check if they already have an active pledge
     existing = DisasterPledge.objects.filter(event=slot.point.event, donor=donor, status='PENDING').exists()
