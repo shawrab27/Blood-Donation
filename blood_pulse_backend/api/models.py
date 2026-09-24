@@ -3,12 +3,20 @@ from django.contrib.auth.models import User
 
 class Hospital(models.Model):
     name = models.CharField(max_length=200)
+    name_en = models.CharField(max_length=200, blank=True, default='')
+    name_bn = models.CharField(max_length=200, blank=True, default='')
     district = models.CharField(max_length=100)
+    division = models.ForeignKey('Division', on_delete=models.SET_NULL, null=True, blank=True, related_name='hospitals')
+    upazila = models.ForeignKey('Upazila', on_delete=models.SET_NULL, null=True, blank=True, related_name='hospitals')
     address = models.TextField()
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
+    phone = models.CharField(max_length=50, blank=True, default='')
+    is_verified = models.BooleanField(default=False)
     is_referral_center = models.BooleanField(default=False)
     
     def __str__(self):
-        return self.name
+        return self.name_en or self.name
 
 class DonorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -33,6 +41,24 @@ class DonorProfile(models.Model):
     # Live Geospatial Location
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+
+    # Blood Hub v2 Extensions
+    is_searchable = models.BooleanField(default=False, help_text="Opt-in to donor search and map discovery")
+    campus = models.CharField(max_length=255, blank=True, default='', help_text="Campus or institutional affiliation")
+    fulfilled_count = models.PositiveIntegerField(default=0)
+    no_show_count = models.PositiveIntegerField(default=0)
+    cancel_count = models.PositiveIntegerField(default=0)
+    alert_count = models.PositiveIntegerField(default=0)
+    response_count = models.PositiveIntegerField(default=0)
+    rating_avg = models.FloatField(default=0.0)
+    rating_count = models.PositiveIntegerField(default=0)
+    last_active_at = models.DateTimeField(null=True, blank=True)
+    last_lat = models.FloatField(null=True, blank=True, help_text="Fuzzed latitude for privacy (~500m)")
+    last_lng = models.FloatField(null=True, blank=True, help_text="Fuzzed longitude for privacy (~500m)")
+    geohash = models.CharField(max_length=12, blank=True, default='')
+    deferral_until = models.DateTimeField(null=True, blank=True)
+    alert_pause_until = models.DateTimeField(null=True, blank=True)
+    firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
     
     @property
     def global_rank(self):
@@ -80,17 +106,197 @@ class DonorProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.blood_group})"
 
+class DeferralRecord(models.Model):
+    REASON_CODES = (
+        ('MEDICAL', 'Medical Rejection'),
+        ('TIMEFRAME', 'Donation Interval Cooldown'),
+        ('TRAVEL', 'Travel / Endemic Zone'),
+        ('OTHER', 'Other'),
+    )
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='deferrals')
+    reason = models.CharField(max_length=255)
+    reason_code = models.CharField(max_length=20, choices=REASON_CODES, default='MEDICAL')
+    starts_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    appeal_status = models.CharField(max_length=20, default='NONE')
+    notes = models.TextField(blank=True, default='')
+
+    def __str__(self):
+        return f"Deferral for {self.donor.user.username} until {self.expires_at} ({self.reason_code})"
+
 class BloodRequest(models.Model):
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blood_requests', null=True, blank=True)
     patient_name = models.CharField(max_length=200)
     blood_group = models.CharField(max_length=5)
-    urgency_level = models.CharField(max_length=50)
-    hospital_location = models.CharField(max_length=300)
-    contact_number = models.CharField(max_length=20)
+    urgency_level = models.CharField(max_length=50, default='CRITICAL_2H')
+    hospital_location = models.CharField(max_length=300, blank=True, default='')
+    contact_number = models.CharField(max_length=20, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-    
+
+    # Blood Hub v2 Extensions
+    mode = models.CharField(max_length=20, default='EMERGENCY') # EMERGENCY, DIRECT
+    component = models.CharField(max_length=20, default='WHOLE') # WHOLE, RBC, PLATELETS, PLASMA
+    units_needed = models.PositiveIntegerField(default=1)
+    urgency = models.CharField(max_length=20, default='CRITICAL_2H') # CRITICAL_2H, URGENT_6H, TODAY_24H, SCHEDULED
+    needed_by = models.DateTimeField(null=True, blank=True)
+    condition_category = models.CharField(max_length=50, default='OTHER') # SURGERY, ACCIDENT, THALASSEMIA, CANCER, DENGUE, DELIVERY, OTHER
+    condition_note = models.CharField(max_length=80, blank=True, default='')
+    patient_photo = models.ImageField(upload_to='patient_photos/', null=True, blank=True)
+    scope = models.CharField(max_length=20, default='LOCAL') # LOCAL, DISTRICT, DIVISION, NATIONWIDE
+    effective_scope = models.CharField(max_length=20, default='LOCAL')
+    division = models.ForeignKey('Division', on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.CharField(max_length=100, blank=True, default='')
+    upazila = models.ForeignKey('Upazila', on_delete=models.SET_NULL, null=True, blank=True)
+    hospital = models.ForeignKey(Hospital, on_delete=models.SET_NULL, null=True, blank=True, related_name='blood_requests')
+    hospital_name_other = models.CharField(max_length=200, blank=True, default='')
+    ward_bed = models.CharField(max_length=100, blank=True, default='')
+    attendant_name = models.CharField(max_length=100, blank=True, default='')
+    contact_phone = models.CharField(max_length=20, blank=True, default='')
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
+    geohash = models.CharField(max_length=12, blank=True, default='')
+    requisition_slip = models.FileField(upload_to='requisition_slips/', null=True, blank=True)
+    trust_score = models.IntegerField(default=50)
+    trust_band = models.CharField(max_length=20, default='MEDIUM') # LOW, MEDIUM, HIGH
+    status = models.CharField(max_length=20, default='ACTIVE') # PENDING_ADMIN, ACTIVE, COVERED, FULFILLED, EXPIRED, CANCELLED, REJECTED
+    current_wave = models.PositiveIntegerField(default=1)
+    next_wave_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    escalated_to_admin = models.BooleanField(default=False)
+    client_request_id = models.UUIDField(null=True, blank=True, unique=True)
+    is_drill = models.BooleanField(default=False)
+
     def __str__(self):
-        return f"{self.blood_group} needed at {self.hospital_location}"
+        return f"{self.blood_group} ({self.component}) needed at {self.hospital_name_other or (self.hospital.name if self.hospital else self.hospital_location)}"
+
+class RequestTarget(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('ACCEPTED', 'Accepted'),
+        ('DECLINED', 'Declined'),
+        ('EXPIRED', 'Expired'),
+    )
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='targets')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='targeted_requests')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('request', 'donor')
+
+class EmergencyNotification(models.Model):
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='notifications')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='emergency_notifications')
+    wave = models.PositiveIntegerField(default=1)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    delivered = models.BooleanField(default=False)
+    opened = models.BooleanField(default=False)
+    responded = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+class RequestAcceptance(models.Model):
+    STATUS_CHOICES = (
+        ('ACCEPTED', 'Accepted'),
+        ('ON_THE_WAY', 'On the Way'),
+        ('ARRIVED', 'Arrived at Hospital'),
+        ('DONATED', 'Donation Completed'),
+        ('FAILED', 'Failed / Cancelled'),
+        ('CANCELLED', 'Cancelled by Requester'),
+    )
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='acceptances')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='acceptances')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACCEPTED')
+    is_standby = models.BooleanField(default=False)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    cancellation_reason = models.TextField(blank=True, default='')
+
+    # Live Tracking Fields
+    donor_lat = models.FloatField(null=True, blank=True)
+    donor_lng = models.FloatField(null=True, blank=True)
+    last_location_update = models.DateTimeField(null=True, blank=True)
+    eta_minutes = models.IntegerField(null=True, blank=True)
+    distance_km = models.FloatField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-started_at']
+
+class FakeReport(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Review'),
+        ('CONFIRMED', 'Confirmed Fake'),
+        ('DISMISSED', 'Dismissed / Valid'),
+    )
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='fake_reports')
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE)
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class DonationIssue(models.Model):
+    ISSUE_TYPES = (
+        ('MEDICAL_REJECTION', 'Medical Rejection (Low Hb, Vein, Vitals)'),
+        ('DONOR_NO_SHOW', 'Donor No-Show / Unreachable'),
+        ('LOGISTICS_DELAY', 'Logistics / Traffic Delay'),
+        ('OTHER', 'Other Issue'),
+    )
+    acceptance = models.ForeignKey(RequestAcceptance, on_delete=models.CASCADE, related_name='issues')
+    reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    issue_type = models.CharField(max_length=30, choices=ISSUE_TYPES, default='OTHER')
+    description = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Issue ({self.issue_type}) on Acceptance #{self.acceptance_id}"
+
+class StandbyOffer(models.Model):
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Offer'),
+        ('ACCEPTED', 'Accepted'),
+        ('DECLINED', 'Declined'),
+        ('EXPIRED', 'Offer Expired'),
+    )
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='standby_offers')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='standby_offers')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    offered_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-offered_at']
+
+    def __str__(self):
+        return f"Standby Offer to {self.donor.user.username} for Request #{self.request_id} ({self.status})"
+
+class EmailOTP(models.Model):
+    email = models.EmailField()
+    otp_hash = models.CharField(max_length=64) # HMAC-SHA256 of 6-digit code
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveIntegerField(default=0)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def is_locked(self):
+        return self.attempts >= 5
+
+    def __str__(self):
+        return f"OTP for {self.email} (Used: {self.is_used}, Locked: {self.is_locked()})"
 
 class DonationHistory(models.Model):
     donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='donation_history')

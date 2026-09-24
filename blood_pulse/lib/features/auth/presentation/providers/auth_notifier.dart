@@ -449,12 +449,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Sends 6-digit email verification OTP via backend POST /api/auth/send-verification-email/
+  /// Sends 6-digit email verification OTP via Brevo backend POST /api/auth/otp/send/
   Future<bool> sendVerificationEmail({String? email}) async {
     try {
       final targetEmail = email ?? state.user?.email ?? '';
       final response = await _apiClient.post(
-        'auth/send-verification-email/',
+        'auth/otp/send/',
         body: {'email': targetEmail},
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -469,15 +469,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Verifies 6-digit email OTP via backend POST /api/auth/verify-email-code/
+  /// Verifies 6-digit email OTP via Brevo backend POST /api/auth/otp/verify/
   Future<bool> verifyEmailCode({required String code, String? email}) async {
     try {
       final payload = {
-        'code': code.trim(),
+        'code': code.trim(), // The serializer expects 'code'
         if (email != null && email.isNotEmpty) 'email': email.trim(),
       };
       final response = await _apiClient.post(
-        'auth/verify-email-code/',
+        'auth/otp/verify/',
         body: payload,
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {

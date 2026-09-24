@@ -25,6 +25,15 @@ import '../features/donor/presentation/screens/live_dispatch_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 
+// Blood Hub v2 Screens
+import '../features/blood_hub/presentation/screens/blood_hub_search_screen.dart';
+import '../features/blood_hub/presentation/screens/direct_request_screen.dart';
+import '../features/blood_hub/presentation/screens/emergency_hub_screen.dart';
+import '../features/blood_hub/presentation/screens/journey_detail_screen.dart';
+import '../features/blood_hub/presentation/screens/standby_offer_screen.dart';
+import '../features/blood_hub/presentation/screens/national_emergency_screen.dart';
+import '../features/blood_hub/presentation/screens/journey_list_screen.dart';
+
 // Health Hub 7 Sub-Screens
 import '../features/health_hub/presentation/screens/ai_report_analysis_screen.dart';
 import '../features/health_hub/presentation/screens/health_calculators_screen.dart';
@@ -72,6 +81,8 @@ class _StandaloneProfileScreen extends StatelessWidget {
   }
 }
 
+
+
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
@@ -118,6 +129,213 @@ final appRouter = GoRouter(
       path: '/feed',
       builder: (context, state) => const MainShellScreen(),
     ),
+
+    // ── Blood Hub v2 Routes ───────────────────────────────────────────────────
+    // /blood-hub — redirects to /dashboard (MainShellScreen handles tab via shellTabProvider)
+    GoRoute(
+      path: '/blood-hub',
+      redirect: (context, state) => '/dashboard',
+    ),
+    // /blood-hub/search — Donor Search Results + fuzzed OSM map
+    GoRoute(
+      path: '/blood-hub/search',
+      builder: (context, state) => Scaffold(
+        backgroundColor: const Color(0xFFFFF8F7),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded,
+                color: Color(0xFF2B2B2B)),
+            onPressed: () => context.canPop()
+                ? context.pop()
+                : context.go('/blood-hub'),
+          ),
+          title: const Text(
+            'Search Donors',
+            style: TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2B2B2B),
+            ),
+          ),
+          centerTitle: false,
+        ),
+        body: const BloodHubSearchScreen(),
+      ),
+    ),
+    // /blood-hub/request/direct — Priority Requisition form
+    GoRoute(
+      path: '/blood-hub/request/direct',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return Scaffold(
+          backgroundColor: const Color(0xFFFFF8F7),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: Color(0xFF2B2B2B)),
+              onPressed: () => context.canPop()
+                  ? context.pop()
+                  : context.go('/blood-hub'),
+            ),
+            title: const Text(
+              'Blood Request',
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2B2B2B),
+              ),
+            ),
+            centerTitle: false,
+          ),
+          body: DirectRequestScreen(
+            prefillBloodGroup: extra?['prefill_blood_group'] as String?,
+            prefillComponent: extra?['prefill_component'] as String?,
+            prefillDistrict: extra?['prefill_district'] as String?,
+            mode: extra?['mode'] as String?,
+          ),
+        );
+      },
+    ),
+    // /emergency — Emergency Hub (2-card: national + personal)
+    GoRoute(
+      path: '/emergency',
+      builder: (context, state) => Scaffold(
+        backgroundColor: const Color(0xFFFFF8F7),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded,
+                color: Color(0xFF2B2B2B)),
+            onPressed: () => context.canPop()
+                ? context.pop()
+                : context.go('/blood-hub'),
+          ),
+          title: const Text(
+            'Emergency Hub',
+            style: TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2B2B2B),
+            ),
+          ),
+          centerTitle: false,
+        ),
+        body: const EmergencyHubScreen(),
+      ),
+    ),
+    // /emergency/national — Disaster Overview (Prompt 4)
+    GoRoute(
+      path: '/emergency/national',
+      builder: (context, state) => const NationalEmergencyScreen(),
+    ),
+
+    // /emergency/personal — Personal Emergency Request form (Prompt 3B scope)
+    GoRoute(
+      path: '/emergency/personal',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return Scaffold(
+          backgroundColor: const Color(0xFFFFF8F7),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: Color(0xFF2B2B2B)),
+              onPressed: () => context.canPop()
+                  ? context.pop()
+                  : context.go('/emergency'),
+            ),
+            title: const Text(
+              'Personal Emergency',
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2B2B2B),
+              ),
+            ),
+          ),
+          body: DirectRequestScreen(
+            prefillBloodGroup: extra?['prefill_blood_group'] as String?,
+            prefillComponent: extra?['prefill_component'] as String?,
+            prefillDistrict: extra?['prefill_district'] as String?,
+            mode: extra?['mode'] as String?,
+          ),
+        );
+      },
+    ),
+    // /journeys — Active Requests list (Prompt 5)
+    GoRoute(
+      path: '/journeys',
+      builder: (context, state) => const JourneyListScreen(),
+    ),
+    // /journeys/:id — Journey Detail (Prompt 4) — role-aware two-sided tracking
+    GoRoute(
+      path: '/journeys/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'] ?? '0';
+        final id = int.tryParse(idStr) ?? 0;
+        return JourneyDetailScreen(journeyId: id);
+      },
+    ),
+    // /standby/:offerId — Standby Donor Alert (Prompt 4)
+    GoRoute(
+      path: '/standby/:offerId',
+      builder: (context, state) {
+        final idStr = state.pathParameters['offerId'] ?? '0';
+        final offerId = int.tryParse(idStr) ?? 0;
+        return StandbyOfferScreen(offerId: offerId);
+      },
+    ),
+    // /identity/verify — Email OTP verification (Prompt 5 scope; bridges to existing)
+    GoRoute(
+      path: '/identity/verify',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return Scaffold(
+          backgroundColor: const Color(0xFFFFF8F7),
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded,
+                  color: Color(0xFF2B2B2B)),
+              onPressed: () =>
+                  context.canPop() ? context.pop() : context.go('/blood-hub'),
+            ),
+            title: const Text(
+              'Identity Verification',
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2B2B2B),
+              ),
+            ),
+          ),
+          body: IdentityVerificationScreen(
+            patientName: extra?['patientName'] as String?,
+            bloodGroup: extra?['bloodGroup'] as String?,
+            urgencyLevel: extra?['urgencyLevel'] as String?,
+            hospitalLocation: extra?['hospitalLocation'] as String?,
+            contactNumber: extra?['contactNumber'] as String?,
+            returnRoute:
+                extra?['returnRoute'] as String? ?? '/blood-hub',
+          ),
+        );
+      },
+    ),
+
+
 
     // ── Notifications ─────────────────────────────────────────────────────────
     GoRoute(

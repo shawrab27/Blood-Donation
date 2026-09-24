@@ -67,6 +67,7 @@ dependencies:
   firebase_auth: ^6.7.0
   share_plus: ^13.3.0
   video_player: ^2.8.6
+  connectivity_plus: ^6.1.0
 
 dev_dependencies:
   flutter_test:

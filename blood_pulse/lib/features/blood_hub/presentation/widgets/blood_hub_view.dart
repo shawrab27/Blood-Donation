@@ -197,7 +197,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
             ],
           ),
           buttonText: isBangla ? 'এখনই খুঁজুন ➔' : 'Find Now ➔',
-          onTap: () => setState(() => _activeMode = 1),
+          onTap: () => context.push('/blood-hub/search'),
         ),
 
         const SizedBox(height: 16),
@@ -223,7 +223,37 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
             ),
           ),
           buttonText: isBangla ? 'অনুরোধ পোস্ট করুন ➔' : 'Post Request ➔',
-          onTap: () => setState(() => _activeMode = 2),
+          onTap: () => context.push('/blood-hub/request/direct'),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ── Card 3: Emergency Blood ──
+        _buildActionOptionCard(
+          icon: Icons.crisis_alert_rounded,
+          iconBgColor: const Color(0xFFFFF0F0),
+          iconColor: const Color(0xFFC30121),
+          title: isBangla ? 'জরুরি রক্ত' : 'Emergency Blood',
+          subtitle: isBangla
+              ? 'জাতীয় দুর্যোগ বা ব্যক্তিগত জরুরি অবস্থায় তাৎক্ষণিক ওয়েভ অ্যালার্ট সক্রিয় করুন।'
+              : 'Activate wave alerts for national disasters or personal emergencies — connects you fast.',
+          badgeWidget: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE9EB),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'WAVE ALERTS • LIVE TRACKING',
+              style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFC30121)),
+            ),
+          ),
+          buttonText: isBangla ? 'এখনই সাহায্য নিন ➔' : 'Get Help Now ➔',
+          onTap: () => context.push('/emergency'),
         ),
 
         const SizedBox(height: 20),

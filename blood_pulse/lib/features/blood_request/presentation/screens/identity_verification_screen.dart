@@ -47,7 +47,7 @@ class _IdentityVerificationScreenState
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _pinFocusNodes = List.generate(6, (_) => FocusNode());
 
-  int _countdown = 45;
+  int _countdown = 60; // Increased to 60s per RECON spec
   Timer? _timer;
   bool _isSending = false;
   bool _isVerifying = false;
@@ -86,7 +86,7 @@ class _IdentityVerificationScreenState
 
   void _startCountdown() {
     _timer?.cancel();
-    setState(() => _countdown = 45);
+    setState(() => _countdown = 60);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       if (_countdown > 0) {
@@ -107,6 +107,11 @@ class _IdentityVerificationScreenState
           _pinFocusNodes[i + 1].requestFocus();
         }
         setState(() {});
+        
+        // Auto-verify when 6th digit is entered
+        if (i == 5) {
+          _verifyAndSubmit();
+        }
         break;
       }
     }

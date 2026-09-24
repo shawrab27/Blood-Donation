@@ -64,5 +64,39 @@ service cloud.firestore {
     match /test_verification/{docId} {
       allow read, write: if true;
     }
+
+    // ── 6. LIVE JOURNEY TRACKING (/tracking/{acceptanceId}) ───────────────────
+    match /tracking/{acceptanceId} {
+      // Only authenticated participants (donor or requester) can read the tracking doc
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.donorUid || 
+        request.auth.uid == resource.data.requesterUid || 
+        isAdmin()
+      );
+
+      // Document is initialized by backend server via Admin SDK, or created by participants if authorized
+      allow create: if isAuthenticated() && (
+        request.auth.uid == request.resource.data.donorUid || 
+        request.auth.uid == request.resource.data.requesterUid || 
+        isAdmin()
+      );
+
+      // Donor can update ONLY donorLocation and cannot alter status, participants, or destination
+      // Requester can update ONLY requesterLocation
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == resource.data.donorUid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['donorLocation', 'etaMinutes', 'distanceKm'])) ||
+        (request.auth.uid == resource.data.requesterUid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['requesterLocation'])) ||
+        isAdmin()
+      );
+
+      // Only Admin or participants can delete upon journey termination
+      allow delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.donorUid || 
+        request.auth.uid == resource.data.requesterUid || 
+        isAdmin()
+      );
+    }
   }
 }
