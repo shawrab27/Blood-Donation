@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../widgets/deferral_notice_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -462,6 +463,8 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Filter header
+            const DeferralNoticeCard(),
             // ── Filter header ──────────────────────────────────────────────
             Container(
               color: _kSurface,

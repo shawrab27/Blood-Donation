@@ -732,6 +732,36 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
   }
 
   /// POST `/api/journeys/<id>/status/`  — update journey status
+  Future<Map<String, dynamic>> getActiveDeferral() async {
+    final response = await _api.get('deferrals/active/');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return {'has_deferral': false};
+  }
+
+  Future<void> appealDeferral(int id) async {
+    final response = await _api.post('deferrals/$id/appeal/');
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? data['detail'] ?? 'Failed to appeal deferral');
+    }
+  }
+
+  Future<void> updateJourneyLocation(int id, double lat, double lng) async {
+    final response = await _api.post(
+      'journeys/$id/location/',
+      body: {
+        'latitude': lat.toString(),
+        'longitude': lng.toString(),
+      },
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['detail'] ?? 'Failed to update location');
+    }
+  }
+
   Future<void> updateJourneyStatus(int id, String status) async {
     final response = await _api.post(
       'journeys/$id/status/',

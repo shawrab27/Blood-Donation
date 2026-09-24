@@ -1007,3 +1007,62 @@ def journey_list_view(request):
         'next_offset': offset + limit if offset + limit < total else None,
         'results': items,
     }, status=status.HTTP_200_OK)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deferral_appeal_view(request, pk):
+    """
+    Allows a donor to appeal a deferral record.
+    POST /api/deferrals/<pk>/appeal/
+    """
+    from api.models import DeferralRecord
+    
+    try:
+        donor = request.user.donorprofile
+        deferral = DeferralRecord.objects.get(pk=pk, donor=donor)
+    except Exception:
+        return Response({'error': 'Deferral record not found.'}, status=404)
+        
+    if deferral.appeal_status != 'NONE':
+        return Response({'error': 'Appeal already submitted or processed.'}, status=400)
+        
+    deferral.appeal_status = 'PENDING'
+    deferral.save(update_fields=['appeal_status'])
+    
+    return Response({'message': 'Appeal submitted successfully.', 'status': 'PENDING'})
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def active_deferral_view(request):
+    """
+    GET /api/deferrals/active/
+    Returns the currently active deferral (if any) for the logged-in donor.
+    """
+    from api.models import DeferralRecord
+    from django.utils import timezone
+    
+    try:
+        donor = request.user.donorprofile
+        now = timezone.now()
+        
+        # Check explicit deferral_until date
+        if donor.deferral_until and donor.deferral_until > now:
+            active = DeferralRecord.objects.filter(donor=donor, expires_at__gt=now).order_by('-created_at').first()
+            if active:
+                return Response({
+                    'has_deferral': True,
+                    'id': active.id,
+                    'reason': active.reason,
+                    'reason_code': active.reason_code,
+                    'expires_at': active.expires_at.isoformat() if active.expires_at else None,
+                    'appeal_status': active.appeal_status,
+                })
+        
+        return Response({'has_deferral': False})
+        
+    except Exception:
+        return Response({'has_deferral': False})

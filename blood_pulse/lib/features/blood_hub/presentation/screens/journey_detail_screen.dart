@@ -8,6 +8,9 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
+import '../widgets/journey_actions.dart';
+import '../widgets/journey_tracker.dart';
+
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +88,8 @@ class JourneyDetailScreen extends ConsumerStatefulWidget {
 
 class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   Timer? _pollTimer;
+  bool _isTracking = false;
+
 
   @override
   void initState() {
@@ -200,10 +205,24 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
             onRetry: () =>
                 ref.invalidate(journeyDetailProvider(widget.journeyId)),
           ),
-          data: (journey) => _JourneyBody(
-            journey: journey,
-            onReport: () => _showIssueSheet(journey),
-            onCancel: () => _cancelJourney(journey.id),
+          data: (journey) => Column(
+            children: [
+              if (journey.isDonor && journey.status != 'COMPLETED' && journey.status != 'CANCELLED' && journey.status != 'FAILED')
+                JourneyLiveTracker(
+                  journeyId: widget.journeyId,
+                  isTracking: _isTracking || journey.status == 'ON_THE_WAY',
+                  onStopTracking: () {
+                    setState(() => _isTracking = false);
+                  },
+                ),
+              Expanded(
+                child: _JourneyBody(
+                  journey: journey,
+                  onReport: () => _showIssueSheet(journey),
+                  onCancel: () => _cancelJourney(journey.id),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -215,7 +234,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
 // MAIN BODY
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _JourneyBody extends StatelessWidget {
+class _JourneyBody extends ConsumerWidget {
   const _JourneyBody({
     required this.journey,
     required this.onReport,
@@ -227,7 +246,7 @@ class _JourneyBody extends StatelessWidget {
   final VoidCallback onCancel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ResponsiveCenterWrapper(
       maxWidth: 560,
       child: CustomScrollView(
@@ -239,9 +258,9 @@ class _JourneyBody extends StatelessWidget {
           SliverToBoxAdapter(child: _ProgressStepper(journey: journey)),
           // Role-specific info cards
           if (journey.isRequester)
-            SliverToBoxAdapter(child: _RequesterInfoCard(journey: journey))
+            SliverToBoxAdapter(child: _RequesterInfoCard(journey: journey, onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id))))
           else if (journey.isDonor)
-            SliverToBoxAdapter(child: _DonorInfoCard(journey: journey))
+            SliverToBoxAdapter(child: _DonorInfoCard(journey: journey, onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id))))
           else
             SliverToBoxAdapter(child: _GenericInfoCard(journey: journey)),
           SliverToBoxAdapter(
@@ -586,13 +605,16 @@ class _ProgressStepper extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Requester sees: donor details + request summary
-class _RequesterInfoCard extends StatelessWidget {
-  const _RequesterInfoCard({required this.journey});
+class _RequesterInfoCard extends ConsumerWidget {
+  const _RequesterInfoCard({required this.journey, required this.onRefresh});
   final JourneyDetail journey;
+  final VoidCallback onRefresh;
 
   @override
-  Widget build(BuildContext context) {
-    return _InfoCard(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        _InfoCard(
       title: 'Your Donor',
       titleIcon: Icons.volunteer_activism_rounded,
       titleColor: _kTertiary,
@@ -612,18 +634,31 @@ class _RequesterInfoCard extends StatelessWidget {
         _InfoRow('Units', '${journey.unitsNeeded}'),
         _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
       ],
+    ),
+    JourneyDonorActions(
+      journeyId: journey.id,
+      status: journey.status,
+      onRefresh: onRefresh,
+      onCancel: () {
+          // TODO cancel
+      },
+    ),
+    ],
     );
   }
 }
 
 /// Donor sees: patient + hospital details + requester contact
-class _DonorInfoCard extends StatelessWidget {
-  const _DonorInfoCard({required this.journey});
+class _DonorInfoCard extends ConsumerWidget {
+  const _DonorInfoCard({required this.journey, required this.onRefresh});
   final JourneyDetail journey;
+  final VoidCallback onRefresh;
 
   @override
-  Widget build(BuildContext context) {
-    return _InfoCard(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        _InfoCard(
       title: 'Your Mission',
       titleIcon: Icons.bloodtype_rounded,
       titleColor: _kPrimary,
@@ -642,6 +677,16 @@ class _DonorInfoCard extends StatelessWidget {
         _InfoRow('Units', '${journey.unitsNeeded}'),
         _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
       ],
+    ),
+    JourneyDonorActions(
+      journeyId: journey.id,
+      status: journey.status,
+      onRefresh: onRefresh,
+      onCancel: () {
+          // TODO cancel
+      },
+    ),
+    ],
     );
   }
 }
