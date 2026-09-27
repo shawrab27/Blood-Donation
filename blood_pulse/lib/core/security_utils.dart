@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 class SecurityUtils {
   static bool validateBangladeshPhone(String phone) {
     final RegExp regex = RegExp(r'^(?:\+8801)[3-9]\d{8}$');

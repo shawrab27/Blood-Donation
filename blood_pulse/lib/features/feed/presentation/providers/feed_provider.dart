@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -236,7 +239,7 @@ class TopDonorItem {
 }
 
 class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
-  FeedNotifier() : super(_initialPosts);
+  FeedNotifier() : super([]) { fetchPosts(); }
 
   static final List<FeedPostItem> _initialPosts = [
     // Post 1: City Central Blood Bank / City General Hospital Urgent Call
@@ -380,7 +383,8 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
     try {
       final response = await _apiClient.get('posts/');
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final List<dynamic> list = jsonDecode(response.body) as List<dynamic>;
+        final Map<String, dynamic> decoded = jsonDecode(response.body);
+        final List<dynamic> list = decoded.containsKey('results') ? decoded['results'] : decoded;
         if (list.isNotEmpty) {
           final fetched = list.map((item) {
             final commentsList = (item['comments'] as List<dynamic>?)?.map((c) => FeedComment(

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -75,6 +78,12 @@ class _DonorMapScreenState extends State<DonorMapScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
+  // Search
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
@@ -91,7 +100,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
     _hospitalLocation = LatLng(
       widget.destinationLat ?? 23.7259,
       widget.destinationLng ?? 90.3976,
-    ); // Dhaka Medical College Hospital area
+    ); // General Hospital area
     _donorTrackingLocation = const LatLng(23.7808, 90.4192); // Gulshan / Badda area
 
     _setupRoutePoints();
@@ -174,8 +183,13 @@ class _DonorMapScreenState extends State<DonorMapScreen>
     }
   }
 
+  String? _errorMessage;
+
   Future<void> _loadDonors() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     final position = await _determinePosition();
     if (position != null) {
@@ -186,71 +200,75 @@ class _DonorMapScreenState extends State<DonorMapScreen>
     }
 
     try {
-      final response = await _apiClient.get(
-        'donors-nearby/?lat=${_center.latitude}&lng=${_center.longitude}',
+      final fetchedDonors = await LocationMappingService.instance.fetchNearbyDonors(
+        center: _center,
+        radiusKm: 6.0,
       );
+      if (mounted) {
+        setState(() {
+          _nearbyDonors = fetchedDonors;
+          _isLoading = false;
+        });
+        _mapController.move(_center, 13.0);
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.message;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'An error occurred while loading donors.';
+        });
+      }
+    }
+  }
 
+  void _onSearchChanged(String query) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _performSearch(query);
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty) {
+      setState(() => _searchResults = []);
+      return;
+    }
+    setState(() => _isSearching = true);
+    try {
+      final response = await _apiClient.get('osm/geocode/?q=$query');
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        final fetchedDonors = <DonorPin>[];
-
-        for (final item in data) {
-          if (item is Map<String, dynamic>) {
-            final lat = (item['latitude'] as num?)?.toDouble();
-            final lng = (item['longitude'] as num?)?.toDouble();
-            if (lat != null && lng != null) {
-              final rawLocation = LatLng(lat, lng);
-              final fuzzedLocation =
-                  LocationMappingService.instance.fuzzLocation(rawLocation);
-              final firstName = item['first_name']?.toString() ?? '';
-              final lastName = item['last_name']?.toString() ?? '';
-              final fullName = ('$firstName $lastName').trim();
-              fetchedDonors.add(
-                DonorPin(
-                  id: item['id']?.toString() ??
-                      'donor_${fetchedDonors.length}',
-                  location: fuzzedLocation,
-                  bloodGroup: item['blood_group'] ?? 'O+',
-                  isVerified: item['is_verified'] ?? false,
-                  isAvailable: item['is_available'] ?? true,
-                  name: fullName.isNotEmpty
-                      ? fullName
-                      : (item['username']?.toString() ?? 'Community Donor'),
-                  phone: item['phone_number']?.toString(),
-                ),
-              );
-            }
-          }
-        }
-
         if (mounted) {
           setState(() {
-            _nearbyDonors = fetchedDonors.isNotEmpty
-                ? fetchedDonors
-                : LocationMappingService.instance
-                    .fetchNearbyDonors(_center, radiusKm: 6.0);
-            _isLoading = false;
-          });
-          _mapController.move(_center, 13.0);
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _nearbyDonors = LocationMappingService.instance
-                .fetchNearbyDonors(_center, radiusKm: 6.0);
-            _isLoading = false;
+            _searchResults = data.cast<Map<String, dynamic>>();
           });
         }
       }
     } catch (_) {
+      // Ignore or show small toast
+    } finally {
       if (mounted) {
-        setState(() {
-          _nearbyDonors = LocationMappingService.instance
-              .fetchNearbyDonors(_center, radiusKm: 6.0);
-          _isLoading = false;
-        });
+        setState(() => _isSearching = false);
       }
     }
+  }
+
+  void _jumpToLocation(double lat, double lng) {
+    setState(() {
+      _center = LatLng(lat, lng);
+      _searchResults = [];
+      _searchController.clear();
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
+    _mapController.move(_center, 14.0);
+    _loadDonors();
   }
 
   double _calculateDistanceKm(LatLng p1, LatLng p2) {
@@ -406,12 +424,63 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
 
+            if (_errorMessage != null)
+              Positioned(
+                top: 70,
+                left: 16,
+                right: 16,
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withAlpha(20),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppColors.secondary,
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _loadDonors,
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
             // Top Floating Mode Selector Tabs
             Positioned(
               top: 14,
               left: 16,
               right: 16,
-              child: _buildModeSelector(),
+              child: Column(
+                children: [
+                  _buildModeSelector(),
+                  const SizedBox(height: 12),
+                  if (_mode == MapTrackingMode.radar) _buildSearchBar(),
+                ],
+              ),
             ),
 
             // Bottom Tracking Cards (Donor / Requester / Radar HUD)
@@ -526,6 +595,89 @@ class _DonorMapScreenState extends State<DonorMapScreen>
           ),
         ),
       ),
+    );
+  }
+
+  // ── Search Bar ────────────────────────────────────────────────────────────
+  Widget _buildSearchBar() {
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(50),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+            decoration: InputDecoration(
+              hintText: 'Search areas or places...',
+              hintStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.neutral),
+              prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+              suffixIcon: _isSearching
+                  ? const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      ),
+                    )
+                  : _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, color: AppColors.neutral),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchResults = []);
+                          },
+                        )
+                      : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            ),
+          ),
+        ),
+        if (_searchResults.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(20),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _searchResults.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final result = _searchResults[index];
+                return ListTile(
+                  title: Text(
+                    result['display_name'] ?? '',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onTap: () => _jumpToLocation(result['lat'], result['lng']),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 
@@ -650,7 +802,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
 
   // ── 1. Donor View Bottom Panel (En Route) ─────────────────────────────────
   Widget _buildDonorEnRoutePanel(double distanceKm, int etaMinutes) {
-    final hospital = widget.hospitalName ?? 'Dhaka Medical College Hospital';
+    final hospital = widget.hospitalName ?? 'General Hospital';
     final patient = widget.patientName ?? 'Emergency Patient';
     final bg = widget.bloodGroup ?? 'O+';
 
@@ -1135,7 +1287,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
           ),
         ),
         content: Text(
-          'Have you arrived at ${widget.hospitalName ?? "Dhaka Medical College Hospital"}? We will notify the patient and hospital team.',
+          'Have you arrived at ${widget.hospitalName ?? "General Hospital"}? We will notify the patient and hospital team.',
           style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
         ),
         actions: [

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// Health Log Entity representing vital health metrics, BMI, and donation eligibility logs.
 class HealthLogEntity {
   const HealthLogEntity({

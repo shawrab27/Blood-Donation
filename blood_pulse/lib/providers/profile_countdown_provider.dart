@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 

@@ -1,0 +1,548 @@
+<!-- Donor Management & Governance — Full Erase & Export Actions --><!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="web_dashboard" name="shell-type"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#C30121",
+            "primary-container": "#C30121",
+            "primary-hover": "#A1001B",
+            "primary-fixed": "#FFDAD7",
+            "primary-fixed-dim": "#FFB3AE",
+            "on-primary": "#FFFFFF",
+            "on-primary-container": "#FFD1CD",
+            "on-primary-fixed": "#410005",
+            "on-primary-fixed-variant": "#930016",
+            secondary: "#2B2B2B",
+            "secondary-container": "#3F3F3F",
+            "on-secondary": "#FFFFFF",
+            "on-secondary-container": "#D1D5DB",
+            tertiary: "#0D68AA",
+            "tertiary-container": "#0D68AA",
+            "tertiary-fixed": "#D1E4FF",
+            "on-tertiary": "#FFFFFF",
+            background: "#FDF3F3",
+            surface: "#FDF3F3",
+            "surface-dim": "#F4E5E5",
+            "surface-bright": "#FFFFFF",
+            "surface-container-lowest": "#FFFFFF",
+            "surface-container-low": "#FAF0F0",
+            "surface-container": "#F5E9E9",
+            "surface-container-high": "#EFE1E1",
+            "surface-container-highest": "#E6D7D7",
+            "on-surface": "#2B2B2B",
+            "on-surface-variant": "#594A4B",
+            outline: "#857373",
+            "outline-variant": "#E4CECE",
+            error: "#BA1A1A",
+            "error-container": "#FFDAD6",
+            "on-error": "#FFFFFF",
+            "on-error-container": "#93000A",
+            "sidebar-bg": "#2B2B2B"
+          },
+          borderRadius: {
+            DEFAULT: "0.5rem",
+            lg: "0.75rem",
+            xl: "1rem",
+            full: "9999px"
+          },
+          fontFamily: {
+            headline: ["Georgia", "serif"],
+            body: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#FDF3F3] font-body text-[#2B2B2B] antialiased">
+<aside class="fixed left-0 top-0 h-full w-72 bg-[#2B2B2B] z-50 flex flex-col shadow-2xl border-r border-[#383838]">
+<div class="h-16 px-6 flex items-center gap-3 bg-[#242424] border-b border-[#383838]">
+<div class="w-9 h-9 rounded-lg bg-[#C30121] flex items-center justify-center text-white shadow-md shrink-0"><span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">water_drop</span></div>
+<div class="flex flex-col"><span class="font-headline text-lg font-bold text-white tracking-tight leading-none">BloodPulse</span><span class="text-[10px] text-[#A3A3A3] font-semibold tracking-widest uppercase mt-0.5">Command Center</span></div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+<nav class="space-y-1">
+<div class="px-3 pb-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">Operations</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="operations-dashboard" href="operations-dashboard.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">grid_view</span><span class="text-sm font-medium">Dashboard</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="wave-engine-control" href="wave-engine-control.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">water_drop</span><span class="text-sm font-medium">Wave Engine Control</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="geographic-map" href="geographic-map.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">map</span><span class="text-sm font-medium">Geographic Map</span></a>
+
+</nav>
+<nav class="space-y-1">
+<div class="px-3 pb-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">Governance &amp; AI</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded bg-[#C30121] text-white font-semibold shadow-sm transition-all" data-path="donor-directory" href="donor-directory.html"><span class="material-symbols-outlined text-[20px] text-white">how_to_reg</span><span class="text-sm">Donor Directory</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="trust-and-fraud-engine" href="trust-fraud-engine.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">verified_user</span><span class="text-sm font-medium">Trust &amp; Fraud Engine</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="pulseai-console" href="pulseai-console.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">psychology</span><span class="text-sm font-medium">PulseAI Console</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="audit-and-compliance" href="audit-and-compliance.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">policy</span><span class="text-sm font-medium">Audit &amp; Compliance</span></a>
+</nav>
+<nav class="space-y-1">
+<div class="px-3 pb-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">Infrastructure</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="system-health-and-ops" href="system-health-and-ops.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">monitor_heart</span><span class="text-sm font-medium">System Health &amp; Ops</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="notifications" href="notifications.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">notifications_active</span><span class="text-sm font-medium">Notifications</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="reports-and-analytics" href="reports-and-analytics.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">query_stats</span><span class="text-sm font-medium">Reports &amp; Analytics</span></a>
+</nav>
+<nav class="space-y-1">
+<div class="px-3 pb-1.5 text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">Administration</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="role-and-permission-editor" href="role-permission-editor.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">admin_panel_settings</span><span class="text-sm font-medium">Role &amp; Permissions</span></a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-[#E4E2E1] hover:bg-[#383838] hover:text-white transition-colors group" data-path="staff-directory" href="staff-directory.html"><span class="material-symbols-outlined text-[20px] text-[#9CA3AF] group-hover:text-white transition-colors">badge</span><span class="text-sm font-medium">Staff Directory</span></a>
+</nav>
+</div>
+<div class="p-3.5 bg-[#202020] m-3 rounded-lg border border-[#3A3A3A] shadow-inner">
+<div class="flex items-center justify-between"><span class="text-[11px] font-semibold text-[#A3A3A3] uppercase tracking-wider">Node Region</span><span class="text-[11px] font-bold text-[#70B8EB] uppercase">US-EAST-01</span></div>
+<div class="mt-1.5 flex items-center justify-between"><span class="text-xs text-white font-medium">Clinical Telemetry</span><span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#4ADE80]"><span class="w-1.5 h-1.5 rounded-full bg-[#4ADE80] animate-pulse"></span>SYNCED</span></div>
+</div>
+</aside>
+<div class="pl-72">
+<header class="fixed top-0 left-72 right-0 h-16 bg-white border-b border-[#E5E7EB] z-40 shadow-sm flex items-center justify-between px-8">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F3F4F6] text-[#2B2B2B] border border-[#E5E7EB] text-xs font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span>All Systems Operational</span></div>
+<div class="relative flex-1"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-[18px]">search</span><input class="w-full pl-9 pr-4 py-1.5 rounded-full bg-[#F9FAFB] border border-[#E5E7EB] text-xs text-[#2B2B2B] placeholder:text-[#9CA3AF] outline-none focus:bg-white focus:border-[#C30121] focus:ring-1 focus:ring-[#C30121] transition-all" placeholder="Search telemetry, donor IDs, incidents, wards..." type="text"/></div>
+</div>
+<div class="flex items-center gap-4">
+<button class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#C30121] text-white text-xs font-semibold hover:bg-[#A1001B] transition-colors shadow-sm" type="button"><span class="material-symbols-outlined text-[17px]">broadcast_on_personal</span><span>Emergency Broadcast</span></button>
+<div class="h-6 w-px bg-[#E5E7EB]"></div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F9FAFB] border border-[#E5E7EB]"><span class="text-xs text-[#2B2B2B] font-bold">Super Admin</span><span class="text-xs text-[#6B7280]">/ Operations Chief</span></div>
+<button class="relative p-1.5 rounded-full text-[#6B7280] hover:text-[#2B2B2B] hover:bg-[#F3F4F6] transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#C30121]"></span></button>
+<div class="w-8 h-8 rounded-full bg-[#C30121] flex items-center justify-center text-white shadow-sm font-semibold text-xs">SA</div>
+</div>
+</header>
+<main class="w-full pt-20 pb-16 bg-[#FDF3F3] px-8 min-h-screen">
+<div class="flex flex-col w-full max-w-7xl mx-auto">
+<div class="flex flex-col gap-2 pb-6 pt-2">
+<div class="flex flex-wrap items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 text-xs text-[#6B7280] uppercase tracking-wider font-semibold"><span class="material-symbols-outlined text-[16px] text-[#C30121]">admin_panel_settings</span><span>Governance &amp; Medical Compliance Node</span><span class="text-[#D1D5DB]">•</span><span class="text-[#0D68AA] font-bold">GDPR Art. 17 / HIPAA Compliant Pipeline</span></div>
+<h1 class="font-headline text-3xl text-[#2B2B2B] font-bold mt-1 tracking-tight">Donor &amp; User Governance — Directory &amp; Clinical Lifecycle</h1>
+<p class="text-sm text-[#594A4B] max-w-4xl mt-1 leading-relaxed">Manage registered volunteer donors, verify clinical serology credentials, inspect telemetry, export full GDPR audit logs, and execute targeted anonymization protocols.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#2B2B2B] border border-[#E5E7EB] shadow-sm hover:bg-[#FAF0F0] transition-colors text-xs font-semibold" type="button"><span class="material-symbols-outlined text-[17px] text-[#0D68AA]">download</span><span>Export Full Registry (CSV)</span></button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-[#2B2B2B] border border-[#E5E7EB] shadow-sm hover:bg-[#FAF0F0] transition-colors text-xs font-semibold" type="button"><span class="material-symbols-outlined text-[17px] text-[#594A4B]">sync</span><span>Sync Clinical Nodes</span></button>
+<button class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#C30121] text-white shadow-sm hover:bg-[#A1001B] transition-colors text-xs font-semibold" type="button"><span class="material-symbols-outlined text-[17px]">person_add</span><span>Onboard Clinical Donor</span></button>
+</div>
+</div>
+</div>
+<!-- KPI Overview Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+<div class="p-5 rounded-lg bg-white border border-[#EBDCDC] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-[#C30121]/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between"><div><span class="text-xs text-[#6B7280] uppercase tracking-wider font-semibold block">Total Donors Registered</span><span class="font-headline text-3xl text-[#2B2B2B] font-bold mt-1 block">48,290</span></div><div class="w-10 h-10 rounded-full bg-[#FAF0F0] flex items-center justify-center text-[#C30121]"><span class="material-symbols-outlined text-[22px]">group</span></div></div>
+<div class="mt-4 pt-2 border-t border-[#F5E9E9] flex items-center justify-between text-xs"><span class="inline-flex items-center gap-1 font-semibold text-[#0D68AA]"><span class="material-symbols-outlined text-[15px]">trending_up</span>+124 today</span><span class="text-[#6B7280]">99.2% identity verified</span></div>
+</div>
+<div class="p-5 rounded-lg bg-white border border-[#EBDCDC] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-[#0D68AA]/5 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between"><div><span class="text-xs text-[#6B7280] uppercase tracking-wider font-semibold block">Active Ready-for-Dispatch</span><span class="font-headline text-3xl text-[#2B2B2B] font-bold mt-1 block">34,810</span></div><div class="w-10 h-10 rounded-full bg-[#F0F7FD] flex items-center justify-center text-[#0D68AA]"><span class="material-symbols-outlined text-[22px]">local_shipping</span></div></div>
+<div class="mt-4 pt-2 border-t border-[#F5E9E9] flex items-center justify-between text-xs"><div class="flex items-center gap-1.5 font-semibold text-[#2B2B2B]"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>72% ready pool</div><span class="text-[#6B7280]">&lt; 14m avg dispatch</span></div>
+</div>
+<div class="p-5 rounded-lg bg-white border border-[#EBDCDC] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-[#C30121]/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between"><div><span class="text-xs text-[#6B7280] uppercase tracking-wider font-semibold block">Verified O- Roster</span><span class="font-headline text-3xl text-[#C30121] font-bold mt-1 block">2,418</span></div><div class="w-10 h-10 rounded-full bg-[#FFDAD7] flex items-center justify-center text-[#C30121]"><span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">water_drop</span></div></div>
+<div class="mt-4 pt-2 border-t border-[#F5E9E9] flex items-center justify-between text-xs"><span class="inline-flex items-center gap-1 text-[#930016] bg-[#FFDAD7] px-2 py-0.5 rounded-full font-bold text-[11px]">Universal Safety Pool</span><span class="text-[#6B7280]">318 in high alert</span></div>
+</div>
+<div class="p-5 rounded-lg bg-white border border-[#EBDCDC] shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-red-500/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between"><div><span class="text-xs text-[#6B7280] uppercase tracking-wider font-semibold block">Quarantined / High-Risk</span><span class="font-headline text-3xl text-[#BA1A1A] font-bold mt-1 block">14</span></div><div class="w-10 h-10 rounded-full bg-[#FFDAD6] flex items-center justify-center text-[#BA1A1A]"><span class="material-symbols-outlined text-[22px]">flip_camera_ios</span></div></div>
+<div class="mt-4 pt-2 border-t border-[#F5E9E9] flex items-center justify-between text-xs"><span class="inline-flex items-center gap-1 text-[#93000A] font-semibold">Awaiting manual triage</span><button class="font-bold text-[#C30121] hover:underline" type="button">View queue →</button></div>
+</div>
+</div>
+<!-- Search & Filter Controls -->
+<div class="p-4 rounded-lg bg-white border border-[#EBDCDC] shadow-sm mb-5 flex flex-col lg:flex-row items-center justify-between gap-4">
+<div class="relative flex-1 w-full"><span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#857373] text-[20px]">search</span><input class="w-full pl-10 pr-4 py-2 rounded-full bg-[#FAF0F0] border border-[#EBDCDC] text-xs text-[#2B2B2B] placeholder:text-[#857373] outline-none focus:bg-white focus:border-[#C30121] focus:ring-1 focus:ring-[#C30121] transition-all" placeholder="Search donor by name, UID, phone, blood group, NID hash..." type="text"/></div>
+<div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+<div class="relative inline-flex items-center"><select class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-[#FAF0F0] border border-[#EBDCDC] text-xs font-medium text-[#2B2B2B] outline-none cursor-pointer hover:bg-[#F5E9E9] transition-colors shadow-sm"><option>Blood Group: All (8 Types)</option><option><span id="modal-donor-bg"></span> (Critical)</option><option>O+ Positive</option><option>A- Negative</option><option>A+ Positive</option><option>B- Negative</option><option>B+ Positive</option><option>AB- Negative</option><option>AB+ Positive</option></select><span class="material-symbols-outlined absolute right-2.5 pointer-events-none text-[18px] text-[#857373]">expand_more</span></div>
+<div class="relative inline-flex items-center"><select class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-[#FAF0F0] border border-[#EBDCDC] text-xs font-medium text-[#2B2B2B] outline-none cursor-pointer hover:bg-[#F5E9E9] transition-colors shadow-sm"><option>Status: All Statuses</option><option>Verified Active</option><option>In Cooldown</option><option>Pending Serology</option><option>Suspended</option><option>Quarantined / Flagged</option></select><span class="material-symbols-outlined absolute right-2.5 pointer-events-none text-[18px] text-[#857373]">expand_more</span></div>
+<div class="relative inline-flex items-center"><select class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-[#FAF0F0] border border-[#EBDCDC] text-xs font-medium text-[#2B2B2B] outline-none cursor-pointer hover:bg-[#F5E9E9] transition-colors shadow-sm"><option>Region: All Districts</option><option>Dhaka Central Metropole</option><option>Chittagong Port Node</option><option>Sylhet Medical Division</option><option>Rajshahi North</option></select><span class="material-symbols-outlined absolute right-2.5 pointer-events-none text-[18px] text-[#857373]">expand_more</span></div>
+<div class="relative inline-flex items-center"><select class="appearance-none pl-3.5 pr-8 py-2 rounded-full bg-[#FAF0F0] border border-[#EBDCDC] text-xs font-medium text-[#2B2B2B] outline-none cursor-pointer hover:bg-[#F5E9E9] transition-colors shadow-sm"><option>Sort: Recent Activity</option><option>Donation Count (High → Low)</option><option>Trust Score (Highest)</option><option>Trust Score (Flagged First)</option></select><span class="material-symbols-outlined absolute right-2.5 pointer-events-none text-[18px] text-[#857373]">sort</span></div>
+</div>
+</div>
+<!-- Donor Directory Table -->
+<div class="rounded-lg bg-white border border-[#EBDCDC] shadow-sm overflow-hidden mb-8">
+<div class="px-5 py-3.5 flex items-center justify-between bg-[#FAF0F0] border-b border-[#EBDCDC]">
+<div class="flex items-center gap-2.5"><span class="font-headline text-lg text-[#2B2B2B] font-bold">Registered Donors &amp; Clinical Entities</span><span class="px-2.5 py-0.5 rounded-full bg-[#FFDAD7] text-[#930016] text-xs font-bold">5 Priority Records Loaded</span></div>
+<div class="flex items-center gap-2 text-xs text-[#594A4B] font-medium"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Real-time Clinical Synchronization Active</span></div>
+</div>
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<thead><tr class="bg-[#FDF3F3] text-xs font-bold text-[#594A4B] uppercase tracking-wider border-b border-[#EBDCDC]"><th class="py-3 px-4">Donor &amp; Identity</th><th class="py-3 px-4">Blood Group &amp; Phenotype</th><th class="py-3 px-4">Clinical Status</th><th class="py-3 px-4">Donations &amp; Impact</th><th class="py-3 px-4">Trust Score</th><th class="py-3 px-4 text-right">Row Actions (Governance)</th></tr></thead>
+<tbody id="donor-table-body" class="divide-y divide-[#F5E9E9] text-xs text-[#2B2B2B]">
+<!-- Row 1: <span id="modal-donor-name"></span> -->
+<tr class="hover:bg-[#FAF0F0]/80 transition-colors bg-[#FAF0F0]/40">
+<td class="py-3.5 px-4"><div class="flex items-center gap-3"><div class="relative w-10 h-10 rounded-full bg-[#FFDAD7] text-[#C30121] flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm"><img alt="<span id="modal-donor-name"></span>" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWo6tWc2j6oDlop9rXOuZDsbcZgH3COIhzHFHkOxaHaTpduwTZM3YOzbfl7F5juvQkRNZnuYI_o6_e45_fwGabgxDd4ry7-GL4JU1cECsckhcaovn5iN8VTdIs764nhyYAPTkZAPV1lw8XcmCSR2NxAsbvTpgqp-RcoY7jnoqWoXN7OI775SGEFNhnrOg5sxXxL_6FNKxRxmzaDhtfED0VVpVpwYKoPb3NxLzrb9YdwbG968EYXOKp"/></div><div class="flex flex-col"><div class="flex items-center gap-1"><span class="text-sm font-bold text-[#2B2B2B]"><span id="modal-donor-name"></span></span><span class="material-symbols-outlined text-[15px] text-[#0D68AA]" title="Biometrically Verified">verified</span></div><div class="flex items-center gap-1.5 text-[#6B7280] text-[11px]"><span class="font-mono text-[#0D68AA] font-bold">#D-8492</span><span>•</span><span>+1 (555) •••• 9012</span><span>•</span><span>Joined Oct 2021</span></div></div></div></td>
+<td class="py-3.5 px-4"><div class="flex flex-col gap-0.5"><div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFDAD7] text-[#930016] text-[11px] font-bold w-fit"><span class="w-1.5 h-1.5 rounded-full bg-[#C30121]"></span><span><span id="modal-donor-bg"></span> (Critical Pool)</span></div><span class="text-[11px] text-[#6B7280]">Rh- (D) Negative • Kell: K-</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span class="text-xs font-semibold text-[#2B2B2B]">Verified Active</span></div><span class="text-[11px] text-[#6B7280] block mt-0.5">Eligible: Immediate dispatch</span></td>
+<td class="py-3.5 px-4"><div class="flex flex-col"><span class="text-xs font-bold text-[#C30121]">12 Bags Donated</span><span class="text-[11px] text-[#6B7280]">36 Est. Lives Saved</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#F0F7FD] flex items-center justify-center font-bold text-xs text-[#0D68AA]">98</div><div class="flex flex-col"><span class="text-xs font-semibold text-[#2B2B2B]">Tier 1 Trust</span><span class="text-[10px] text-[#6B7280]">Zero adverse flags</span></div></div></td>
+<td class="py-3.5 px-4 text-right"><div class="inline-flex items-center gap-1 justify-end"><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" title="Verify serology" type="button"><span class="material-symbols-outlined text-[18px]">check_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" title="Suspend temporarily" type="button"><span class="material-symbols-outlined text-[18px]">pause_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" title="Force-Confirm sync" type="button"><span class="material-symbols-outlined text-[18px]">sync</span></button><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" title="Export Data (JSON/CSV)" type="button"><span class="material-symbols-outlined text-[18px]">download</span></button><button class="p-1 rounded-full bg-[#FFDAD7] text-[#C30121] hover:bg-[#C30121] hover:text-white transition-colors shadow-sm" onclick="document.getElementById('eraseModalOverlay').style.display='flex'" title="Full Erase / Anonymize" type="button"><span class="material-symbols-outlined text-[18px]">delete_forever</span></button></div></td>
+</tr>
+<!-- Row 2: Tanvir Hossain -->
+<tr class="hover:bg-[#FAF0F0]/80 transition-colors">
+<td class="py-3.5 px-4"><div class="flex items-center gap-3"><div class="relative w-10 h-10 rounded-full bg-[#FFDAD6] text-[#BA1A1A] flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm"><img alt="Tanvir Hossain" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRUpAMnvcyY6RpbGyvAOPsrjQy-a49VXWekdo3zeHJDZSkEPqhUn-IgTxMUSMBFcc_2qiHZ7pO54MaDC4eGUq2E5TJKyBjtu5l9KWAte0kl4rltv298FMunoYhOHaU81_U6kF1xxtNAfG-ZwBj9yQ-d0MYPcbm-6g7dUIgUDip_C7L66_y_jLJUMqPyXuta6tAh43AJ1_vmjdazcHRrHXTUCJbl5hw0ZGiekfTlcTjcHTYW6UtEi1x"/></div><div class="flex flex-col"><div class="flex items-center gap-1"><span class="text-sm font-bold text-[#2B2B2B]">Tanvir Hossain</span><span class="material-symbols-outlined text-[15px] text-[#BA1A1A]" title="Under Fraud Investigation">report</span></div><div class="flex items-center gap-1.5 text-[#6B7280] text-[11px]"><span class="font-mono text-[#0D68AA] font-bold">#D-7718</span><span>•</span><span>+880 17•••• 4410</span><span>•</span><span>Joined Jan 2024</span></div></div></div></td>
+<td class="py-3.5 px-4"><div class="flex flex-col gap-0.5"><div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFDAD7] text-[#930016] text-[11px] font-bold w-fit"><span class="w-1.5 h-1.5 rounded-full bg-[#C30121]"></span><span><span id="modal-donor-bg"></span></span></div><span class="text-[11px] text-[#6B7280]">Awaiting Crossmatch Confirmation</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#BA1A1A]"></span><span class="text-xs font-semibold text-[#BA1A1A]">Quarantined / Fraud Flag</span></div><span class="text-[11px] text-[#93000A] block mt-0.5">Dual hospital booking alert</span></td>
+<td class="py-3.5 px-4"><div class="flex flex-col"><span class="text-xs font-bold text-[#2B2B2B]">1 Bag Donated</span><span class="text-[11px] text-[#6B7280]">Under Retrospective Review</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#FFDAD6] flex items-center justify-center font-bold text-xs text-[#BA1A1A]">44</div><div class="flex flex-col"><span class="text-xs font-semibold text-[#BA1A1A]">High Risk</span><span class="text-[10px] text-[#6B7280]">Audit Trigger #Q-109</span></div></div></td>
+<td class="py-3.5 px-4 text-right"><div class="inline-flex items-center gap-1 justify-end"><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">check_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">flip_camera_ios</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">sync</span></button><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">download</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#C30121] transition-colors" onclick="document.getElementById('eraseModalOverlay').style.display='flex'" type="button"><span class="material-symbols-outlined text-[18px]">delete_forever</span></button></div></td>
+</tr>
+<!-- Row 3: Shamim Reza -->
+<tr class="hover:bg-[#FAF0F0]/80 transition-colors">
+<td class="py-3.5 px-4"><div class="flex items-center gap-3"><div class="relative w-10 h-10 rounded-full bg-[#F5E9E9] text-[#2B2B2B] flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm"><img alt="Shamim Reza" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvsM1QdagNcPvvxwlgZr4dkP4cis_jDgLiLWFWgkFdIsRCT9wF67H2cSXCY9ibprDt6m9_fJcc6hAir5kPda_vYFh4Aip2XQxVs5rkfdBE-y1zsmMdFYnIlZ93i3bRgKIJ1jL6cYN2jFsbO22_LfAAxpKNzjnwBjPODsX0l84VHZ1AaQnBwrKXNgKD2EHZhH-2FZjQ8Pi2JDLIbXHs2gwP857vH6o0tIQF8gMYEzWNRUWHQshPalAR"/></div><div class="flex flex-col"><div class="flex items-center gap-1"><span class="text-sm font-bold text-[#2B2B2B]">Shamim Reza</span><span class="material-symbols-outlined text-[15px] text-[#0D68AA]">verified</span></div><div class="flex items-center gap-1.5 text-[#6B7280] text-[11px]"><span class="font-mono text-[#0D68AA] font-bold">#D-8829</span><span>•</span><span>+880 18•••• 7811</span><span>•</span><span>Joined Mar 2022</span></div></div></div></td>
+<td class="py-3.5 px-4"><div class="flex flex-col gap-0.5"><div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E5E7EB] text-[#2B2B2B] text-[11px] font-bold w-fit"><span class="w-1.5 h-1.5 rounded-full bg-[#0D68AA]"></span><span>A+ Positive (Optimal)</span></div><span class="text-[11px] text-[#6B7280]">Anti-A Negative • Rh-D Positive</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span class="text-xs font-semibold text-[#2B2B2B]">Verified Active</span></div><span class="text-[11px] text-[#6B7280] block mt-0.5">Last Donated: 94d ago</span></td>
+<td class="py-3.5 px-4"><div class="flex flex-col"><span class="text-xs font-bold text-[#2B2B2B]">4 Bags Donated</span><span class="text-[11px] text-[#6B7280]">12 Est. Lives Saved</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#F5E9E9] flex items-center justify-center font-bold text-xs text-[#2B2B2B]">88</div><div class="flex flex-col"><span class="text-xs font-semibold text-[#2B2B2B]">Verified Star</span><span class="text-[10px] text-[#6B7280]">Consistent schedule</span></div></div></td>
+<td class="py-3.5 px-4 text-right"><div class="inline-flex items-center gap-1 justify-end"><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">check_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">pause_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">sync</span></button><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">download</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#C30121] transition-colors" onclick="document.getElementById('eraseModalOverlay').style.display='flex'" type="button"><span class="material-symbols-outlined text-[18px]">delete_forever</span></button></div></td>
+</tr>
+<!-- Row 4: Nusrat Jahan -->
+<tr class="hover:bg-[#FAF0F0]/80 transition-colors">
+<td class="py-3.5 px-4"><div class="flex items-center gap-3"><div class="relative w-10 h-10 rounded-full bg-[#D1E4FF] flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm"><img alt="Nusrat Jahan" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDHvzXMxpJd23AaUcO4jjrg6qflcr6yBP0A42vOotcqpDi4raxCl93RZBLQEZq5yp9iPMcnmKtgZ8opBS-JIvMt80w_0bqydXtL3jNFLNOhRwVqbiTxN4A0I0wD2YdZeT5JWVt9j-2ZXHcipgKM9g1la52QZHJpKNNJHCjFS4ttSeC-LRMFr1YZV8k_uxtDFzQ8doO5DRdhSBrZJPxOYI64_O2CEvEJG_JT-MfWWfD6mqfeJVc8fTC"/></div><div class="flex flex-col"><div class="flex items-center gap-1"><span class="text-sm font-bold text-[#2B2B2B]">Nusrat Jahan</span><span class="material-symbols-outlined text-[15px] text-[#0D68AA]">verified</span></div><div class="flex items-center gap-1.5 text-[#6B7280] text-[11px]"><span class="font-mono text-[#0D68AA] font-bold">#D-1042</span><span>•</span><span>+880 19•••• 3320</span><span>•</span><span>Joined Jun 2023</span></div></div></div></td>
+<td class="py-3.5 px-4"><div class="flex flex-col gap-0.5"><div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E5E7EB] text-[#2B2B2B] text-[11px] font-bold w-fit"><span class="w-1.5 h-1.5 rounded-full bg-[#0D68AA]"></span><span>B+ Positive (High)</span></div><span class="text-[11px] text-[#6B7280]">Normal Platelet Yield Verified</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span class="text-xs font-semibold text-[#2B2B2B]">In Cooldown (42d left)</span></div><span class="text-[11px] text-[#6B7280] block mt-0.5">Post-donation recovery phase</span></td>
+<td class="py-3.5 px-4"><div class="flex flex-col"><span class="text-xs font-bold text-[#2B2B2B]">2 Bags Donated</span><span class="text-[11px] text-[#6B7280]">6 Est. Lives Saved</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#F0F7FD] flex items-center justify-center font-bold text-xs text-[#0D68AA]">92</div><div class="flex flex-col"><span class="text-xs font-semibold text-[#2B2B2B]">Tier 1 Trust</span><span class="text-[10px] text-[#6B7280]">Clinical clearance ok</span></div></div></td>
+<td class="py-3.5 px-4 text-right"><div class="inline-flex items-center gap-1 justify-end"><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">check_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">pause_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">sync</span></button><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">download</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#C30121] transition-colors" onclick="document.getElementById('eraseModalOverlay').style.display='flex'" type="button"><span class="material-symbols-outlined text-[18px]">delete_forever</span></button></div></td>
+</tr>
+<!-- Row 5: Brooklyn Simmons -->
+<tr class="hover:bg-[#FAF0F0]/80 transition-colors">
+<td class="py-3.5 px-4"><div class="flex items-center gap-3"><div class="relative w-10 h-10 rounded-full bg-[#E5E7EB] text-[#594A4B] flex items-center justify-center font-bold text-base shrink-0 overflow-hidden shadow-sm"><img alt="Brooklyn Simmons" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIG1F17zsFySBRBES6HNhnqBBHA9LNmKO_HBJ9L-dwaRbdi39K4bLDKE2SJQ9qHK9nlAbm74aaHnBfIoGjVkOElPoDzWO5zyh64M8jYVqJm8h_fC5qG-Tl9_3o9gf-APlFsDtzjl2NBSFBMdkzU6Un6gp7_gIXWY71m4k6Fnh3K8RsjFqTrMa0NCmw90enhLIF3wh8vK9ZYTYyLIMuKrt1b1Zi7ovj1qndqaiKkj3KTLLQKD7NCPT4"/></div><div class="flex flex-col"><div class="flex items-center gap-1"><span class="text-sm font-bold text-[#2B2B2B]">Brooklyn Simmons</span><span class="material-symbols-outlined text-[15px] text-[#6B7280]" title="Pending Verification">hourglass_empty</span></div><div class="flex items-center gap-1.5 text-[#6B7280] text-[11px]"><span class="font-mono text-[#0D68AA] font-bold">#D-3011</span><span>•</span><span>+1 (555) •••• 1192</span><span>•</span><span>Joined Aug 2023</span></div></div></div></td>
+<td class="py-3.5 px-4"><div class="flex flex-col gap-0.5"><div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E5E7EB] text-[#2B2B2B] text-[11px] font-bold w-fit"><span class="w-1.5 h-1.5 rounded-full bg-[#594A4B]"></span><span>B+ Positive</span></div><span class="text-[11px] text-[#6B7280]">Serology screening expired</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#6B7280]"></span><span class="text-xs font-semibold text-[#6B7280]">Suspended</span></div><span class="text-[11px] text-[#6B7280] block mt-0.5">Failed second stage SMS token</span></td>
+<td class="py-3.5 px-4"><div class="flex flex-col"><span class="text-xs font-bold text-[#6B7280]">0 Bags Donated</span><span class="text-[11px] text-[#6B7280]">Intake incomplete</span></div></td>
+<td class="py-3.5 px-4"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full bg-[#F5E9E9] flex items-center justify-center font-bold text-xs text-[#6B7280]">54</div><div class="flex flex-col"><span class="text-xs font-semibold text-[#6B7280]">Unverified</span><span class="text-[10px] text-[#6B7280]">Missing ID proof</span></div></div></td>
+<td class="py-3.5 px-4 text-right"><div class="inline-flex items-center gap-1 justify-end"><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">check_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">pause_circle</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">bolt</span></button><button class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">download</span></button><button class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#C30121] transition-colors" onclick="document.getElementById('eraseModalOverlay').style.display='flex'" type="button"><span class="material-symbols-outlined text-[18px]">delete_forever</span></button></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer Pagination -->
+<div class="px-5 py-3.5 bg-[#FAF0F0] border-t border-[#EBDCDC] flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3"><span class="text-xs text-[#6B7280]">Showing 1 to 5 of 48,290 verified donor records</span><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span class="text-xs text-[#0D68AA] font-mono font-bold">ENCRYPTED_TELEMETRY: SHA-256</span></div></div>
+<div class="flex items-center gap-1"><button class="p-1 rounded-full bg-white border border-[#E5E7EB] text-[#9CA3AF] hover:text-[#2B2B2B] shadow-sm disabled:opacity-50" disabled="" type="button"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button><span class="w-7 h-7 flex items-center justify-center rounded-full bg-[#C30121] text-white text-xs font-bold shadow-sm">1</span><button class="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[#E5E7EB] text-[#2B2B2B] hover:bg-[#FAF0F0] transition-colors text-xs font-semibold" type="button">2</button><button class="w-7 h-7 flex items-center justify-center rounded-full bg-white border border-[#E5E7EB] text-[#2B2B2B] hover:bg-[#FAF0F0] transition-colors text-xs font-semibold" type="button">3</button><span class="px-1 text-xs text-[#6B7280]">...</span><button class="px-2 h-7 flex items-center justify-center rounded-full bg-white border border-[#E5E7EB] text-[#2B2B2B] hover:bg-[#FAF0F0] transition-colors text-xs font-semibold" type="button">9,658</button><button class="p-1 rounded-full bg-white border border-[#E5E7EB] text-[#2B2B2B] hover:bg-[#FAF0F0] shadow-sm transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- GDPR ERASE MODAL OVERLAY -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2B2B2B]/60 backdrop-blur-sm" id="eraseModalOverlay" style="display:none;">
+<div class="relative w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-[#EBDCDC] overflow-hidden">
+<div class="bg-[#C30121] text-white px-6 py-2 flex items-center justify-between text-xs font-semibold"><div class="flex items-center gap-2 tracking-wider uppercase"><span class="material-symbols-outlined text-[17px]">gavel</span><span>GDPR Article 17 "Right to be Forgotten" • Irreversible Command</span></div><span class="font-mono text-[11px] opacity-80">SYS_SEC_LEVEL_4</span></div>
+<div class="p-6">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-full bg-[#FFDAD7] flex items-center justify-center text-[#C30121] shrink-0 shadow-sm"><span class="material-symbols-outlined text-[28px]">warning</span></div>
+<div class="flex-1"><h2 class="font-headline text-2xl text-[#2B2B2B] font-bold tracking-tight">Full Erase Protocol — Anonymize Donor Record</h2><div class="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0F0] text-[#594A4B] text-xs font-medium border border-[#EBDCDC]"><span>Target:</span><strong class="text-[#C30121] font-bold"><span id="modal-donor-name"></span></strong><span>(UID #D-<span id="modal-donor-uid"></span> • <span id="modal-donor-bg"></span>)</span></div></div>
+<button class="p-1 rounded-full text-[#6B7280] hover:bg-[#FAF0F0] hover:text-[#2B2B2B] transition-colors" onclick="document.getElementById('eraseModalOverlay').style.display='none'" type="button"><span class="material-symbols-outlined text-[20px]">close</span></button>
+</div>
+<div class="mt-4 p-4 rounded-lg bg-[#FAF0F0] border-l-4 border-[#C30121]"><p class="text-sm text-[#2B2B2B] font-medium leading-relaxed">This will anonymize <span id="modal-donor-name"></span>'s personal info. Their <span id="modal-donor-donations"></span> donation records will remain in the system for hospital history. This cannot be undone.</p></div>
+<div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-4 rounded-lg bg-[#FDF3F3] border border-[#EBDCDC] flex flex-col gap-2">
+<div class="flex items-center gap-1.5 text-[#BA1A1A] text-xs font-bold uppercase tracking-wider mb-1"><span class="material-symbols-outlined text-[17px]">delete_sweep</span><span>Data Purged &amp; Shredded</span></div>
+<ul class="space-y-2 text-xs text-[#2B2B2B]">
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#BA1A1A] text-[15px] shrink-0 mt-0.5">remove_circle</span><span>Legal Full Name → Replaced with <strong class="font-mono text-[#C30121] font-bold">"ANON_DONOR_<span id="modal-anon-uid"></span>"</strong></span></li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#BA1A1A] text-[15px] shrink-0 mt-0.5">remove_circle</span><span>Phone Number &amp; WhatsApp → Truncated &amp; Salt-Hashed</span></li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#BA1A1A] text-[15px] shrink-0 mt-0.5">remove_circle</span><span>Email Address &amp; Auth Tokens → Permanently Purged</span></li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#BA1A1A] text-[15px] shrink-0 mt-0.5">remove_circle</span><span>Physical Address &amp; NID/Passport Scan → Crypto-shredded</span></li>
+</ul>
+</div>
+<div class="p-4 rounded-lg bg-[#F0F7FD] border border-[#D1E4FF] flex flex-col gap-2">
+<div class="flex items-center gap-1.5 text-[#0D68AA] text-xs font-bold uppercase tracking-wider mb-1"><span class="material-symbols-outlined text-[17px]">verified_user</span><span>Preserved for Compliance</span></div>
+<ul class="space-y-2 text-xs text-[#2B2B2B]">
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#0D68AA] text-[15px] shrink-0 mt-0.5">check_circle</span><span><strong><span id="modal-donor-donations-3"></span> Anonymized Transfusion Logs</strong> (Volume, Hospital ID, Date)</span></li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#0D68AA] text-[15px] shrink-0 mt-0.5">check_circle</span><span>Serology &amp; Lab Cross-Match Compatibility Records</span></li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#0D68AA] text-[15px] shrink-0 mt-0.5">check_circle</span><span>Batch Requisition Reference IDs</span></li>
+<li class="flex items-start gap-2"><span class="material-symbols-outlined text-[#0D68AA] text-[15px] shrink-0 mt-0.5">check_circle</span><span>GDPR Anonymization Proof-of-Erasure Token</span></li>
+</ul>
+</div>
+</div>
+<div class="mt-4 p-4 rounded-lg bg-[#FAF0F0] border border-[#EBDCDC]">
+<label class="block text-xs text-[#2B2B2B] font-bold mb-1.5" for="eraseInput">Type <span class="font-mono text-[#C30121] font-bold bg-white px-1.5 py-0.5 rounded border border-[#EBDCDC]">CONFIRM_ERASE</span> to execute audit trail anonymization:</label>
+<input class="w-full px-3.5 py-2 rounded-lg bg-white border border-[#EBDCDC] font-mono text-sm text-[#C30121] font-bold placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-[#C30121] shadow-inner" id="eraseInput" placeholder="CONFIRM_ERASE" type="text"/>
+</div>
+<div class="mt-6 flex flex-wrap items-center justify-end gap-3">
+<button class="px-5 py-2 rounded-full bg-[#FAF0F0] border border-[#EBDCDC] text-[#2B2B2B] hover:bg-[#F5E9E9] transition-colors text-xs font-semibold shadow-sm" onclick="document.getElementById('eraseModalOverlay').style.display='none'" type="button">Cancel &amp; Retain Record</button>
+<button class="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-[#C30121] text-white hover:bg-[#A1001B] transition-colors text-xs font-semibold shadow-sm" id="confirm-erase-btn" type="button"><span class="material-symbols-outlined text-[18px]">delete_forever</span><span>Execute Irreversible Erase</span></button>
+</div>
+<div class="mt-4 pt-3 border-t border-[#F5E9E9] flex items-center justify-between text-[#6B7280] text-xs">
+<div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px] text-[#0D68AA]">lock</span><span>Audit Log Event <strong>#DEL-9082</strong> will be broadcast to Central Audit &amp; Compliance Engine with Ops-Chief cryptotoken signature.</span></div>
+<span class="font-mono text-[11px] text-[#0D68AA] font-bold">SIGNATURE: 0x9AF...4829</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Notification Toast -->
+<div class="fixed bottom-6 right-6 z-50 bg-[#2B2B2B] text-white px-md py-sm rounded-lg shadow-xl flex items-center gap-sm transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none" id="toast">
+<span class="material-symbols-outlined text-[20px] text-red-300" id="toast-icon">check_circle</span>
+<span class="font-body-sm text-body-sm" id="toast-message">Action executed successfully</span>
+</div>
+
+
+<script>
+    function getHeaders() {
+        const token = localStorage.getItem('access_token');
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+        };
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      const toastIcon = document.getElementById('toast-icon');
+      
+      document.getElementById('toast-message').innerText = message;
+      
+      if (isError) {
+        toastIcon.innerText = 'error';
+        toastIcon.classList.remove('text-red-300');
+        toastIcon.classList.add('text-[#C30121]');
+      } else {
+        toastIcon.innerText = 'check_circle';
+        toastIcon.classList.remove('text-[#C30121]');
+        toastIcon.classList.add('text-red-300');
+      }
+  
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 4000);
+    }
+
+    let currentEraseDonorId = null;
+
+    function openEraseModal(id, name, uid, bg, donations) {
+        currentEraseDonorId = id;
+        document.querySelectorAll('#modal-donor-name').forEach(el => el.innerText = name || 'Unknown');
+        document.querySelectorAll('#modal-donor-uid').forEach(el => el.innerText = uid);
+        document.querySelectorAll('#modal-anon-uid').forEach(el => el.innerText = uid);
+        document.querySelectorAll('#modal-donor-bg').forEach(el => el.innerText = bg);
+        document.querySelectorAll('#modal-donor-donations, #modal-donor-donations-2, #modal-donor-donations-3').forEach(el => el.innerText = donations);
+        
+        document.getElementById('eraseInput').value = '';
+        document.getElementById('eraseModalOverlay').style.display = 'flex';
+    }
+
+    function closeEraseModal() {
+        currentEraseDonorId = null;
+        document.getElementById('eraseModalOverlay').style.display = 'none';
+    }
+
+    async function actionRequest(url, rowIdToRemove, successMsg='Action successful') {
+        try {
+            const res = await fetch(url, { method: 'POST', headers: getHeaders() });
+            if (res.ok) {
+                showToast(successMsg);
+                if (rowIdToRemove) {
+                    const row = document.getElementById('donor-row-' + rowIdToRemove);
+                    if (row) row.remove();
+                } else {
+                    fetchDonors();
+                }
+            } else if (res.status === 401 || res.status === 403) {
+                window.location.href = 'admin-login.html';
+            } else {
+                showToast('Action failed', true);
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Network error', true);
+        }
+    }
+
+    async function exportData(id) {
+        try {
+            const res = await fetch(`http://127.0.0.1:8000/api/admin/donors/${id}/export/`, { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `donor_export_${id}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                showToast('Export triggered successfully');
+            } else {
+                showToast('Export failed', true);
+            }
+        } catch(e) {
+            showToast('Export error', true);
+        }
+    }
+
+    function verifyDonor(id) {
+        if (confirm('Mark donor as Hospital Verified?')) {
+            actionRequest(`http://127.0.0.1:8000/api/admin/donors/${id}/verify/`, null, 'Donor Verified');
+        }
+    }
+
+    async function suspendDonor(id, is_suspended) {
+        const msg = is_suspended ? 'Un-suspend donor (restore availability)?' : 'Suspend donor (set unavailable)?';
+        if (confirm(msg)) {
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/api/admin/donors/${id}/suspend/`, { method: 'POST', headers: getHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.status === 'suspended' ? 'Donor Suspended' : 'Donor Unsuspended');
+                    fetchDonors();
+                } else if (res.status === 401 || res.status === 403) {
+                    window.location.href = 'admin-login.html';
+                } else {
+                    showToast('Action failed', true);
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Network error', true);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchDonors();
+
+        document.getElementById('confirm-erase-btn')?.addEventListener('click', () => {
+            const val = document.getElementById('eraseInput').value;
+            if (val === 'CONFIRM_ERASE' && currentEraseDonorId) {
+                // The soft delete endpoint uses the user ID or donor ID.
+                // The view soft deletes based on the user object, but wait, the destroy method handles it?
+                // Actually, the new views_admin_donors doesn't have erase, we should add it!
+                // Wait! the user said: "call the existing soft-delete logic (same pattern verified in UserDeletionRetentionTest)".
+                // That is DELETE /api/donors/<id>/ but it requires the donor id or "me".
+                // Admin can delete any donor id via DELETE /api/donors/<id>/
+                actionDelete(`http://127.0.0.1:8000/api/donors/${currentEraseDonorId}/`, currentEraseDonorId);
+            } else {
+                showToast('Type CONFIRM_ERASE to proceed', true);
+            }
+        });
+    });
+
+    async function actionDelete(url, id) {
+        try {
+            const res = await fetch(url, { method: 'DELETE', headers: getHeaders() });
+            if (res.ok || res.status === 204) {
+                showToast('Irreversible Erase Completed');
+                closeEraseModal();
+                fetchDonors();
+            } else {
+                showToast('Erase failed', true);
+            }
+        } catch(e) {
+            showToast('Erase error', true);
+        }
+    }
+
+    async function fetchDonors() {
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/admin/donors/', { headers: getHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                renderDonors(data);
+            } else if (res.status === 401 || res.status === 403) {
+                window.location.href = 'admin-login.html';
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderDonors(data) {
+        const container = document.getElementById('donor-table-body');
+        if (data.length === 0) {
+            container.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-sm text-gray-500">No donors found.</td></tr>';
+            return;
+        }
+
+        container.innerHTML = data.map(item => `
+        <tr class="hover:bg-[#FDF3F3] transition-colors" id="donor-row-${item.id}">
+            <td class="py-3.5 px-4">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <img alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-[#EBDCDC]" src="https://i.pravatar.cc/150?u=${item.user_id}"/>
+                        ${item.is_active ? 
+                          '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white"></span>' : 
+                          '<span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-red-500 border-2 border-white"></span>'}
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sm font-bold text-[#2B2B2B]">${item.full_name}</span>
+                            ${item.trust_score > 70 ? '<span class="material-symbols-outlined text-[14px] text-blue-500">verified</span>' : ''}
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5 text-[#6B7280]">
+                            <span class="text-[11px]">${item.phone || item.email}</span>
+                            <span class="w-1 h-1 rounded-full bg-[#EBDCDC]"></span>
+                            <span class="text-[11px] font-mono">UID #D-${item.user_id}</span>
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td class="py-3.5 px-4">
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full ${item.blood_group ? 'bg-[#C30121]' : 'bg-gray-400'}"></span>
+                        <span>${item.blood_group || 'Unknown'}</span>
+                    </div>
+                    <span class="text-[11px] text-[#6B7280]">${item.is_suspended ? 'Suspended' : (item.is_available ? 'Available' : 'Unavailable')}</span>
+                </div>
+            </td>
+            <td class="py-3.5 px-4">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full ${item.is_active ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                    <span class="text-xs font-semibold ${item.is_active ? 'text-emerald-700' : 'text-red-700'}">${item.is_active ? 'Active' : 'Erased/Banned'}</span>
+                </div>
+            </td>
+            <td class="py-3.5 px-4">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-[#2B2B2B]">${item.total_donations} Bag(s) Donated</span>
+                </div>
+            </td>
+            <td class="py-3.5 px-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-[#FFDAD6] flex items-center justify-center font-bold text-xs text-[#BA1A1A]">${item.trust_score}</div>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-semibold text-[#BA1A1A]">Band: ${item.trust_band}</span>
+                    </div>
+                </div>
+            </td>
+            <td class="py-3.5 px-4 text-right">
+                <div class="inline-flex items-center gap-1 justify-end">
+                    <button onclick="verifyDonor(${item.id})" class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button" title="Verify">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    </button>
+                    <button onclick="suspendDonor(${item.id}, ${item.is_suspended})" class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#594A4B] transition-colors" type="button" title="${item.is_suspended ? 'Unsuspend' : 'Suspend'}">
+                        <span class="material-symbols-outlined text-[18px] ${item.is_suspended ? 'text-red-500' : ''}">flip_camera_ios</span>
+                    </button>
+                    <button onclick="exportData(${item.id})" class="p-1 rounded-full hover:bg-[#F0F7FD] text-[#0D68AA] transition-colors" type="button" title="Export">
+                        <span class="material-symbols-outlined text-[18px]">download</span>
+                    </button>
+                    <button onclick="openEraseModal(${item.id}, '${item.full_name.replace(/'/g, "\'")}', '${item.user_id}', '${item.blood_group}', ${item.total_donations})" class="p-1 rounded-full hover:bg-[#FAF0F0] text-[#C30121] transition-colors" type="button" title="Full Erase">
+                        <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+        `).join('');
+    }
+</script>
+
+</body></html>

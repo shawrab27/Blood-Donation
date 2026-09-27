@@ -1,8 +1,11 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 from django.contrib import admin
 from .models import (
     Hospital, DonorProfile, BloodRequest, SocialPost, FakeAccountFlag, AdminAction,
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember,
-    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep
+    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep, HealthAccessory
 )
 
 class HospitalAdmin(admin.ModelAdmin):
@@ -84,3 +87,36 @@ class EmergencyContactAdmin(admin.ModelAdmin):
 class RecoveryTimelineStepAdmin(admin.ModelAdmin):
     list_display = ('hour_mark', 'title')
     ordering = ('hour_mark',)
+
+@admin.register(HealthAccessory)
+class HealthAccessoryAdmin(admin.ModelAdmin):
+    list_display = ('name_en', 'category', 'is_active', 'display_order', 'price_range_text')
+    list_filter = ('category', 'is_active')
+    search_fields = ('name_en', 'name_bn')
+    list_editable = ('is_active', 'display_order')
+
+from django.utils import timezone
+from datetime import timedelta
+from api.models import RequestAcceptance
+
+@admin.register(RequestAcceptance)
+class RequestAcceptanceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'donor', 'status', 'donated_at', 'hours_pending', 'auto_confirmed')
+    list_filter = ('status', 'auto_confirmed')
+    actions = ['force_confirm_selected']
+
+    def hours_pending(self, obj):
+        if obj.status == 'DONATED' and obj.donated_at:
+            delta = timezone.now() - obj.donated_at
+            return f"{delta.total_seconds() / 3600:.1f}h"
+        return "-"
+    hours_pending.short_description = "Pending for"
+
+    def force_confirm_selected(self, request, queryset):
+        from api.services.journeys import finalize_donation
+        count = 0
+        for acceptance in queryset.filter(status='DONATED'):
+            finalize_donation(acceptance, auto=False)
+            count += 1
+        self.message_user(request, f"Manually confirmed {count} donation(s).")
+    force_confirm_selected.short_description = "Force-confirm selected DONATED entries"

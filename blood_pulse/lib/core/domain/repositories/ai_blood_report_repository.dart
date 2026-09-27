@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import '../entities/ai_blood_report_result.dart';
 import '../enums/domain_enums.dart';
 

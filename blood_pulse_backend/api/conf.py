@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 Configuration constants for BloodPulse Blood Hub engine.
 Centralized parameters for wave delays, geofencing, trust scoring, and cooldowns.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// ChatMessageModel representing sent & received messages in real-time emergency chats.
 /// Includes WhatsApp-style delivery status ('sent', 'delivered', 'read').
 class ChatMessageModel {

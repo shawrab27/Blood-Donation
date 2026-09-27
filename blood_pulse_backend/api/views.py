@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import logging
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
@@ -12,7 +15,7 @@ logger = logging.getLogger(__name__)
 from .models import (
     DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, Hospital, FakeAccountFlag, AdminAction, 
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
-    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
+    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep, HealthAccessory,
     UserNotificationState, EmailVerificationCode
 )
 from .serializers import (
@@ -21,15 +24,20 @@ from .serializers import (
     DivisionSerializer, DistrictSerializer, UpazilaSerializer,
     NationalCommunitySerializer, MedicalPartnerSerializer, LocalClubSerializer, 
     LocalClubRegistrationSerializer, ExecutiveMemberSerializer, AreaGuideSerializer,
-    BloodScienceArticleSerializer, CompatibilityRuleSerializer, DonationGuideSectionSerializer,
+    BloodScienceArticleSerializer, CompatibilityRuleSerializer, DonationGuideSectionSerializer, HealthAccessorySerializer,
     EmergencyContactSerializer, RecoveryTimelineStepSerializer
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from api.permissions import IsSuperAdminOrGroup
 from django.contrib.auth.models import User
 from .permissions import IsProfileComplete
 from .utils import send_blood_request_notification
 
 class DonorProfileViewSet(viewsets.ModelViewSet):
+    throttle_classes = [
+        __import__('api.throttles', fromlist=['DonorsAnonThrottle']).DonorsAnonThrottle,
+        __import__('api.throttles', fromlist=['DonorsUserThrottle']).DonorsUserThrottle
+    ]
     queryset = DonorProfile.objects.all()
     serializer_class = DonorProfileSerializer
 
@@ -119,10 +127,37 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
                 return Response({'detail': 'You do not have permission to delete this account.'}, status=status.HTTP_403_FORBIDDEN)
         
         user = instance.user
-        self.perform_destroy(instance)
+        
+        # Soft delete and anonymize DonorProfile PII
+        instance.phone_number = f"deleted_{instance.id}"
+        instance.is_available = False
+        instance.save(update_fields=['phone_number', 'is_available'])
+        
         if user:
-            user.delete()
-        return Response({'detail': 'Account and donor profile permanently deleted.'}, status=status.HTTP_204_NO_CONTENT)
+            # Soft delete User
+            user.is_active = False
+            user.email = f"deleted_{user.id}@example.com"
+            user.first_name = "Deleted"
+            user.last_name = "User"
+            user.set_unusable_password()
+            user.save(update_fields=['is_active', 'email', 'first_name', 'last_name', 'password'])
+            
+        return Response({'detail': 'Account soft-deleted and anonymized to preserve relational integrity.'}, status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['post'], url_path='fcm-token', permission_classes=[IsAuthenticated])
+    def update_fcm_token(self, request):
+        """Update the FCM device token for the current user."""
+        token = request.data.get('token')
+        if not token:
+            return Response({"error": "Token is required"}, status=400)
+            
+        try:
+            profile = DonorProfile.objects.get(user=request.user)
+            profile.fcm_token = token
+            profile.save(update_fields=['fcm_token'])
+            return Response({"status": "Token updated successfully"})
+        except DonorProfile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=404)
 
     @action(detail=False, methods=['get', 'delete'], permission_classes=[IsAuthenticated])
     def me(self, request):
@@ -131,9 +166,18 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         if request.method == 'DELETE':
             user = request.user
             if profile:
-                profile.delete()
-            user.delete()
-            return Response({'detail': 'Your account and donor records have been permanently deleted.'}, status=status.HTTP_204_NO_CONTENT)
+                profile.phone_number = f"deleted_{profile.id}"
+                profile.is_available = False
+                profile.save(update_fields=['phone_number', 'is_available'])
+            
+            user.is_active = False
+            user.email = f"deleted_{user.id}@example.com"
+            user.first_name = "Deleted"
+            user.last_name = "User"
+            user.set_unusable_password()
+            user.save(update_fields=['is_active', 'email', 'first_name', 'last_name', 'password'])
+            
+            return Response({'detail': 'Your account and donor records have been soft-deleted and anonymized.'}, status=status.HTTP_204_NO_CONTENT)
 
         if not profile:
             return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -246,7 +290,7 @@ class SocialPostViewSet(viewsets.ModelViewSet):
         serializer.save(author=author)
 
     @action(detail=True, methods=['post'], permission_classes=[AllowAny])
-    def react(self, request, pk=None):
+    def like(self, request, pk=None):
         post = None
         if str(pk).isdigit():
             post = SocialPost.objects.filter(id=pk).first()
@@ -257,14 +301,13 @@ class SocialPostViewSet(viewsets.ModelViewSet):
                 pass
 
         if not post:
-            return Response({'react_count': 1, 'is_reacted': True}, status=status.HTTP_200_OK)
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
         user = request.user if request.user and request.user.is_authenticated else None
         if user:
             reaction, created = PostReaction.objects.get_or_create(post=post, user=user)
             if not created:
-                reaction.delete()
-                is_reacted = False
+                is_reacted = True
             else:
                 is_reacted = True
         else:
@@ -338,16 +381,82 @@ class HospitalViewSet(viewsets.ModelViewSet):
 
 class NearbyDonorsView(APIView):
     """
-    Simulates a geospatial query to find donors within a certain radius.
+    Geospatial query to find nearby donors with privacy fuzzing.
     """
+    from api.throttles import NearbyDonorsThrottle
+    throttle_classes = [NearbyDonorsThrottle]
+    def _validate_coords(self, lat, lng):
+        try:
+            if lat is None or lng is None:
+                return False
+            lat_f = float(lat)
+            lng_f = float(lng)
+            if not (-90 <= lat_f <= 90) or not (-180 <= lng_f <= 180):
+                return False
+            return True
+        except ValueError:
+            return False
+
     def get(self, request, *args, **kwargs):
-        lat = request.query_params.get('lat')
-        lng = request.query_params.get('lng')
-        # In a real app, use PostGIS or Haversine formula here.
-        # For prototype, just return donors with coordinates.
+        lat_str = request.query_params.get('lat')
+        lng_str = request.query_params.get('lng')
+        radius_km = float(request.query_params.get('radius_km', 5.0))
+        blood_group = request.query_params.get('blood_group')
+
+        if not self._validate_coords(lat_str, lng_str):
+            return Response({'error': 'Invalid coordinates'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        radius_km = min(float(radius_km), 50.0)
+        req_lat = float(lat_str)
+        req_lng = float(lng_str)
+
+        import pygeohash
+        from datetime import date
+        from api.services.geo import haversine_distance, fuzz_coordinates
+
+        # 1. Geohash prefix filter (narrow candidates)
+        # precision 4 is roughly ~39km x 19km, good for < 50km
+        center_geohash = pygeohash.encode(req_lat, req_lng, precision=4)
+        
+        qs = DonorProfile.objects.filter(is_searchable=True, geohash__startswith=center_geohash)
+        if blood_group:
+            qs = qs.filter(blood_group=blood_group)
+
+        # 2. Exact Haversine distance and Privacy Offset
+        today_str = date.today().isoformat()
+        results = []
+        for d in qs:
+            if d.latitude is None or d.longitude is None:
+                continue
+            dist = haversine_distance(req_lat, req_lng, d.latitude, d.longitude)
+            if dist <= radius_km:
+                # Seed per-donor-per-day
+                seed_id = f"{d.id}_{today_str}"
+                f_lat, f_lng = fuzz_coordinates(d.latitude, d.longitude, seed_id=seed_id)
+                results.append({
+                    'donor_id': d.id,
+                    'display_name': d.user.get_full_name() or d.user.username,
+                    'blood_group': d.blood_group,
+                    'fuzzed_lat': f_lat,
+                    'fuzzed_lng': f_lng,
+                    'distance_km': round(dist, 1),
+                    'last_donation_date': d.last_donation_date
+                })
+
+        # Sort by distance
+        results.sort(key=lambda x: x['distance_km'])
+
+        return Response(results, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        lat = request.data.get('latitude') or request.data.get('lat')
+        lng = request.data.get('longitude') or request.data.get('lng')
+        if lat and lng and not self._validate_coords(lat, lng):
+            return Response({'error': 'Invalid coordinates'}, status=status.HTTP_400_BAD_REQUEST)
+            
         donors = DonorProfile.objects.filter(latitude__isnull=False, longitude__isnull=False)[:10]
         serializer = DonorProfileSerializer(donors, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data if serializer.data else [])
 
 class NIDVerificationView(APIView):
     """
@@ -356,7 +465,8 @@ class NIDVerificationView(APIView):
     def post(self, request, *args, **kwargs):
         # Real OCR/trust-scoring wired in Flutter client, see ai_trust_detector_service.dart
         user_id = request.data.get('user_id')
-        uploaded_file = request.FILES.get('image') or request.FILES.get('file')
+        from api.utils import validate_uploaded_file
+        uploaded_file = validate_uploaded_file(request.FILES.get('image') or request.FILES.get('file'))
 
         if uploaded_file:
             from django.core.files.storage import default_storage
@@ -383,15 +493,47 @@ class NIDVerificationView(APIView):
 
         return Response({"status": "success", "message": "NID uploaded, profile updated if user existed."}, status=status.HTTP_200_OK)
 
-class FakeAccountFlagViewSet(viewsets.ModelViewSet):
+
+
+
+
+class AdminAuditLogMixin:
+    def perform_update(self, serializer):
+        old_instance = self.get_object()
+        old_data = self.get_serializer(old_instance).data
+        instance = serializer.save()
+        new_data = self.get_serializer(instance).data
+        changes = {k: {'old': old_data.get(k), 'new': new_data.get(k)} for k in new_data if old_data.get(k) != new_data.get(k)}
+        from api.models import AuditLog
+        AuditLog.objects.create(
+            user=self.request.user,
+            action=f"update_{self.basename if hasattr(self, 'basename') else self.__class__.__name__}",
+            object_type=instance.__class__.__name__,
+            object_id=instance.id,
+            changes=changes
+        )
+
+    def perform_destroy(self, instance):
+        old_data = self.get_serializer(instance).data
+        from api.models import AuditLog
+        AuditLog.objects.create(
+            user=self.request.user,
+            action=f"delete_{self.basename if hasattr(self, 'basename') else self.__class__.__name__}",
+            object_type=instance.__class__.__name__,
+            object_id=instance.id,
+            changes={'deleted': old_data}
+        )
+        instance.delete()
+
+class FakeAccountFlagViewSet(AdminAuditLogMixin, viewsets.ModelViewSet):
     queryset = FakeAccountFlag.objects.all().order_by('-flagged_at')
     serializer_class = FakeAccountFlagSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsSuperAdminOrGroup]
 
-class AdminActionViewSet(viewsets.ModelViewSet):
+class AdminActionViewSet(AdminAuditLogMixin, viewsets.ModelViewSet):
     queryset = AdminAction.objects.all().order_by('-timestamp')
     serializer_class = AdminActionSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsSuperAdminOrGroup]
 
 class DivisionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Division.objects.all().order_by('name')
@@ -534,33 +676,27 @@ import json
 import os
 
 class GeminiReportAnalyzeView(APIView):
-    parser_classes = (MultiPartParser, FormParser, JSONParser)
-    permission_classes = [AllowAny] # Using AllowAny for easy testing, switch to IsAuthenticated later if needed.
+    parser_classes = (JSONParser, MultiPartParser, FormParser)
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        file_obj = request.FILES.get('report')
-        image = None
+        # Reject raw image uploads
+        if 'report' in request.FILES or 'image' in request.FILES:
+            return Response(
+                {'error': 'Raw image uploads are not supported. Run on-device OCR (ML Kit) and send report_text.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        if file_obj:
-            try:
-                image = Image.open(file_obj)
-            except Exception:
-                return Response({'error': 'Invalid image file. Please upload a JPG or PNG.'}, status=400)
-        else:
-            report_base64 = request.data.get('report_base64') or request.data.get('image')
-            if report_base64:
-                try:
-                    import base64
-                    import io
-                    if ',' in report_base64:
-                        report_base64 = report_base64.split(',', 1)[1]
-                    decoded_bytes = base64.b64decode(report_base64)
-                    image = Image.open(io.BytesIO(decoded_bytes)).convert("RGB")
-                except Exception:
-                    return Response({'error': 'Invalid base64 image data. Please upload a valid JPG or PNG.'}, status=400)
+        report_text = request.data.get('report_text', '').strip()
+        if not report_text:
+            return Response(
+                {'error': 'report_text is required. On-device OCR text must be provided.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        if not image:
-            return Response({'error': 'No report file provided. Please upload an image or base64 report.'}, status=400)
+        # 1. Redact sensitive info (PII, phone numbers, NID)
+        from assistant.pipeline.redact import redact_text
+        safe_text = redact_text(report_text)
 
         api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
         if not api_key:
@@ -571,12 +707,11 @@ class GeminiReportAnalyzeView(APIView):
         prompt = """
         You are a medical AI assistant that only analyzes blood and lab reports.
         
-        FIRST: Determine if the image is actually a medical blood report or lab report.
-        Look for: patient information, test names (WBC, Hemoglobin, Platelets, RBC, etc.), 
-        reference ranges, lab values, or medical terminology.
+        FIRST: Determine if the text represents actual medical blood report or lab report data.
+        Look for: test names (WBC, Hemoglobin, Platelets, RBC, etc.), reference ranges, lab values, or medical terminology.
         
-        If the image does NOT appear to be a medical blood or lab report, return ONLY this JSON:
-        {"not_a_report": true, "error": "This doesn't appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report."}
+        If the text does NOT appear to be a medical blood or lab report, return ONLY this JSON:
+        {"not_a_report": true, "error": "This text does not appear to be a valid blood or lab report."}
         
         If it IS a valid blood/lab report, extract:
         - All test values (WBC, Hemoglobin, Platelets, RBC, etc.)
@@ -602,9 +737,10 @@ class GeminiReportAnalyzeView(APIView):
         """
         
         try:
+            # 2. Only send the redacted text to Gemini — never raw text or images
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
-                contents=[prompt, image],
+                contents=[prompt, safe_text],
             )
             text = response.text.strip()
             if text.startswith("```json"):
@@ -618,7 +754,7 @@ class GeminiReportAnalyzeView(APIView):
                 
             data = json.loads(text)
             
-            # Handle the non-medical-image case
+            # Handle the non-medical case
             if data.get('not_a_report'):
                 return Response(
                     {'error': data.get('error', 'This does not appear to be a valid blood or lab report.')},
@@ -626,7 +762,7 @@ class GeminiReportAnalyzeView(APIView):
                 )
             return Response(data)
         except json.JSONDecodeError:
-            return Response({'error': 'Failed to parse AI response. Please try again with a clearer image.'}, status=500)
+            return Response({'error': 'Failed to parse AI response. Please try again with clearer text.'}, status=500)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
@@ -828,6 +964,7 @@ def _get_firebase_app():
 
 
 class FirebaseAuthView(APIView):
+    throttle_classes = [__import__('api.throttles', fromlist=['FirebaseAuthThrottle']).FirebaseAuthThrottle]
     """
     POST /api/auth/firebase/
     Cryptographically verifies Firebase ID token server-side via Firebase Admin SDK.
@@ -1087,3 +1224,53 @@ class HealthCheckView(APIView):
 
 
 
+from rest_framework import viewsets, permissions, serializers
+from api.permissions import IsSuperAdminOrGroup
+from api.models import AuditLog
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    class Meta:
+        model = AuditLog
+        fields = '__all__'
+
+class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AuditLog.objects.all().order_by('-timestamp')
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsSuperAdminOrGroup]
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user_id = self.request.query_params.get('user_id')
+        action = self.request.query_params.get('action')
+        date = self.request.query_params.get('date')
+        if user_id: qs = qs.filter(user_id=user_id)
+        if action: qs = qs.filter(action=action)
+        if date: qs = qs.filter(timestamp__date=date)
+        return qs
+
+
+from .models import Notification
+from rest_framework.serializers import ModelSerializer
+
+class NotificationSerializer(ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'title', 'body', 'type', 'is_read', 'created_at']
+
+class NotificationListView(APIView):
+    """
+    GET /api/notifications/
+    Returns notifications for the authenticated user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class HealthAccessoryViewSet(viewsets.ModelViewSet):
+    queryset = HealthAccessory.objects.filter(is_active=True).order_by('display_order')
+    serializer_class = HealthAccessorySerializer
+    permission_classes = [permissions.AllowAny]  # Keep it accessible for now

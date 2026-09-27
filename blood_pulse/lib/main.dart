@@ -1,3 +1,7 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +18,8 @@ import 'core/constants.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+
 
   // Firebase ইনিশিয়ালাইজেশন
   try {

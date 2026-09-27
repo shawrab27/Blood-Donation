@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
@@ -5,6 +8,7 @@ import sys
 
 
 def main():
+
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'blood_pulse_backend.settings')
     try:

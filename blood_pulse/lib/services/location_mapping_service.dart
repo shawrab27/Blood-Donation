@@ -1,48 +1,24 @@
-/// BloodPulse — Spatial Mapping Service
-///
-/// Handles geographic operations for the BloodPulse donor network including:
-///  1. Geohash encoding/decoding for fast Firestore spatial queries.
-///  2. Bounding-box and radius proximity calculations.
-///  3. Donor Privacy Fuzzing: applies a cryptographically secure random offset
-///     (up to 500m) to donor coordinates to protect exact residential addresses.
-library;
-
 import 'dart:math';
-
+import 'dart:convert';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:blood_pulse/services/api_client.dart';
 
-// ─── Custom Lightweight Geohasher ───────────────────────────────────────────
-// Base32 character map for Geohash
 const _base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
 
 class LocationMappingService {
   LocationMappingService._();
   static final LocationMappingService instance = LocationMappingService._();
 
-  // ── Privacy Fuzzing ───────────────────────────────────────────────────
-
-  /// Applies a random spatial offset up to [maxOffsetMeters] to protect donor privacy.
-  /// Uses a uniform random distribution within a circle.
   LatLng fuzzLocation(LatLng original, {double maxOffsetMeters = 500.0}) {
     final rand = Random.secure();
-    
-    // Random angle between 0 and 2*PI
     final angle = rand.nextDouble() * 2 * pi;
-    
-    // To ensure uniform distribution in a circle, take the square root of the random uniform
-    // distance fraction.
     final fraction = sqrt(rand.nextDouble());
     final distanceMeters = fraction * maxOffsetMeters;
-
-    final distance = Distance();
+    final distance = const Distance();
     return distance.offset(original, distanceMeters, angle);
   }
 
-  // ── Geohash Operations ────────────────────────────────────────────────
-
-  /// Encodes latitude and longitude into a geohash string of [precision].
-  /// Precision of 5 ≈ 4.9km x 4.9km block.
-  /// Precision of 6 ≈ 1.2km x 0.6km block.
   String encodeGeohash(double lat, double lon, {int precision = 6}) {
     bool isEven = true;
     double minLat = -90.0, maxLat = 90.0;
@@ -82,43 +58,70 @@ class LocationMappingService {
     return hash;
   }
 
-  // ── Mock Radius Query ─────────────────────────────────────────────────
+  Future<List<DonorPin>> fetchNearbyDonors({
+    LatLng? center,
+    double radiusKm = 5.0,
+    ApiClient? apiClient,
+  }) async {
+    final client = apiClient ?? ApiClient();
+    LatLng queryCenter;
 
-  /// Generates mock donors around a target [center] for UI demonstration.
-  /// In production, this would query Firestore `where('geohash', isGreaterThanOrEqualTo: prefix)`
-  List<DonorPin> fetchNearbyDonors(LatLng center, {double radiusKm = 5.0}) {
-    final rand = Random();
-    final donors = <DonorPin>[];
-    
-    // Generate 15-30 mock donors nearby
-    final count = 15 + rand.nextInt(16);
-    final distance = Distance();
-
-    final bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-
-    for (var i = 0; i < count; i++) {
-      // Random distance up to radiusKm
-      final distMeters = sqrt(rand.nextDouble()) * (radiusKm * 1000);
-      final angle = rand.nextDouble() * 2 * pi;
-      
-      final exactLoc = distance.offset(center, distMeters, angle);
-      
-      // Apply privacy fuzzing before returning to client layer
-      final fuzzedLoc = fuzzLocation(exactLoc);
-      
-      donors.add(DonorPin(
-        id: 'mock_donor_$i',
-        location: fuzzedLoc,
-        bloodGroup: bloodGroups[rand.nextInt(bloodGroups.length)],
-        isVerified: rand.nextDouble() > 0.3, // 70% verified
-      ));
+    if (center != null) {
+      queryCenter = center;
+    } else {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw const ApiException('Location services are disabled.');
+      }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw const ApiException('Location permissions are denied.');
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        throw const ApiException('Location permissions are permanently denied.');
+      }
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium));
+        queryCenter = LatLng(pos.latitude, pos.longitude);
+      } catch (e) {
+        throw ApiException('Failed to get current position: $e');
+      }
     }
 
-    return donors;
+    final response = await client.get('donors-nearby/?lat=${queryCenter.latitude}&lng=${queryCenter.longitude}&radius_km=$radiusKm');
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      final donors = <DonorPin>[];
+      for (final item in data) {
+        if (item is Map<String, dynamic>) {
+            final lat = (item['fuzzed_lat'] as num?)?.toDouble();
+            final lng = (item['fuzzed_lng'] as num?)?.toDouble();
+            if (lat != null && lng != null) {
+              final fuzzedLocation = LatLng(lat, lng);
+              final fullName = item['display_name']?.toString() ?? 'Community Donor';
+              donors.add(DonorPin(
+                id: item['donor_id']?.toString() ?? 'donor_${donors.length}',
+                location: fuzzedLocation,
+                bloodGroup: item['blood_group'] ?? 'O+',
+                isVerified: true,
+                isAvailable: true,
+                name: fullName,
+              ));
+            }
+        }
+      }
+      return donors;
+    } else {
+      throw ApiException('Failed to fetch nearby donors', statusCode: response.statusCode);
+    }
   }
 }
 
-/// Represents a public donor point on the map.
 class DonorPin {
   const DonorPin({
     required this.id,

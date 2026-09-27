@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 Geospatial calculation and privacy fuzzing service.
 Implements Haversine distance, deterministic ~500m coordinate fuzzing,

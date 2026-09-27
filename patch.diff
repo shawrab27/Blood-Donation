@@ -1,0 +1,44 @@
+--- blood_pulse_backend/api/views_bloodhub.py
++++ blood_pulse_backend/api/views_bloodhub.py
+@@ -232,6 +232,15 @@
+ 
+     donor = request.user.donorprofile
+ 
++    # Check 90 days eligibility
++    if donor.last_donation_date:
++        from django.utils import timezone
++        days_since_last = (timezone.now().date() - donor.last_donation_date).days
++        if days_since_last < 90:
++            return Response({
++                'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
++            }, status=status.HTTP_400_BAD_REQUEST)
++
+     existing_acceptance = RequestAcceptance.objects.filter(
+         request=blood_req,
+         donor=donor,
+@@ -835,7 +844,8 @@
+         donor.fulfilled_count = (donor.fulfilled_count or 0) + 1
+         donor.total_bags_donated = (donor.total_bags_donated or 0) + (blood_req.units_needed or 1)
+         donor.last_donation_date = now.date()
+-        donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date'])
++        donor.is_available = False
++        donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date', 'is_available'])
+ 
+         # Record donation history
+         from api.models import DonationHistory
+@@ -1071,6 +1081,15 @@
+         
+     donor = request.user.donorprofile
+     
++    # Check 90 days eligibility
++    if donor.last_donation_date:
++        from django.utils import timezone
++        days_since_last = (timezone.now().date() - donor.last_donation_date).days
++        if days_since_last < 90:
++            return Response({
++                'error': f'You are not eligible to pledge. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
++            }, status=400)
++
+     # Check if they already have an active pledge
+     existing = DisasterPledge.objects.filter(event=slot.point.event, donor=donor, status='PENDING').exists()
+     if existing:

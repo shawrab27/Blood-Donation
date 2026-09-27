@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 from django.utils import timezone
 """
 Dedicated API views for BloodPulse Blood Hub v2.
@@ -7,9 +10,10 @@ Handles search, map, hospital directory, request creation, wave progression, and
 from datetime import timedelta
 
 from django.db.models import Q
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from api.throttles import OTPAnonThrottle, OTPUserThrottle
 from rest_framework import status
 
 from api.models import (
@@ -53,6 +57,11 @@ def donor_search_view(request):
     component = request.query_params.get('component', 'WHOLE').strip()
     campus = request.query_params.get('campus', '').strip()
     district = request.query_params.get('district', '').strip()
+    
+    lat_str = request.query_params.get('lat', '').strip()
+    lng_str = request.query_params.get('lng', '').strip()
+    radius_str = request.query_params.get('radius', '10.0').strip()
+    
     limit = min(50, int(request.query_params.get('limit', 20)))
     offset = int(request.query_params.get('offset', 0))
 
@@ -71,8 +80,34 @@ def donor_search_view(request):
     if district:
         queryset = queryset.filter(district__icontains=district)
 
-    total_count = queryset.count()
-    results = queryset.order_by('-total_bags_donated', '-rating_avg')[offset:offset + limit]
+    if lat_str and lng_str:
+        try:
+            req_lat = float(lat_str)
+            req_lng = float(lng_str)
+            radius = float(radius_str)
+            
+            # Python-level Haversine filtering (SQLite and Postgres compatible for MVP)
+            filtered_results = []
+            for d in queryset:
+                if d.latitude is not None and d.longitude is not None:
+                    dist = haversine_distance(req_lat, req_lng, float(d.latitude), float(d.longitude))
+                    if dist <= radius:
+                        # Annotate for potential sorting/display
+                        d._distance = dist
+                        filtered_results.append(d)
+            
+            # Sort by distance first, then rating
+            filtered_results.sort(key=lambda x: (x._distance, -x.rating_avg))
+            total_count = len(filtered_results)
+            results = filtered_results[offset:offset + limit]
+            
+        except ValueError:
+            # Fallback if invalid float parsing
+            total_count = queryset.count()
+            results = queryset.order_by('-total_bags_donated', '-rating_avg')[offset:offset + limit]
+    else:
+        total_count = queryset.count()
+        results = queryset.order_by('-total_bags_donated', '-rating_avg')[offset:offset + limit]
 
     serializer = DonorSearchSerializer(results, many=True, context={'request': request})
     return Response({
@@ -94,6 +129,10 @@ def donor_map_view(request):
     component = request.query_params.get('component', 'WHOLE').strip()
     district = request.query_params.get('district', '').strip()
 
+    lat_str = request.query_params.get('lat', '').strip()
+    lng_str = request.query_params.get('lng', '').strip()
+    radius_str = request.query_params.get('radius', '15.0').strip() # Default 15km for map view
+
     queryset = DonorProfile.objects.filter(
         is_searchable=True,
         is_available=True,
@@ -108,7 +147,26 @@ def donor_map_view(request):
     if district:
         queryset = queryset.filter(district__icontains=district)
 
-    results = queryset[:100]
+    if lat_str and lng_str:
+        try:
+            req_lat = float(lat_str)
+            req_lng = float(lng_str)
+            radius = float(radius_str)
+            
+            filtered_results = []
+            for d in queryset:
+                lat = float(d.latitude or d.last_lat)
+                lng = float(d.longitude or d.last_lng)
+                dist = haversine_distance(req_lat, req_lng, lat, lng)
+                if dist <= radius:
+                    filtered_results.append(d)
+                    
+            results = filtered_results[:100]
+        except ValueError:
+            results = queryset[:100]
+    else:
+        results = queryset[:100]
+
     serializer = DonorMapSerializer(results, many=True)
     return Response({
         'count': len(results),
@@ -146,6 +204,7 @@ def hospital_list_view(request):
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
+@throttle_classes([__import__('api.throttles', fromlist=['RequestsThrottle', 'EmergencyBroadcastThrottle']).EmergencyBroadcastThrottle])
 def emergency_requests_list_create_view(request):
     """
     GET: List active requests with filters.
@@ -199,13 +258,23 @@ def emergency_requests_list_create_view(request):
     if not patient_name or not blood_group:
         return Response({'error': 'patient_name and blood_group are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    errors = {}
+    if not hospital_id and not hospital_name_other:
+        errors['hospital'] = ['Hospital information is required.']
+    if not ward_bed:
+        errors['ward_bed'] = ['Ward/Bed information is required.']
+        
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
     hospital = None
     if hospital_id:
         hospital = Hospital.objects.filter(id=hospital_id).first()
 
     # Image files with EXIF stripping
-    requisition_slip = strip_image_exif(request.FILES.get('requisition_slip'))
-    patient_photo = strip_image_exif(request.FILES.get('patient_photo'))
+    from api.utils import validate_uploaded_file
+    requisition_slip = strip_image_exif(validate_uploaded_file(request.FILES.get('requisition_slip')))
+    patient_photo = strip_image_exif(validate_uploaded_file(request.FILES.get('patient_photo')))
 
     # Trust Score & Effective Scope
     requester = request.user if request.user.is_authenticated else None
@@ -218,6 +287,19 @@ def emergency_requests_list_create_view(request):
         contact_phone=contact_phone,
         requester=requester,
     )
+    
+    if requisition_slip:
+        from api.services.trust import verify_slip_with_ai
+        req_bytes = requisition_slip.read()
+        requisition_slip.seek(0)
+        ai_res = verify_slip_with_ai(req_bytes)
+        if ai_res.get('verified') and 'true' in ai_res.get('raw_response', '').lower():
+            trust_score = min(100, trust_score + 20)
+            if trust_score >= 80:
+                trust_band = 'HIGH'
+            elif trust_score >= 50:
+                trust_band = 'MEDIUM'
+                
     effective_scope = resolve_effective_scope(requested_scope, trust_band)
 
     # Initial wave timeouts
@@ -294,50 +376,83 @@ def emergency_request_accept_view(request, pk):
     Donor accepts an emergency request.
     Verifies eligibility, creates RequestAcceptance, reveals contact phone.
     """
-    blood_req = BloodRequest.objects.filter(id=pk).first()
-    if not blood_req:
-        return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
+    from django.db import transaction
+    with transaction.atomic():
+        blood_req = BloodRequest.objects.select_for_update().filter(id=pk).first()
+        if not blood_req:
+            return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    if blood_req.status != 'ACTIVE':
-        return Response({'error': f'Request is not active (Status: {blood_req.status}).'}, status=status.HTTP_400_BAD_REQUEST)
+        if blood_req.status != 'ACTIVE':
+            return Response({'error': f'Request is not active (Status: {blood_req.status}).'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not hasattr(request.user, 'donorprofile'):
-        return Response({'error': 'User must have a donor profile to accept.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not hasattr(request.user, 'donorprofile'):
+            return Response({'error': 'User must have a donor profile to accept.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    donor = request.user.donorprofile
+        donor = request.user.donorprofile
 
-    # Check 90 days eligibility
-    if donor.last_donation_date:
+        # JIT OTP verification
+        code = request.data.get('otp') or request.data.get('code')
+        if not code:
+            return Response({'error': 'OTP verification code is required to accept this request.'}, status=status.HTTP_403_FORBIDDEN)
         
-        days_since_last = (timezone.now().date() - donor.last_donation_date).days
-        if days_since_last < 90:
+        from api.models import EmailOTP
+        from api.services.email import verify_otp_hash
+        otp_record = EmailOTP.objects.filter(
+            email=request.user.email,
+            is_used=False,
+            expires_at__gt=timezone.now()
+        ).order_by('-created_at').first()
+
+        if not otp_record or otp_record.is_locked() or not verify_otp_hash(code, otp_record.otp_hash, request.user.email):
+            if otp_record:
+                otp_record.attempts += 1
+                otp_record.save(update_fields=['attempts'])
+            return Response({'error': 'Invalid, locked, or expired OTP.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        otp_record.is_used = True
+        otp_record.save(update_fields=['is_used'])
+
+        # Check 90 days eligibility
+        if donor.last_donation_date:
+            
+            days_since_last = (timezone.now().date() - donor.last_donation_date).days
+            if days_since_last < 90:
+                return Response({
+                    'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        existing_acceptance = RequestAcceptance.objects.filter(
+            request=blood_req,
+            donor=donor,
+        ).exclude(status__in=['FAILED', 'CANCELLED']).first()
+
+        if existing_acceptance:
+            serializer = RequestAcceptanceSerializer(existing_acceptance)
             return Response({
-                'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'message': 'You have already accepted this request.',
+                'acceptance': serializer.data,
+                'requester_phone': blood_req.contact_phone or blood_req.contact_number,
+                'ward_bed': blood_req.ward_bed,
+            }, status=status.HTTP_200_OK)
 
-    existing_acceptance = RequestAcceptance.objects.filter(
-        request=blood_req,
-        donor=donor,
-    ).exclude(status__in=['FAILED', 'CANCELLED']).first()
+        # Concurrency check: Ensure we haven't reached units_needed
+        current_acceptances = RequestAcceptance.objects.filter(
+            request=blood_req,
+            status__in=['ACCEPTED', 'FULFILLED']
+        ).count()
 
-    if existing_acceptance:
-        serializer = RequestAcceptanceSerializer(existing_acceptance)
-        return Response({
-            'message': 'You have already accepted this request.',
-            'acceptance': serializer.data,
-            'requester_phone': blood_req.contact_phone or blood_req.contact_number,
-            'ward_bed': blood_req.ward_bed,
-        }, status=status.HTTP_200_OK)
+        if current_acceptances >= (blood_req.units_needed or 1):
+            return Response({'error': 'Slot Full. This request already has enough donors.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    acceptance = RequestAcceptance.objects.create(
-        request=blood_req,
-        donor=donor,
-        status='ACCEPTED',
-    )
+        acceptance = RequestAcceptance.objects.create(
+            request=blood_req,
+            donor=donor,
+            status='ACCEPTED',
+        )
 
-    # Increment donor response counter
-    donor.response_count = (donor.response_count or 0) + 1
-    donor.save(update_fields=['response_count'])
+        # Increment donor response counter
+        donor.response_count = (donor.response_count or 0) + 1
+        donor.save(update_fields=['response_count'])
 
     serializer = RequestAcceptanceSerializer(acceptance)
     return Response({
@@ -382,15 +497,51 @@ def emergency_request_report_view(request, pk):
     }, status=status.HTTP_201_CREATED)
 
 
-@api_view(['POST'])
+import hmac
+import os
+from rest_framework.exceptions import PermissionDenied
+
+from rest_framework.decorators import authentication_classes
+
+@api_view(['GET', 'HEAD', 'POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def emergency_wave_tick_view(request):
     """
     Triggers wave progression tick for all active requests.
-    Used by cron, celery, or internal runner.
+    Used by UptimeRobot or internal runner.
     """
+    auth_header = request.headers.get('Authorization', '')
+    expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
+    
+    # If no token configured or no header matched
+    if not expected or not auth_header.startswith('Bearer '):
+        raise PermissionDenied("Invalid or missing token")
+        
+    token = auth_header.split(' ')[1]
+    if not hmac.compare_digest(token, expected):
+        raise PermissionDenied("Invalid token")
+        
     result = process_wave_tick()
     return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def maintenance_tick_view(request):
+    auth_header = request.headers.get('Authorization', '')
+    expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
+    if not expected or not auth_header.startswith('Bearer '):
+        raise PermissionDenied("Invalid or missing token")
+    token = auth_header.split(' ')[1]
+    if not hmac.compare_digest(token, expected):
+        raise PermissionDenied("Invalid token")
+
+    from api.services.journeys import auto_confirm_stale_donations, auto_manage_deferrals
+    closed = auto_confirm_stale_donations(hours=48)
+    deferred, reenabled = auto_manage_deferrals()
+    return Response({'auto_confirmed_count': len(closed), 'auto_deferred_count': deferred, 'auto_reenabled_count': reenabled})
 
 
 # ── Live Tracking Endpoints ───────────────────────────────────────────────────
@@ -422,6 +573,8 @@ def journey_location_view(request, pk):
             return Response({'error': 'lat and lng are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now()
+        if acceptance.status not in ['ACCEPTED', 'ON_THE_WAY']:
+            return Response({'status': 'ignored', 'message': 'Journey not in active tracking window'}, status=status.HTTP_200_OK)
         acceptance.donor_lat = float(lat)
         acceptance.donor_lng = float(lng)
         acceptance.last_location_update = now
@@ -475,7 +628,7 @@ def journey_status_transition_view(request, pk):
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     new_status = request.data.get('status', '').strip().upper()
-    valid_statuses = ['ON_THE_WAY', 'ARRIVED', 'DONATED', 'CANCELLED']
+    valid_statuses = ['ON_THE_WAY', 'ARRIVED', 'DONATED', 'CANCELLED', 'CONFIRMED']
     if new_status not in valid_statuses:
         return Response({'error': f'Invalid status. Allowed: {valid_statuses}'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -488,40 +641,21 @@ def journey_status_transition_view(request, pk):
     now = timezone.now()
 
     if new_status == 'DONATED':
-        if not (is_donor or is_requester):
-            return Response({'error': 'Unauthorized.'}, status=status.HTTP_403_FORBIDDEN)
-
         acceptance.status = 'DONATED'
-        acceptance.completed_at = now
-        acceptance.save(update_fields=['status', 'completed_at'])
+        acceptance.donated_at = now
+        acceptance.save(update_fields=['status', 'donated_at'])
+        return Response({'status': 'DONATED', 'message': 'Pending requester confirmation.'})
 
-        # Fulfill request
-        blood_req = acceptance.request
-        blood_req.status = 'FULFILLED'
-        blood_req.is_active = False
-        blood_req.save(update_fields=['status', 'is_active'])
-
-        # Update donor stats
-        donor = acceptance.donor
-        donor.fulfilled_count = (donor.fulfilled_count or 0) + 1
-        donor.total_bags_donated = (donor.total_bags_donated or 0) + (blood_req.units_needed or 1)
-        donor.last_donation_date = now.date()
-        donor.is_available = False
-        donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date', 'is_available'])
-
-        # Record donation history
-        from api.models import DonationHistory
-        DonationHistory.objects.create(
-            donor=donor,
-            date=now.date(),
-            location=blood_req.hospital_location or (blood_req.hospital.name if blood_req.hospital else 'Hospital'),
-            bags_donated=blood_req.units_needed or 1,
-            notes=f"Emergency requisition #{blood_req.id} fulfilled.",
-        )
+    elif new_status == 'CONFIRMED':
+        if not is_requester: return Response({'error': 'Unauthorized.'}, status=403)
+        
+        from api.services.journeys import finalize_donation
+        finalize_donation(acceptance, auto=False)
 
         return Response({
             'message': 'Donation successfully marked as completed. Donor record updated.',
-            'status': 'DONATED',
+            'status': 'CONFIRMED',
+            'completed_at': acceptance.completed_at
         }, status=status.HTTP_200_OK)
 
     elif new_status == 'CANCELLED':
@@ -729,6 +863,7 @@ def standby_offer_respond_view(request, pk):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([OTPAnonThrottle, OTPUserThrottle])
 def email_otp_send_view(request):
     """
     POST /api/auth/otp/send/
@@ -1057,7 +1192,7 @@ def deferral_appeal_view(request, pk):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def active_deferral_view(request):
     """
     GET /api/deferrals/active/
@@ -1065,6 +1200,8 @@ def active_deferral_view(request):
     """
     from api.models import DeferralRecord
     
+    if not request.user or not request.user.is_authenticated:
+        return Response({'has_deferral': False})
     
     try:
         donor = request.user.donorprofile
@@ -1094,7 +1231,7 @@ def active_deferral_view(request):
 # PROMPT 9: NATIONAL EMERGENCY & DISASTER RESPONSE
 # -----------------------------------------------------------------------------
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def active_national_emergency_view(request):
     """
     GET /api/emergency/national/active/
@@ -1191,3 +1328,41 @@ def my_pledge_view(request):
         'has_pledge': True,
         'pledge': DisasterPledgeSerializer(pledge).data
     })
+@api_view(['POST'])
+
+@permission_classes([IsAuthenticated])
+
+def emergency_request_all_view(request, pk):
+
+    """
+
+    Manually dispatch notifications to all eligible donors in the area.
+
+    """
+
+    blood_req = BloodRequest.objects.filter(id=pk).first()
+
+    if not blood_req:
+
+        return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+    candidates = get_candidate_donors_for_wave(blood_req, wave_number=3) # Wave 3 or max wave usually targets everyone in district
+
+    if not candidates:
+
+        return Response({'message': 'No eligible donors found.', 'notified': 0}, status=status.HTTP_200_OK)
+
+        
+
+    dispatch_wave_notifications(blood_req, candidates, wave_number=3)
+
+    return Response({'message': f'Notified {len(candidates)} donors.', 'notified': len(candidates)}, status=status.HTTP_200_OK)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def emergency_request_all_view(request):
+    return Response({'message': 'No eligible donors found.', 'notified': 0}, status=status.HTTP_200_OK)

@@ -1,4 +1,9 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/providers/health_hub_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -8,16 +13,16 @@ import '../../domain/models/health_accessory_model.dart';
 
 /// Health & Blood Accessories Screen
 /// Directly aligned with BloodPulse Stitch UI Screen (Screen ID: a60dff7c188e4fdf92dc4b48392ad450).
-/// Curated medical supplies, diagnostic equipment, test strips, and donor gear
+/// Medical supplies, diagnostic equipment, test strips, and donor gear
 /// with direct affiliate store integration via url_launcher.
-class HealthAccessoriesScreen extends StatefulWidget {
+class HealthAccessoriesScreen extends ConsumerStatefulWidget {
   const HealthAccessoriesScreen({super.key});
 
   @override
-  State<HealthAccessoriesScreen> createState() => _HealthAccessoriesScreenState();
+  ConsumerState<HealthAccessoriesScreen> createState() => _HealthAccessoriesScreenState();
 }
 
-class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
+class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScreen> {
   String _selectedCategory = 'All';
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -60,7 +65,12 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredItems = HealthAccessory.curatedList.where((item) {
+    final asyncAccessories = ref.watch(healthAccessoriesProvider);
+    return asyncAccessories.when(
+      loading: () => const Scaffold(backgroundColor: Color(0xFFFFF8F7), body: Center(child: CircularProgressIndicator())),
+      error: (e, st) => Scaffold(backgroundColor: Color(0xFFFFF8F7), body: Center(child: Text('Error loading accessories', style: TextStyle(fontFamily: 'Inter')))),
+      data: (items) {
+        final filteredItems = items.where((item) {
       final matchesCategory = _selectedCategory == 'All' || item.category == _selectedCategory;
       final matchesSearch = _searchQuery.isEmpty ||
           item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -144,7 +154,7 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Certified diagnostic devices, test strips, recovery supplements & voluntary donor gear.',
+                        'Diagnostic devices, test strips, recovery supplements & voluntary donor gear.',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 14,
@@ -314,7 +324,7 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Products listed are curated from verified pharmacy partners. A modest referral commission supports BloodPulse voluntary emergency blood dispatch logistics at no extra cost to you.',
+                                'These are general product search links, not endorsements from specific sellers. Sponsored — BloodPulse may earn a commission from purchases. (এগুলো সাধারণ পণ্য অনুসন্ধানের লিংক, নির্দিষ্ট কোনো বিক্রেতার অনুমোদন নয়। স্পন্সরড — কেনাকাটা থেকে BloodPulse কমিশন পেতে পারে - unreviewed)',
                                 style: TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 12,
@@ -334,6 +344,8 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 
@@ -406,7 +418,7 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
                                 Icon(Icons.verified_rounded, size: 12, color: Color(0xFF0D68AA)),
                                 SizedBox(width: 4),
                                 Text(
-                                  'DGDA / ISO Certified',
+                                  'Quality Standards',
                                   style: TextStyle(fontFamily: 'Inter', fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
                                 ),
                               ],
@@ -536,7 +548,7 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                item.priceRange,
+                                'Approx. ${item.priceRange}',
                                 style: const TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 17,
@@ -739,7 +751,7 @@ class _HealthAccessoriesScreenState extends State<HealthAccessoriesScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          item.priceRange,
+                          'Approx. ${item.priceRange}',
                           style: const TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 15,

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -577,7 +580,19 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
                           ),
                           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
 
-                          // 4. Settings & Security
+                          // 4. BloodPulse Assistant
+                          _buildMenuItem(
+                            icon: Icons.support_agent_rounded,
+                            title: 'BloodPulse Assistant',
+                            subtitle: 'Get instant help with AI',
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              context.push('/assistant');
+                            },
+                          ),
+                          const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+
+                          // 5. Settings & Security
                           _buildMenuItem(
                             icon: Icons.settings_outlined,
                             title: 'Settings & Security',

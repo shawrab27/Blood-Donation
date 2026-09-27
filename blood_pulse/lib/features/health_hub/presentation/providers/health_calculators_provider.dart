@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/health_log_entity.dart';
 
@@ -27,13 +30,15 @@ class HealthCalculatorState {
   // ── Computed Calculations ────────────────────────────────────────────────
 
   double get bmi {
-    if (heightCm <= 0) return 0.0;
+    if (heightCm <= 0 || weightKg <= 0) return 0.0;
+    if (weightKg > 600 || heightCm > 300) return 0.0; // Extreme bound check
     final hm = heightCm / 100.0;
     return weightKg / (hm * hm);
   }
 
   String get bmiCategory {
     final b = bmi;
+    if (b <= 0.0 || b > 150.0) return 'Invalid Input';
     if (b < 18.5) return 'Underweight';
     if (b < 25.0) return 'Normal Weight';
     if (b < 30.0) return 'Overweight';

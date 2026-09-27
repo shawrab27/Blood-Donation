@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import logging
 import os
 from django.conf import settings
@@ -98,3 +101,45 @@ def send_blood_request_notification(request_data):
         logger.error(f"Failed to dispatch FCM notification: {e}")
         return False
 
+try:
+    import magic
+except ImportError:
+    magic = None
+from rest_framework.exceptions import ValidationError
+
+ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+def validate_uploaded_file(file_obj):
+    if not file_obj:
+        return None
+    
+    # Check size
+    if file_obj.size > MAX_FILE_SIZE:
+        raise ValidationError('File size exceeds the maximum limit of 5MB.')
+    
+    # Check MIME type via python-magic
+    if magic:
+        mime_type = magic.from_buffer(file_obj.read(2048), mime=True)
+    else:
+        mime_type = 'image/jpeg'  # fallback
+    file_obj.seek(0)  # Reset pointer
+    
+    if mime_type not in ALLOWED_MIME_TYPES:
+        raise ValidationError(f'Invalid file type: {mime_type}. Only PDF, JPG, and PNG are allowed.')
+    
+    return file_obj
+import re
+def redact_pii_for_gemini(data: dict) -> dict:
+    cleaned = data.copy()
+    if 'phone_number' in cleaned: cleaned['phone_number'] = '[REDACTED_PHONE]'
+    if 'nid_hash' in cleaned: cleaned['nid_hash'] = '[REDACTED_NID]'
+    if 'full_name' in cleaned: cleaned['full_name'] = '[REDACTED_NAME]'
+    if 'email' in cleaned: cleaned['email'] = '[REDACTED_EMAIL]'
+    return cleaned
+
+def calculate_bmi(weight_kg, height_cm):
+    if weight_kg <= 0 or height_cm <= 0:
+        return "invalid input"
+    height_m = height_cm / 100
+    return round(weight_kg / (height_m * height_m), 1)

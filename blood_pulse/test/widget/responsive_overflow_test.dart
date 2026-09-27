@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,35 +15,45 @@ void main() {
       const Size(600, 960), // Small tablet
     ];
 
-    testWidgets('HealthHubDashboardScreen scales without render overflow', (WidgetTester tester) async {
+    testWidgets('HealthHubDashboardScreen scales without render overflow',
+        (WidgetTester tester) async {
       for (final size in sizes) {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
         await tester.pumpWidget(
-          const ProviderScope(child: MaterialApp(
-            home: HealthHubDashboardScreen()),
+          ProviderScope(
+            child: MaterialApp(
+              // Scaffold provides Material ancestor needed by Material widgets.
+              home: const Scaffold(body: HealthHubDashboardScreen()),
+            ),
           ),
         );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull, reason: 'Overflow exception at $size');
+        await tester.pump();
+        expect(tester.takeException(), isNull,
+            reason: 'Overflow exception at $size');
       }
     });
 
-    testWidgets('BloodHubSearchScreen scales without render overflow', (WidgetTester tester) async {
+    testWidgets('BloodHubSearchScreen scales without render overflow',
+        (WidgetTester tester) async {
       for (final size in sizes) {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
 
         await tester.pumpWidget(
-          const ProviderScope(child: MaterialApp(
-            home: BloodHubSearchScreen()),
+          ProviderScope(
+            child: MaterialApp(
+              // Scaffold provides Material ancestor required by DropdownButton.
+              home: const Scaffold(body: BloodHubSearchScreen()),
+            ),
           ),
         );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull, reason: 'Overflow exception at $size');
+        await tester.pump();
+        expect(tester.takeException(), isNull,
+            reason: 'Overflow exception at $size');
       }
     });
   });

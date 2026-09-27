@@ -1,68 +1,66 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../core/widgets/custom_app_bar.dart';
+import '../feed/presentation/providers/feed_provider.dart';
 
-class SocialFeedScreen extends StatelessWidget {
+class SocialFeedScreen extends ConsumerWidget {
   const SocialFeedScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final posts = ref.watch(feedProvider);
+
     return Scaffold(
       appBar: CustomAppBar(
         showLogo: true,
         showBackButton: true,
         onBack: () => context.go('/dashboard'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppConstants.padding),
-        children: [
-          Text('Stories of Impact', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 16),
-          // Stories Row
-          SizedBox(
-            height: 100,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildStoryBubble(context, isNew: true, label: 'Add Story', icon: Icons.add),
-                _buildStoryBubble(context, label: 'Rahim'),
-                _buildStoryBubble(context, label: 'Sadia'),
-                _buildStoryBubble(context, label: 'Karim'),
-                _buildStoryBubble(context, label: 'Nadia'),
-              ],
+      body: posts.isEmpty
+          ? const Center(child: Text('No posts found.'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(AppConstants.padding),
+              itemCount: posts.length + 2, // stories + header + posts
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Stories of Impact', style: Theme.of(context).textTheme.headlineMedium),
+                      const SizedBox(height: 16),
+                    ],
+                  );
+                }
+                if (index == 1) {
+                  return SizedBox(
+                    height: 100,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _buildStoryBubble(context, isNew: true, label: 'Add Story', icon: Icons.add),
+                      ],
+                    ),
+                  );
+                }
+                final post = posts[index - 2];
+                return Padding(
+                  padding: EdgeInsets.only(bottom: 16.0, top: (index == 2) ? 24.0 : 0.0),
+                  child: _buildFeedPost(
+                    context,
+                    author: post.authorName,
+                    time: post.timestamp,
+                    content: post.content,
+                    likes: post.reactCount,
+                    isEmergency: post.urgentNeedBadge != null,
+                  ),
+                );
+              },
             ),
-          ),
-          const SizedBox(height: 24),
-          // Feed Posts
-          _buildFeedPost(
-            context,
-            author: 'Rahim Uddin',
-            time: '2 hours ago',
-            content: 'Just donated blood at Dhaka Medical College! Feeling great knowing I could help someone in need. #BloodDonation',
-            likes: 42,
-            isEmergency: false,
-          ),
-          const SizedBox(height: 16),
-          _buildFeedPost(
-            context,
-            author: 'Anisur Rahman',
-            time: '5 hours ago',
-            content: 'URGENT: Need 2 bags of O- blood at Square Hospital immediately. Please share or contact if available.',
-            likes: 120,
-            isEmergency: true,
-          ),
-          const SizedBox(height: 16),
-          _buildFeedPost(
-            context,
-            author: 'Sadia Islam',
-            time: '1 day ago',
-            content: 'Thank you to the generous donor who saved my brother\'s life today. Words cannot express our gratitude.',
-            likes: 315,
-            isEmergency: false,
-          ),
-        ],
-      ),
     );
   }
 

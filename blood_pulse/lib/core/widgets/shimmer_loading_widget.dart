@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 
 /// Shimmer loading skeleton placeholder widget for smooth loading states across newsfeed cards, communities lists, and health metrics.

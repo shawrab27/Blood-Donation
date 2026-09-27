@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 URL configuration for blood_pulse_backend project.
 
@@ -19,6 +22,7 @@ from django.urls import path, include
 from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import health_check
+from api.views_fcm import update_fcm_view
 
 def root_index(request):
     return JsonResponse({
@@ -36,4 +40,6 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('api.urls')),
+    path('api/users/update-fcm/', update_fcm_view, name='update-fcm'),
+    path('api/assistant/', include('assistant.urls')),
 ]

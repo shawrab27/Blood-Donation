@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../services/api_client.dart';
 import '../providers/auth_notifier.dart';
 
 /// Login Screen — Phone/Username + Password.
@@ -353,63 +357,96 @@ class _ForgotPasswordModal extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordModalState extends ConsumerState<_ForgotPasswordModal> {
-  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _codeCtrl = TextEditingController();
   final _newPwCtrl = TextEditingController();
-  bool _otpSent = false;
+  final _confirmPwCtrl = TextEditingController();
+  
+  int _step = 1;
+  bool _isLoading = false;
+  String _resetToken = '';
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     _codeCtrl.dispose();
     _newPwCtrl.dispose();
+    _confirmPwCtrl.dispose();
     super.dispose();
   }
-
-  void _onSendOtp() {
-    final phone = _phoneCtrl.text.trim();
-    if (phone.isEmpty) return;
-    setState(() => _otpSent = true);
+  
+  void _showSnack(String msg, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Verification code sent to your phone! (PIN: 1234)', style: TextStyle(fontFamily: 'Inter')),
-        backgroundColor: AppColors.tertiary,
+      SnackBar(
+        content: Text(msg, style: const TextStyle(fontFamily: 'Inter')),
+        backgroundColor: isError ? AppColors.error : const Color(0xFF1B8A4E),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  void _onResetPassword() {
-    if (_codeCtrl.text.trim() != '1234' && _codeCtrl.text.trim() != '0000') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid verification code. Use PIN: 1234', style: TextStyle(fontFamily: 'Inter')),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  Future<void> _onRequestOtp() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      await ApiClient().requestEmailOtp(email);
+      if (!mounted) return;
+      setState(() {
+        _step = 2;
+        _isLoading = false;
+      });
+      _showSnack('Check your email for a 6-digit code', isError: false);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnack(e.toString());
+    }
+  }
+
+  Future<void> _onVerifyOtp() async {
+    final email = _emailCtrl.text.trim();
+    final code = _codeCtrl.text.trim();
+    if (code.isEmpty) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      final token = await ApiClient().verifyEmailOtp(email, code);
+      if (!mounted) return;
+      setState(() {
+        _resetToken = token;
+        _step = 3;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnack(e.toString());
+    }
+  }
+
+  Future<void> _onResetPassword() async {
+    final np = _newPwCtrl.text;
+    final cp = _confirmPwCtrl.text;
+    
+    if (np.length < 8) {
+      _showSnack('Password must be at least 8 characters');
       return;
     }
-
-    if (_newPwCtrl.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password must be at least 6 characters.', style: TextStyle(fontFamily: 'Inter')),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    if (np != cp) {
+      _showSnack('Passwords do not match');
       return;
     }
-
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password reset successfully! You can now sign in.', style: TextStyle(fontFamily: 'Inter')),
-        backgroundColor: Color(0xFF1B8A4E),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    
+    setState(() => _isLoading = true);
+    try {
+      await ApiClient().resetPassword(_resetToken, np, cp);
+      if (!mounted) return;
+      Navigator.pop(context);
+      _showSnack('Password updated — please sign in', isError: false);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnack(e.toString());
+    }
   }
 
   @override
@@ -437,60 +474,63 @@ class _ForgotPasswordModalState extends ConsumerState<_ForgotPasswordModal> {
             style: TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.secondary),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Enter your registered phone number to receive a secure OTP code.',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
+          Text(
+            _step == 1 
+                ? 'Enter your registered email to receive a 6-digit OTP.' 
+                : _step == 2
+                    ? 'Enter the 6-digit OTP sent to your email.'
+                    : 'Create a new password (min. 8 characters).',
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
           ),
           const SizedBox(height: 20),
-          if (!_otpSent) ...[
+          if (_step == 1) ...[
             CustomInputField(
-              controller: _phoneCtrl,
-              hint: 'Phone Number (e.g. 01711000000)',
-              prefixIcon: Icons.phone_android_rounded,
-              keyboardType: TextInputType.phone,
+              controller: _emailCtrl,
+              hint: 'Email Address',
+              prefixIcon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 20),
             CapsuleButton(
               label: 'Send OTP Code',
-              icon: Icons.sms_outlined,
-              onPressed: _onSendOtp,
+              icon: Icons.send_rounded,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _onRequestOtp,
             ),
-          ] else ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              margin: const EdgeInsets.only(bottom: 14),
-              decoration: BoxDecoration(color: const Color(0xFFEDF4FF), borderRadius: BorderRadius.circular(12)),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline_rounded, color: AppColors.tertiary, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '🔑 Demo PIN: 1234',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.tertiary, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          ] else if (_step == 2) ...[
             CustomInputField(
               controller: _codeCtrl,
-              hint: 'Enter 4-Digit OTP Code',
+              hint: 'Enter 6-Digit OTP',
               prefixIcon: Icons.lock_clock_rounded,
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 20),
+            CapsuleButton(
+              label: 'Verify OTP',
+              icon: Icons.check_circle_outline_rounded,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _onVerifyOtp,
+            ),
+          ] else if (_step == 3) ...[
             CustomInputField(
               controller: _newPwCtrl,
-              hint: 'Enter New Password',
+              hint: 'New Password',
+              prefixIcon: Icons.lock_outline_rounded,
+              isPassword: true,
+            ),
+            const SizedBox(height: 14),
+            CustomInputField(
+              controller: _confirmPwCtrl,
+              hint: 'Confirm Password',
               prefixIcon: Icons.lock_outline_rounded,
               isPassword: true,
             ),
             const SizedBox(height: 20),
             CapsuleButton(
               label: 'Update Password',
-              icon: Icons.check_circle_outline_rounded,
-              onPressed: _onResetPassword,
+              icon: Icons.save_rounded,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _onResetPassword,
             ),
           ],
         ],

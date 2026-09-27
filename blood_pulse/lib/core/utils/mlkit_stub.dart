@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// Stub for google_mlkit_text_recognition on web/desktop platforms.
 /// ML Kit OCR is only supported on Android and iOS.
 /// This file satisfies the conditional import so the project compiles

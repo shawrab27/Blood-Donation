@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// BloodPulse — Research Feature Shared Enums
 ///
 /// All enum values documented with academic-publication-level descriptions

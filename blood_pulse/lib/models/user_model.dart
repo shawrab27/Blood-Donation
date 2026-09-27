@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// UserModel representing user profile, verification status, and 120-day donation eligibility.
 class UserModel {
   const UserModel({

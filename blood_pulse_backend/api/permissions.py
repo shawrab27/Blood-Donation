@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 from rest_framework.permissions import BasePermission
 
 class IsProfileComplete(BasePermission):
@@ -16,3 +19,14 @@ class IsProfileComplete(BasePermission):
         except Exception:
             return False
 
+from rest_framework import permissions
+
+class IsSuperAdminOrGroup(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser and request.user.is_staff:
+            return True
+        if request.user.groups.filter(name='administrators').exists():
+            return True
+        return False

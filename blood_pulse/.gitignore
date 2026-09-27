@@ -1,4 +1,4 @@
-# Miscellaneous
+﻿# Miscellaneous
 *.class
 *.log
 *.pyc
@@ -43,3 +43,18 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Firebase secrets
+
+android/app/google-services.json
+
+firebase.json
+
+lib/firebase_options.dart
+
+
+
+# Keystore files
+key.properties
+*.jks

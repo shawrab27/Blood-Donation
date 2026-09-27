@@ -1,5 +1,9 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
@@ -46,6 +50,23 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           const GlobalLiveBanner(),
           Expanded(child: tabs[activeTabIndex]),
         ],
+      ),
+      floatingActionButton: SizedBox(
+        width: 44,
+        height: 44,
+        child: FloatingActionButton(
+          mini: true,
+          onPressed: () => context.push('/assistant'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          highlightElevation: 0,
+          child: Image.asset(
+            'assets/images/pulse_ai_icon.png',
+            width: 42,
+            height: 42,
+            fit: BoxFit.contain,
+          ),
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

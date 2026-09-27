@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// BloodPulse — FCM Push Notification Service
 ///
 /// Production-grade Firebase Cloud Messaging singleton that:
@@ -23,6 +26,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../features/notifications/presentation/screens/notification_wallpaper_overlay.dart';
+import 'api_client.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Background message handler — MUST be a top-level function.
@@ -230,14 +234,24 @@ class FcmService {
         debugPrint('👤 User UID: $userUid');
       }
       debugPrint('🔑 Token: $token');
-      debugPrint('════════════════════════════════════════════════════════════\n');
-    } catch (e) {
+        if (token != null) {
+          try {
+            await ApiClient().post('/api/users/update-fcm/', body: {'token': token});
+            debugPrint('[FCM] Token registered with Django backend.');
+          } catch (apiErr) {
+            debugPrint('[FCM] Failed to register token with backend: $apiErr');
+          }
+        }
+      } catch (e) {
       debugPrint('[FCM] token fetch error: $e');
     }
 
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-      debugPrint('[FCM] token refreshed: $newToken');
-    });
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        debugPrint('[FCM] token refreshed: $newToken');
+        try {
+          await ApiClient().post('/api/users/update-fcm/', body: {'token': newToken});
+        } catch (apiErr) {}
+      });
   }
 
   // ── Topic Subscription ─────────────────────────────────────────────────

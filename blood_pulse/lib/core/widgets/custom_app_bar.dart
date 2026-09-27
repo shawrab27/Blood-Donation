@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +32,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool showNotification;
   final VoidCallback? onNotificationTap;
   final bool showProfile;
-  final bool showMenu;
+  
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
   final Color? backgroundColor;
@@ -49,7 +52,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.showNotification = true,
     this.onNotificationTap,
     this.showProfile = true,
-    this.showMenu = false,
+    
     this.actions,
     this.bottom,
     this.backgroundColor,
@@ -185,7 +188,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: (!showNotification &&
               !showProfile &&
-              !showMenu &&
+              
               (actions == null || actions!.isEmpty))
           ? null
           : [
@@ -249,7 +252,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               // ── 2. Profile Avatar ──
               if (showProfile)
                 GestureDetector(
-                  onTap: () => ProfileDrawer.show(context),
+                  onTap: () => context.push('/profile'),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: _TopBarProfileAvatar(
@@ -259,83 +262,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                   ),
                 ),
-              if (showNotification || showProfile || showMenu)
+              if (showNotification || showProfile)
                 const SizedBox(width: 6),
-
-              // ── 3. Menu Options (3-Dot Popup Menu) ──
-              if (showMenu)
-                PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert_rounded,
-              color: (backgroundColor != null &&
-                      backgroundColor!.computeLuminance() < 0.3)
-                  ? Colors.white
-                  : AppColors.secondary,
-              size: 22,
-            ),
-            tooltip: 'More Options',
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 8,
-            color: Colors.white,
-            onSelected: (value) {
-              switch (value) {
-                case 'profile':
-                  context.go('/profile');
-                  break;
-                case 'request':
-                  context.go('/emergency-request');
-                  break;
-                case 'map':
-                  context.go('/map');
-                  break;
-                case 'notifications':
-                  context.push('/notifications');
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'profile',
-                child: Row(
-                  children: [
-                    Icon(Icons.person_outline_rounded, size: 20, color: AppColors.secondary),
-                    SizedBox(width: 10),
-                    Text('My Profile', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'request',
-                child: Row(
-                  children: [
-                    Icon(Icons.bloodtype_outlined, size: 20, color: AppColors.primary),
-                    SizedBox(width: 10),
-                    Text('Request Blood', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'map',
-                child: Row(
-                  children: [
-                    Icon(Icons.map_outlined, size: 20, color: AppColors.secondary),
-                    SizedBox(width: 10),
-                    Text('Live Donor Map', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'notifications',
-                child: Row(
-                  children: [
-                    Icon(Icons.notifications_outlined, size: 20, color: AppColors.secondary),
-                    SizedBox(width: 10),
-                    Text('Notifications', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-            ],
-          ),
 
         const SizedBox(width: 8),
       ],

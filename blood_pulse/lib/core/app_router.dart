@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +20,7 @@ import '../features/blood_request/presentation/screens/emergency_request_screen.
 // Notifications & Chat
 import '../features/notifications/presentation/screens/notification_center_screen.dart';
 import '../views/chat/chat_screen.dart';
+import '../features/assistant/presentation/screens/assistant_screen.dart';
 import '../features/donor/presentation/screens/donor_map_screen.dart';
 import '../features/blood_request/presentation/screens/identity_verification_screen.dart';
 import '../features/donor/presentation/screens/live_dispatch_screen.dart';
@@ -85,7 +89,7 @@ class _StandaloneProfileScreen extends StatelessWidget {
 
 
 final appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/onboarding',
   routes: [
     // ── Auth ──────────────────────────────────────────────────────────────────
     GoRoute(
@@ -382,6 +386,13 @@ final appRouter = GoRouter(
         );
       },
     ),
+      GoRoute(
+        path: '/assistant',
+        builder: (context, state) {
+          final contextData = state.extra as String?;
+          return AssistantScreen(screenContext: contextData);
+        },
+      ),
 
     // ── OpenStreetMap Donor Mapping ───────────────────────────────────────────
     GoRoute(

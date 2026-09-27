@@ -1,4 +1,7 @@
-﻿from django.core.management.base import BaseCommand
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
+from django.core.management.base import BaseCommand
 from api.models import (
     BloodScienceArticle, CompatibilityRule, DonationGuideSection,
     EmergencyContact, RecoveryTimelineStep

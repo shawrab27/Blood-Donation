@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 from datetime import timedelta
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -126,6 +129,14 @@ class LiveTrackingAndStandbyTests(TestCase):
 
         self.acceptance.refresh_from_db()
         self.assertEqual(self.acceptance.status, 'DONATED')
+        
+        # Requester confirms
+        self.client.force_authenticate(user=self.requester)
+        resp3 = self.client.post(f'/api/journeys/{self.acceptance.id}/status/', {'status': 'CONFIRMED'})
+        self.assertEqual(resp3.status_code, status.HTTP_200_OK)
+
+        self.acceptance.refresh_from_db()
+        self.assertEqual(self.acceptance.status, 'CONFIRMED')
         self.assertIsNotNone(self.acceptance.completed_at)
 
         self.blood_req.refresh_from_db()
@@ -192,6 +203,7 @@ class LiveTrackingAndStandbyTests(TestCase):
         post_resp = self.client.post(f'/api/standby/{offer.id}/respond/', {'action': 'ACCEPT'})
         self.assertEqual(post_resp.status_code, status.HTTP_200_OK)
         self.assertIn('requester_phone', post_resp.json())
+
         self.assertEqual(post_resp.json()['requester_phone'], '+8801800000000')
 
         offer.refresh_from_db()
@@ -202,3 +214,24 @@ class LiveTrackingAndStandbyTests(TestCase):
         self.assertIsNotNone(new_acc)
         self.assertTrue(new_acc.is_standby)
         self.assertEqual(new_acc.status, 'ACCEPTED')
+
+    def test_auto_confirm_stale_donations(self):
+        from api.services.journeys import auto_confirm_stale_donations
+        from datetime import timedelta
+        from django.utils import timezone
+
+        self.acceptance.status = 'DONATED'
+        self.acceptance.donated_at = timezone.now() - timedelta(hours=50)
+        self.acceptance.save()
+
+        closed = auto_confirm_stale_donations(hours=48)
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(closed[0].id, self.acceptance.id)
+
+        self.acceptance.refresh_from_db()
+        self.assertEqual(self.acceptance.status, 'CONFIRMED')
+        self.assertTrue(self.acceptance.auto_confirmed)
+        self.assertIsNotNone(self.acceptance.completed_at)
+        
+        self.blood_req.refresh_from_db()
+        self.assertEqual(self.blood_req.status, 'FULFILLED')

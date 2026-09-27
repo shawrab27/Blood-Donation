@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 Standby Donor Ranking & Activation Engine.
 Activates backup donors when an active journey encounters a donation issue

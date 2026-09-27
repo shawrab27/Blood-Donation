@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -629,7 +632,7 @@ class _PersonalEmergencyScreenState
                     ),
                   ),
                   subtitle: Text(
-                    '${h.district}, ${h.division}',
+                    '${h.district}',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 11,

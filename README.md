@@ -1,3 +1,13 @@
+# Ownership & License
+
+This is a proprietary project owned by **Nasim Uddin Shawrab**. All rights reserved (2026).
+
+This software and its associated source code, design assets, database schemas, and documentation are **not open-source**. The code is shared for academic and research evaluation purposes only (Software Development course, BAUST) unless otherwise explicitly licensed in writing.
+
+For full terms, see the [LICENSE](blood_pulse/LICENSE) file.
+
+---
+
 # 🩸 BloodPulse — Emergency Blood Donation & Medical Matching Platform
 
 > **Bangladesh's Premier Emergency Blood Matching & Donor Coordination Network**  

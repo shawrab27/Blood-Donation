@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -40,7 +43,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
 
   final MapController _mapController = MapController();
 
-  // GPS Coordinates (Dhaka Route: Dhanmondi to Dhaka Medical / City General)
+  // GPS Coordinates (Dhaka Route: Dhanmondi to City General)
   final LatLng _originCoord = const LatLng(23.7465, 90.3708); // Dhanmondi 27
   final LatLng _donorCoord = const LatLng(23.7380, 90.3850);  // Mirpur Road transit
   final LatLng _hospitalCoord = const LatLng(23.7259, 90.3976); // City General Trauma Wing

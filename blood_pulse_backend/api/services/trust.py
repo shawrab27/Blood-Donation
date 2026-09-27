@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 Trust Scoring & Verification Service.
 Evaluates request authenticity, calculates trust scores (0-100),
@@ -36,17 +39,19 @@ def calculate_trust_score(
     Computes rule-based trust score (0-100) and corresponding trust band ('LOW', 'MEDIUM', 'HIGH').
     Returns (score: int, band: str).
     """
-    score = TRUST_SCORE_BASE
+    from api.models import TrustScoreConfig
+    config = TrustScoreConfig.get_solo()
+    score = config.base_score
 
     # Hospital verification bonus
     if hospital and getattr(hospital, 'is_verified', False):
-        score += TRUST_SCORE_HOSPITAL_VERIFIED
+        score += config.hospital_verified
     elif hospital or (hospital_name_other and len(hospital_name_other.strip()) > 3):
         score += TRUST_SCORE_HOSPITAL_UNVERIFIED
 
     # Requisition slip bonus
     if has_requisition_slip:
-        score += TRUST_SCORE_PRESCRIPTION_SLIP
+        score += config.prescription_slip
 
     # Patient photo bonus
     if has_patient_photo:
@@ -63,7 +68,7 @@ def calculate_trust_score(
         no_shows = getattr(profile, 'no_show_count', 0)
 
         score += min(15, fulfilled * TRUST_SCORE_DONOR_FULFILLED_BONUS)
-        score -= (no_shows * TRUST_SCORE_NO_SHOW_PENALTY)
+        score -= (no_shows * config.no_show_penalty)
 
     # Clamp score to [0, 100]
     score = max(0, min(100, score))

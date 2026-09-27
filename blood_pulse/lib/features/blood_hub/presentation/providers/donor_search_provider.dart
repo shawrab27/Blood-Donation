@@ -1,5 +1,10 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../services/api_client.dart';
 
 class DonorSearchResult {
   const DonorSearchResult({
@@ -13,7 +18,7 @@ class DonorSearchResult {
     required this.isVerified,
     required this.isAvailable,
     required this.location,
-    this.phone = '+8801700000000',
+    this.phone,
   });
 
   final String id;
@@ -26,7 +31,26 @@ class DonorSearchResult {
   final bool isVerified;
   final bool isAvailable;
   final LatLng location;
-  final String phone;
+  final String? phone; // Could be null if not returned by search API
+
+  factory DonorSearchResult.fromJson(Map<String, dynamic> json) {
+    return DonorSearchResult(
+      id: json['id']?.toString() ?? '',
+      name: json['full_name'] ?? 'Unknown Donor',
+      bloodGroup: json['blood_group'] ?? 'Unknown',
+      campusOrLocation: json['campus'] ?? json['institute'] ?? 'Unknown Campus',
+      division: json['division'] ?? '',
+      zila: json['district'] ?? '',
+      lastDonationText: 'Donated: \ bags', // Fallback, update if needed
+      isVerified: json['is_verified'] ?? false,
+      isAvailable: json['is_available'] ?? true,
+      location: LatLng(
+        (json['latitude'] ?? 23.7259).toDouble(),
+        (json['longitude'] ?? 90.3976).toDouble(),
+      ),
+      phone: json['phone_masked'], // Often null/omitted in search results
+    );
+  }
 }
 
 class DonorSearchFilter {
@@ -69,124 +93,66 @@ class DonorSearchFilter {
   }
 }
 
-class DonorSearchNotifier extends StateNotifier<List<DonorSearchResult>> {
-  DonorSearchNotifier() : super(_initialDonors);
-
-  static final List<DonorSearchResult> _initialDonors = [
-    const DonorSearchResult(
-      id: 'd1',
-      name: 'Zahir Raihan',
-      bloodGroup: 'A+',
-      campusOrLocation: 'Dhaka Medical College',
-      division: 'Dhaka',
-      zila: 'Dhaka',
-      lastDonationText: 'Donated: 6 months ago',
-      isVerified: true,
-      isAvailable: true,
-      location: LatLng(23.7259, 90.3976),
-      phone: '+8801711223344',
-    ),
-    const DonorSearchResult(
-      id: 'd2',
-      name: 'Anika Tabassum',
-      bloodGroup: 'O+',
-      campusOrLocation: 'BUET Campus',
-      division: 'Dhaka',
-      zila: 'Dhaka',
-      lastDonationText: 'Last donation: 4 mos ago',
-      isVerified: true,
-      isAvailable: true,
-      location: LatLng(23.7266, 90.3888),
-      phone: '+8801811556677',
-    ),
-    const DonorSearchResult(
-      id: 'd3',
-      name: 'Md. Jalal',
-      bloodGroup: 'B+',
-      campusOrLocation: 'RUET Campus, Rajshahi',
-      division: 'Rajshahi',
-      zila: 'Rajshahi',
-      lastDonationText: 'Last donation: 1 mo ago (Unavailable)',
-      isVerified: false,
-      isAvailable: false,
-      location: LatLng(24.3636, 88.6284),
-      phone: '+8801911998877',
-    ),
-    const DonorSearchResult(
-      id: 'd4',
-      name: 'Arifur Rahman',
-      bloodGroup: 'O-',
-      campusOrLocation: 'Chittagong Medical College',
-      division: 'Chattogram',
-      zila: 'Chattogram',
-      lastDonationText: 'Donated: 5 months ago',
-      isVerified: true,
-      isAvailable: true,
-      location: LatLng(22.3569, 91.8215),
-      phone: '+8801611334455',
-    ),
-    const DonorSearchResult(
-      id: 'd5',
-      name: 'Farzana Haque',
-      bloodGroup: 'AB+',
-      campusOrLocation: 'Sylhet MAG Osmani Medical',
-      division: 'Sylhet',
-      zila: 'Sylhet',
-      lastDonationText: 'Donated: 7 months ago',
-      isVerified: true,
-      isAvailable: true,
-      location: LatLng(24.8949, 91.8687),
-      phone: '+8801511223344',
-    ),
-  ];
-
-  List<DonorSearchResult> filterDonors(DonorSearchFilter filter) {
-    return state.where((donor) {
-      if (filter.searchQuery.isNotEmpty) {
-        final q = filter.searchQuery.toLowerCase();
-        final match = donor.name.toLowerCase().contains(q) ||
-            donor.campusOrLocation.toLowerCase().contains(q) ||
-            donor.bloodGroup.toLowerCase().contains(q) ||
-            donor.zila.toLowerCase().contains(q);
-        if (!match) return false;
-      }
-
-      if (filter.bloodGroup != null && filter.bloodGroup!.isNotEmpty && filter.bloodGroup != 'Any') {
-        if (donor.bloodGroup != filter.bloodGroup) return false;
-      }
-
-      if (filter.division != null && filter.division!.isNotEmpty) {
-        if (donor.division != filter.division) return false;
-      }
-
-      if (filter.zila != null && filter.zila!.isNotEmpty && filter.zila != 'All Zilas') {
-        if (donor.zila != filter.zila) return false;
-      }
-
-      if (filter.campus != null && filter.campus!.isNotEmpty && filter.campus != 'All Campuses') {
-        if (!donor.campusOrLocation.toLowerCase().contains(filter.campus!.toLowerCase())) return false;
-      }
-
-      if (filter.onlyAvailable && !donor.isAvailable) {
-        return false;
-      }
-
-      return true;
-    }).toList();
-  }
-}
-
 final donorSearchFilterProvider = StateProvider<DonorSearchFilter>((ref) {
   return const DonorSearchFilter();
 });
 
+class DonorSearchNotifier extends StateNotifier<AsyncValue<List<DonorSearchResult>>> {
+  DonorSearchNotifier() : super(const AsyncValue.loading()) { search(const DonorSearchFilter()); }
+
+  Future<void> search(DonorSearchFilter filter) async {
+    state = const AsyncValue.loading();
+    try {
+      final queryParams = <String, String>{};
+      if (filter.bloodGroup != null && filter.bloodGroup!.isNotEmpty && filter.bloodGroup != 'Any') {
+        queryParams['blood_group'] = filter.bloodGroup!;
+      }
+      if (filter.campus != null && filter.campus!.isNotEmpty && filter.campus != 'All Campuses') {
+        queryParams['campus'] = filter.campus!;
+      }
+      if (filter.zila != null && filter.zila!.isNotEmpty && filter.zila != 'All Zilas') {
+        queryParams['district'] = filter.zila!;
+      }
+      
+      final uri = Uri(path: 'donors/search/', queryParameters: queryParams.isEmpty ? null : queryParams);
+      
+      final response = await ApiClient().get(uri.toString());
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      final List<dynamic> data = responseData['results'] as List<dynamic>;
+      
+      var donors = data.map((e) => DonorSearchResult.fromJson(e as Map<String, dynamic>)).toList();
+      
+      // Local filtering for things not supported by API yet (e.g. search query over multiple fields)
+      if (filter.searchQuery.isNotEmpty) {
+        final q = filter.searchQuery.toLowerCase();
+        donors = donors.where((donor) {
+          return donor.name.toLowerCase().contains(q) ||
+                 donor.campusOrLocation.toLowerCase().contains(q) ||
+                 donor.bloodGroup.toLowerCase().contains(q) ||
+                 donor.zila.toLowerCase().contains(q);
+        }).toList();
+      }
+      if (filter.division != null && filter.division!.isNotEmpty) {
+         donors = donors.where((d) => d.division == filter.division).toList();
+      }
+      if (filter.onlyAvailable) {
+         donors = donors.where((d) => d.isAvailable).toList();
+      }
+
+      state = AsyncValue.data(donors);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
 final donorSearchProvider =
-    StateNotifierProvider<DonorSearchNotifier, List<DonorSearchResult>>((ref) {
+    StateNotifierProvider<DonorSearchNotifier, AsyncValue<List<DonorSearchResult>>>((ref) {
   return DonorSearchNotifier();
 });
 
-final filteredDonorsProvider = Provider<List<DonorSearchResult>>((ref) {
-  final filter = ref.watch(donorSearchFilterProvider);
-  final notifier = ref.watch(donorSearchProvider.notifier);
-  return notifier.filterDonors(filter);
+final filteredDonorsProvider = Provider<AsyncValue<List<DonorSearchResult>>>((ref) {
+  // It's already filtered locally inside the notifier state for now.
+  // The UI can just watch donorSearchProvider directly.
+  return ref.watch(donorSearchProvider);
 });

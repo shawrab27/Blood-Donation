@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -87,15 +90,12 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
 
   Widget _bloodGroupChips() {
     final filter = ref.watch(bloodHubFilterProvider);
-    return SizedBox(
-      height: 36,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _kBloodGroups.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final group = _kBloodGroups[i];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: _kBloodGroups.map((group) {
           final selected = (group == 'Any' && filter.bloodGroup == null) ||
               filter.bloodGroup == group;
           return GestureDetector(
@@ -126,7 +126,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
               ),
             ),
           );
-        },
+        }).toList(),
       ),
     );
   }

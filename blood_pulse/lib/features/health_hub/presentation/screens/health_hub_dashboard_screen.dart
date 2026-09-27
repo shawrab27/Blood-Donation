@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -200,14 +203,21 @@ class HealthHubDashboardScreen extends StatelessWidget {
       ),
     ];
 
-    return GridView.builder(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // At very narrow widths (≤320px), cards would be too short with ratio 1.3.
+        // We need ≥110px tall: 44px icon + 10px gap + ~28px text + 28px padding.
+        final cardWidth = (constraints.maxWidth - 14) / 2; // 2 cols + gap
+        final minHeight = 110.0;
+        final safeRatio = (cardWidth / minHeight) < 1.3 ? cardWidth / minHeight : 1.3;
+        return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: 1.3,
+        childAspectRatio: safeRatio,
       ),
       itemCount: features.length,
       itemBuilder: (context, index) {
@@ -222,20 +232,20 @@ class HealthHubDashboardScreen extends StatelessWidget {
               side: BorderSide(color: Colors.grey.shade200),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(14.0),
+              padding: const EdgeInsets.all(10.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: item.bgColor,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(item.icon, color: item.color, size: 24),
+                    child: Icon(item.icon, color: item.color, size: 20),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Text(
                     item.title,
                     textAlign: TextAlign.center,
@@ -243,7 +253,7 @@ class HealthHubDashboardScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 13,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                       color: AppColors.secondary,
                     ),
@@ -252,6 +262,8 @@ class HealthHubDashboardScreen extends StatelessWidget {
               ),
             ),
           ),
+        );
+      },
         );
       },
     );

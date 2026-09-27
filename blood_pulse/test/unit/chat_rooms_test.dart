@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blood_pulse/models/chat_message_model.dart';
 

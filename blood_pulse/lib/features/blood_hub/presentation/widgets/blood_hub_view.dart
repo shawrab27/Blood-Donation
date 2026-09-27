@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -831,7 +834,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
   // DONOR SEARCH & LIVE MAP SECTION
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildDonorSearchSection() {
-    final donors = ref.watch(filteredDonorsProvider);
+    final donorsAsync = ref.watch(filteredDonorsProvider);
     final filter = ref.watch(donorSearchFilterProvider);
 
     return Column(
@@ -839,17 +842,40 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
       children: [
         _buildSearchFilterCard(filter),
         const SizedBox(height: 20),
-        Text(
-          'Available Donors (${donors.length} found near you)',
-          style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+        donorsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFC30121))),
+          error: (err, st) => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFFFFDAD6), borderRadius: BorderRadius.circular(12)),
+            child: Text('Error loading donors: ', style: const TextStyle(color: Colors.red)),
+          ),
+          data: (donors) {
+            if (donors.isEmpty) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Text('No donors found for your criteria.', style: TextStyle(color: Colors.grey)),
+                ),
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Available Donors (\ found)',
+                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+                ),
+                const SizedBox(height: 12),
+                for (final donor in donors) ...[
+                  _buildDonorCard(donor),
+                  const SizedBox(height: 12),
+                ],
+                const SizedBox(height: 20),
+                _buildLiveMapContainer(donors),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 12),
-        for (final donor in donors) ...[
-          _buildDonorCard(donor),
-          const SizedBox(height: 12),
-        ],
-        const SizedBox(height: 20),
-        _buildLiveMapContainer(donors),
       ],
     );
   }
@@ -858,7 +884,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
     final availableDistricts = filter.division != null ? (_divisionDistricts[filter.division] ?? []) : <String>[];
     const availableCampuses = [
       'All Campuses',
-      'Dhaka Medical College',
+      'General Hospital',
       'BUET Campus',
       'Dhaka University',
       'Chittagong Medical College',
@@ -1180,7 +1206,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
               ),
               TextButton.icon(
-                onPressed: () => context.push('/live-dispatch'),
+                onPressed: () => context.push('/map?mode=radar'),
                 icon: const Icon(Icons.fullscreen_rounded, size: 16, color: Color(0xFFC30121)),
                 label: const Text('Full Screen Map', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
               ),
@@ -1615,7 +1641,7 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
                   const SizedBox(height: 6),
                   CustomInputField(
                     controller: _hospitalLocationCtrl,
-                    hint: 'Search hospital name or address (e.g. Dhaka Medical College)',
+                    hint: 'Search hospital name or address (e.g. General Hospital)',
                     prefixIcon: Icons.local_hospital_outlined,
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Hospital address is required' : null,
                   ),

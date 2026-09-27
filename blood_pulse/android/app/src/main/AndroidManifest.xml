@@ -1,6 +1,10 @@
+<!--
+  Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+  Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>

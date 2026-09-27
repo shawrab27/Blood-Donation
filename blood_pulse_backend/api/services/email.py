@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 Email & OTP Service with Brevo HTTPS API.
 Complies with Rule 8: Render blocks outbound SMTP ports (25, 465, 587).

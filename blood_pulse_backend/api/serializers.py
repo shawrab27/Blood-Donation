@@ -1,9 +1,12 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 from rest_framework import serializers
 from .models import (
     Hospital, DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, FakeAccountFlag, AdminAction,
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
-    DonationHistory, RecentLog
+    DonationHistory, RecentLog, HealthAccessory
 )
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -61,6 +64,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', read_only=True)
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
+    password = serializers.CharField(write_only=True, required=False)
     donation_history = DonationHistorySerializer(many=True, read_only=True)
     recent_logs = RecentLogSerializer(many=True, read_only=True)
     global_rank = serializers.IntegerField(read_only=True)
@@ -69,9 +73,9 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = DonorProfile
         fields = [
-            'id', 'username', 'first_name', 'last_name', 'email', 'blood_group', 
+            'id', 'username', 'password', 'first_name', 'last_name', 'email', 'blood_group', 
             'district', 'phone_number', 'nid_hash', 'last_donation_date', 'is_verified', 
-            'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'address', 
+            'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'institution', 'upazila_linked', 'address', 
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
             'recent_logs', 'global_rank', 'badge'
         ]
@@ -223,8 +227,14 @@ class LocalClubRegistrationSerializer(serializers.ModelSerializer):
         fields = [
             'name', 'established_year', 'slogan', 'description',
             'division', 'district', 'upazila',
-            'president_name', 'contact_number',
+            'president_name', 'contact_number', 'cover_photo'
         ]
+
+    def validate_cover_photo(self, value):
+        if value:
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Image file too large ( > 5mb )")
+        return value
 
     def create(self, validated_data):
         validated_data['status'] = LocalClub.STATUS_PENDING
@@ -235,4 +245,9 @@ class LocalClubRegistrationSerializer(serializers.ModelSerializer):
 class AreaGuideSerializer(serializers.ModelSerializer):
     class Meta:
         model = AreaGuide
+        fields = '__all__'
+
+class HealthAccessorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HealthAccessory
         fields = '__all__'

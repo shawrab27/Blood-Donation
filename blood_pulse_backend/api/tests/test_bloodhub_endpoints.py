@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import uuid
 from django.test import TestCase
 from django.contrib.auth.models import User
@@ -129,9 +132,23 @@ class BloodHubEndpointsIntegrationTests(TestCase):
             status='ACTIVE',
         )
 
+        self.donor_user.email = 'donor@example.com'
+        self.donor_user.save()
+
+        from api.models import EmailOTP
+        from api.services.email import hash_otp
+        from django.utils import timezone
+        from datetime import timedelta
+        EmailOTP.objects.create(
+            email='donor@example.com',
+            otp_hash=hash_otp('123456', 'donor@example.com'),
+            expires_at=timezone.now() + timedelta(minutes=10),
+            is_used=False
+        )
+
         # Donor accepts request
         self.client.force_authenticate(user=self.donor_user)
-        resp = self.client.post(f'/api/emergency/requests/{req.id}/accept/')
+        resp = self.client.post(f'/api/emergency/requests/{req.id}/accept/', {'otp': '123456'})
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         data = resp.json()
         self.assertEqual(data['requester_phone'], '+8801799887766')

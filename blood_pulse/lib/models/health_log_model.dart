@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// HealthLogModel representing vital calculation logs, BMI, and weight eligibility.
 class HealthLogModel {
   const HealthLogModel({

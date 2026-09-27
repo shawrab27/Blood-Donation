@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -111,82 +114,27 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
   Widget _buildNotificationList(Box? box) {
     final cachedWidgets = _getCachedNotificationWidgets(box);
 
-    switch (_selectedFilterIndex) {
-      case 0:
-        return ListView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          children: [
-            ...cachedWidgets,
-            const _NotificationItemTile(
-              icon: Icons.favorite_rounded,
-              iconColor: AppColors.primary,
-              title: 'Rahim Ahmed liked your post',
-              subtitle: '"Successfully donated 1 bag of AB+ blood today!"',
-              time: '5 mins ago',
-              isUnread: true,
-            ),
-            const _NotificationItemTile(
-              icon: Icons.mode_comment_rounded,
-              iconColor: AppColors.tertiary,
-              title: 'Nusrat Jahan commented on your update',
-              subtitle: '"Proud of you brother! Real hero 👏"',
-              time: '40 mins ago',
-              isUnread: false,
-            ),
-          ],
-        );
-      case 1:
-        return ListView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          children: [
-            ...cachedWidgets,
-            _NotificationItemTile(
-              icon: Icons.emergency_rounded,
-              iconColor: AppColors.primary,
-              title: '🚨 CRITICAL MATCH: O+ Blood Needed',
-              subtitle: 'Dhaka Medical College Hospital • 2 Bags required for surgery',
-              time: '10 mins ago',
-              isUnread: true,
-              onTap: () => NotificationWallpaperOverlay.show(context),
-            ),
-            _NotificationItemTile(
-              icon: Icons.water_drop_rounded,
-              iconColor: AppColors.warning,
-              title: '⚠️ Moderate Request: B+ Blood Needed',
-              subtitle: 'Square Hospital, Panthapath • 1 Bag required in 24 hours',
-              time: '2 hours ago',
-              isUnread: false,
-              onTap: () => NotificationWallpaperOverlay.show(context),
-            ),
-          ],
-        );
-      case 2:
-        return _buildMessagesTab(cachedWidgets);
-      case 3:
-      default:
-        return ListView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          children: [
-            ...cachedWidgets,
-            const _NotificationItemTile(
-              icon: Icons.verified_user_rounded,
-              iconColor: AppColors.success,
-              title: '🎉 NID & JIT Verification Approved',
-              subtitle: 'Your profile has achieved 100% verified donor status.',
-              time: 'Yesterday',
-              isUnread: false,
-            ),
-            const _NotificationItemTile(
-              icon: Icons.timelapse_rounded,
-              iconColor: AppColors.tertiary,
-              title: '⏳ Cooldown Countdown Update',
-              subtitle: '42 days remaining until your next eligible donation date.',
-              time: '2 days ago',
-              isUnread: false,
-            ),
-          ],
-        );
+    if (_selectedFilterIndex == 2) {
+      return _buildMessagesTab(cachedWidgets);
     }
+
+    if (cachedWidgets.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text('No notifications yet', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      children: cachedWidgets,
+    );
   }
 
   List<Widget> _getCachedNotificationWidgets(Box? box) {

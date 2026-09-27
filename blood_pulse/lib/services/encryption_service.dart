@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// BloodPulse — Encryption Service
 ///
 /// Hybrid RSA-2048 + AES-256-GCM End-to-End Encryption Engine.

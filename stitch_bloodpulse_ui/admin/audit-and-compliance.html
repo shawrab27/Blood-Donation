@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>BloodPulse | Audit & Compliance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Georgia:ital,wght@0,400;0,700;1,400&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+        .font-headline { font-family: 'Georgia', serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#FDF3F3] text-[#2B2B2B] font-body antialiased min-h-screen flex overflow-hidden">
+    
+    <!-- Sidebar -->
+    <aside class="fixed top-0 left-0 bottom-0 w-72 bg-[#2B2B2B] flex flex-col z-50">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-[#3B3B3B]">
+            <img src="../assets/images/Blood Pulse logo.jpg" alt="Logo" class="w-8 h-8 rounded-full object-cover"/>
+            <h1 class="font-headline text-lg text-white tracking-wide">BloodPulse<span class="text-[#0D68AA] font-bold">.SYS</span></h1>
+        </div>
+        <nav class="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
+            <a href="wave-engine-control.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">water_drop</span>
+                <span class="font-medium text-sm">Wave Engine Control</span>
+            </a>
+            <a href="trust-fraud-engine.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">policy</span>
+                <span class="font-medium text-sm">Trust & Fraud Engine</span>
+            </a>
+            <a href="donor-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">group</span>
+                <span class="font-medium text-sm">Donor Management</span>
+            </a>
+            <a href="audit-and-compliance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#C30121] text-white transition-colors">
+                <span class="material-symbols-outlined text-[20px]">security</span>
+                <span class="font-medium text-sm">Audit & Compliance</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="pl-72 w-full flex flex-col h-screen">
+        <header class="h-16 bg-white border-b border-[#EBDCDC] flex items-center justify-between px-6 shrink-0">
+            <h2 class="font-headline font-bold text-xl text-[#2B2B2B]">Audit Log</h2>
+            <div class="flex items-center gap-4">
+                <div class="w-8 h-8 rounded-full border border-[#C30121] flex items-center justify-center overflow-hidden">
+                    <span class="material-symbols-outlined text-[#C30121]">person</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-sm border border-[#EBDCDC] p-4 flex flex-wrap items-end gap-4">
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+                    <label class="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Action Type</label>
+                    <input type="text" id="filter-action-type" placeholder="e.g. EXPORT_DONOR_DATA" class="w-full px-3 py-2 rounded-lg bg-[#FDF3F3] border border-[#EBDCDC] text-sm focus:ring-2 focus:ring-[#C30121] outline-none"/>
+                </div>
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[150px]">
+                    <label class="text-xs font-bold text-[#6B7280] uppercase tracking-wider">From Date</label>
+                    <input type="date" id="filter-from" class="w-full px-3 py-2 rounded-lg bg-[#FDF3F3] border border-[#EBDCDC] text-sm focus:ring-2 focus:ring-[#C30121] outline-none"/>
+                </div>
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[150px]">
+                    <label class="text-xs font-bold text-[#6B7280] uppercase tracking-wider">To Date</label>
+                    <input type="date" id="filter-to" class="w-full px-3 py-2 rounded-lg bg-[#FDF3F3] border border-[#EBDCDC] text-sm focus:ring-2 focus:ring-[#C30121] outline-none"/>
+                </div>
+                <button onclick="applyFilters()" class="px-5 py-2 h-[38px] rounded-full bg-[#C30121] text-white text-sm font-semibold hover:bg-[#A1001B] transition-colors shrink-0 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">search</span> Apply
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-[#EBDCDC] overflow-hidden flex-1 flex flex-col">
+                <div class="px-5 py-4 border-b border-[#EBDCDC] flex items-center justify-between">
+                    <h3 class="font-headline font-bold text-[#2B2B2B]">System Operations & Compliance Log</h3>
+                </div>
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#FDF3F3] border-b border-[#EBDCDC]">
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Timestamp</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Admin</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Action Type</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Target ID</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Notes / Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-table-body" class="divide-y divide-[#EBDCDC] bg-white">
+                            <tr><td colspan="5" class="p-5 text-center text-sm text-gray-500">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="px-5 py-3 bg-[#FDF3F3] border-t border-[#EBDCDC] flex items-center justify-between">
+                    <span class="text-xs text-[#6B7280]" id="pagination-info">Showing records</span>
+                    <div class="flex items-center gap-2">
+                        <button id="btn-prev" onclick="changePage(-1)" disabled class="px-3 py-1.5 rounded bg-white border border-[#EBDCDC] text-xs font-semibold disabled:opacity-50">Previous</button>
+                        <button id="btn-next" onclick="changePage(1)" disabled class="px-3 py-1.5 rounded bg-white border border-[#EBDCDC] text-xs font-semibold disabled:opacity-50">Next</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="fixed bottom-6 right-6 z-50 bg-[#2B2B2B] text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none" id="toast">
+        <span class="material-symbols-outlined text-[20px] text-red-300" id="toast-icon">check_circle</span>
+        <span class="text-sm font-medium" id="toast-message">Action executed successfully</span>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let hasNextPage = false;
+        
+        function getHeaders() {
+            const token = localStorage.getItem('access_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            };
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            
+            document.getElementById('toast-message').innerText = message;
+            
+            if (isError) {
+                toastIcon.innerText = 'error';
+                toastIcon.classList.remove('text-red-300');
+                toastIcon.classList.add('text-[#C30121]');
+            } else {
+                toastIcon.innerText = 'check_circle';
+                toastIcon.classList.remove('text-[#C30121]');
+                toastIcon.classList.add('text-red-300');
+            }
+        
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 4000);
+        }
+
+        async function fetchAuditLogs(page = 1) {
+            currentPage = page;
+            const actionType = document.getElementById('filter-action-type').value;
+            const dateFrom = document.getElementById('filter-from').value;
+            const dateTo = document.getElementById('filter-to').value;
+            
+            let url = `http://127.0.0.1:8000/api/admin/audit/?page=${page}`;
+            if (actionType) url += `&action_type=${encodeURIComponent(actionType)}`;
+            if (dateFrom) url += `&from=${encodeURIComponent(dateFrom)}`;
+            if (dateTo) url += `&to=${encodeURIComponent(dateTo)}`;
+
+            try {
+                const res = await fetch(url, { headers: getHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderTable(data.results);
+                    
+                    hasNextPage = !!data.next;
+                    document.getElementById('btn-prev').disabled = page <= 1;
+                    document.getElementById('btn-next').disabled = !hasNextPage;
+                    document.getElementById('pagination-info').innerText = `Page ${page} (Total: ${data.count})`;
+                } else if (res.status === 401 || res.status === 403) {
+                    window.location.href = 'admin-login.html';
+                } else {
+                    showToast('Failed to load logs', true);
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Network error', true);
+            }
+        }
+
+        function renderTable(logs) {
+            const container = document.getElementById('audit-table-body');
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-sm text-gray-500">No logs found matching criteria.</td></tr>';
+                return;
+            }
+
+            container.innerHTML = logs.map(log => {
+                const date = new Date(log.timestamp);
+                const formattedDate = date.toLocaleString();
+                
+                let typeColor = 'bg-[#F0F7FD] text-[#0D68AA] border-[#D1E4FF]'; // default blue
+                if (log.action_type.includes('BAN') || log.action_type.includes('SUSPEND') || log.action_type.includes('REJECT')) {
+                    typeColor = 'bg-[#FFDAD6] text-[#BA1A1A] border-[#FFB4AB]';
+                } else if (log.action_type.includes('APPROVE') || log.action_type.includes('UNSUSPEND') || log.action_type.includes('VERIFY')) {
+                    typeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                } else if (log.action_type.includes('EXPORT')) {
+                    typeColor = 'bg-purple-50 text-purple-700 border-purple-200';
+                }
+
+                return `
+                <tr class="hover:bg-[#FDF3F3] transition-colors">
+                    <td class="py-3 px-5 text-xs text-[#6B7280] whitespace-nowrap">${formattedDate}</td>
+                    <td class="py-3 px-5">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#EBDCDC] flex items-center justify-center text-xs font-bold">${log.admin_name.charAt(0).toUpperCase()}</span>
+                            <span class="text-sm font-semibold text-[#2B2B2B]">${log.admin_name}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-5">
+                        <span class="inline-flex px-2 py-0.5 rounded border text-[11px] font-bold tracking-wide ${typeColor}">${log.action_type}</span>
+                    </td>
+                    <td class="py-3 px-5 text-sm font-mono text-[#6B7280]">
+                        ${log.target_id ? '#' + log.target_id : '-'}
+                    </td>
+                    <td class="py-3 px-5 text-sm text-[#2B2B2B]">
+                        ${log.notes || ''}
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function applyFilters() {
+            fetchAuditLogs(1);
+        }
+
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage > 0) {
+                fetchAuditLogs(newPage);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAuditLogs(1);
+        });
+    </script>
+</body>
+</html>

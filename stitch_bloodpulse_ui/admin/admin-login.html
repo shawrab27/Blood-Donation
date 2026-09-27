@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Authentication | BloodPulse Central Command</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Georgia&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    
+    <!-- Tailwind CSS (CDN for prototype) -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C30121',
+                        secondary: '#2B2B2B',
+                        tertiary: '#0D68AA',
+                        surface: '#FDF3F3',
+                        surfaceAlt: '#FFF8F7'
+                    },
+                    fontFamily: {
+                        headline: ['Georgia', 'serif'],
+                        body: ['Inter', 'sans-serif'],
+                        button: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#2B2B2B] h-screen w-screen flex items-center justify-center font-body text-secondary overflow-hidden relative">
+    
+    <!-- Background Accents -->
+    <div class="absolute inset-0 pointer-events-none opacity-20">
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-primary rounded-full mix-blend-screen filter blur-[100px]"></div>
+        <div class="absolute bottom-0 right-0 w-1/2 h-1/2 bg-tertiary rounded-full mix-blend-screen filter blur-[150px]"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-white rounded-3xl p-10 shadow-2xl w-full max-w-md relative z-10 mx-4 border border-gray-100">
+        <!-- Logo Header -->
+        <div class="flex flex-col items-center mb-8">
+            <div class="w-16 h-16 rounded-full bg-surface flex items-center justify-center border-2 border-primary/20 mb-4 shadow-sm overflow-hidden">
+                <span class="material-symbols-outlined text-primary text-[32px]">health_and_safety</span>
+            </div>
+            <h1 class="font-headline text-3xl font-bold text-primary tracking-tight">BloodPulse</h1>
+            <p class="text-sm text-gray-500 mt-1 uppercase tracking-widest font-semibold">Central Command</p>
+        </div>
+
+        <!-- Form -->
+        <form id="login-form" class="space-y-5">
+            <div>
+                <label for="username" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 ml-1">Admin Identity</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-gray-400 text-[20px]">badge</span>
+                    </span>
+                    <input type="text" id="username" name="username" required
+                        class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all text-sm outline-none"
+                        placeholder="Enter admin username">
+                </div>
+            </div>
+
+            <div>
+                <label for="password" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 ml-1">Cryptographic Token</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-gray-400 text-[20px]">key</span>
+                    </span>
+                    <input type="password" id="password" name="password" required
+                        class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all text-sm outline-none"
+                        placeholder="Enter password">
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" id="btn-submit"
+                    class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-full bg-primary text-white font-bold text-sm shadow-md hover:bg-[#a9001b] hover:shadow-lg transition-all focus:ring-4 focus:ring-primary/30 outline-none">
+                    <span class="material-symbols-outlined text-[20px]" id="btn-icon">lock_open</span>
+                    <span id="btn-text">Establish Secure Session</span>
+                </button>
+            </div>
+        </form>
+        
+        <!-- Error Container -->
+        <div id="error-container" class="mt-5 hidden">
+            <div class="flex items-start gap-2 p-3 bg-surface border border-primary/20 rounded-xl text-primary text-sm">
+                <span class="material-symbols-outlined text-[18px] mt-0.5">error</span>
+                <span id="error-text" class="font-medium">Authentication failed. Check credentials.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Footer -->
+    <div class="absolute bottom-6 w-full text-center z-10 pointer-events-none">
+        <p class="text-xs text-gray-400 font-medium flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-[14px]">shield_lock</span>
+            Authorized Personnel Only. Connection is end-to-end encrypted.
+        </p>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            const btnSubmit = document.getElementById('btn-submit');
+            const btnIcon = document.getElementById('btn-icon');
+            const btnText = document.getElementById('btn-text');
+            const errorContainer = document.getElementById('error-container');
+            const errorText = document.getElementById('error-text');
+            
+            // Reset UI
+            errorContainer.classList.add('hidden');
+            btnIcon.innerText = 'refresh';
+            btnIcon.classList.add('animate-spin');
+            btnText.innerText = 'Authenticating...';
+            btnSubmit.disabled = true;
+            btnSubmit.classList.add('opacity-80', 'cursor-not-allowed');
+
+            try {
+                const response = await fetch(`${API_URL}/token/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.error || 'Invalid credentials');
+                }
+
+                // Authentication Success
+                localStorage.setItem('access_token', data.access);
+                localStorage.setItem('refresh_token', data.refresh);
+                
+                // Verify Admin Privileges
+                const verifyResponse = await fetch(`${API_URL}/admin/wave-engine/metrics/`, {
+                    headers: { 'Authorization': `Bearer ${data.access}` }
+                });
+                
+                if (!verifyResponse.ok) {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    throw new Error('Access Denied: You do not have administrative privileges.');
+                }
+                
+                btnIcon.classList.remove('animate-spin');
+                btnIcon.innerText = 'check_circle';
+                btnText.innerText = 'Session Established';
+                btnSubmit.classList.replace('bg-primary', 'bg-tertiary');
+                btnSubmit.classList.replace('hover:bg-[#a9001b]', 'hover:bg-[#0a4d7d]');
+                
+                // Redirect to wave engine dashboard
+                setTimeout(() => {
+                    window.location.href = 'wave-engine-control.html';
+                }, 600);
+
+            } catch (err) {
+                // Authentication Failed
+                errorText.innerText = err.message || 'Network error. Backend unreachable.';
+                errorContainer.classList.remove('hidden');
+                
+                btnIcon.classList.remove('animate-spin');
+                btnIcon.innerText = 'lock_open';
+                btnText.innerText = 'Establish Secure Session';
+                btnSubmit.disabled = false;
+                btnSubmit.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        });
+        
+        // Auto-redirect if already logged in (optional UX enhancement)
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                // Could verify token here, but redirecting is faster. Wave engine will boot them if invalid.
+                // window.location.href = 'wave-engine-control.html';
+            }
+        });
+    </script>
+</body>
+</html>

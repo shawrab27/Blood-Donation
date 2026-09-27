@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -10,7 +13,7 @@ class NotificationWallpaperOverlay extends StatelessWidget {
     super.key,
     this.title = '🚨 CRITICAL MATCH: O+ Blood Needed',
     this.patientName = 'Md. Safiqul Islam',
-    this.hospital = 'Dhaka Medical College Hospital (Ward 4)',
+    this.hospital = 'Hospital',
     this.bloodGroup = 'O+',
     this.unitsNeeded = 2,
     this.requesterPhone = '01711-999888',

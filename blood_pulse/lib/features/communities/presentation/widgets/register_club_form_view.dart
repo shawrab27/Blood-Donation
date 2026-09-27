@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -131,7 +134,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
         subtitle: 'Register Your Club',
         showNotification: false,
         showProfile: false,
-        showMenu: false,
+        
         actions: [],
       ),
       body: SingleChildScrollView(

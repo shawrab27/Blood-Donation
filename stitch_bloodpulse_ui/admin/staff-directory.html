@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>BloodPulse | Staff Directory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Georgia:ital,wght@0,400;0,700;1,400&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style>
+        .font-headline { font-family: 'Georgia', serif; }
+        .font-body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#FDF3F3] text-[#2B2B2B] font-body antialiased min-h-screen flex overflow-hidden">
+    
+    <!-- Sidebar -->
+    <aside class="fixed top-0 left-0 bottom-0 w-72 bg-[#2B2B2B] flex flex-col z-50">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-[#3B3B3B]">
+            <img src="../assets/images/Blood Pulse logo.jpg" alt="Logo" class="w-8 h-8 rounded-full object-cover"/>
+            <h1 class="font-headline text-lg text-white tracking-wide">BloodPulse<span class="text-[#0D68AA] font-bold">.SYS</span></h1>
+        </div>
+        <nav class="flex-1 py-6 px-3 flex flex-col gap-1 overflow-y-auto">
+            <a href="wave-engine-control.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">water_drop</span>
+                <span class="font-medium text-sm">Wave Engine Control</span>
+            </a>
+            <a href="trust-fraud-engine.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">policy</span>
+                <span class="font-medium text-sm">Trust & Fraud Engine</span>
+            </a>
+            <a href="donor-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">group</span>
+                <span class="font-medium text-sm">Donor Management</span>
+            </a>
+            <a href="staff-directory.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#C30121] text-white transition-colors">
+                <span class="material-symbols-outlined text-[20px]">badge</span>
+                <span class="font-medium text-sm">Staff Directory</span>
+            </a>
+            <a href="audit-and-compliance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#3B3B3B] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">security</span>
+                <span class="font-medium text-sm">Audit & Compliance</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="pl-72 w-full flex flex-col h-screen">
+        <header class="h-16 bg-white border-b border-[#EBDCDC] flex items-center justify-between px-6 shrink-0">
+            <h2 class="font-headline font-bold text-xl text-[#2B2B2B]">Staff Directory</h2>
+            <div class="flex items-center gap-4">
+                <div class="w-8 h-8 rounded-full border border-[#C30121] flex items-center justify-center overflow-hidden">
+                    <span class="material-symbols-outlined text-[#C30121]">person</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-[#EBDCDC] overflow-hidden flex-1 flex flex-col">
+                <div class="px-5 py-4 border-b border-[#EBDCDC] flex items-center justify-between">
+                    <h3 class="font-headline font-bold text-[#2B2B2B]">System Staff & Administrators</h3>
+                </div>
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#FDF3F3] border-b border-[#EBDCDC]">
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Staff Member</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Email</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Joined / Last Login</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider">Status</th>
+                                <th class="py-3 px-5 text-xs font-bold text-[#6B7280] uppercase tracking-wider text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-table-body" class="divide-y divide-[#EBDCDC] bg-white">
+                            <tr><td colspan="5" class="p-5 text-center text-sm text-gray-500">Loading staff directory...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="fixed bottom-6 right-6 z-50 bg-[#2B2B2B] text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none" id="toast">
+        <span class="material-symbols-outlined text-[20px] text-red-300" id="toast-icon">check_circle</span>
+        <span class="text-sm font-medium" id="toast-message">Action executed successfully</span>
+    </div>
+
+    <script>
+        function getHeaders() {
+            const token = localStorage.getItem('access_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            };
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            
+            document.getElementById('toast-message').innerText = message;
+            
+            if (isError) {
+                toastIcon.innerText = 'error';
+                toastIcon.classList.remove('text-red-300');
+                toastIcon.classList.add('text-[#C30121]');
+            } else {
+                toastIcon.innerText = 'check_circle';
+                toastIcon.classList.remove('text-[#C30121]');
+                toastIcon.classList.add('text-red-300');
+            }
+        
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 4000);
+        }
+
+        async function fetchStaff() {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/admin/staff/', { headers: getHeaders() });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderTable(data);
+                } else if (res.status === 401 || res.status === 403) {
+                    window.location.href = 'admin-login.html';
+                } else {
+                    showToast('Failed to load staff', true);
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Network error', true);
+            }
+        }
+
+        function renderTable(staffList) {
+            const container = document.getElementById('staff-table-body');
+            if (!staffList || staffList.length === 0) {
+                container.innerHTML = '<tr><td colspan="5" class="p-5 text-center text-sm text-gray-500">No staff found.</td></tr>';
+                return;
+            }
+
+            container.innerHTML = staffList.map(staff => {
+                const joinedDate = new Date(staff.date_joined).toLocaleDateString();
+                const lastLogin = staff.last_login ? new Date(staff.last_login).toLocaleDateString() : 'Never';
+                
+                let statusBadge = staff.is_active 
+                    ? '<span class="inline-flex px-2 py-0.5 rounded border text-[11px] font-bold tracking-wide bg-emerald-50 text-emerald-700 border-emerald-200">ACTIVE</span>'
+                    : '<span class="inline-flex px-2 py-0.5 rounded border text-[11px] font-bold tracking-wide bg-[#FFDAD6] text-[#BA1A1A] border-[#FFB4AB]">INACTIVE</span>';
+
+                return `
+                <tr class="hover:bg-[#FDF3F3] transition-colors">
+                    <td class="py-3 px-5">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-[#EBDCDC] flex items-center justify-center text-sm font-bold text-[#2B2B2B] shrink-0">
+                                ${staff.name.charAt(0).toUpperCase()}
+                            </span>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-semibold text-[#2B2B2B]">${staff.name}</span>
+                                <span class="text-xs text-[#6B7280]">@${staff.username}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-5 text-sm text-[#2B2B2B]">${staff.email || '-'}</td>
+                    <td class="py-3 px-5">
+                        <div class="flex flex-col">
+                            <span class="text-sm text-[#2B2B2B]">${joinedDate}</span>
+                            <span class="text-xs text-[#6B7280]">Last Login: ${lastLogin}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-5">
+                        ${statusBadge}
+                    </td>
+                    <td class="py-3 px-5 text-right">
+                        <button onclick="toggleStaff(${staff.id}, ${staff.is_active})" class="p-1.5 rounded-full ${staff.is_active ? 'hover:bg-[#FFDAD6] text-[#C30121]' : 'hover:bg-emerald-50 text-emerald-600'} transition-colors" type="button" title="${staff.is_active ? 'Deactivate Account' : 'Activate Account'}">
+                            <span class="material-symbols-outlined text-[20px]">${staff.is_active ? 'block' : 'check_circle'}</span>
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        async function toggleStaff(id, currentStatus) {
+            const action = currentStatus ? 'Deactivate' : 'Activate';
+            if (confirm(`${action} this staff account?`)) {
+                try {
+                    const res = await fetch(`http://127.0.0.1:8000/api/admin/staff/${id}/toggle/`, { 
+                        method: 'POST', 
+                        headers: getHeaders() 
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        showToast(`Staff account ${data.is_active ? 'activated' : 'deactivated'}.`);
+                        fetchStaff();
+                    } else if (res.status === 401 || res.status === 403) {
+                        window.location.href = 'admin-login.html';
+                    } else {
+                        showToast(data.error || 'Action failed', true);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast('Network error', true);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStaff();
+        });
+    </script>
+</body>
+</html>

@@ -1,11 +1,16 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/profile_models.dart';
 import '../../../../services/api_client.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 
 final profileProvider = StateNotifierProvider<ProfileNotifier, AsyncValue<ProfileModel?>>((ref) {
+  // Re-fetch or reset profile whenever user authentication status changes
+  ref.watch(authProvider.select((s) => s.status));
   return ProfileNotifier();
 });
 
@@ -14,41 +19,27 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     fetchProfile();
   }
 
-  final String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
-
-
   /// Fetches the current authenticated user's own profile via GET /api/donors/me/
-  /// This prevents the bug where data[0] of the list always returned the first
-  /// user in the database (Dr. S.M. Shawrab) regardless of who was logged in.
+  /// Verifies access token first to avoid premature 401 Unauthorized errors for guests.
   Future<void> fetchProfile() async {
     try {
       state = const AsyncValue.loading();
       final token = await ApiClient().getAccessToken();
-      
-      if (token == null) {
+      if (token == null || token.isEmpty) {
         state = const AsyncValue.data(null);
         return;
       }
 
-      // First try the /me/ endpoint for the exact current user
-      final meResponse = await http.get(
-        Uri.parse('$_baseUrl/donors/me/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (meResponse.statusCode == 200) {
-        final data = jsonDecode(meResponse.body) as Map<String, dynamic>;
+      final response = await ApiClient().get('donors/me/');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
         final profile = ProfileModel.fromJson(data);
         state = AsyncValue.data(profile);
-        return;
+      } else if (response.statusCode == 404 || response.statusCode == 401) {
+        state = const AsyncValue.data(null);
+      } else {
+        throw Exception('Failed to load profile');
       }
-
-      // Fallback: If /donors/me/ is not available, do not blindly assign data[0] (which is Dr. S.M. Shawrab)
-      // Return null so the app gracefully uses the authenticated user's verified identity from authProvider.
-      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -59,16 +50,9 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     if (currentProfile == null) return false;
 
     try {
-      final token = await ApiClient().getAccessToken();
-      if (token == null) return false;
-
-      final response = await http.patch(
-        Uri.parse('$_baseUrl/donor_profiles/${currentProfile.id}/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(data),
+      final response = await ApiClient().patch(
+        'donors/${currentProfile.id}/',
+        body: data,
       );
 
       if (response.statusCode == 200) {

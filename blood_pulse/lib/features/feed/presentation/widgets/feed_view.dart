@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -309,8 +312,8 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
   void _openCheckInModal() {
     final locationCtrl = TextEditingController(text: _clinicCheckIn ?? '');
     final popularLocations = [
-      'Dhaka Medical College Hospital',
-      'Square Hospital, Dhaka',
+      'General Hospital',
+      'City Clinic',
       'Evercare Hospital, Dhaka',
       'Bangabandhu Sheikh Mujib Med. University (BSMMU)',
       'Bangladesh Red Crescent Blood Center',

@@ -1,10 +1,16 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:blood_pulse/services/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
@@ -53,7 +59,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _phoneCtrl = TextEditingController();
   final _altPhoneCtrl = TextEditingController();
   final _ageCtrl = TextEditingController();
-  final _pwCtrl = TextEditingController(text: 'Password@123'); // Safe default or can be input
+  final _pwCtrl = TextEditingController(); // User password input
+  final _confirmPwCtrl = TextEditingController();
 
   // Student specific
   final _instituteCtrl = TextEditingController();
@@ -74,6 +81,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   String? _bloodGroup;
   String? _confirmBloodGroup;
+  String? _selectedInstitutionId;
+  String? _selectedUpazilaId;
+  bool _manualInstitution = false;
+  final _apiClient = ApiClient();
 
   String? _selectedDivision;
   String? _selectedZila;
@@ -81,6 +92,20 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   bool _neverDonated = false;
   DateTime? _lastDonationDate;
   int _totalBags = 0;
+
+  bool get _isPasswordValid =>
+      _pwCtrl.text.length >= 8 && _pwCtrl.text == _confirmPwCtrl.text;
+
+  @override
+  void initState() {
+    super.initState();
+    _pwCtrl.addListener(_onPasswordChanged);
+    _confirmPwCtrl.addListener(_onPasswordChanged);
+  }
+
+  void _onPasswordChanged() {
+    setState(() {});
+  }
 
   @override
   void dispose() {
@@ -90,6 +115,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     _altPhoneCtrl.dispose();
     _ageCtrl.dispose();
     _pwCtrl.dispose();
+    _confirmPwCtrl.dispose();
     _instituteCtrl.dispose();
     _classCtrl.dispose();
     _groupCtrl.dispose();
@@ -160,7 +186,11 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     final catDetails = <String, String>{};
     String? nidHash;
     if (_category == _UserCategory.student) {
-      catDetails['institute'] = _instituteCtrl.text.trim();
+      if (_selectedInstitutionId != null) {
+        catDetails['institution_id'] = _selectedInstitutionId!;
+      } else {
+        catDetails['institute'] = _instituteCtrl.text.trim();
+      }
       if (_classCtrl.text.isNotEmpty) catDetails['class'] = _classCtrl.text.trim();
       if (_groupCtrl.text.isNotEmpty) catDetails['group'] = _groupCtrl.text.trim();
       if (_deptCtrl.text.isNotEmpty) catDetails['dept'] = _deptCtrl.text.trim();
@@ -170,7 +200,11 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     } else {
       catDetails['division'] = _selectedDivision ?? 'Dhaka';
       catDetails['district'] = _selectedZila ?? 'Dhaka';
-      catDetails['upazila'] = _upazilaCtrl.text.trim();
+      if (_selectedUpazilaId != null) {
+        catDetails['upazila_id'] = _selectedUpazilaId!;
+      } else {
+        catDetails['upazila'] = _upazilaCtrl.text.trim();
+      }
       final nidInput = _nidBirthCtrl.text.trim();
       catDetails['nidOrBirth'] = nidInput;
       if (nidInput.isNotEmpty) {
@@ -198,7 +232,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       avatarBytes: _avatarBytes,
     );
 
-    final success = await ref.read(authProvider.notifier).registerUser(profile);
+    final success = await ref.read(authProvider.notifier).registerUser(profile, password: _pwCtrl.text);
     if (!mounted) return;
     if (!success) {
       final err = ref.read(authProvider).errorMessage ?? 'Registration failed. Please check your information.';
@@ -206,21 +240,28 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return;
     }
 
-    // Trigger OTP flow
-    await ref.read(otpStateProvider.notifier).sendOtp(
-          primaryPhone: profile.primaryPhone,
-          secondaryPhone: profile.secondaryPhone,
-        );
-
-    if (!mounted) return;
+    // Automatically log the user in and redirect to feed
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Account created! Please verify your phone with OTP.', style: TextStyle(fontFamily: 'Inter')),
+        content: Text('Account created! Logging in...', style: TextStyle(fontFamily: 'Inter')),
         backgroundColor: Color(0xFF1B8A4E),
         behavior: SnackBarBehavior.floating,
       ),
     );
-    context.go('/otp-verify');
+
+    final loginSuccess = await ref.read(authProvider.notifier).loginWithCredentials(
+      identifier: _phoneCtrl.text.trim(), // Users login with phone number per Phase A
+      password: _pwCtrl.text,
+    );
+
+    if (mounted) {
+      if (loginSuccess) {
+        context.go('/dashboard');
+      } else {
+        // Fallback to login screen if auto-login fails
+        context.go('/login');
+      }
+    }
   }
 
   void _showError(String msg) {
@@ -288,12 +329,27 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
                 // Submit Button
                 CapsuleButton(
-                  label: 'Create Account',
+                  label: auth.isLoading ? 'Creating Account...' : 'Create Account',
                   icon: Icons.arrow_forward_rounded,
                   isLoading: auth.isLoading,
                   showGlow: true,
-                  onPressed: auth.isLoading ? null : _onCreateAccount,
+                  onPressed: (auth.isLoading || !_isPasswordValid) ? null : _onCreateAccount,
                 ),
+                if (auth.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: Center(
+                      child: Text(
+                        'Please wait up to 60 seconds. The server might be waking up.',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: Color(0xFFC30121),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 16),
 
                 // Footer Terms
@@ -328,7 +384,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       subtitle: 'Register',
       showNotification: false,
       showProfile: false,
-      showMenu: false,
+      
       actions: const [],
     );
   }
@@ -474,6 +530,36 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           validator: (v) {
             if (v == null || v.trim().isEmpty) return 'Please enter your email';
             if (!v.contains('@') || !v.contains('.')) return 'Please enter a valid email';
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        _fieldLabel('Password'),
+        const SizedBox(height: 6),
+        CustomInputField(
+          controller: _pwCtrl,
+          hint: 'Create a strong password',
+          prefixIcon: Icons.lock_outline_rounded,
+          isPassword: true,
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return 'Please enter a password';
+            if (v.length < 8) return 'Password must be at least 8 characters';
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        _fieldLabel('Confirm Password'),
+        const SizedBox(height: 6),
+        CustomInputField(
+          controller: _confirmPwCtrl,
+          hint: 'Re-enter your password',
+          prefixIcon: Icons.lock_outline_rounded,
+          isPassword: true,
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) return 'Please confirm your password';
+            if (v != _pwCtrl.text) return 'Passwords do not match';
             return null;
           },
         ),
@@ -682,14 +768,70 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _fieldLabel('Institution / University'),
-          const SizedBox(height: 6),
-          CustomInputField(
-            controller: _instituteCtrl,
-            hint: 'Enter your university or college',
-            prefixIcon: Icons.school_outlined,
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _fieldLabel('Institution / University'),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _manualInstitution = !_manualInstitution;
+                    _instituteCtrl.clear();
+                    _selectedInstitutionId = null;
+                  });
+                },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  _manualInstitution ? 'Search instead' : 'Enter manually',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFFC30121)),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 6),
+          if (_manualInstitution)
+            CustomInputField(
+              controller: _instituteCtrl,
+              hint: 'Enter your institution name',
+              prefixIcon: Icons.school_outlined,
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
+            )
+          else
+            TypeAheadField<Map<String, dynamic>>(
+              controller: _instituteCtrl,
+              builder: (context, controller, focusNode) {
+                return CustomInputField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  hint: 'Search institution...',
+                  prefixIcon: Icons.school_outlined,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
+                );
+              },
+              debounceDuration: const Duration(milliseconds: 300),
+              suggestionsCallback: (pattern) async {
+                if (pattern.trim().length < 2) return [];
+                return await _apiClient.searchInstitutions(pattern);
+              },
+              itemBuilder: (context, suggestion) {
+                return ListTile(
+                  title: Text(suggestion['name'] ?? ''),
+                  subtitle: Text("${suggestion['institution_type'] ?? ''} • ${suggestion['eiin'] ?? ''}"),
+                );
+              },
+              onSelected: (suggestion) {
+                _instituteCtrl.text = suggestion['name'] ?? '';
+                _selectedInstitutionId = suggestion['id']?.toString();
+              },
+              emptyBuilder: (context) => const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('No institutions found.'),
+              ),
+            ),
           const SizedBox(height: 16),
 
           _fieldLabel('Department / Subject'),
@@ -725,10 +867,35 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
         _fieldLabel('Upazila (Optional)'),
         const SizedBox(height: 6),
-        CustomInputField(
+        TypeAheadField<Map<String, dynamic>>(
           controller: _upazilaCtrl,
-          hint: 'Enter Upazila',
-          prefixIcon: Icons.location_city_outlined,
+          builder: (context, controller, focusNode) {
+            return CustomInputField(
+              controller: controller,
+              focusNode: focusNode,
+              hint: 'Search Upazila',
+              prefixIcon: Icons.location_city_outlined,
+            );
+          },
+          debounceDuration: const Duration(milliseconds: 300),
+          suggestionsCallback: (pattern) async {
+            if (pattern.trim().length < 2) return [];
+            return await _apiClient.searchUpazilas(pattern);
+          },
+          itemBuilder: (context, suggestion) {
+            return ListTile(
+              title: Text(suggestion['name'] ?? ''),
+              subtitle: Text(suggestion['district_name'] ?? ''),
+            );
+          },
+          onSelected: (suggestion) {
+            _upazilaCtrl.text = suggestion['name'] ?? '';
+            _selectedUpazilaId = suggestion['id']?.toString();
+          },
+          emptyBuilder: (context) => const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text('No upazilas found.'),
+          ),
         ),
         const SizedBox(height: 16),
 

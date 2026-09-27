@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -300,7 +303,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> loginWithGoogle() => signInWithGoogle();
 
   /// Sets the user profile upon registration and posts to `/api/donors/`.
-  Future<bool> registerUser(UserProfile profile) async {
+  Future<bool> registerUser(UserProfile profile, {String? password}) async {
     final completeProfile = profile.copyWith(isProfileComplete: true);
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null, user: completeProfile);
 
@@ -314,6 +317,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       'phone_number': completeProfile.primaryPhone,
       if (completeProfile.nidHash != null && completeProfile.nidHash!.isNotEmpty)
         'nid_hash': completeProfile.nidHash,
+      if (completeProfile.categoryDetails['institute'] != null)
+        'institute': completeProfile.categoryDetails['institute'],
+      if (completeProfile.categoryDetails['institution_id'] != null)
+        'institution': completeProfile.categoryDetails['institution_id'],
+      if (completeProfile.categoryDetails['village'] != null)
+        'address': completeProfile.categoryDetails['village'],
+      if (completeProfile.categoryDetails['upazila_id'] != null)
+        'upazila_linked': completeProfile.categoryDetails['upazila_id'],
       'last_donation_date': completeProfile.lastDonationDate?.toIso8601String().split('T').first,
       'is_verified': completeProfile.isOtpVerified,
       'full_name': completeProfile.fullName,
@@ -321,6 +332,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       'age': completeProfile.age,
       'gender': completeProfile.gender,
       'category': completeProfile.category,
+      if (password != null && password.isNotEmpty) 'password': password,
     };
 
     try {

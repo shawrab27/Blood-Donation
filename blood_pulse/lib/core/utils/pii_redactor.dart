@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// Utility for on-device PII (Personally Identifiable Information) redaction.
 /// Strips emails, phone numbers, and Bangladesh NID numbers before sending text off-device.
 class PiiRedactor {

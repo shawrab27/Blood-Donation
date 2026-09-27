@@ -1,0 +1,677 @@
+<!-- Wave Engine Control — Real-Time Escalation Matrix --><!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-secondary-fixed":"#1b1c1c","outline-variant":"#f0c5c2","inverse-on-surface":"#ffecee","on-error":"#ffffff","on-surface":"#2B2B2B","background":"#FDF3F3","outline":"#8d6e6b","tertiary":"#0D68AA","on-tertiary-container":"#c3ddff","inverse-primary":"#ffb3ae","secondary-fixed-dim":"#c8c6c5","on-secondary-container":"#656464","surface-container-low":"#fbf0f0","tertiary-container":"#0D68AA","on-primary-fixed-variant":"#930016","secondary":"#2B2B2B","on-primary-container":"#ffffff","on-primary-fixed":"#410005","surface":"#FDF3F3","on-secondary-fixed-variant":"#474746","surface-container-highest":"#f5dede","on-tertiary-fixed-variant":"#00497b","primary-fixed":"#ffdad7","surface-bright":"#FDF3F3","tertiary-fixed-dim":"#9dcaff","surface-variant":"#fae6e6","surface-container":"#f8e9e9","error-container":"#ffdad6","on-error-container":"#93000a","on-primary":"#ffffff","surface-dim":"#f2dada","on-tertiary-fixed":"#001d35","surface-container-lowest":"#ffffff","on-tertiary":"#ffffff","error":"#ba1a1a","on-secondary":"#ffffff","secondary-fixed":"#e4e2e1","secondary-container":"#e4e2e1","tertiary-fixed":"#d1e4ff","on-surface-variant":"#543f3e","surface-container-high":"#f3e2e2","inverse-surface":"#2B2B2B","primary":"#C30121","primary-container":"#C30121","on-background":"#2B2B2B","primary-fixed-dim":"#ffb3ae","surface-tint":"#C30121"},borderRadius:{DEFAULT:"0.75rem",lg:"1rem",xl:"1.5rem",full:"9999px"},spacing:{xl:"32px","margin-desktop":"64px",md:"16px","margin-mobile":"16px",xs:"4px",gutter:"16px",unit:"4px",sm:"8px",lg:"24px"},fontFamily:{"headline-lg":["Georgia"],"label-md":["Inter"],"display-lg":["Georgia"],"body-md":["Inter"],button:["Inter"],"body-sm":["Inter"],"body-lg":["Inter"],"headline-md":["Georgia"],"headline-sm":["Georgia"],"label-lg":["Inter"]},fontSize:{"headline-lg":["32px",{lineHeight:"40px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"600"}],"display-lg":["48px",{lineHeight:"56px",letterSpacing:"-0.02em",fontWeight:"700"}],"body-md":["16px",{lineHeight:"24px",fontWeight:"400"}],"button":["16px",{lineHeight:"24px",fontWeight:"600"}],"body-sm":["14px",{lineHeight:"20px",fontWeight:"400"}],"body-lg":["18px",{lineHeight:"28px",fontWeight:"400"}],"headline-md":["24px",{lineHeight:"32px",fontWeight:"700"}],"headline-sm":["20px",{lineHeight:"28px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"600"}]}}}}</script></head><body class="bg-[#FDF3F3] font-body-md text-on-surface"><aside class="fixed left-0 top-0 h-full w-72 bg-[#2B2B2B] z-50 flex flex-col shadow-[0_4px_20px_rgba(0,0,0,0.25)]"><div class="h-16 px-lg flex items-center gap-sm bg-[#2B2B2B] border-b border-[#3D3D3D]"><img alt="BloodPulse logo" class="h-8 w-auto object-contain filter brightness-110" src="https://lh3.googleusercontent.com/aida/AEtjO1XOmzoMhbHZ46JoLdHxYxPiES3_JJx9Wzqm-s1qlmgzBIHYWS5LbxTMv01TQYkG6fHZ76W5Bx4g1wHifNXG_6GQzNskynWzJGJXtQXXkLS7f_tvL4KLyuDqUvO4U6AfAaSArMbUoRnSQDKNFgA3DssYBjRuaWiQEUEDZ7_mwI2M6lqdm3hxm5CqX2xS7CArNrX00OLKXs2agXuwzogSgt9q3KpFTs8dffvjPolBx51nojy-iQw-PEtJEIWzMVlazd42qE15odpsuw"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-white tracking-tight leading-none">BloodPulse</span><span class="font-label-md text-label-md text-[#A3A3A3] tracking-widest uppercase">Command Center</span></div></div><div class="flex-1 overflow-y-auto px-md py-md space-y-lg"><nav class="space-y-xs"><div class="px-sm pb-xs font-label-md text-label-md text-[#9CA3AF] uppercase tracking-wider">Operations</div><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="operations-dashboard" href="operations-dashboard.html"><span class="material-symbols-outlined text-[20px] text-white/80">grid_view</span><span class="font-body-sm text-body-sm">Dashboard</span></a><a aria-current="page" class="flex items-center gap-sm px-md py-sm transition-all bg-[#C30121] text-white font-button rounded-lg shadow-sm" data-path="wave-engine-control" href="wave-engine-control.html"><span class="material-symbols-outlined text-[20px] text-white">water_drop</span><span class="font-body-sm text-body-sm font-semibold">Wave Engine Control</span></a><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="geographic-map" href="geographic-map.html"><span class="material-symbols-outlined text-[20px] text-white/80">map</span><span class="font-body-sm text-body-sm">Geographic Map</span></a></nav><nav class="space-y-xs"><div class="px-sm pb-xs font-label-md text-label-md text-[#9CA3AF] uppercase tracking-wider">Governance &amp; AI</div><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="trust-and-fraud-engine" href="trust-fraud-engine.html"><span class="material-symbols-outlined text-[20px] text-white/80">verified_user</span><span class="font-body-sm text-body-sm">Trust &amp; Fraud Engine</span></a><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="pulseai-console" href="pulseai-console.html"><span class="material-symbols-outlined text-[20px] text-white/80">psychology</span><span class="font-body-sm text-body-sm">PulseAI Console</span></a><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="audit-and-compliance" href="audit-and-compliance.html"><span class="material-symbols-outlined text-[20px] text-white/80">policy</span><span class="font-body-sm text-body-sm">Audit &amp; Compliance</span></a></nav><nav class="space-y-xs"><div class="px-sm pb-xs font-label-md text-label-md text-[#9CA3AF] uppercase tracking-wider">Infrastructure</div><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="system-health-and-ops" href="system-health-and-ops.html"><span class="material-symbols-outlined text-[20px] text-white/80">monitor_heart</span><span class="font-body-sm text-body-sm">System Health &amp; Ops</span></a><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="notifications" href="notifications.html"><span class="material-symbols-outlined text-[20px] text-white/80">notifications_active</span><span class="font-body-sm text-body-sm">Notifications</span></a><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="reports-and-analytics" href="reports-and-analytics.html"><span class="material-symbols-outlined text-[20px] text-white/80">query_stats</span><span class="font-body-sm text-body-sm">Reports &amp; Analytics</span></a></nav><nav class="space-y-xs"><div class="px-sm pb-xs font-label-md text-label-md text-[#9CA3AF] uppercase tracking-wider">Administration</div><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="role-and-permission-editor" href="role-permission-editor.html"><span class="material-symbols-outlined text-[20px] text-white/80">admin_panel_settings</span><span class="font-body-sm text-body-sm">Role &amp; Permissions</span></a><a class="flex items-center gap-sm px-md py-sm rounded-lg text-white/90 hover:bg-white/10 hover:text-white transition-all" data-path="staff-directory" href="staff-directory.html"><span class="material-symbols-outlined text-[20px] text-white/80">badge</span><span class="font-body-sm text-body-sm">Staff Directory</span></a></nav></div><div class="p-md bg-[#222222] m-md rounded-lg border border-[#3E3E3E]"><div class="flex items-center justify-between"><span class="font-label-md text-label-md text-[#A3A3A3]">NODE REGION</span><span class="font-label-md text-label-md text-[#6ba7db] font-semibold uppercase">US-EAST-01</span></div><div class="mt-xs flex items-center justify-between"><span class="font-body-sm text-body-sm text-white font-semibold">Clinical Telemetry</span><span class="inline-flex items-center gap-xs text-[11px] font-semibold text-white/90"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>SYNCED</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-white border-b border-[#ebd7d7] z-40 shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex items-center justify-between px-lg"><div class="flex items-center gap-md flex-1 max-w-xl"><div class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-[#FDF3F3] border border-[#ebd7d7] text-[#2B2B2B] shadow-sm"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span class="font-label-md text-label-md text-[#2B2B2B] font-medium">All Systems Operational</span></div><div class="relative flex-1"><span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-[#543f3e] text-[20px]">search</span><input class="w-full pl-9 pr-md py-xs rounded-full bg-[#FDF3F3] border border-[#ebd7d7] font-body-sm text-body-sm text-[#2B2B2B] placeholder:text-[#8d6e6b] outline-none focus:ring-2 focus:ring-[#0D68AA]" placeholder="Search telemetry, donor IDs, incidents, wards..." type="text"/></div></div><div class="flex items-center gap-md"><button class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-[#C30121] text-white font-button text-label-md hover:bg-[#a9001b] transition-all shadow-sm" type="button"><span class="material-symbols-outlined text-[18px]">broadcast_on_personal</span><span>Emergency Broadcast</span></button><div class="h-6 w-px bg-neutral-200"></div><div class="flex items-center gap-xs px-sm py-xs rounded-full bg-[#FDF3F3] border border-[#ebd7d7]"><span class="font-label-md text-label-md text-[#2B2B2B] font-semibold">Super Admin</span><span class="font-label-md text-label-md text-[#757575]">/ Operations Chief</span></div><button class="relative p-xs rounded-full text-[#2B2B2B] hover:text-[#C30121] hover:bg-[#FDF3F3] transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#C30121]"></span></button><div class="w-8 h-8 rounded-full bg-[#C30121] text-white flex items-center justify-center font-bold"><span class="material-symbols-outlined text-white text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-[#FDF3F3] px-lg min-h-screen"><div class="flex flex-col w-full">
+<div class="py-md flex flex-col gap-lg">
+<!-- Breadcrumb & Control Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-xs font-label-md text-label-md text-[#543f3e]">
+<span>OPERATIONS ENGINE</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-[#0D68AA] font-semibold uppercase">Wave Escalation Matrix v4.2</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-[#C30121] tracking-tight">Wave Engine Control &amp; Escalation Matrix</h1>
+<p class="font-body-sm text-body-sm text-[#543f3e]">Autonomous geometric donor routing, multi-tier surge throttling, and clinical emergency broadcast relays.</p>
+</div>
+<div class="flex items-center gap-sm">
+<!-- Live Auto-refresh Pill Toggle -->
+<div class="flex items-center gap-xs bg-white border border-[#ebd7d7] px-md py-xs rounded-full shadow-sm">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" id="ping-ring"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+</span>
+<span class="font-label-md text-label-md text-[#2B2B2B]">Auto-Refresh (5s)</span>
+<button class="ml-xs text-[#2B2B2B] hover:text-[#C30121] transition-colors focus:outline-none" id="toggle-refresh" title="Pause / Resume Live Feed" type="button">
+<span class="material-symbols-outlined text-[18px]" id="refresh-icon">sync</span>
+</button>
+</div>
+<!-- Maintenance Trigger Button -->
+<button class="inline-flex items-center gap-xs px-md py-xs rounded-full bg-white hover:bg-[#fae6e6] text-[#2B2B2B] border border-[#ebd7d7] font-button text-label-md transition-all shadow-sm" id="btn-force-tick" type="button">
+<span class="material-symbols-outlined text-[18px] text-[#0D68AA]">bolt</span>
+<span>Force Run Maintenance Tick</span>
+</button>
+</div>
+</div>
+<!-- Live Counter Cards (4 Metrics) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Metric 1 -->
+<div class="bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-20 h-20 bg-[#C30121]/5 rounded-full pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-[#757575]">Active Escalations</span>
+<div class="font-display-lg text-display-lg text-[#C30121] tracking-tight mt-xs font-bold" id="metric-active-escalations">18</div>
+</div>
+<span class="p-xs rounded-full bg-[#FDF3F3] text-[#C30121] material-symbols-outlined">network_node</span>
+</div>
+<div class="flex items-center gap-xs mt-md">
+<span class="inline-flex items-center text-label-md font-semibold text-[#C30121]">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> +3 new cases
+          </span>
+<span class="font-body-sm text-body-sm text-[#757575]">vs last hour</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-20 h-20 bg-[#0D68AA]/5 rounded-full pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-[#757575]">Wave 1 Donors Pinged</span>
+<div class="font-display-lg text-display-lg text-[#2B2B2B] tracking-tight mt-xs font-bold" id="metric-wave1-donors">1,420</div>
+</div>
+<span class="p-xs rounded-full bg-[#f0f6fa] text-[#0D68AA] material-symbols-outlined">radar</span>
+</div>
+<div class="flex items-center gap-xs mt-md">
+<span class="font-body-sm text-body-sm text-[#2B2B2B] font-semibold">91.4% local pickup</span>
+<span class="font-body-sm text-body-sm text-[#757575]">in ≤ 5km grid</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-20 h-20 bg-[#C30121]/10 rounded-full pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-[#757575]">Wave 4 Broadcasts</span>
+<div class="font-display-lg text-display-lg text-[#C30121] tracking-tight mt-xs font-bold" id="metric-wave4-broadcasts">2</div>
+</div>
+<span class="p-xs rounded-full bg-red-100 text-[#C30121] material-symbols-outlined animate-pulse">crisis_alert</span>
+</div>
+<div class="flex items-center gap-xs mt-md">
+<span class="px-xs py-0.5 rounded text-[11px] font-bold bg-red-100 text-[#C30121]">CRITICAL</span>
+<span class="font-body-sm text-body-sm text-[#757575]">Dhaka Central &amp; Sylhet Sadar</span>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 w-20 h-20 bg-[#2B2B2B]/5 rounded-full pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-md text-label-md uppercase tracking-wider text-[#757575]">Avg Time to Match</span>
+<div class="font-display-lg text-display-lg text-[#2B2B2B] tracking-tight mt-xs font-bold" id="metric-avg-time">6.4 <span class="text-headline-md font-headline-md text-[#757575]">min</span></div>
+</div>
+<span class="p-xs rounded-full bg-neutral-100 text-[#2B2B2B] material-symbols-outlined">timer</span>
+</div>
+<div class="flex items-center gap-xs mt-md">
+<span class="text-label-md font-semibold text-[#0D68AA]">-1.8m efficiency</span>
+<span class="font-body-sm text-body-sm text-[#757575]">below SLA ceiling</span>
+</div>
+</div>
+</div>
+<!-- Wave Architecture Visualizer -->
+<div class="bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col gap-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-sm">
+<div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[#C30121] text-[20px]">share_location</span>
+<h2 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Wave Engine Architectural Stages</h2>
+</div>
+<p class="font-body-sm text-body-sm text-[#543f3e]">Deterministic auto-escalation thresholds across concentric geopolitical polygons.</p>
+</div>
+<div class="flex items-center gap-xs">
+<span class="font-label-md text-label-md text-[#757575] uppercase">Algorithm State:</span>
+<span class="px-sm py-xs rounded-full bg-[#FDF3F3] border border-[#ebd7d7] text-[#C30121] font-label-md text-label-md font-semibold">Strict Geo-Fencing Active</span>
+</div>
+</div>
+<!-- Pipeline Cards Sequence -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md relative">
+<!-- Wave 1 Card -->
+<div class="bg-[#FDF3F3] border border-[#ebd7d7] p-md rounded-lg flex flex-col justify-between gap-md relative group hover:bg-[#fae6e6] transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md px-sm py-0.5 rounded-full bg-white text-[#C30121] font-bold border border-[#ebd7d7]">WAVE 1</span>
+<span class="font-label-md text-label-md text-[#757575]">15 min Window</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Immediate Radius</h3>
+<p class="font-body-sm text-body-sm text-[#543f3e] mt-xs">0 - 5 km hyper-local cluster</p>
+</div>
+<div class="space-y-xs font-body-sm text-body-sm pt-xs border-t-0">
+<div class="flex justify-between text-[#757575]">
+<span>Cooldown:</span>
+<span class="text-[#2B2B2B] font-semibold">180s silence</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Compatibility Gate:</span>
+<span class="text-[#C30121] font-semibold">Exact Blood Match</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Auto-Escalation Rule:</span>
+<span class="text-[#2B2B2B] font-semibold">&lt; 2 confirmations</span>
+</div>
+</div>
+<div class="w-full bg-[#ebd7d7] h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#C30121] h-full rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+<!-- Wave 2 Card -->
+<div class="bg-[#FDF3F3] border border-[#ebd7d7] p-md rounded-lg flex flex-col justify-between gap-md relative group hover:bg-[#fae6e6] transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md px-sm py-0.5 rounded-full bg-white text-[#C30121] font-bold border border-[#ebd7d7]">WAVE 2</span>
+<span class="font-label-md text-label-md text-[#757575]">30 min Window</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Upazila / Thana</h3>
+<p class="font-body-sm text-body-sm text-[#543f3e] mt-xs">5 - 15 km municipal cluster</p>
+</div>
+<div class="space-y-xs font-body-sm text-body-sm pt-xs">
+<div class="flex justify-between text-[#757575]">
+<span>Cooldown:</span>
+<span class="text-[#2B2B2B] font-semibold">120s silence</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Compatibility Gate:</span>
+<span class="text-[#C30121] font-semibold">Compatible Recipient</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Auto-Escalation Rule:</span>
+<span class="text-[#2B2B2B] font-semibold">0 in-transit donors</span>
+</div>
+</div>
+<div class="w-full bg-[#ebd7d7] h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#C30121] h-full rounded-full" style="width: 65%;"></div>
+</div>
+</div>
+<!-- Wave 3 Card -->
+<div class="bg-[#FDF3F3] border border-[#ebd7d7] p-md rounded-lg flex flex-col justify-between gap-md relative group hover:bg-[#fae6e6] transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md px-sm py-0.5 rounded-full bg-white text-[#0D68AA] font-bold border border-[#ebd7d7]">WAVE 3</span>
+<span class="font-label-md text-label-md text-[#757575]">60 min Window</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#2B2B2B]">District Hubs</h3>
+<p class="font-body-sm text-body-sm text-[#543f3e] mt-xs">15 - 50 km cross-district grid</p>
+</div>
+<div class="space-y-xs font-body-sm text-body-sm pt-xs">
+<div class="flex justify-between text-[#757575]">
+<span>Cooldown:</span>
+<span class="text-[#2B2B2B] font-semibold">60s silence</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Compatibility Gate:</span>
+<span class="text-[#0D68AA] font-semibold">All Viable Transfusions</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Auto-Escalation Rule:</span>
+<span class="text-[#2B2B2B] font-semibold">Emergency Veto Timeout</span>
+</div>
+</div>
+<div class="w-full bg-[#ebd7d7] h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#0D68AA] h-full rounded-full" style="width: 35%;"></div>
+</div>
+</div>
+<!-- Wave 4 Card -->
+<div class="bg-[#FDF3F3] border border-[#ebd7d7] p-md rounded-lg flex flex-col justify-between gap-md relative group hover:bg-[#fae6e6] transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md px-sm py-0.5 rounded-full bg-[#C30121] text-white font-bold">WAVE 4</span>
+<span class="font-label-md text-label-md text-[#757575]">Nationwide Broadcast</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-[#C30121]">Emergency Override</h3>
+<p class="font-body-sm text-body-sm text-[#543f3e] mt-xs">All BD • SMS + Push + IVR Call</p>
+</div>
+<div class="space-y-xs font-body-sm text-body-sm pt-xs">
+<div class="flex justify-between text-[#757575]">
+<span>Cooldown:</span>
+<span class="text-[#2B2B2B] font-semibold">Immediate Dispatch</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Compatibility Gate:</span>
+<span class="text-[#C30121] font-semibold">Universal Donor Pool</span>
+</div>
+<div class="flex justify-between text-[#757575]">
+<span>Auto-Escalation Rule:</span>
+<span class="text-[#C30121] font-bold">Chief Officer Trigger</span>
+</div>
+</div>
+<div class="w-full bg-[#ebd7d7] h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#C30121] h-full rounded-full animate-pulse" style="width: 15%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Emergency Escalation Pipeline Table -->
+<div class="bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col gap-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-sm">
+<div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[#C30121] text-[22px]">medical_services</span>
+<h2 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Live Case Pipeline Monitor</h2>
+</div>
+<p class="font-body-sm text-body-sm text-[#543f3e]">Real-time status of critical transfusion requests traversing the geometric wave relays.</p>
+</div>
+<div class="flex items-center gap-xs">
+<input class="px-md py-xs rounded-full bg-[#FDF3F3] border border-[#ebd7d7] font-body-sm text-body-sm text-[#2B2B2B] placeholder:text-[#8d6e6b] outline-none focus:ring-2 focus:ring-[#0D68AA]" placeholder="Filter by Hospital, Patient or Blood..." type="text"/>
+<button class="px-md py-xs rounded-full bg-[#FDF3F3] hover:bg-[#ebd7d7] text-[#2B2B2B] border border-[#ebd7d7] font-button text-label-md transition-colors" type="button">Filter Tiers</button>
+</div>
+</div>
+<!-- Table Structure -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#FDF3F3] text-[#757575] font-label-md text-label-md uppercase tracking-wider border-b border-[#ebd7d7]">
+<th class="py-sm px-md rounded-l-lg">Case &amp; Hospital</th>
+<th class="py-sm px-md">Patient &amp; Blood</th>
+<th class="py-sm px-md">Current Stage</th>
+<th class="py-sm px-md">Donors Pinged / Confirmed</th>
+<th class="py-sm px-md">Radius</th>
+<th class="py-sm px-md">Tier Elapsed</th>
+<th class="py-sm px-md text-right rounded-r-lg">Action Controls</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#ebd7d7]/60 text-[#2B2B2B] font-body-sm text-body-sm" id="pipeline-table-body"></tbody>
+</table>
+</div>
+</div>
+<!-- Dual Layout: Radius Tuning Sliders & Dispatch Telemetry -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-md">
+<!-- Live Tuning Sliders Panel (8 Cols) -->
+<div class="lg:col-span-8 bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col gap-lg">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[#C30121] text-[22px]">tune</span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Dynamic Escalation Thresholds &amp; Delay Engine</h2>
+<p class="font-body-sm text-body-sm text-[#543f3e]">Calibrate response windows, geospatial expansion bounds, and automated pulse throttling.</p>
+</div>
+</div>
+<button class="px-md py-xs rounded-full bg-[#FDF3F3] border border-[#ebd7d7] text-[#C30121] font-button text-label-md hover:bg-[#fae6e6] transition-colors" type="button">Reset to Standard Policy</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="space-y-sm p-md bg-[#FDF3F3] border border-[#ebd7d7] rounded-lg">
+<div class="flex items-center justify-between"><span class="font-label-md text-label-md text-[#2B2B2B] font-semibold">Wave 1 Window (Immediate 5km)</span><span class="font-label-md text-label-md text-[#C30121] font-bold" id="val-wave1">15 min</span></div>
+<input class="w-full accent-[#C30121] h-2 bg-neutral-200 rounded-lg cursor-pointer" max="30" min="5" oninput="document.getElementById('val-wave1').innerText = this.value + ' min'" step="1" type="range" value="15"/>
+<div class="flex justify-between text-[#757575] font-label-md text-[11px]"><span>5 min (Rapid)</span><span>Default: 15m</span><span>30 min (Relaxed)</span></div>
+</div>
+<div class="space-y-sm p-md bg-[#FDF3F3] border border-[#ebd7d7] rounded-lg">
+<div class="flex items-center justify-between"><span class="font-label-md text-label-md text-[#2B2B2B] font-semibold">Wave 2 Window (Thana 15km)</span><span class="font-label-md text-label-md text-[#C30121] font-bold" id="val-wave2">30 min</span></div>
+<input class="w-full accent-[#C30121] h-2 bg-neutral-200 rounded-lg cursor-pointer" max="60" min="15" oninput="document.getElementById('val-wave2').innerText = this.value + ' min'" step="5" type="range" value="30"/>
+<div class="flex justify-between text-[#757575] font-label-md text-[11px]"><span>15 min</span><span>Default: 30m</span><span>60 min</span></div>
+</div>
+<div class="space-y-sm p-md bg-[#FDF3F3] border border-[#ebd7d7] rounded-lg">
+<div class="flex items-center justify-between"><span class="font-label-md text-label-md text-[#2B2B2B] font-semibold">Zero-Response Auto-Escalate Trigger</span><span class="font-label-md text-label-md text-[#C30121] font-bold" id="val-zero">8 min</span></div>
+<input class="w-full accent-[#C30121] h-2 bg-neutral-200 rounded-lg cursor-pointer" max="15" min="2" oninput="document.getElementById('val-zero').innerText = this.value + ' min'" step="1" type="range" value="8"/>
+<div class="flex justify-between text-[#757575] font-label-md text-[11px]"><span>2 min (Emergency)</span><span>Threshold: 8m</span><span>15 min (Standard)</span></div>
+</div>
+<div class="space-y-sm p-md bg-[#FDF3F3] border border-[#ebd7d7] rounded-lg">
+<div class="flex items-center justify-between"><span class="font-label-md text-label-md text-[#2B2B2B] font-semibold">SMS / Push Surge Throttling</span><span class="font-label-md text-label-md text-[#0D68AA] font-bold" id="val-surge">250 msgs/min</span></div>
+<input class="w-full accent-[#0D68AA] h-2 bg-neutral-200 rounded-lg cursor-pointer" max="1000" min="50" oninput="document.getElementById('val-surge').innerText = this.value + ' msgs/min'" step="50" type="range" value="250"/>
+<div class="flex justify-between text-[#757575] font-label-md text-[11px]"><span>50 (Anti-Spam)</span><span>Standard: 250</span><span>1000 (Surge Rate)</span></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-sm">
+<span class="font-body-sm text-body-sm text-[#757575]">Algorithm changes propagate to worker queues within 2 heartbeats (≤ 10s).</span>
+<button class="px-lg py-xs rounded-full bg-[#C30121] text-white font-button text-label-md hover:bg-[#a9001b] transition-all shadow-sm" type="button">Save Threshold Configuration</button>
+</div>
+</div>
+<!-- Quick Telemetry & Health Panel (4 Cols) -->
+<div class="lg:col-span-4 bg-white border border-[#ebd7d7] p-lg rounded-lg shadow-sm flex flex-col justify-between gap-md">
+<div>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[#0D68AA] text-[20px]">sensors</span><h3 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Wave Engine Node State</h3></div>
+<p class="font-body-sm text-body-sm text-[#543f3e]">Real-time gateway worker statistics.</p>
+</div>
+<div class="space-y-md">
+<div class="p-md rounded-lg bg-[#FDF3F3] border border-[#ebd7d7] flex flex-col gap-xs">
+<div class="flex justify-between items-center font-label-md text-label-md"><span class="text-[#757575]">PUSH NOTIFICATION QUEUE</span><span class="text-[#2B2B2B] font-bold">42 pending</span></div>
+<div class="w-full bg-[#ebd7d7] h-2 rounded-full overflow-hidden"><div class="bg-[#0D68AA] h-full rounded-full" style="width: 22%;"></div></div>
+<span class="font-body-sm text-[12px] text-[#757575]">FCM Latency: 1.1s • Apple APNs: 0.9s</span>
+</div>
+<div class="p-md rounded-lg bg-[#FDF3F3] border border-[#ebd7d7] flex flex-col gap-xs">
+<div class="flex justify-between items-center font-label-md text-label-md"><span class="text-[#757575]">TELCO SMS GATEWAYS</span><span class="text-emerald-600 font-bold">100% OPERATIONAL</span></div>
+<div class="flex items-center gap-sm pt-xs"><span class="px-xs py-0.5 rounded bg-white border border-[#ebd7d7] text-[11px] font-semibold text-[#2B2B2B]">Grameenphone: 99.8%</span><span class="px-xs py-0.5 rounded bg-white border border-[#ebd7d7] text-[11px] font-semibold text-[#2B2B2B]">Robi: 99.4%</span><span class="px-xs py-0.5 rounded bg-white border border-[#ebd7d7] text-[11px] font-semibold text-[#2B2B2B]">Banglalink: 98.9%</span></div>
+</div>
+<div class="p-md rounded-lg bg-[#FDF3F3] border border-[#ebd7d7] flex flex-col gap-xs">
+<div class="flex justify-between items-center font-label-md text-label-md"><span class="text-[#757575]">AUTOMATED IVR VOIP CHANNELS</span><span class="text-[#2B2B2B] font-bold">14 / 20 Channels Active</span></div>
+<div class="w-full bg-[#ebd7d7] h-2 rounded-full overflow-hidden"><div class="bg-[#C30121] h-full rounded-full" style="width: 70%;"></div></div>
+<span class="font-body-sm text-[12px] text-[#757575]">Dedicated voice lines for critical O- and rare AB- donor pinging</span>
+</div>
+</div>
+<div class="pt-sm"><a class="inline-flex items-center justify-center gap-xs w-full py-xs px-md rounded-full bg-[#FDF3F3] border border-[#ebd7d7] text-[#0D68AA] font-button text-label-md hover:bg-[#fae6e6] transition-colors" href="#"><span class="material-symbols-outlined text-[18px]">query_stats</span><span>View Full Node Diagnostics</span></a></div>
+</div>
+</div>
+</div>
+<!-- Interactive Confirmation Modal (Escalation Trigger) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-[#2B2B2B]/60 backdrop-blur-sm hidden" id="escalation-modal">
+<div class="bg-white border border-[#ebd7d7] p-xl rounded-xl shadow-2xl max-w-xl w-full mx-md flex flex-col gap-lg animate-in fade-in zoom-in-95 duration-200">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-sm"><div class="w-10 h-10 rounded-full bg-red-100 text-[#C30121] flex items-center justify-center"><span class="material-symbols-outlined text-[24px]">crisis_alert</span></div><div><h3 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Force Wave Escalation</h3><span class="font-label-md text-label-md text-[#757575] uppercase tracking-wider">High-Priority Clinical Override</span></div></div>
+<button class="p-xs rounded-full hover:bg-neutral-100 text-[#757575] hover:text-[#2B2B2B] transition-colors" onclick="closeEscalationModal()" type="button"><span class="material-symbols-outlined text-[20px]">close</span></button>
+</div>
+<div class="bg-[#FDF3F3] border border-[#ebd7d7] p-md rounded-lg space-y-sm">
+<div class="flex justify-between items-center"><span class="font-label-md text-label-md text-[#757575]">TARGET CASE:</span><span class="font-semibold text-[#C30121] font-body-sm text-body-sm" id="modal-case-id">#BP-8819</span></div>
+<div class="flex justify-between items-center"><span class="font-label-md text-label-md text-[#757575]">FACILITY:</span><span class="font-medium text-[#2B2B2B] font-body-sm text-body-sm" id="modal-hospital">Dhaka Medical College</span></div>
+<div class="flex justify-between items-center"><span class="font-label-md text-label-md text-[#757575]">REQUIRED BLOOD TYPE:</span><span class="px-sm py-0.5 rounded-full bg-[#C30121] text-white font-bold font-label-md text-label-md" id="modal-blood">B-</span></div>
+<div class="flex justify-between items-center pt-xs"><span class="font-label-md text-label-md text-[#757575]">STAGE TRANSITION:</span><div class="flex items-center gap-xs font-semibold text-[#2B2B2B]"><span id="modal-from-stage">Wave 2</span><span class="material-symbols-outlined text-[16px] text-[#C30121]">arrow_forward</span><span class="text-[#C30121] font-bold" id="modal-to-stage">Wave 3</span></div></div>
+</div>
+<div class="space-y-xs">
+<span class="font-label-md text-label-md text-[#757575] uppercase">Projected Wave Impact:</span>
+<div class="p-md rounded-lg bg-[#FDF3F3] border border-[#ebd7d7] space-y-xs text-[#2B2B2B] font-body-sm text-body-sm">
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[18px] text-[#0D68AA]">open_in_full</span><span>Geographic Radius Expansion: <strong class="text-[#C30121]" id="modal-radius">15km → 45km</strong></span></div>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[18px] text-[#0D68AA]">groups</span><span>Target Audience: <strong class="text-[#2B2B2B]" id="modal-donors">342 verified donors</strong></span></div>
+<div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[18px] text-[#0D68AA]">speed</span><span>Estimated FCM Dispatch Latency: <strong>1.2 seconds</strong></span></div>
+<div class="flex items-center gap-xs text-[12px] text-[#543f3e] pt-xs"><span class="material-symbols-outlined text-[16px] text-[#C30121]">info</span><span>Automated IVR call priority will escalate to High Bandwidth.</span></div>
+</div>
+</div>
+<div class="flex items-center justify-end gap-sm pt-xs">
+<button class="px-lg py-xs rounded-full bg-neutral-200 text-[#2B2B2B] font-button text-label-md hover:bg-neutral-300 transition-colors" onclick="closeEscalationModal()" type="button">Cancel</button>
+<button class="px-lg py-xs rounded-full bg-[#C30121] text-white font-button text-label-md hover:bg-[#a9001b] transition-all shadow-md flex items-center gap-xs" id="btn-confirm-escalation" onclick="executeEscalation()" type="button"><span class="material-symbols-outlined text-[18px]">emergency_share</span><span>Confirm Immediate Force Escalation</span></button>
+</div>
+</div>
+</div>
+<!-- Live Wave Radar Drawer (Side Overlay) -->
+<div class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white border-l border-[#ebd7d7] shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col justify-between" id="radar-drawer">
+<div class="p-lg flex flex-col gap-md flex-1 overflow-y-auto">
+<div class="flex items-center justify-between pb-sm border-b border-[#ebd7d7]"><div class="flex items-center gap-xs"><span class="material-symbols-outlined text-[#C30121] text-[22px]">radar</span><h3 class="font-headline-sm text-headline-sm text-[#2B2B2B]">Live Wave Radar</h3></div><button class="p-xs rounded-full hover:bg-neutral-100 text-[#757575] hover:text-[#2B2B2B] transition-colors" onclick="closeRadarDrawer()" type="button"><span class="material-symbols-outlined text-[20px]">close</span></button></div>
+<div class="flex flex-col gap-xs"><div class="flex justify-between items-center"><span class="font-label-md text-label-md text-[#757575]">ACTIVE TELEMETRY FOR</span><span class="font-bold text-[#C30121]" id="drawer-case-id">#BP-8819</span></div><p class="font-body-sm text-body-sm text-[#543f3e]">Concentric geographical ring coverage &amp; ping echoes.</p></div>
+<!-- SVG Concentric Wave Radar Graphic -->
+<div class="w-full bg-[#FDF3F3] border border-[#ebd7d7] rounded-lg p-md flex flex-col items-center justify-center relative overflow-hidden">
+<svg class="w-64 h-64" fill="none" viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" opacity="0.8" r="25" stroke="#C30121" stroke-dasharray="3 3" stroke-width="1.5"></circle>
+<circle cx="100" cy="100" opacity="0.6" r="50" stroke="#C30121" stroke-width="1.5"></circle>
+<circle cx="100" cy="100" opacity="0.4" r="75" stroke="#0D68AA" stroke-dasharray="2 2" stroke-width="1.5"></circle>
+<circle cx="100" cy="100" opacity="0.2" r="95" stroke="#0D68AA" stroke-width="1"></circle>
+<circle cx="100" cy="100" fill="#C30121" r="7"></circle>
+<circle class="animate-ping" cx="100" cy="100" fill="#C30121" opacity="0.3" r="14" style="transform-origin: center;"></circle>
+<circle cx="85" cy="88" fill="#0D68AA" r="4"></circle>
+<circle cx="118" cy="72" fill="#0D68AA" r="3.5"></circle>
+<circle cx="125" cy="120" fill="#C30121" r="4.5"></circle>
+<circle cx="65" cy="130" fill="#0D68AA" r="3"></circle>
+<circle cx="140" cy="85" fill="#2B2B2B" opacity="0.6" r="3"></circle>
+<circle cx="50" cy="70" fill="#0D68AA" r="4"></circle>
+<line opacity="0.7" stroke="#C30121" stroke-width="1.5" x1="100" x2="180" y1="100" y2="40"><animatetransform attributename="transform" dur="4s" from="0 100 100" repeatcount="indefinite" to="360 100 100" type="rotate"></animatetransform></line>
+</svg>
+<div class="flex items-center justify-between w-full mt-sm font-label-md text-[11px] text-[#757575]">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#C30121] inline-block"></span> Hospital Node</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#0D68AA] inline-block"></span> Local Active Donor</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#C30121] inline-block"></span> Critical Alert Donor</span>
+</div>
+</div>
+<!-- Real-time Echo Stream -->
+<div class="space-y-sm">
+<span class="font-label-md text-label-md text-[#757575] uppercase">Live Broadcast Log</span>
+<div class="space-y-xs font-body-sm text-[13px]">
+<div class="p-xs px-sm bg-[#FDF3F3] border border-[#ebd7d7] rounded flex items-center justify-between"><span class="text-[#2B2B2B]">Wave 2 Ping Sent to 84 Recipients</span><span class="text-[#757575] text-[11px]">11:42:04</span></div>
+<div class="p-xs px-sm bg-[#FDF3F3] border border-[#ebd7d7] rounded flex items-center justify-between"><span class="text-[#0D68AA] font-semibold">Donor #D-4412 Acknowledged (1.8km)</span><span class="text-[#757575] text-[11px]">11:42:19</span></div>
+<div class="p-xs px-sm bg-[#FDF3F3] border border-[#ebd7d7] rounded flex items-center justify-between"><span class="text-[#2B2B2B]">IVR Call completed for Donor #D-1029</span><span class="text-[#757575] text-[11px]">11:43:02</span></div>
+<div class="p-xs px-sm bg-[#FDF3F3] border border-[#ebd7d7] rounded flex items-center justify-between"><span class="text-[#757575]">Wave 2 Auto-Escalate timer tick (T-11m)</span><span class="text-[#757575] text-[11px]">11:44:00</span></div>
+</div>
+</div>
+</div>
+<div class="p-lg bg-[#FDF3F3] border-t border-[#ebd7d7] flex flex-col gap-sm"><button class="w-full py-xs px-md rounded-full bg-neutral-200 text-[#2B2B2B] font-button text-label-md hover:bg-neutral-300 transition-colors" onclick="closeRadarDrawer()" type="button">Close Radar Window</button></div>
+</div>
+<!-- Notification Toast -->
+<div class="fixed bottom-6 right-6 z-50 bg-[#2B2B2B] text-white px-md py-sm rounded-lg shadow-xl flex items-center gap-sm transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none" id="toast">
+<span class="material-symbols-outlined text-[20px] text-red-300" id="toast-icon">check_circle</span>
+<span class="font-body-sm text-body-sm" id="toast-message">Action executed successfully</span>
+</div>
+</div>
+<script>
+  const API_URL = 'http://127.0.0.1:8000/api';
+  
+  function getAuthToken() {
+    return localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('adminToken') || '';
+  }
+  
+  function getHeaders() {
+    const token = getAuthToken();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    };
+  }
+
+  let refreshActive = true;
+  let currentForceEscalateCaseId = null;
+  const toggleBtn = document.getElementById('toggle-refresh');
+  const pingRing = document.getElementById('ping-ring');
+  const refreshIcon = document.getElementById('refresh-icon');
+
+  toggleBtn.addEventListener('click', () => {
+    refreshActive = !refreshActive;
+    if (refreshActive) {
+      pingRing.classList.remove('hidden');
+      refreshIcon.classList.add('text-[#C30121]');
+      showToast('Live telemetry auto-refresh resumed (5s interval)');
+      fetchLivePipeline(true);
+    } else {
+      pingRing.classList.add('hidden');
+      refreshIcon.classList.add('text-[#757575]');
+      showToast('Live telemetry auto-refresh paused');
+    }
+  });
+
+  document.getElementById('btn-force-tick').addEventListener('click', () => {
+    showToast('Manual fetch triggered');
+    fetchDashboardMetrics();
+    fetchLivePipeline(true);
+  });
+
+  const modal = document.getElementById('escalation-modal');
+
+  function openEscalationModal(caseId, hospital, blood, fromStage, toStage, fromRad, toRad, donors) {
+    currentForceEscalateCaseId = caseId;
+    document.getElementById('modal-case-id').innerText = '#' + caseId;
+    document.getElementById('modal-hospital').innerText = hospital;
+    document.getElementById('modal-blood').innerText = blood;
+    document.getElementById('modal-from-stage').innerText = fromStage;
+    document.getElementById('modal-to-stage').innerText = toStage;
+    document.getElementById('modal-radius').innerText = fromRad + ' -> ' + toRad;
+    document.getElementById('modal-donors').innerText = donors;
+    
+    // Reset button state
+    const confirmBtn = document.getElementById('btn-confirm-escalation');
+    if (confirmBtn) {
+      confirmBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">emergency_share</span><span>Confirm Immediate Force Escalation</span>`;
+      confirmBtn.onclick = executeEscalation;
+      confirmBtn.classList.remove('bg-[#0D68AA]', 'hover:bg-[#0a4d7d]');
+      confirmBtn.classList.add('bg-[#C30121]', 'hover:bg-[#a9001b]');
+    }
+    
+    modal.classList.remove('hidden');
+  }
+
+  function closeEscalationModal() { 
+    currentForceEscalateCaseId = null;
+    modal.classList.add('hidden'); 
+  }
+
+  async function executeEscalation() {
+    if (!currentForceEscalateCaseId) return;
+    const caseId = currentForceEscalateCaseId;
+    
+    const confirmBtn = document.getElementById('btn-confirm-escalation');
+    if (confirmBtn) {
+      confirmBtn.innerHTML = `<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span><span>Executing...</span>`;
+      confirmBtn.onclick = null;
+    }
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/cases/${caseId}/force-escalate/`, {
+        method: 'POST',
+        headers: getHeaders()
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        showToast(data.error || 'Failed to escalate request', true);
+        closeEscalationModal();
+        return;
+      }
+      
+      // Update modal with actual numbers
+      document.getElementById('modal-to-stage').innerText = `Wave ${data.new_wave}`;
+      const radiusElem = document.getElementById('modal-radius');
+      radiusElem.innerText = radiusElem.innerText.split('->')[0] + '-> ' + data.new_radius_km + 'km';
+      document.getElementById('modal-donors').innerText = `${data.donors_notified} verified donors notified`;
+      
+      if (confirmBtn) {
+        confirmBtn.innerHTML = `<span class="material-symbols-outlined text-[18px]">check_circle</span><span>Success - Close</span>`;
+        confirmBtn.classList.remove('bg-[#C30121]', 'hover:bg-[#a9001b]');
+        confirmBtn.classList.add('bg-[#0D68AA]', 'hover:bg-[#0a4d7d]');
+        confirmBtn.onclick = closeEscalationModal;
+      }
+      
+      showToast(`Escalated to Wave ${data.new_wave}. Notified ${data.donors_notified} new donors.`);
+      fetchDashboardMetrics();
+      fetchLivePipeline(false);
+    } catch (err) {
+      showToast('Network error during escalation', true);
+      closeEscalationModal();
+    }
+  }
+
+  const drawer = document.getElementById('radar-drawer');
+
+  function toggleRadarDrawer(caseId) {
+    document.getElementById('drawer-case-id').innerText = '#' + caseId;
+    drawer.classList.remove('translate-x-full');
+  }
+
+  function closeRadarDrawer() { drawer.classList.add('translate-x-full'); }
+
+  function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+    const toastIcon = document.getElementById('toast-icon');
+    
+    document.getElementById('toast-message').innerText = message;
+    
+    if (isError) {
+      toastIcon.innerText = 'error';
+      toastIcon.classList.remove('text-red-300');
+      toastIcon.classList.add('text-[#C30121]');
+    } else {
+      toastIcon.innerText = 'check_circle';
+      toastIcon.classList.remove('text-[#C30121]');
+      toastIcon.classList.add('text-red-300');
+    }
+
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 4000);
+  }
+
+  // --- NEW FETCH LOGIC --- //
+
+  async function fetchDashboardMetrics() {
+    try {
+      const res = await fetch(`${API_URL}/admin/wave-engine/metrics/`, {
+        headers: getHeaders()
+      });
+      if (!res.ok) throw new Error('Failed to fetch metrics');
+      const data = await res.json();
+      
+      document.getElementById('metric-active-escalations').innerText = data.active_escalations;
+      document.getElementById('metric-wave1-donors').innerText = data.wave1_donors_pinged;
+      document.getElementById('metric-wave4-broadcasts').innerText = data.wave4_broadcasts;
+      
+      const timeDiv = document.getElementById('metric-avg-time');
+      if (data.avg_match_time_minutes === null) {
+        timeDiv.innerHTML = `<span class="text-headline-md font-headline-md text-[#757575]">Not enough data</span>`;
+      } else {
+        timeDiv.innerHTML = `${data.avg_match_time_minutes} <span class="text-headline-md font-headline-md text-[#757575]">min</span>`;
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Error loading telemetry metrics', true);
+    }
+  }
+
+  function getTimeAgo(dateString) {
+    const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
+    if (diff < 60) return diff + "s ago";
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    return Math.floor(diff / 3600) + "h ago";
+  }
+
+  async function fetchLivePipeline(isInitial = false) {
+    try {
+      const res = await fetch(`${API_URL}/admin/wave-engine/live-pipeline/`, {
+        headers: getHeaders()
+      });
+      if (!res.ok) throw new Error('Failed to fetch pipeline');
+      const data = await res.json();
+      
+      const tbody = document.getElementById('pipeline-table-body');
+      tbody.innerHTML = '';
+      
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-lg text-center text-[#757575]">No active escalations currently.</td></tr>`;
+        return;
+      }
+      
+      data.forEach(item => {
+        let waveBadgeClass = item.current_wave >= 4 ? 'bg-[#C30121]/10 text-[#C30121]' :
+                             item.current_wave === 3 ? 'bg-[#0D68AA]/10 text-[#0D68AA]' :
+                             'bg-neutral-100 text-[#5A5A5A]';
+        let isWave4 = item.current_wave >= 4;
+        let btnDisabled = isWave4 ? 'disabled opacity-50 cursor-not-allowed' : '';
+        
+        // Setup variables for Force Escalation Modal
+        let fromWave = item.current_wave;
+        let toWave = Math.min(item.current_wave + 1, 4);
+        let radius = item.search_radius_km;
+        let nextRadius = toWave === 1 ? 5.0 : toWave === 2 ? 25.0 : toWave === 3 ? 100.0 : 150.0;
+        
+        const rowHTML = `
+          <tr class="hover:bg-[#FDF3F3]/70 transition-colors">
+            <td class="py-3.5 px-4 font-semibold text-[#C30121]">#BP-${item.id}</td>
+            <td class="py-3.5 px-4">
+              <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-xs font-bold text-[#C30121]">
+                ${item.blood_group}
+              </span>
+            </td>
+            <td class="py-3.5 px-4"><span class="truncate block max-w-[150px] font-medium" title="${item.hospital_name}">${item.hospital_name}</span></td>
+            <td class="py-3.5 px-4">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${waveBadgeClass} text-xs font-bold">
+                Wave ${item.current_wave} &middot; ${item.escalation_status}
+              </span>
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="flex items-center gap-2">
+                <div class="w-full bg-neutral-200 rounded-full h-1.5 max-w-[60px] overflow-hidden flex">
+                  <div class="bg-[#0D68AA] h-1.5" style="width: ${Math.min((item.accepted_donors_count / Math.max(item.pinged_donors_count, 1)) * 100, 100)}%"></div>
+                </div>
+                <span class="text-xs text-[#5A5A5A]">
+                  <strong class="text-[#2B2B2B]">${item.accepted_donors_count}</strong>/${item.pinged_donors_count}
+                </span>
+              </div>
+            </td>
+            <td class="py-3.5 px-4 text-[#757575] text-xs">T+${getTimeAgo(item.created_at)}</td>
+            <td class="py-3.5 px-4 text-right">
+              <div class="flex items-center justify-end gap-1">
+                <button type="button" onclick="toggleRadarDrawer(${item.id})" class="p-1 rounded text-[#757575] hover:bg-neutral-100 hover:text-[#0D68AA] transition-colors tooltip-trigger relative" title="View Radar">
+                  <span class="material-symbols-outlined text-[18px]">radar</span>
+                </button>
+                <button type="button" ${btnDisabled} onclick="openEscalationModal(${item.id}, '${item.hospital_name.replace(/'/g, "\'")}', '${item.blood_group}', 'Wave ${fromWave}', 'Wave ${toWave}', '${radius}', '${nextRadius}', 'Pending scan...')" class="p-1 rounded text-[#757575] hover:bg-[#FDF3F3] hover:text-[#C30121] transition-colors tooltip-trigger relative" title="Force Next Wave">
+                  <span class="material-symbols-outlined text-[18px]">fast_forward</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', rowHTML);
+      });
+    } catch (e) {
+      console.error(e);
+      if (isInitial) {
+        showToast('Error loading live pipeline data', true);
+      }
+    }
+  }
+
+  // Initialization
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchDashboardMetrics();
+    fetchLivePipeline(true);
+    
+    // Auto refresh interval (every 5 seconds)
+    setInterval(() => {
+      if (refreshActive) {
+        fetchLivePipeline(false);
+      }
+    }, 5000);
+  });
+</script></main></div></body></html>

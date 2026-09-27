@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -102,31 +105,49 @@ class DonorMapPin {
 class HospitalModel {
   const HospitalModel({
     required this.id,
+    required this.name,
     required this.nameEn,
     this.nameBn,
     required this.district,
-    required this.division,
+    required this.address,
+    this.lat,
+    this.lng,
     this.phone,
     required this.isVerified,
+    required this.isReferralCenter,
+    this.divisionId,
+    this.upazilaId,
   });
 
   final int id;
+  final String name;
   final String nameEn;
   final String? nameBn;
   final String district;
-  final String division;
+  final String address;
+  final double? lat;
+  final double? lng;
   final String? phone;
   final bool isVerified;
+  final bool isReferralCenter;
+  final int? divisionId;
+  final int? upazilaId;
 
   factory HospitalModel.fromJson(Map<String, dynamic> j) {
     return HospitalModel(
       id: (j['id'] as num?)?.toInt() ?? 0,
-      nameEn: (j['name_en'] as String?) ?? (j['name'] as String?) ?? '',
+      name: (j['name'] as String?) ?? '',
+      nameEn: (j['name_en'] as String?) ?? '',
       nameBn: j['name_bn'] as String?,
       district: (j['district'] as String?) ?? '',
-      division: (j['division'] as String?) ?? '',
+      address: (j['address'] as String?) ?? '',
+      lat: (j['lat'] as num?)?.toDouble(),
+      lng: (j['lng'] as num?)?.toDouble(),
       phone: j['phone'] as String?,
       isVerified: (j['is_verified'] as bool?) ?? false,
+      isReferralCenter: (j['is_referral_center'] as bool?) ?? false,
+      divisionId: (j['division'] as num?)?.toInt(),
+      upazilaId: (j['upazila'] as num?)?.toInt(),
     );
   }
 }

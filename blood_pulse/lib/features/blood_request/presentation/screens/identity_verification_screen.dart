@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -247,14 +250,24 @@ class _IdentityVerificationScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title & Subtitle
-                  const Text(
-                    'Identity Verification',
-                    style: TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2B2B2B),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Identity Verification',
+                        style: TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2B2B2B),
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.support_agent_rounded, size: 16, color: Color(0xFFC30121)),
+                        label: const Text('Need help?', style: TextStyle(color: Color(0xFFC30121), fontSize: 13, fontWeight: FontWeight.bold)),
+                        onPressed: () => context.push('/assistant', extra: 'IDENTITY_VERIFICATION'),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   const Text(

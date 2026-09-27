@@ -1,0 +1,317 @@
+<!-- Role & Permission Editor — Matrix Governance --><!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Georgia&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary":"#C30121","primary-container":"#A2001A","secondary":"#2B2B2B","tertiary":"#0D68AA","tertiary-container":"#004f86","surface":"#FDF3F3","surface-container":"#faeae9","surface-container-low":"#fbf0f0","surface-container-high":"#f6dcda","surface-container-highest":"#f2cbca","surface-container-lowest":"#ffffff","background":"#FDF3F3","on-surface":"#2B2B2B","on-surface-variant":"#5A5A5A","outline":"#8D7070","outline-variant":"#E6C0BE","primary-fixed":"#FFE0DF","primary-fixed-dim":"#FFB3AE","tertiary-fixed":"#D6E9FF"},borderRadius:{DEFAULT:"0.75rem",lg:"1.5rem",xl:"2rem",full:"9999px"},fontFamily:{"headline-lg":["Georgia"],"label-md":["Inter"],"body-md":["Inter"],button:["Inter"],"body-sm":["Inter"],"body-lg":["Inter"],"headline-md":["Georgia"],"headline-sm":["Georgia"],"label-lg":["Inter"]}}}}</script></head><body class="bg-[#FDF3F3] font-body-md text-[#2B2B2B]"><aside class="fixed left-0 top-0 h-full w-72 bg-[#2B2B2B] z-50 flex flex-col shadow-2xl"><div class="h-16 px-6 flex items-center gap-3 bg-[#2B2B2B] border-b border-white/10"><div class="w-8 h-8 rounded-lg bg-[#C30121] flex items-center justify-center text-white shrink-0 shadow-sm"><span class="material-symbols-outlined text-[20px]">water_drop</span></div><div class="flex flex-col"><span class="font-headline-sm text-[20px] text-white tracking-tight leading-none font-bold">BloodPulse</span><span class="font-label-md text-[10px] text-[#A3A3A3] tracking-widest uppercase font-semibold mt-1">Command Center</span></div></div><div class="flex-1 overflow-y-auto px-4 py-4 space-y-6"><nav class="space-y-1"><div class="px-3 pb-1 font-label-md text-[11px] text-[#9CA3AF] uppercase tracking-wider font-semibold">Operations</div><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="operations-dashboard" href="operations-dashboard.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">grid_view</span><span class="text-sm">Dashboard</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="wave-engine-control" href="wave-engine-control.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">water_drop</span><span class="text-sm">Wave Engine Control</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="geographic-map" href="geographic-map.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">map</span><span class="text-sm">Geographic Map</span></a></nav><nav class="space-y-1"><div class="px-3 pb-1 font-label-md text-[11px] text-[#9CA3AF] uppercase tracking-wider font-semibold">Governance &amp; AI</div><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="trust-and-fraud-engine" href="trust-fraud-engine.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">verified_user</span><span class="text-sm">Trust &amp; Fraud Engine</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="pulseai-console" href="pulseai-console.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">psychology</span><span class="text-sm">PulseAI Console</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="audit-and-compliance" href="audit-and-compliance.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">policy</span><span class="text-sm">Audit &amp; Compliance</span></a></nav><nav class="space-y-1"><div class="px-3 pb-1 font-label-md text-[11px] text-[#9CA3AF] uppercase tracking-wider font-semibold">Infrastructure</div><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="system-health-and-ops" href="system-health-and-ops.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">monitor_heart</span><span class="text-sm">System Health &amp; Ops</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="notifications" href="notifications.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">notifications_active</span><span class="text-sm">Notifications</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="reports-and-analytics" href="reports-and-analytics.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">query_stats</span><span class="text-sm">Reports &amp; Analytics</span></a></nav><nav class="space-y-1"><div class="px-3 pb-1 font-label-md text-[11px] text-[#9CA3AF] uppercase tracking-wider font-semibold">Administration</div><a aria-current="page" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all bg-[#C30121] text-white font-medium shadow-md shadow-[#C30121]/30" data-path="role-and-permission-editor" href="role-permission-editor.html"><span class="material-symbols-outlined text-[20px] text-white">admin_panel_settings</span><span class="text-sm">Role &amp; Permissions</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#E4E2E1] hover:bg-white/10 hover:text-white transition-all group" data-path="staff-directory" href="staff-directory.html"><span class="material-symbols-outlined text-[20px] text-[#A3A3A3] group-hover:text-white transition-colors">badge</span><span class="text-sm">Staff Directory</span></a></nav></div><div class="p-3.5 bg-white/5 border border-white/10 m-4 rounded-xl shadow-inner"><div class="flex items-center justify-between"><span class="text-[11px] font-semibold text-[#A3A3A3] uppercase tracking-wider">Node Region</span><span class="text-[11px] font-bold text-[#86c4f7] uppercase font-mono">US-EAST-01</span></div><div class="mt-2 flex items-center justify-between"><span class="text-xs text-[#E4E2E1] font-medium">Clinical Telemetry</span><span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span>SYNCED</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-white border-b border-[#2B2B2B]/10 z-40 flex items-center justify-between px-6 shadow-sm"><div class="flex items-center gap-4 flex-1 max-w-xl"><div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FDF3F3] text-[#2B2B2B] border border-[#C30121]/20"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="text-xs font-semibold text-[#2B2B2B]">All Systems Operational</span></div><div class="relative flex-1"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A5A] text-[18px]">search</span><input class="w-full pl-9 pr-4 py-1.5 rounded-full bg-[#FDF3F3] border border-[#2B2B2B]/10 text-xs text-[#2B2B2B] placeholder:text-[#5A5A5A]/70 outline-none focus:ring-2 focus:ring-[#0D68AA]" placeholder="Search telemetry, donor IDs, incidents, wards..." type="text"/></div></div><div class="flex items-center gap-4"><button class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#C30121] text-white text-xs font-semibold hover:bg-[#A2001A] transition-all shadow-sm" type="button"><span class="material-symbols-outlined text-[16px]">broadcast_on_personal</span><span>Emergency Broadcast</span></button><div class="h-6 w-px bg-[#2B2B2B]/10"></div><div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF3F3] border border-[#2B2B2B]/10"><span class="text-xs text-[#2B2B2B] font-bold">Super Admin</span><span class="text-xs text-[#5A5A5A]">/ Operations Chief</span></div><button class="relative p-1.5 rounded-full text-[#5A5A5A] hover:text-[#2B2B2B] hover:bg-black/5 transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#C30121]"></span></button><div class="w-8 h-8 rounded-full bg-[#2B2B2B] text-white flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">person</span></div></div></header><main class="w-full pt-16 bg-[#FDF3F3] px-6 min-h-screen"><div class="flex flex-col w-full">
+<!-- Top Header & Actions Section -->
+<section class="w-full pb-6 pt-4">
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+<div class="space-y-1.5">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#2B2B2B] text-[11px] font-semibold uppercase tracking-wider shadow-sm"><span class="material-symbols-outlined text-[15px] text-[#0D68AA]">admin_panel_settings</span>Security Policy RBAC-v4.2</span>
+<span class="text-xs text-[#5A5A5A]">•</span>
+<span class="text-xs text-[#5A5A5A] flex items-center gap-1.5 font-medium"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>Policy Synced &amp; Enforced</span>
+</div>
+<h1 class="font-headline-lg text-[32px] text-[#2B2B2B] tracking-tight font-bold">Role &amp; Permission Matrix Governance</h1>
+<div class="flex flex-wrap items-center gap-3 pt-0.5">
+<div class="flex items-center gap-1.5 text-[#5A5A5A] text-xs"><span class="material-symbols-outlined text-[16px] text-[#C30121]">groups</span><span><strong class="font-bold text-[#2B2B2B]">48 Staff &amp; Coordinators</strong> across 8 divisions</span></div>
+<span class="text-xs text-[#2B2B2B]/20">|</span>
+<div class="flex items-center gap-1.5 text-[#5A5A5A] text-xs"><span class="material-symbols-outlined text-[16px] text-[#5A5A5A]">history</span><span>Last Deploy: <span class="font-semibold text-[#2B2B2B]">14 mins ago</span> by <span class="text-[#0D68AA] font-bold">Ops-Chief Dr. Kabir</span></span></div>
+<span class="text-xs text-[#2B2B2B]/20">|</span>
+<div class="flex items-center gap-1.5 text-[#5A5A5A] text-xs"><span class="material-symbols-outlined text-[16px] text-[#0D68AA]">shield_lock</span><span class="font-medium">2FA &amp; Hardware Token Enforced</span></div>
+</div>
+</div>
+<div class="flex items-center gap-2.5 shrink-0">
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#2B2B2B]/15 text-[#2B2B2B] font-medium text-xs hover:bg-black/5 transition-all shadow-sm" type="button"><span class="material-symbols-outlined text-[16px] text-[#5A5A5A]">history_edu</span><span>Policy Diff Logs</span></button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#C30121] text-white font-medium text-xs shadow-sm hover:bg-[#A2001A] transition-all" id="btn-create-role" type="button"><span class="material-symbols-outlined text-[18px]">add_moderator</span><span>Create New Custom Role</span></button>
+</div>
+</div>
+</section>
+<!-- Horizontal Role Presets & Carousel Track -->
+<section class="w-full pb-6">
+<div class="flex items-center justify-between pb-2.5">
+<div class="flex items-center gap-2 text-xs text-[#5A5A5A] uppercase tracking-wider font-bold"><span>Active Security Tiers &amp; Presets (7 Roles)</span></div>
+<span class="text-xs font-semibold text-[#0D68AA] cursor-pointer hover:underline">Manage Role Templates</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+<!-- 1. Super Admin -->
+<div class="p-3.5 rounded-xl bg-white border border-[#2B2B2B]/10 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between">
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#C30121]/10 text-[#C30121] text-[10px] font-bold"><span class="material-symbols-outlined text-[12px]">verified_user</span> ROOT</span><span class="text-[11px] font-medium text-[#5A5A5A]">3 Users</span></div><p class="font-headline-sm text-[15px] text-[#2B2B2B] font-bold leading-tight">Super Admin</p><p class="text-[11px] text-[#5A5A5A] mt-1 leading-snug line-clamp-2">System Owner &amp; Cluster Master with unrestricted access.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#5A5A5A]"><span class="text-[11px] font-bold text-[#C30121]">All 48 perms</span><span class="material-symbols-outlined text-[15px]">lock</span></div>
+</div>
+<!-- 2. Operations Chief -->
+<div class="p-3.5 rounded-xl bg-white border border-[#2B2B2B]/10 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between">
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#0D68AA]/10 text-[#0D68AA] text-[10px] font-bold">OPERATIONS</span><span class="text-[11px] font-medium text-[#5A5A5A]">5 Users</span></div><p class="font-headline-sm text-[15px] text-[#2B2B2B] font-bold leading-tight">Operations Chief</p><p class="text-[11px] text-[#5A5A5A] mt-1 leading-snug line-clamp-2">Emergency waves, hospital triage, and fleet dispatching.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#5A5A5A]"><span class="text-[11px] font-bold text-[#2B2B2B]">39 of 48</span><span class="material-symbols-outlined text-[15px]">tune</span></div>
+</div>
+<!-- 3. Hospital Liaison -->
+<div class="p-3.5 rounded-xl bg-white border border-[#2B2B2B]/10 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between">
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 text-[#2B2B2B] text-[10px] font-bold">CLINICAL</span><span class="text-[11px] font-medium text-[#5A5A5A]">11 Users</span></div><p class="font-headline-sm text-[15px] text-[#2B2B2B] font-bold leading-tight">Hospital Liaison</p><p class="text-[11px] text-[#5A5A5A] mt-1 leading-snug line-clamp-2">Medical partner inventory, blood crossmatch logs, and hospital bags.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#5A5A5A]"><span class="text-[11px] font-bold text-[#2B2B2B]">22 of 48</span><span class="material-symbols-outlined text-[15px]">local_hospital</span></div>
+</div>
+<!-- 4. Content Moderator -->
+<div class="p-3.5 rounded-xl bg-white border border-[#2B2B2B]/10 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between">
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 text-[#2B2B2B] text-[10px] font-bold">COMMUNITY</span><span class="text-[11px] font-medium text-[#5A5A5A]">6 Users</span></div><p class="font-headline-sm text-[15px] text-[#2B2B2B] font-bold leading-tight">Content Moderator</p><p class="text-[11px] text-[#5A5A5A] mt-1 leading-snug line-clamp-2">Newsfeed stories, testimonial validation, and donor comments.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#5A5A5A]"><span class="text-[11px] font-bold text-[#2B2B2B]">14 of 48</span><span class="material-symbols-outlined text-[15px]">forum</span></div>
+</div>
+<!-- 5. District Coordinator -->
+<div class="p-3.5 rounded-xl bg-white border border-[#2B2B2B]/10 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between">
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/5 text-[#2B2B2B] text-[10px] font-bold">REGIONAL</span><span class="text-[11px] font-medium text-[#5A5A5A]">14 Users</span></div><p class="font-headline-sm text-[15px] text-[#2B2B2B] font-bold leading-tight">District Coordinator</p><p class="text-[11px] text-[#5A5A5A] mt-1 leading-snug line-clamp-2">Local club verification, club EC approval, and zone camps.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#5A5A5A]"><span class="text-[11px] font-bold text-[#2B2B2B]">19 of 48</span><span class="material-symbols-outlined text-[15px]">location_city</span></div>
+</div>
+<!-- 6. AI Safety Auditor -->
+<div class="p-3.5 rounded-xl bg-white border border-[#2B2B2B]/10 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between">
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#0D68AA]/10 text-[#0D68AA] text-[10px] font-bold">GOVERNANCE</span><span class="text-[11px] font-medium text-[#5A5A5A]">3 Users</span></div><p class="font-headline-sm text-[15px] text-[#2B2B2B] font-bold leading-tight">AI Safety Auditor</p><p class="text-[11px] text-[#5A5A5A] mt-1 leading-snug line-clamp-2">PulseAI RAG prompt editor, Gemini token quota, hallucination flags.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#5A5A5A]"><span class="text-[11px] font-bold text-[#2B2B2B]">17 of 48</span><span class="material-symbols-outlined text-[15px]">psychology_alt</span></div>
+</div>
+<!-- 7. Custom Role: Sylhet Divisional Dispatcher (ACTIVE TAB) -->
+<div class="p-3.5 rounded-xl bg-white border-2 border-[#C30121] shadow-md flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-[#C30121]"></div>
+<div><div class="flex items-center justify-between pb-1.5"><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#C30121] text-white text-[10px] font-bold">ACTIVE ROLE</span><span class="text-[11px] font-bold text-[#C30121]">6 Users</span></div><p class="font-headline-sm text-[15px] text-[#C30121] font-bold leading-tight">Sylhet Dispatcher</p><p class="text-[11px] text-[#2B2B2B] mt-1 leading-snug line-clamp-2 font-medium">Custom divisional escalation authority for flood prone zone.</p></div>
+<div class="pt-3 flex items-center justify-between text-[#C30121]"><span class="text-[11px] font-bold">28 of 48 Active</span><span class="material-symbols-outlined text-[15px]">edit</span></div>
+</div>
+</div>
+</section>
+<!-- Live Role State Banner -->
+<section class="w-full mb-5 p-4 bg-white border border-[#2B2B2B]/10 rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-[#C30121]/10 border border-[#C30121]/20 flex items-center justify-center text-[#C30121] shrink-0"><span class="material-symbols-outlined text-[26px]">badge</span></div>
+<div>
+<div class="flex items-center gap-2"><h2 class="font-headline-sm text-[18px] text-[#2B2B2B] font-bold">Sylhet Divisional Dispatcher</h2><span class="px-2 py-0.5 rounded-full bg-[#0D68AA]/10 text-[#0D68AA] text-[10px] font-bold">ZONE: SYLHET-DIV-03</span><span class="px-2 py-0.5 rounded-full bg-[#C30121]/10 text-[#C30121] text-[10px] font-bold">CUSTOM RBAC</span></div>
+<p class="text-xs text-[#5A5A5A] mt-0.5">Assigned to handle emergency donor calls, local dispatch surges, and hospital liaison during flash flood alerts.</p>
+</div>
+</div>
+<div class="flex items-center gap-2.5">
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FDF3F3] border border-[#C30121]/20 text-[#2B2B2B]"><span class="w-2 h-2 rounded-full bg-[#C30121] animate-ping"></span><span class="text-xs font-bold text-[#C30121]" id="diff-counter">3 unsaved changes</span><span class="text-xs text-[#5A5A5A]">vs Production Policy</span></div>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-[#2B2B2B]/15 text-[#2B2B2B] hover:bg-black/5 text-xs font-semibold transition-all shadow-sm" type="button"><span class="material-symbols-outlined text-[16px] text-[#5A5A5A]">content_copy</span><span>Clone from Template</span></button>
+</div>
+</section>
+<!-- Main Workspace: Matrix + Staff Assignment Drawer Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pb-32">
+<!-- Permission Matrix Column (9 Columns) -->
+<div class="lg:col-span-9 space-y-4">
+<div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-white border border-[#2B2B2B]/10 rounded-xl shadow-sm">
+<div class="flex items-center gap-2 flex-1 max-w-md"><div class="relative w-full"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A5A] text-[17px]">filter_alt</span><input class="w-full pl-9 pr-3 py-1.5 rounded-full bg-[#FDF3F3] border border-[#2B2B2B]/10 text-xs text-[#2B2B2B] placeholder:text-[#5A5A5A] outline-none focus:ring-2 focus:ring-[#0D68AA]" placeholder="Filter permission flags or subsystems..." type="text"/></div></div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 text-xs text-[#5A5A5A] font-medium"><span class="inline-block w-3 h-3 rounded-full bg-[#C30121]"></span><span>Granted</span></div>
+<div class="flex items-center gap-1.5 text-xs text-[#5A5A5A] font-medium"><span class="inline-block w-3 h-3 rounded-full bg-[#2B2B2B]/20"></span><span>Denied</span></div>
+<div class="flex items-center gap-1.5 text-xs text-[#5A5A5A] font-medium"><span class="material-symbols-outlined text-[16px] text-[#0D68AA]">shield</span><span>Policy Guardrail (Hard-locked)</span></div>
+</div>
+</div>
+<!-- Interactive Permission Matrix Container -->
+<div class="bg-white border border-[#2B2B2B]/10 rounded-xl shadow-sm overflow-hidden divide-y divide-[#2B2B2B]/10">
+<div class="grid grid-cols-12 gap-2 px-4 py-3 bg-[#FDF3F3] text-[#2B2B2B] font-bold text-xs uppercase tracking-wider">
+<div class="col-span-4 flex items-center gap-1.5">Subsystem &amp; Privilege Module</div>
+<div class="col-span-1 text-center">View</div>
+<div class="col-span-2 text-center">Create / Edit</div>
+<div class="col-span-2 text-center">Approve / Reject</div>
+<div class="col-span-2 text-center">Override / Escalation</div>
+<div class="col-span-1 text-center">Delete / Ban</div>
+</div>
+<!-- 1. SUBSYSTEM: Wave Engine & Emergency Dispatch -->
+<div class="group/subsystem bg-[#2B2B2B]/5 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[#C30121] text-[18px]">water_drop</span><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">1. Wave Engine &amp; Emergency Dispatch</span><span class="px-2 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#5A5A5A] text-[10px] font-semibold">Tier 1 Operations</span></div>
+<button class="text-[#0D68AA] hover:underline text-xs font-semibold flex items-center gap-1" onclick="toggleSubsystem(this)" type="button"><span class="material-symbols-outlined text-[15px]">select_all</span><span>Toggle Subsystem</span></button>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Wave Telemetry &amp; Live Waves</p><p class="text-[11px] text-[#5A5A5A]">Real-time GPS donor wave radii and hospital beacon requests</p></div>
+<div class="col-span-1 flex justify-center"><label class="cursor-pointer"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></label></div>
+<div class="col-span-2 flex justify-center"><label class="cursor-pointer"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></label></div>
+<div class="col-span-2 flex justify-center"><label class="cursor-pointer"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></label></div>
+<div class="col-span-2 flex justify-center"><label class="cursor-pointer"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></label></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]" title="Action not available for this module">block</span></div>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Modify Wave Radius &amp; Pacing Thresholds</p><p class="text-[11px] text-[#5A5A5A]">Expand notification circles from 3km to 25km divisional perimeter</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><div class="flex items-center gap-1.5"><p class="text-xs font-bold text-[#2B2B2B]">Nationwide Cellular &amp; Push Broadcast</p><span class="material-symbols-outlined text-[#0D68AA] text-[14px]" title="Super Admin Guardrail Required">shield</span></div><p class="text-[11px] text-[#5A5A5A]">Trigger nationwide level-5 red alerts overriding telco frequency locks</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2B2B2B]/5 text-[#5A5A5A] text-[10px] font-bold"><span class="material-symbols-outlined text-[13px] text-[#C30121]">lock</span> Root Only</div></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+</div>
+<!-- 2. SUBSYSTEM: Blood Hub & Donor Database -->
+<div class="group/subsystem bg-[#2B2B2B]/5 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[#C30121] text-[18px]">folder_shared</span><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">2. Blood Hub &amp; Donor Database</span><span class="px-2 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#5A5A5A] text-[10px] font-semibold">GDPR / Clinical Privacy</span></div>
+<button class="text-[#0D68AA] hover:underline text-xs font-semibold flex items-center gap-1" onclick="toggleSubsystem(this)" type="button"><span class="material-symbols-outlined text-[15px]">select_all</span><span>Toggle Subsystem</span></button>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Donor Medical Profiles &amp; History</p><p class="text-[11px] text-[#5A5A5A]">Historical bag donations, serology test results, and deferral tags</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><div class="flex items-center gap-1.5"><p class="text-xs font-bold text-[#2B2B2B]">Override Verified Blood Group</p><span class="material-symbols-outlined text-[#C30121] text-[14px]">warning</span></div><p class="text-[11px] text-[#5A5A5A]">Re-classify verified antigen Rh typology without lab re-test upload</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2B2B2B]/5 text-[#5A5A5A] text-[10px] font-bold"><span class="material-symbols-outlined text-[13px] text-[#C30121]">lock</span> Medical Board Only</div></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Reveal Unmasked Donor Phone Numbers</p><p class="text-[11px] text-[#5A5A5A]">Bypasses VoIP virtual forwarding proxy during critical emergencies</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+</div>
+<!-- 3. SUBSYSTEM: Trust & Fraud Gate -->
+<div class="group/subsystem bg-[#2B2B2B]/5 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[#C30121] text-[18px]">security</span><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">3. Trust &amp; Fraud Gate</span><span class="px-2 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#5A5A5A] text-[10px] font-semibold">Anti-Exploit Engine</span></div>
+<button class="text-[#0D68AA] hover:underline text-xs font-semibold flex items-center gap-1" onclick="toggleSubsystem(this)" type="button"><span class="material-symbols-outlined text-[15px]">select_all</span><span>Toggle Subsystem</span></button>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Quarantine Triage Queue</p><p class="text-[11px] text-[#5A5A5A]">Review high-velocity donation requests, bot triggers, and geo-spoof flags</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Permanent Hardware IMEI &amp; IP Blacklist</p><p class="text-[11px] text-[#5A5A5A]">Hard bans abusive intermediaries charging illicit blood collection fees</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+</div>
+<!-- 4. SUBSYSTEM: Communities & Club Governance -->
+<div class="group/subsystem bg-[#2B2B2B]/5 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[#C30121] text-[18px]">groups_3</span><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">4. Communities &amp; Club Governance</span><span class="px-2 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#5A5A5A] text-[10px] font-semibold">Volunteer Networks</span></div>
+<button class="text-[#0D68AA] hover:underline text-xs font-semibold flex items-center gap-1" onclick="toggleSubsystem(this)" type="button"><span class="material-symbols-outlined text-[15px]">select_all</span><span>Toggle Subsystem</span></button>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Club Accreditation &amp; EC Roster</p><p class="text-[11px] text-[#5A5A5A]">Authorize campus blood clubs, modify executive committee hierarchy</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+</div>
+<!-- 5. SUBSYSTEM: PulseAI & RAG Management -->
+<div class="group/subsystem bg-[#2B2B2B]/5 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[#C30121] text-[18px]">psychology</span><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">5. PulseAI &amp; RAG Management</span><span class="px-2 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#5A5A5A] text-[10px] font-semibold">Gemini 1.5 Pro</span></div>
+<button class="text-[#0D68AA] hover:underline text-xs font-semibold flex items-center gap-1" onclick="toggleSubsystem(this)" type="button"><span class="material-symbols-outlined text-[15px]">select_all</span><span>Toggle Subsystem</span></button>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Triage Chat Logs &amp; Hallucination Reviews</p><p class="text-[11px] text-[#5A5A5A]">Inspect anonymized user conversational context and clinical accuracy markers</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">RAG Knowledge Vector Base &amp; Prompt Pins</p><p class="text-[11px] text-[#5A5A5A]">Inject regional emergency FAQs and modulate Gemini token allocation ceiling</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2B2B2B]/5 text-[#5A5A5A] text-[10px] font-bold"><span class="material-symbols-outlined text-[13px] text-[#C30121]">lock</span> AI Auditor Only</div></div>
+<div class="col-span-1 flex justify-center"><span class="material-symbols-outlined text-[#2B2B2B]/20 text-[18px]">block</span></div>
+</div>
+<!-- 6. SUBSYSTEM: Infrastructure & System Ops -->
+<div class="group/subsystem bg-[#2B2B2B]/5 px-4 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2"><span class="material-symbols-outlined text-[#C30121] text-[18px]">terminal</span><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">6. Infrastructure &amp; System Ops</span><span class="px-2 py-0.5 rounded-full bg-white border border-[#2B2B2B]/10 text-[#5A5A5A] text-[10px] font-semibold">Cloud &amp; Telemetry</span></div>
+<button class="text-[#0D68AA] hover:underline text-xs font-semibold flex items-center gap-1" onclick="toggleSubsystem(this)" type="button"><span class="material-symbols-outlined text-[15px]">select_all</span><span>Toggle Subsystem</span></button>
+</div>
+<div class="grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-[#FDF3F3]/60 transition-colors">
+<div class="col-span-4"><p class="text-xs font-bold text-[#2B2B2B]">Divisional Node Telemetry &amp; Redis Cache Invalidation</p><p class="text-[11px] text-[#5A5A5A]">Trigger warm-cache flushes for Sylhet regional edge cluster</p></div>
+<div class="col-span-1 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input checked="" class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-2 flex justify-center"><input class="perm-checkbox w-4 h-4 rounded text-[#C30121] accent-[#C30121] cursor-pointer" type="checkbox"/></div>
+<div class="col-span-1 flex justify-center"><div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2B2B2B]/5 text-[#5A5A5A] text-[10px] font-bold"><span class="material-symbols-outlined text-[13px] text-[#C30121]">lock</span> Root Only</div></div>
+</div>
+</div>
+</div>
+<!-- Assigned Staff Column (3 Columns) -->
+<div class="lg:col-span-3 space-y-4">
+<div class="bg-white border border-[#2B2B2B]/10 rounded-xl p-4 shadow-sm">
+<div class="flex items-center justify-between pb-3"><div><h3 class="font-headline-sm text-sm text-[#2B2B2B] font-bold">Assigned Staff</h3><p class="text-xs text-[#5A5A5A]">6 Active Personnel in Sylhet</p></div><button class="w-8 h-8 rounded-full bg-[#FDF3F3] border border-[#2B2B2B]/10 flex items-center justify-center text-[#2B2B2B] hover:bg-[#2B2B2B] hover:text-white transition-colors" title="Assign Additional Member" type="button"><span class="material-symbols-outlined text-[17px]">person_add</span></button></div>
+<div class="space-y-2">
+<div class="p-2 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 hover:border-[#2B2B2B]/15 transition-all flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full bg-[#C30121] text-white flex items-center justify-center font-bold text-[11px] shrink-0">FA</div><div class="truncate"><p class="text-xs font-bold text-[#2B2B2B] truncate">Fahim Ahmed</p><p class="text-[10px] text-[#5A5A5A] truncate">Sylhet Sadar • Lead</p></div></div><div class="flex items-center gap-2 shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500" title="Active on Dispatch Radar"></span><button class="text-[#5A5A5A] hover:text-[#C30121] p-0.5" title="Revoke Role" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div>
+<div class="p-2 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 hover:border-[#2B2B2B]/15 transition-all flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full bg-[#0D68AA] text-white flex items-center justify-center font-bold text-[11px] shrink-0">TB</div><div class="truncate"><p class="text-xs font-bold text-[#2B2B2B] truncate">Tanzina Begum</p><p class="text-[10px] text-[#5A5A5A] truncate">Beanibazar • Night</p></div></div><div class="flex items-center gap-2 shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><button class="text-[#5A5A5A] hover:text-[#C30121] p-0.5" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div>
+<div class="p-2 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 hover:border-[#2B2B2B]/15 transition-all flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full bg-[#2B2B2B] text-white font-bold text-[11px] shrink-0">RC</div><div class="truncate"><p class="text-xs font-bold text-[#2B2B2B] truncate">Rony Chowdhury</p><p class="text-[10px] text-[#5A5A5A] truncate">Habiganj Cross • Field</p></div></div><div class="flex items-center gap-2 shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><button class="text-[#5A5A5A] hover:text-[#C30121] p-0.5" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div>
+<div class="p-2 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 hover:border-[#2B2B2B]/15 transition-all flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full bg-[#2B2B2B]/60 text-white font-bold text-[11px] shrink-0">SK</div><div class="truncate"><p class="text-xs font-bold text-[#2B2B2B] truncate">Sadia Khan</p><p class="text-[10px] text-[#5A5A5A] truncate">Moulvibazar • Shift B</p></div></div><div class="flex items-center gap-2 shrink-0"><span class="w-2 h-2 rounded-full bg-[#5A5A5A]"></span><button class="text-[#5A5A5A] hover:text-[#C30121] p-0.5" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div>
+<div class="p-2 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 hover:border-[#2B2B2B]/15 transition-all flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full bg-[#2B2B2B]/60 text-white font-bold text-[11px] shrink-0">MR</div><div class="truncate"><p class="text-xs font-bold text-[#2B2B2B] truncate">Mahir Rahman</p><p class="text-[10px] text-[#5A5A5A] truncate">Sunamganj • Relief</p></div></div><div class="flex items-center gap-2 shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><button class="text-[#5A5A5A] hover:text-[#C30121] p-0.5" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div>
+<div class="p-2 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 hover:border-[#2B2B2B]/15 transition-all flex items-center justify-between"><div class="flex items-center gap-2.5 min-w-0"><div class="w-7 h-7 rounded-full bg-[#2B2B2B]/60 text-white font-bold text-[11px] shrink-0">AH</div><div class="truncate"><p class="text-xs font-bold text-[#2B2B2B] truncate">Asif Hasan</p><p class="text-[10px] text-[#5A5A5A] truncate">Osmani Med Liaison</p></div></div><div class="flex items-center gap-2 shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><button class="text-[#5A5A5A] hover:text-[#C30121] p-0.5" type="button"><span class="material-symbols-outlined text-[15px]">close</span></button></div></div>
+</div>
+<button class="w-full mt-3 py-2 rounded-full bg-[#FDF3F3] hover:bg-[#2B2B2B] hover:text-white text-[#2B2B2B] border border-[#2B2B2B]/10 font-medium text-xs transition-all flex items-center justify-center gap-1.5" type="button"><span class="material-symbols-outlined text-[15px]">swap_horiz</span><span>Batch Reassign Role</span></button>
+</div>
+<div class="bg-white border border-[#2B2B2B]/10 rounded-xl p-4 shadow-sm space-y-2.5">
+<div class="flex items-center gap-1.5 text-[#C30121]"><span class="material-symbols-outlined text-[18px]">verified</span><span class="text-xs uppercase tracking-wider font-bold">Policy Governance</span></div>
+<p class="text-xs text-[#5A5A5A] leading-relaxed">Permissions altered here trigger an immediate cryptographic re-issue of JSON Web Tokens across all active coordinator mobile sessions.</p>
+<div class="p-2.5 rounded-lg bg-[#FDF3F3] border border-[#2B2B2B]/5 space-y-1">
+<div class="flex justify-between text-[11px]"><span class="text-[#5A5A5A]">Enforcement Protocol:</span><span class="font-bold text-[#2B2B2B]">Strict Eager Sync</span></div>
+<div class="flex justify-between text-[11px]"><span class="text-[#5A5A5A]">Signature Key:</span><span class="font-mono text-[#0D68AA] font-bold">ed25519:div-sylhet</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Bottom Save Changes Floating Bar -->
+<div class="fixed bottom-4 left-80 right-8 z-40 max-w-5xl mx-auto">
+<div class="p-4 rounded-xl bg-white border border-[#2B2B2B]/15 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-full bg-[#C30121]/10 flex items-center justify-center text-[#C30121] shrink-0"><span class="material-symbols-outlined text-[22px]">pending_actions</span></div>
+<div>
+<div class="flex items-center gap-2"><span class="font-headline-sm text-sm text-[#2B2B2B] font-bold">Policy Stage: Pending Review</span><span class="px-1.5 py-0.5 rounded bg-[#C30121]/15 text-[#C30121] text-[10px] font-bold tracking-wider">UNCOMMITTED</span></div>
+<p class="text-xs text-[#5A5A5A] mt-0.5">Modifying <span class="font-bold text-[#2B2B2B]">Sylhet Divisional Dispatcher</span> will notify 6 active staff members and invalidate their active device credentials.</p>
+</div>
+</div>
+<div class="flex items-center gap-2.5 shrink-0">
+<button class="px-4 py-2 rounded-full bg-white border border-[#2B2B2B]/15 text-[#2B2B2B] hover:bg-black/5 text-xs font-semibold transition-all" id="btn-discard" type="button">Discard Changes</button>
+<button class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#C30121] text-white hover:bg-[#A2001A] text-xs font-semibold shadow-md transition-all" id="btn-save" type="button"><span class="material-symbols-outlined text-[17px]">publish</span><span>Deploy Policy Updates</span></button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let diffCount = 3;
+  const diffCounterEl = document.getElementById('diff-counter');
+
+  document.querySelectorAll('.perm-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+      diffCount++;
+      if (diffCounterEl) diffCounterEl.textContent = `${diffCount} unsaved changes`;
+    });
+  });
+
+  function toggleSubsystem(btn) {
+    const parentContainer = btn.closest('.group\\/subsystem');
+    if (!parentContainer) return;
+    let nextRow = parentContainer.nextElementSibling;
+    let anyChecked = false;
+    let checkboxesInSubsystem = [];
+    while (nextRow && !nextRow.classList.contains('group/subsystem')) {
+      const cbs = nextRow.querySelectorAll('.perm-checkbox');
+      cbs.forEach(cb => { checkboxesInSubsystem.push(cb); if (cb.checked) anyChecked = true; });
+      nextRow = nextRow.nextElementSibling;
+    }
+    checkboxesInSubsystem.forEach(cb => { cb.checked = !anyChecked; });
+    diffCount += checkboxesInSubsystem.length;
+    if (diffCounterEl) diffCounterEl.textContent = `${diffCount} unsaved changes`;
+  }
+
+  const saveBtn = document.getElementById('btn-save');
+  if (saveBtn) saveBtn.addEventListener('click', () => {
+    diffCount = 0;
+    if (diffCounterEl) diffCounterEl.textContent = `0 unsaved changes`;
+    alert('Security Policy successfully compiled, signed, and dispatched to edge nodes!');
+  });
+
+  const discardBtn = document.getElementById('btn-discard');
+  if (discardBtn) discardBtn.addEventListener('click', () => {
+    if (confirm('Revert all unsaved permission edits back to deployed production state?')) location.reload();
+  });
+</script></main></div></body></html>

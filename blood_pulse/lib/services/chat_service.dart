@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 /// BloodPulse — Real-Time Firestore Chat Service (E2EE)
 ///
 /// Wires encrypted message streams to/from Firestore.

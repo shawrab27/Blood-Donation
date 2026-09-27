@@ -1,3 +1,8 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
+import '../../../blood_hub/data/blood_hub_api_service.dart';
+import '../models/health_accessory_model.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -69,16 +74,9 @@ class AiAnalysisService {
       'filename': imageFile.name.isNotEmpty ? imageFile.name : 'report.jpg',
     });
 
-    // Vercel serverless proxy has a strict 10s execution timeout which drops long-running AI queries.
-    // Direct Render backend does not timeout and handles the Gemini API request reliably.
-    final directRenderUrl = 'https://bloodpulse-backend.onrender.com/api/health-hub/analyze-report/';
     final primaryUrl = '$_baseUrl/analyze-report/';
 
-    final candidateUrls = <String>{
-      if (_baseUrl.contains('vercel.app')) directRenderUrl,
-      primaryUrl,
-      if (!_baseUrl.contains('vercel.app')) directRenderUrl,
-    }.toList();
+    final candidateUrls = <String>[primaryUrl];
 
     Object? lastError;
 
@@ -197,3 +195,26 @@ class AiAnalysisService {
     throw Exception('Unable to complete AI analysis. Please try again.');
   }
 }
+
+final healthAccessoriesProvider = FutureProvider<List<HealthAccessory>>((ref) async {
+  final response = await http.get(Uri.parse('/health-accessories/'));
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> decoded = json.decode(response.body);
+    final List<dynamic> data = decoded.containsKey('results') ? decoded['results'] : decoded;
+    return data.map((e) => HealthAccessory.fromJson(e)).toList();
+  }
+  throw Exception('Failed to load health accessories');
+});
+
+
+
+final hospitalsDirectoryProvider = FutureProvider<List<HospitalModel>>((ref) async {
+  final cleanBase = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
+  final response = await http.get(Uri.parse('$cleanBase/hospitals/'));
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> decoded = json.decode(utf8.decode(response.bodyBytes));
+    final List<dynamic> data = decoded.containsKey('results') ? decoded['results'] : decoded;
+    return data.map((e) => HospitalModel.fromJson(e)).toList();
+  }
+  throw Exception('Failed to load hospitals');
+});

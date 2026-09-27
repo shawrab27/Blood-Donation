@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+# Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 """
 Django settings for blood_pulse_backend project.
 
@@ -49,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'api',
+    'assistant',
 ]
 
 REST_FRAMEWORK = {
@@ -187,4 +191,45 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc=')
+
+
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle',
+]
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'anon': '100/hour',
+    'user': '1000/hour',
+    'otp_anon': '10/hour',
+    'otp_user': '20/hour',
+    'firebase_auth': '50/hour',
+    'donors_anon': '100/hour',
+    'donors_user': '1000/hour',
+    'requests': '50/hour',
+    'pulseai_anon': '20/hour',
+    'pulseai_user': '100/hour',
+    'emergency_broadcast': '3/min',
+    'assistant_chat': '10/min',
+}
+
+
+if os.environ.get('DJANGO_ENV') == 'production':
+    SECURE_SSL_REDIRECT = True
+
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+}
+
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
 

@@ -1,9 +1,14 @@
+// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
+// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Typed exception representing API, network, or decoding failures in BloodPulse.
 class ApiException implements Exception {
@@ -24,15 +29,23 @@ class ApiClient {
   static const String defaultServerUrl = 'https://blood-donation-liard.vercel.app';
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://blood-donation-liard.vercel.app/api/',
+    defaultValue: 'https://blood-donation-liard.vercel.app',
   );
 
-
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   static const String _kAccessToken = 'bp_jwt_access_token';
   static const String _kRefreshToken = 'bp_jwt_refresh_token';
+
+  // In-memory static cache to guarantee token availability across instances
+  static String? _cachedAccessToken;
+  static String? _cachedRefreshToken;
+
+  static void setStaticTokens({String? access, String? refresh}) {
+    _cachedAccessToken = access;
+    _cachedRefreshToken = refresh;
+  }
 
   String baseUrl;
   final http.Client _client;
@@ -48,43 +61,109 @@ class ApiClient {
             const FlutterSecureStorage(
               aOptions: AndroidOptions(),
               iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+              webOptions: WebOptions(
+                dbName: 'BloodPulseSecureStorage',
+                publicKey: 'BloodPulse_Client_Vault_2026',
+              ),
             );
 
   // ── Token Storage Helpers ──
 
   Future<void> saveTokens({required String access, required String refresh}) async {
+    _cachedAccessToken = access;
+    _cachedRefreshToken = refresh;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kAccessToken, access);
+      await prefs.setString(_kRefreshToken, refresh);
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences save error: $e');
+    }
+
     try {
       await _secureStorage.write(key: _kAccessToken, value: access);
       await _secureStorage.write(key: _kRefreshToken, value: refresh);
     } catch (e) {
-      debugPrint('[ApiClient] Error saving tokens: $e');
+      debugPrint('[ApiClient] SecureStorage save error: $e');
     }
   }
 
   Future<String?> getAccessToken() async {
-    try {
-      return await _secureStorage.read(key: _kAccessToken);
-    } catch (e) {
-      debugPrint('[ApiClient] Error reading access token: $e');
-      return null;
+    if (_cachedAccessToken != null && _cachedAccessToken!.isNotEmpty) {
+      return _cachedAccessToken;
     }
+
+    // 1. SharedPreferences (reliable on Web & instant fallback on mobile)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_kAccessToken);
+      if (token != null && token.isNotEmpty) {
+        _cachedAccessToken = token;
+        return token;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences read error: $e');
+    }
+
+    // 2. SecureStorage fallback
+    try {
+      final token = await _secureStorage.read(key: _kAccessToken);
+      if (token != null && token.isNotEmpty) {
+        _cachedAccessToken = token;
+        return token;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] SecureStorage read error: $e');
+    }
+    return null;
   }
 
   Future<String?> getRefreshToken() async {
-    try {
-      return await _secureStorage.read(key: _kRefreshToken);
-    } catch (e) {
-      debugPrint('[ApiClient] Error reading refresh token: $e');
-      return null;
+    if (_cachedRefreshToken != null && _cachedRefreshToken!.isNotEmpty) {
+      return _cachedRefreshToken;
     }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_kRefreshToken);
+      if (token != null && token.isNotEmpty) {
+        _cachedRefreshToken = token;
+        return token;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences read error: $e');
+    }
+
+    try {
+      final token = await _secureStorage.read(key: _kRefreshToken);
+      if (token != null && token.isNotEmpty) {
+        _cachedRefreshToken = token;
+        return token;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] SecureStorage read error: $e');
+    }
+    return null;
   }
 
   Future<void> clearTokens() async {
+    _cachedAccessToken = null;
+    _cachedRefreshToken = null;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kAccessToken);
+      await prefs.remove(_kRefreshToken);
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences clear error: $e');
+    }
+
     try {
       await _secureStorage.delete(key: _kAccessToken);
       await _secureStorage.delete(key: _kRefreshToken);
     } catch (e) {
-      debugPrint('[ApiClient] Error clearing tokens: $e');
+      debugPrint('[ApiClient] SecureStorage clear error: $e');
     }
   }
 
@@ -360,21 +439,99 @@ class ApiClient {
     );
   }
 
-  // ── Helpers ──
+  // â”€â”€ Helpers â”€â”€
+  
+  // ─── Search ───
+
+  Future<List<Map<String, dynamic>>> searchInstitutions(String query) async {
+    final response = await _client
+        .get(Uri.parse(_normalizeUrl('institutions/search/?q=${Uri.encodeComponent(query)}')))
+        .timeout(connectTimeout);
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> searchUpazilas(String query) async {
+    final response = await _client
+        .get(Uri.parse(_normalizeUrl('locations/upazila-search/?q=${Uri.encodeComponent(query)}')))
+        .timeout(connectTimeout);
+    
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  // ─── Forgot Password (Email OTP) ───
+
+  Future<void> requestEmailOtp(String email) async {
+    final response = await _client
+        .post(
+          Uri.parse(_normalizeUrl('auth/forgot-password/request-otp/')),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email}),
+        )
+        .timeout(connectTimeout);
+    
+    if (response.statusCode >= 400) {
+      throw ApiException('Failed to request OTP', statusCode: response.statusCode);
+    }
+  }
+
+  Future<String> verifyEmailOtp(String email, String code) async {
+    final response = await _client
+        .post(
+          Uri.parse(_normalizeUrl('auth/forgot-password/verify-otp/')),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'code': code}),
+        )
+        .timeout(connectTimeout);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['reset_token'] ?? '';
+    } else {
+      throw ApiException('Invalid or expired code', statusCode: response.statusCode);
+    }
+  }
+
+  Future<void> resetPassword(String token, String newPassword, String confirmPassword) async {
+    final response = await _client
+        .post(
+          Uri.parse(_normalizeUrl('auth/forgot-password/reset/')),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'reset_token': token,
+            'new_password': newPassword,
+            'confirm_password': confirmPassword,
+          }),
+        )
+        .timeout(connectTimeout);
+    
+    if (response.statusCode >= 400) {
+      final body = jsonDecode(response.body);
+      throw ApiException(body['detail'] ?? 'Failed to reset password', statusCode: response.statusCode);
+    }
+  }
 
   String _normalizeUrl(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
+    
     var base = baseUrl.trim();
-    if (!base.endsWith('/')) {
-      base = '$base/';
-    }
-    if (!base.endsWith('/api/') && !path.startsWith('api/')) {
-      base = '${base}api/';
-    }
-    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return '$base$cleanPath';
+    if (base.endsWith('/')) base = base.substring(0, base.length - 1);
+    
+    if (path.startsWith('/')) path = path.substring(1);
+    if (path.startsWith('api/')) path = path.substring(4);
+    if (path.startsWith('/')) path = path.substring(1);
+    
+    return '$base/api/$path';
   }
 
   Future<Map<String, String>> _getAuthHeaders() async {
