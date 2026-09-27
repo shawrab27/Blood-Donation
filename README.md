@@ -73,3 +73,6 @@ python manage.py runserver
 ## 🛡️ License & Contributing
 Licensed under the [MIT License](LICENSE).
 Pull requests, bug reports, and feature proposals are welcome!
+
+## Acknowledgements
+- School data compiled from Bangladesh Open Data via KonSchool (github.com/maacpiash/KonSchool)
