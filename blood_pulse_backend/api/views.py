@@ -698,12 +698,33 @@ class GeminiReportAnalyzeView(APIView):
         from assistant.pipeline.redact import redact_text
         safe_text = redact_text(report_text)
 
+        # Check for medical keywords before calling LLM
+        medical_keywords = [
+            'hemoglobin', 'hb', 'cbc', 'complete blood count', 'platelet', 'wbc', 'rbc',
+            'white blood', 'red blood', 'blood group', 'neutrophil', 'lymphocyte',
+            'eosinophil', 'monocyte', 'basophil', 'esr', 'hematocrit', 'hct',
+            'mcv', 'mch', 'mchc', 'serum', 'pathology', 'lab', 'reference range',
+            'result', 'glucose', 'cholesterol', 'urea', 'creatinine', 'bilirubin'
+        ]
+        text_lower = safe_text.lower()
+        has_medical_marker = any(kw in text_lower for kw in medical_keywords)
+
+        if not has_medical_marker or len(safe_text.strip()) < 15:
+            return Response(
+                {
+                    'not_a_report': True,
+                    'error': 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report (such as CBC, Hemoglobin, or Blood Group report) with visible laboratory values.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
         if not api_key:
-            return Response({'error': 'Gemini API Key not configured on the server.'}, status=500)
+            return Response({
+                'not_a_report': True,
+                'error': 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        client = genai.Client(api_key=api_key)
-        
         prompt = """
         You are a medical AI assistant that only analyzes blood and lab reports.
         
@@ -711,7 +732,7 @@ class GeminiReportAnalyzeView(APIView):
         Look for: test names (WBC, Hemoglobin, Platelets, RBC, etc.), reference ranges, lab values, or medical terminology.
         
         If the text does NOT appear to be a medical blood or lab report, return ONLY this JSON:
-        {"not_a_report": true, "error": "This text does not appear to be a valid blood or lab report."}
+        {"not_a_report": true, "error": "This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report."}
         
         If it IS a valid blood/lab report, extract:
         - All test values (WBC, Hemoglobin, Platelets, RBC, etc.)
@@ -737,7 +758,7 @@ class GeminiReportAnalyzeView(APIView):
         """
         
         try:
-            # 2. Only send the redacted text to Gemini — never raw text or images
+            client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
                 contents=[prompt, safe_text],
@@ -757,14 +778,21 @@ class GeminiReportAnalyzeView(APIView):
             # Handle the non-medical case
             if data.get('not_a_report'):
                 return Response(
-                    {'error': data.get('error', 'This does not appear to be a valid blood or lab report.')},
-                    status=400
+                    {'error': data.get('error', 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.')},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
             return Response(data)
         except json.JSONDecodeError:
-            return Response({'error': 'Failed to parse AI response. Please try again with clearer text.'}, status=500)
+            return Response({'error': 'This image does not appear to be a valid blood or lab report. Please ensure your image shows clear test names and values.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=500)
+            # Never expose technical OAuth/401/RPC errors to users
+            return Response(
+                {
+                    'not_a_report': True,
+                    'error': 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report (such as CBC, Hemoglobin, or Blood Group report) with visible laboratory values.'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class GoogleAuthView(APIView):
     """
