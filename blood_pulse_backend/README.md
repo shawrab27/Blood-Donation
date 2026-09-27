@@ -28,3 +28,6 @@ python manage.py runserver
 ```bash
 python manage.py test api.tests
 ```
+
+## Acknowledgements
+- School data compiled from Bangladesh Open Data via KonSchool (github.com/maacpiash/KonSchool)
