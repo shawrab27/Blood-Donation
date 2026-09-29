@@ -1310,15 +1310,15 @@ class PasswordResetOTP(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_otps')
 
-    code_hash = models.CharField(max_length=128)
+    otp_hash = models.CharField(max_length=64, default='')
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     expires_at = models.DateTimeField()
 
-    used = models.BooleanField(default=False)
+    is_used = models.BooleanField(default=False)
 
-    reset_token = models.CharField(max_length=255, null=True, blank=True)
+    last_sent_at = models.DateTimeField(auto_now_add=True, null=True)
 
     attempts = models.IntegerField(default=0)
 

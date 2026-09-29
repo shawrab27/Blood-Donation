@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'api',
     'assistant',
@@ -205,6 +206,9 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'user': '1000/hour',
     'otp_anon': '10/hour',
     'otp_user': '20/hour',
+    'request_otp': '5/hour',
+    'email_otp': '5/hour',
+    'confirm_reset': '10/hour',
     'firebase_auth': '50/hour',
     'donors_anon': '100/hour',
     'donors_user': '1000/hour',
@@ -237,4 +241,5 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
+
 

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,6 +23,13 @@ class ApiException implements Exception {
   String toString() => 'ApiException: $message${statusCode != null ? ' (Status: $statusCode)' : ''}';
 }
 
+/// Thrown specifically when the backend rejects an OTP as wrong or expired (HTTP 400).
+/// Used by [VerifyOtpResetScreen] to shake+clear boxes only for invalid OTP,
+/// not for network errors or password validation failures.
+class OtpWrongException extends ApiException {
+  const OtpWrongException(super.message) : super(statusCode: 400);
+}
+
 /// BloodPulse REST API Client with automatic crash-hardening, token management, and retry logic.
 class ApiClient {
   /// Production via Vercel Reverse Proxy: `https://blood-donation-liard.vercel.app/api/`
@@ -32,8 +40,8 @@ class ApiClient {
     defaultValue: 'https://blood-donation-liard.vercel.app',
   );
 
-  static const Duration connectTimeout = Duration(seconds: 60);
-  static const Duration receiveTimeout = Duration(seconds: 60);
+  static const Duration connectTimeout = Duration(seconds: 75);
+  static const Duration receiveTimeout = Duration(seconds: 75);
 
   static const String _kAccessToken = 'bp_jwt_access_token';
   static const String _kRefreshToken = 'bp_jwt_refresh_token';
@@ -443,16 +451,58 @@ class ApiClient {
   
   // ─── Search ───
 
+  static List<Map<String, dynamic>>? _cachedLocalInstitutions;
+
   Future<List<Map<String, dynamic>>> searchInstitutions(String query) async {
-    final response = await _client
-        .get(Uri.parse(_normalizeUrl('institutions/search/?q=${Uri.encodeComponent(query)}')))
-        .timeout(connectTimeout);
-    
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
+    final cleanQuery = query.trim().toLowerCase();
+    if (cleanQuery.isEmpty) return [];
+
+    // 1. Try Live API Endpoint first
+    try {
+      final response = await _client
+          .get(Uri.parse(_normalizeUrl('institutions/search/?q=${Uri.encodeComponent(query)}')))
+          .timeout(const Duration(seconds: 4));
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final list = data.cast<Map<String, dynamic>>();
+        if (list.isNotEmpty) return list;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] searchInstitutions API error: $e. Falling back to bundled dataset.');
     }
-    return [];
+
+    // 2. Bundled local JSON fallback with case-insensitive substring match
+    return _searchLocalInstitutions(cleanQuery);
+  }
+
+  Future<List<Map<String, dynamic>>> _searchLocalInstitutions(String query) async {
+    try {
+      if (_cachedLocalInstitutions == null) {
+        final jsonString = await rootBundle.loadString('assets/data/institutions.json');
+        final List<dynamic> raw = jsonDecode(jsonString);
+        _cachedLocalInstitutions = raw.cast<Map<String, dynamic>>();
+      }
+      final matches = _cachedLocalInstitutions!.where((item) {
+        final name = (item['name'] as String? ?? '').toLowerCase();
+        return name.contains(query);
+      }).toList();
+
+      matches.sort((a, b) {
+        final nameA = (a['name'] as String? ?? '').toLowerCase();
+        final nameB = (b['name'] as String? ?? '').toLowerCase();
+        final aStarts = nameA.startsWith(query);
+        final bStarts = nameB.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return nameA.compareTo(nameB);
+      });
+
+      return matches.take(10).toList();
+    } catch (e) {
+      debugPrint('[ApiClient] Failed to load local institutions: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> searchUpazilas(String query) async {
@@ -469,53 +519,51 @@ class ApiClient {
 
   // ─── Forgot Password (Email OTP) ───
 
-  Future<void> requestEmailOtp(String email) async {
+  Future<void> requestOtp(String email) async {
     final response = await _client
         .post(
-          Uri.parse(_normalizeUrl('auth/forgot-password/request-otp/')),
+          Uri.parse(_normalizeUrl('auth/password-reset/request/')),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'email': email}),
         )
         .timeout(connectTimeout);
     
     if (response.statusCode >= 400) {
+      if (response.statusCode == 429) {
+        final body = jsonDecode(response.body);
+        throw ApiException(body['detail'] ?? 'Too many requests', statusCode: 429);
+      }
       throw ApiException('Failed to request OTP', statusCode: response.statusCode);
     }
   }
 
-  Future<String> verifyEmailOtp(String email, String code) async {
+  Future<void> confirmReset(String email, String otp, String newPassword) async {
     final response = await _client
         .post(
-          Uri.parse(_normalizeUrl('auth/forgot-password/verify-otp/')),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'email': email, 'code': code}),
-        )
-        .timeout(connectTimeout);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['reset_token'] ?? '';
-    } else {
-      throw ApiException('Invalid or expired code', statusCode: response.statusCode);
-    }
-  }
-
-  Future<void> resetPassword(String token, String newPassword, String confirmPassword) async {
-    final response = await _client
-        .post(
-          Uri.parse(_normalizeUrl('auth/forgot-password/reset/')),
+          Uri.parse(_normalizeUrl('auth/password-reset/confirm/')),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
-            'reset_token': token,
+            'email': email,
+            'otp': otp,
             'new_password': newPassword,
-            'confirm_password': confirmPassword,
           }),
         )
         .timeout(connectTimeout);
     
     if (response.statusCode >= 400) {
       final body = jsonDecode(response.body);
-      throw ApiException(body['detail'] ?? 'Failed to reset password', statusCode: response.statusCode);
+      String errMsg = body['detail'] ?? 'Failed to reset password';
+      if (body['errors'] != null && body['errors']['new_password'] != null) {
+        errMsg = (body['errors']['new_password'] as List).join('\n');
+      }
+      // 400 with "Invalid or expired OTP" → shake+clear boxes in the UI.
+      // Anything else (password too weak, network error, 429) → leave OTP intact.
+      final isOtpRejection = response.statusCode == 400 &&
+          (errMsg.toLowerCase().contains('invalid') ||
+           errMsg.toLowerCase().contains('expired') ||
+           errMsg.toLowerCase().contains('otp'));
+      if (isOtpRejection) throw OtpWrongException(errMsg);
+      throw ApiException(errMsg, statusCode: response.statusCode);
     }
   }
 

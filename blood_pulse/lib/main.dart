@@ -70,7 +70,7 @@ class BloodPulseApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ref.watch(themeModeProvider),
-      routerConfig: appRouter,
+      routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
     );
   }

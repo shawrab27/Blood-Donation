@@ -73,7 +73,7 @@ from .views_bloodhub import (
     emergency_request_all_view,
 )
 
-from .views_auth_reset import request_otp, verify_otp, reset_password
+from .views_auth_reset import request_otp, confirm_reset
 from .views_search import institution_search, upazila_search
 
 urlpatterns = [
@@ -82,9 +82,9 @@ urlpatterns = [
     path('locations/upazila-search/', upazila_search, name='upazila-search'),
 
     # Auth Reset
-    path('auth/forgot-password/request-otp/', request_otp, name='forgot-password-request-otp'),
-    path('auth/forgot-password/verify-otp/', verify_otp, name='forgot-password-verify-otp'),
-    path('auth/forgot-password/reset/', reset_password, name='forgot-password-reset'),
+    path('auth/password-reset/request/', request_otp, name='password-reset-request'),
+    path('auth/password-reset/confirm/', confirm_reset, name='password-reset-confirm'),
+    
 
     # Blood Hub v2 Core Endpoints (registered prior to router to prevent pk collisions)
     path('donors/search/', donor_search_view, name='bloodhub-donor-search'),

@@ -120,3 +120,13 @@ class RequestAcceptanceAdmin(admin.ModelAdmin):
             count += 1
         self.message_user(request, f"Manually confirmed {count} donation(s).")
     force_confirm_selected.short_description = "Force-confirm selected DONATED entries"
+
+from .models import PasswordResetOTP
+@admin.register(PasswordResetOTP)
+class PasswordResetOTPAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'expires_at', 'is_used', 'attempts')
+    list_filter = ('is_used',)
+    readonly_fields = ('otp_hash', 'user', 'created_at', 'expires_at', 'is_used', 'attempts', 'last_sent_at')
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields

@@ -3,12 +3,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'router_notifier.dart';
 
 // Auth
 import '../splash_video_screen.dart';
 import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/auth/presentation/screens/language_selection_screen.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../features/auth/presentation/screens/verify_otp_reset_screen.dart';
 import '../features/auth/presentation/screens/registration_screen.dart';
 import '../features/auth/presentation/screens/otp_verification_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -57,9 +61,9 @@ import '../features/communities/domain/models/community_models.dart';
 
 // Profile & Settings Screens
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
-import '../features/profile/presentation/screens/complete_profile_screen.dart';
 import '../features/profile/presentation/screens/user_profile_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
+import '../features/settings/presentation/screens/privacy_policy_screen.dart';
 import 'widgets/blood_pulse_app_bar.dart';
 
 /// Standalone profile screen rendered when user taps the top-bar avatar.
@@ -88,9 +92,15 @@ class _StandaloneProfileScreen extends StatelessWidget {
 
 
 
-final appRouter = GoRouter(
-  initialLocation: '/onboarding',
-  routes: [
+
+
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final notifier = ref.watch(routerNotifierProvider);
+  return GoRouter(
+    initialLocation: '/',
+    refreshListenable: notifier,
+    redirect: notifier.redirectLogic,
+    routes: [
     // ── Auth ──────────────────────────────────────────────────────────────────
     GoRoute(
       path: '/',
@@ -115,6 +125,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/verify-otp',
+      builder: (context, state) {
+        final email = state.extra as String? ?? '';
+        if (email.isEmpty) return const ForgotPasswordScreen();
+        return VerifyOtpResetScreen(email: email);
+      },
     ),
     GoRoute(
       path: '/register',
@@ -359,7 +381,6 @@ final appRouter = GoRouter(
         String recipientId = '';
 
         if (extra is Map<String, dynamic>) {
-          chatRoomId = extra['chatRoomId'] as String? ?? chatRoomId;
           chatRecipientName = extra['chatRecipientName'] as String? ??
               extra['recipientName'] as String? ??
               chatRecipientName;
@@ -367,15 +388,22 @@ final appRouter = GoRouter(
           recipientId = extra['recipientId'] as String? ??
               extra['receiverId'] as String? ??
               extra['senderId'] as String? ??
-              chatRoomId;
+              '';
+          chatRoomId = extra['chatRoomId'] as String? ??
+              (recipientId.isNotEmpty
+                  ? 'chat_$recipientId'
+                  : 'chat_${chatRecipientName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_')}');
         } else if (extra is String) {
           chatRoomId = extra;
           recipientId = extra;
         } else {
-          chatRoomId = state.uri.queryParameters['roomId'] ?? chatRoomId;
           chatRecipientName = state.uri.queryParameters['name'] ?? chatRecipientName;
           bloodGroup = state.uri.queryParameters['bloodGroup'] ?? bloodGroup;
-          recipientId = state.uri.queryParameters['recipientId'] ?? recipientId;
+          recipientId = state.uri.queryParameters['recipientId'] ?? '';
+          chatRoomId = state.uri.queryParameters['roomId'] ??
+              (recipientId.isNotEmpty
+                  ? 'chat_$recipientId'
+                  : 'chat_${chatRecipientName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_')}');
         }
 
         return ChatScreen(
@@ -422,10 +450,7 @@ final appRouter = GoRouter(
       path: '/create-request',
       builder: (context, state) => const EmergencyRequestScreen(),
     ),
-    GoRoute(
-      path: '/complete-profile',
-      builder: (context, state) => const CompleteProfileScreen(),
-    ),
+
     GoRoute(
       path: '/identity-verification',
       builder: (context, state) {
@@ -469,6 +494,22 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/health-hub/ai-report',
       builder: (context, state) => const AiReportAnalysisScreen(),
+    ),
+    GoRoute(
+      path: '/ai-report-analysis',
+      builder: (context, state) => const AiReportAnalysisScreen(),
+    ),
+    GoRoute(
+      path: '/faq',
+      builder: (context, state) => const DonationGuideScreen(),
+    ),
+    GoRoute(
+      path: '/faq/weight',
+      builder: (context, state) => const DonationGuideScreen(),
+    ),
+    GoRoute(
+      path: '/faq/interval',
+      builder: (context, state) => const DonationGuideScreen(),
     ),
     GoRoute(
       path: '/health-hub/calculators',
@@ -568,5 +609,15 @@ final appRouter = GoRouter(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
     ),
+    // /privacy-policy — Privacy Policy Screen
+    GoRoute(
+      path: '/privacy-policy',
+      builder: (context, state) => const PrivacyPolicyScreen(),
+    ),
   ],
-);
+  );
+});
+
+
+
+
