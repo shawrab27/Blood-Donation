@@ -140,11 +140,52 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                         controller: _scrollController,
                         reverse: true,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: state.messages.length + (state.isSending ? 1 : 0) + 1,
+                        itemCount: state.messages.length + (state.isSending ? 1 : 0) + (state.errorCode != null ? 1 : 0) + 1,
                         itemBuilder: (context, index) {
-                          if (index == 0 && state.isSending) return const TypingIndicator();
-                          
-                          final messageIndex = state.messages.length - 1 - (index - (state.isSending ? 1 : 0));
+                            if (index == 0 && state.errorCode != null) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF2F4),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFC30121).withAlpha(40)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const Icon(Icons.wifi_off_rounded, color: Color(0xFFC30121), size: 32),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                          'Server unreachable',
+                                          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        const Text(
+                                          'PulseAI could not connect to the server. Please try again.',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.black87),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            ref.read(assistantProvider.notifier).sendMessage('Retry', 'en', screenContext: widget.screenContext);
+                                          },
+                                          icon: const Icon(Icons.refresh, size: 16),
+                                          label: const Text('Retry'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFC30121),
+                                            foregroundColor: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                            }
+                            if (index == (state.errorCode != null ? 1 : 0) && state.isSending) return const TypingIndicator();
+                            
+                            final messageIndex = state.messages.length - 1 - (index - (state.isSending ? 1 : 0) - (state.errorCode != null ? 1 : 0));
                           
                           if (messageIndex < 0) {
                             return Padding(

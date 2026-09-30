@@ -16,13 +16,14 @@ class RouterNotifier extends ChangeNotifier {
 
   final Ref ref;
 
-String? redirectLogic(BuildContext context, dynamic state) {
+  String? redirectLogic(BuildContext context, dynamic state) {
     final authState = ref.read(authProvider);
-    final isLoggingIn = state.uri.path == '/login' || 
-                        state.uri.path == '/register' || 
-                        state.uri.path == '/' || 
-                        state.uri.path == '/onboarding' || 
-                        state.uri.path == '/splash';
+    final path = state.uri.path;
+    final isLoggingIn = path == '/login' || 
+                        path == '/register' || 
+                        path == '/' || 
+                        path == '/onboarding' || 
+                        path == '/splash';
                         
     if (authState.status == AuthStatus.unauthenticated) {
       if (!isLoggingIn) {
@@ -34,6 +35,13 @@ String? redirectLogic(BuildContext context, dynamic state) {
     if (authState.status == AuthStatus.authenticated || authState.status == AuthStatus.authenticatedIncomplete) {
       if (isLoggingIn) {
         return '/feed'; // Feed is the default
+      }
+    }
+    
+    // Explicitly block deep links to locked features when incomplete
+    if (authState.status == AuthStatus.authenticatedIncomplete) {
+      if (path == '/profile' || path == '/blood-hub' || path == '/blood-hub/search') {
+        return '/feed';
       }
     }
 
