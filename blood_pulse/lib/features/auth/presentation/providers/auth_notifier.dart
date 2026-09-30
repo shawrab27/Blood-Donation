@@ -123,10 +123,13 @@ class AuthState {
   }
 }
 
+import '../../../../features/profile/domain/providers/profile_provider.dart';
+
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
+  final Ref? ref;
 
-  AuthNotifier({ApiClient? apiClient, AuthState? initialState})
+  AuthNotifier({ApiClient? apiClient, AuthState? initialState, this.ref})
       : _apiClient = apiClient ?? ApiClient(),
         super(initialState ?? const AuthState());
 
@@ -147,22 +150,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
 
     try {
-      await _apiClient.login(identifier, password);
+      await _apiClient.login(identifier, password).timeout(const Duration(seconds: 15));
+      final profile = await _apiClient.get('/api/donors/me/').timeout(const Duration(seconds: 15));
+      final pData = profile as Map<String, dynamic>;
 
-      final user = state.user ??
-          UserProfile(
-            fullName: 'Donor User',
-            email: '',
-            primaryPhone: identifier,
-            age: 25,
-            gender: 'Male',
-            bloodGroup: 'O+',
-            category: 'civilian',
-            categoryDetails: {},
-            neverDonated: true,
-            totalBagsDonated: 0,
-            isOtpVerified: true,
-          );
+
+      final fullName = ((pData['first_name'] ?? '') + ' ' + (pData['last_name'] ?? '')).trim();
+      final user = UserProfile(
+        fullName: fullName.isEmpty ? 'Donor User' : fullName,
+        email: pData['email'] ?? '',
+        primaryPhone: pData['phone_number'] ?? identifier,
+        age: 25,
+        gender: pData['gender'] ?? 'Not specified',
+        bloodGroup: pData['blood_group'] ?? '',
+        category: pData['category'] ?? 'civilian',
+        categoryDetails: {},
+        neverDonated: true,
+        totalBagsDonated: 0,
+        isOtpVerified: true,
+        photoUrl: pData['profile_picture'],
+      );
+      if (ref != null) ref!.invalidate(profileProvider);
 
       state = state.copyWith(
         status: AuthStatus.authenticated,
@@ -604,4 +612,4 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider =
-    StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier());
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier(ref: ref));

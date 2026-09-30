@@ -22,22 +22,16 @@ Future<void> main() async {
 
 
 
-  // Firebase ইনিশিয়ালাইজেশন
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    // Initialize production-grade FCM push notifications & background messaging
-    await FcmService.instance.initialize();
+    await Future.wait([
+      Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+      () async {
+        await Hive.initFlutter();
+        await Hive.openBox('notifications_box');
+      }(),
+    ]);
   } catch (e) {
-    debugPrint('Firebase/FCM initialization warning: $e');
-  }
-
-  try {
-    await Hive.initFlutter();
-    await Hive.openBox('notifications_box');
-  } catch (e) {
-    debugPrint('Hive initialization warning: $e');
+    debugPrint('Startup initialization warning: ');
   }
 
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -49,6 +43,12 @@ Future<void> main() async {
       child: BloodPulseApp(),
     ),
   );
+
+  try {
+    FcmService.instance.initialize();
+  } catch (e) {
+    debugPrint('FCM initialization warning: ');
+  }
 }
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();

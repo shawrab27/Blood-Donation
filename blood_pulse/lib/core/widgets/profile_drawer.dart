@@ -281,36 +281,36 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final profileAsync = ref.watch(profileProvider);
-    final authState = ref.watch(authProvider);
+    final profileData = ref.watch(profileProvider.select((p) => p.value));
+    final authUser = ref.watch(authProvider.select((a) => a.user));
     final themeMode = ref.watch(themeModeProvider);
     final themeNotifier = ref.read(themeModeProvider.notifier);
 
-    final authUser = authState.user;
+    String displayName = 'Guest User';
+    String displayInitials = 'GU';
+    String bloodGroup = 'O+';
     final Uint8List? avatarBytes = authUser?.avatarBytes;
-    final String? photoUrl = authUser?.photoUrl;
+    String? photoUrl = authUser?.photoUrl ?? profileData?.profilePicture;
+    if (photoUrl != null && !photoUrl.startsWith('http')) {
+      photoUrl = 'https://blood-donation-liard.vercel.app' + photoUrl;
+    }
 
-    String displayName = authUser?.fullName.trim().isNotEmpty == true
-        ? authUser!.fullName
-        : 'Blood Donor';
-    String displayInitials = 'BD';
+    final pName = ' '.trim();
+    final aName = authUser?.fullName.trim() ?? '';
+    final name = pName.isNotEmpty ? pName : (aName.isNotEmpty ? aName : 'Donor User');
 
-    profileAsync.whenData((p) {
-      if (p != null) {
-        final name = '${p.firstName ?? ''} ${p.lastName ?? ''}'.trim();
-        if (name.isNotEmpty && name != 'Dr. S. M. Shawrab') {
-          displayName = name;
-        } else if (p.username != null && p.username!.isNotEmpty && p.username != 'Dr. S. M. Shawrab') {
-          displayName = p.username!;
-        }
-      }
-    });
+    if (name.isNotEmpty && name != 'Donor User') {
+      displayName = name;
+      final parts = name.split(' ');
+      displayInitials = parts.length > 1
+          ? ''.toUpperCase()
+          : name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
+    }
 
-    final parts = displayName.trim().split(' ');
-    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-      displayInitials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    } else if (displayName.isNotEmpty) {
-      displayInitials = displayName[0].toUpperCase();
+    if (profileData?.bloodGroup != null && profileData!.bloodGroup!.isNotEmpty) {
+      bloodGroup = profileData.bloodGroup!;
+    } else if (authUser?.bloodGroup != null && authUser!.bloodGroup.isNotEmpty) {
+      bloodGroup = authUser.bloodGroup;
     }
 
     final double drawerWidth = (MediaQuery.of(context).size.width * 0.84).clamp(300.0, 340.0);
