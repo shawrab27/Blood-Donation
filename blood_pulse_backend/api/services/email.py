@@ -74,3 +74,54 @@ def get_email_service() -> EmailService:
         "Set USE_SMTP_EMAIL=True and configure EMAIL_HOST / EMAIL_HOST_USER / "
         "EMAIL_HOST_PASSWORD in your environment, or set DEBUG=True for local dev."
     )
+
+
+import os
+import secrets
+import hmac
+import hashlib
+
+OTP_EXPIRY_MINUTES = 10
+OTP_RESEND_COOLDOWN_SECONDS = 60
+OTP_MAX_HOURLY_REQUESTS = 3
+
+
+def get_otp_pepper() -> str:
+    """Returns the secret pepper used for HMAC-SHA256 OTP hashing."""
+    return os.environ.get("OTP_PEPPER", settings.SECRET_KEY[:32])
+
+
+def generate_secure_otp(length: int = 6) -> str:
+    """Generates a cryptographically strong numeric OTP."""
+    digits = "0123456789"
+    return "".join(secrets.choice(digits) for _ in range(length))
+
+
+def hash_otp(code: str, email: str = "") -> str:
+    """Computes HMAC-SHA256 of the OTP code and email with secret pepper."""
+    pepper = get_otp_pepper()
+    msg = f"{email.strip().lower()}:{code.strip()}"
+    return hmac.new(pepper.encode('utf-8'), msg.encode('utf-8'), hashlib.sha256).hexdigest()
+
+
+def verify_otp_hash(code: str, expected_hash: str, email: str = "") -> bool:
+    """Constant-time comparison of OTP code HMAC hash."""
+    computed_hash = hash_otp(code, email)
+    return hmac.compare_digest(computed_hash, expected_hash)
+
+
+class EmailSender:
+    def send_email(self, to_email: str, subject: str, text_content: str, html_content: str = None) -> bool:
+        raise NotImplementedError
+
+
+class ConsoleEmailSender(EmailSender):
+    def send_email(self, to_email: str, subject: str, text_content: str, html_content: str = None) -> bool:
+        logger.info(f"[CONSOLE EMAIL] To: {to_email} | Subject: {subject} | Body: {text_content}")
+        return True
+
+
+def get_email_sender() -> EmailSender:
+    return ConsoleEmailSender()
+
+

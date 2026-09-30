@@ -51,8 +51,8 @@ class MultiFieldModelBackend(ModelBackend):
             q |= (
                 Q(username=normalized_phone) |
                 Q(username__endswith=normalized_phone) |
-                Q(donor_profile__phone_number=normalized_phone) |
-                Q(donor_profile__phone_number__endswith=normalized_phone)
+                Q(donorprofile__phone_number=normalized_phone) |
+                Q(donorprofile__phone_number__endswith=normalized_phone)
             )
 
         if ' ' in clean_user:

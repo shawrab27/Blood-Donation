@@ -1678,6 +1678,28 @@ class TrustScoreConfig(models.Model):
 
     no_show_penalty = models.IntegerField()
 
+    @classmethod
+    def get_solo(cls):
+        try:
+            obj, _ = cls.objects.get_or_create(
+                id=1,
+                defaults={
+                    'base_score': 50,
+                    'hospital_verified': 15,
+                    'prescription_slip': 20,
+                    'no_show_penalty': 25,
+                }
+            )
+            return obj
+        except Exception:
+            return cls(
+                id=1,
+                base_score=50,
+                hospital_verified=15,
+                prescription_slip=20,
+                no_show_penalty=25,
+            )
+
 
 
 

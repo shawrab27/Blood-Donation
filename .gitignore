@@ -30,6 +30,8 @@ db.sqlite3
 /blood_pulse_backend/db.sqlite3
 media/
 staticfiles/
+data/
+test_db.sqlite3
 
 # ── Flutter / Dart ────────────────────────
 blood_pulse/.dart_tool/
