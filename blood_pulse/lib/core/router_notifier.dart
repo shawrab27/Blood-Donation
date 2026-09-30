@@ -45,7 +45,16 @@ class RouterNotifier extends ChangeNotifier {
           path == '/edit-profile' || 
           path.startsWith('/edit-profile/') ||
           path == '/blood-hub' || 
-          path.startsWith('/blood-hub/')) {
+          path.startsWith('/blood-hub/') ||
+          path == '/emergency' ||
+          path.startsWith('/emergency/') ||
+          path == '/emergency-request' ||
+          path == '/create-request' ||
+          path == '/live-dispatch' ||
+          path == '/journeys' ||
+          path.startsWith('/journeys/') ||
+          path == '/map' ||
+          path.startsWith('/standby/')) {
         return '/feed';
       }
     }

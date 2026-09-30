@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/widgets/avatar_helper.dart';
+import 'package:blood_pulse/services/api_client.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -43,9 +44,7 @@ class ProfileView extends ConsumerWidget {
           const SizedBox(height: 24),
           _buildDownloadCertificateBtn(profile),
           const SizedBox(height: 32),
-          _buildTopDonors(),
-          const SizedBox(height: 32),
-          _buildTabs(),
+          _buildTabs(profile),
         ],
       ),
     );
@@ -57,7 +56,7 @@ class ProfileView extends ConsumerWidget {
         Stack(
           alignment: Alignment.center,
           children: [
-            AvatarHelper(radius: 50, fallbackName: profile.fullName, serverPhotoUrl: profile.profilePicture != null ? 'https://blood-donation-liard.vercel.app${profile.profilePicture}' : null),
+            AvatarHelper(radius: 50, fallbackName: profile.fullName, serverPhotoUrl: profile.profilePicture != null ? '${ApiClient.defaultBaseUrl}${profile.profilePicture}' : null),
             Positioned(
               top: 0,
               right: -10,
@@ -158,7 +157,7 @@ class ProfileView extends ConsumerWidget {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () async {
-          final url = Uri.parse('https://blood-donation-liard.vercel.app/api/donor_profiles/${profile.id}/certificate/');
+          final url = Uri.parse('${ApiClient.defaultBaseUrl}/api/donor_profiles/${profile.id}/certificate/');
 
           if (await canLaunchUrl(url)) {
             await launchUrl(url);
@@ -176,51 +175,7 @@ class ProfileView extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopDonors() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Top Donors', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
-            TextButton(onPressed: () {}, child: const Text('Global Rank >', style: TextStyle(color: Color(0xFFC30121)))),
-          ],
-        ),
-        SizedBox(
-          height: 100,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildDonorAvatar('Mark R.', '18 Bags'),
-              _buildDonorAvatar('Elena T.', '16 Bags'),
-              _buildDonorAvatar('David K.', '14 Bags'),
-              _buildDonorAvatar('Others', 'View'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDonorAvatar(String name, String subtitle) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Column(
-        children: [
-          const CircleAvatar(
-            radius: 30,
-            backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=User&background=random'),
-          ),
-          const SizedBox(height: 8),
-          Text(name, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold)),
-          Text(subtitle, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabs() {
+  Widget _buildTabs(ProfileModel profile) {
     return DefaultTabController(
       length: 3,
       child: Column(
@@ -241,7 +196,7 @@ class ProfileView extends ConsumerWidget {
             height: 400, // Fixed height for demo; ideally use shrinkWrap or CustomScrollView
             child: TabBarView(
               children: [
-                _buildStoriesTab(),
+                _buildStoriesTab(profile),
                 const Center(child: Text('Activity Summary Content')),
                 const Center(child: Text('Donation History Content')),
               ],
@@ -252,7 +207,7 @@ class ProfileView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStoriesTab() {
+  Widget _buildStoriesTab(ProfileModel profile) {
     return Column(
       children: [
         Container(
@@ -263,7 +218,13 @@ class ProfileView extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              const CircleAvatar(radius: 16, child: Text('SJ', style: TextStyle(fontSize: 10))),
+              AvatarHelper(
+                radius: 16,
+                fallbackName: profile.fullName,
+                serverPhotoUrl: profile.profilePicture != null
+                    ? '${ApiClient.defaultBaseUrl}${profile.profilePicture}'
+                    : null,
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: TextField(

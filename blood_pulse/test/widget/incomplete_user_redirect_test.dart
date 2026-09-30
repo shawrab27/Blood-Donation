@@ -86,6 +86,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(router.routerDelegate.currentConfiguration.uri.path, '/feed');
 
+    // Test extended emergency and live-dispatch routes
+    router.go('/emergency');
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/feed');
+
+    router.go('/live-dispatch');
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/feed');
+
     await tester.pumpWidget(const SizedBox());
     container.dispose();
   });
