@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blood_pulse/core/widgets/avatar_helper.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -485,7 +487,6 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final initials = user?.fullName.isNotEmpty == true ? user!.fullName.substring(0, 1).toUpperCase() : 'U';
 
     return Container(
       decoration: BoxDecoration(
@@ -506,13 +507,11 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircleAvatar(
+              AvatarHelper(
                 radius: 18,
-                backgroundColor: const Color(0xFFFEE9EB),
-                child: Text(
-                  initials,
-                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-                ),
+                fallbackName: user?.fullName ?? 'User',
+                serverPhotoUrl: user?.photoUrl,
+                googlePhotoUrl: user?.googlePhotoUrl,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -873,13 +872,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      CircleAvatar(
+                      AvatarHelper(
                         radius: 20,
-                        backgroundColor: const Color(0xFFFEE9EB),
-                        child: Text(
-                          post.authorName.isNotEmpty ? post.authorName.substring(0, 1).toUpperCase() : 'A',
-                          style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-                        ),
+                        fallbackName: post.authorName,
+                        serverPhotoUrl: post.authorAvatar,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -1412,13 +1408,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
+                    AvatarHelper(
                       radius: 12,
-                      backgroundColor: const Color(0xFFFEE9EB),
-                      child: Text(
-                        c.authorName.isNotEmpty ? c.authorName.substring(0, 1).toUpperCase() : 'U',
-                        style: const TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-                      ),
+                      fallbackName: c.authorName,
+                      serverPhotoUrl: c.authorAvatar,
                     ),
                     const SizedBox(width: 8),
                     Expanded(

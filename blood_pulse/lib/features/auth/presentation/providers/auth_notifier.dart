@@ -33,6 +33,8 @@ class UserProfile {
     this.nidHash,
     this.photoUrl,
     this.avatarBytes,
+    this.googlePhotoUrl,
+    this.authProvider,
   });
 
   final String fullName;
@@ -53,6 +55,8 @@ class UserProfile {
   final String? nidHash;
   final String? photoUrl;
   final Uint8List? avatarBytes;
+  final String? googlePhotoUrl;
+  final String? authProvider;
 
   UserProfile copyWith({
     String? fullName,
@@ -73,6 +77,8 @@ class UserProfile {
     String? nidHash,
     String? photoUrl,
     Uint8List? avatarBytes,
+    String? googlePhotoUrl,
+    String? authProvider,
   }) {
     return UserProfile(
       fullName:         fullName         ?? this.fullName,
@@ -93,6 +99,8 @@ class UserProfile {
       nidHash:          nidHash          ?? this.nidHash,
       photoUrl:         photoUrl         ?? this.photoUrl,
       avatarBytes:      avatarBytes      ?? this.avatarBytes,
+      googlePhotoUrl:   googlePhotoUrl   ?? this.googlePhotoUrl,
+      authProvider:     authProvider     ?? this.authProvider,
     );
   }
 }
@@ -125,13 +133,21 @@ class AuthState {
 }
 
 
-class AuthNotifier extends StateNotifier<AuthState> {
-  final ApiClient _apiClient;
-  final Ref? ref;
+class AuthNotifier extends Notifier<AuthState> {
+  final ApiClient? _customApiClient;
+  final AuthState? _initialState;
 
-  AuthNotifier({ApiClient? apiClient, AuthState? initialState, this.ref})
-      : _apiClient = apiClient ?? ApiClient(),
-        super(initialState ?? const AuthState());
+  AuthNotifier({ApiClient? apiClient, AuthState? initialState})
+      : _customApiClient = apiClient,
+        _initialState = initialState;
+
+  late final ApiClient _apiClient;
+
+  @override
+  AuthState build() {
+    _apiClient = _customApiClient ?? ApiClient();
+    return _initialState ?? const AuthState();
+  }
 
   /// Sets user state directly for testing
   @visibleForTesting
@@ -173,8 +189,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         totalBagsDonated: 0,
         isOtpVerified: true,
         photoUrl: pData['profile_picture'],
+        googlePhotoUrl: pData['google_photo_url'],
+        authProvider: pData['auth_provider'],
       );
-      try { if (ref != null) ref!.invalidate(profileProvider); } catch (_) {}
+      try { ref.invalidate(profileProvider); } catch (_) {}
 
       state = state.copyWith(
         status: statusEnum,
@@ -219,7 +237,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       debugPrint('[GoogleSignIn] accessToken present: ${googleAuth.accessToken != null}');
       debugPrint('[GoogleSignIn] idToken present: ${googleAuth.idToken != null}');
 
-      // Authenticate with Firebase using Google credentials
+      // Authenticate with Firebase using Google password
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -316,7 +334,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Sets the user profile upon registration and posts to `/api/donors/`.
   Future<bool> registerUser(UserProfile profile, {String? password}) async {
-    final completeProfile = profile.copyWith(isProfileComplete: true);
+    final completeProfile = profile;
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null, user: completeProfile);
 
     final district = completeProfile.categoryDetails['district'] ??
@@ -616,4 +634,4 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider =
-    StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier(ref: ref));
+    NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);

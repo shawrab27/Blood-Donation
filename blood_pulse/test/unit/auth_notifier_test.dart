@@ -204,7 +204,7 @@ void main() {
 
 
 
-      final container = ProviderContainer(overrides: [authProvider.overrideWith((ref) => AuthNotifier(apiClient: mockApi, ref: ref)), profileProvider.overrideWith((ref) => DummyProfileNotifier())]);
+      final container = ProviderContainer(overrides: [authProvider.overrideWith(() => AuthNotifier(apiClient: mockApi)), profileProvider.overrideWith((ref) => DummyProfileNotifier())]);
 
 
       final notifier = container.read(authProvider.notifier);
@@ -219,7 +219,7 @@ void main() {
       final result = await notifier.loginWithCredentials(identifier: '017', password: 'password');
 
 
-      print('STATE ERROR: '); expect(result, isTrue);
+      expect(result, isTrue);
 
 
 
@@ -262,7 +262,7 @@ void main() {
 
 
 
-      final container = ProviderContainer(overrides: [authProvider.overrideWith((ref) => AuthNotifier(apiClient: mockApi, ref: ref)), profileProvider.overrideWith((ref) => DummyProfileNotifier())]);
+      final container = ProviderContainer(overrides: [authProvider.overrideWith(() => AuthNotifier(apiClient: mockApi)), profileProvider.overrideWith((ref) => DummyProfileNotifier())]);
 
 
       final notifier = container.read(authProvider.notifier);

@@ -4,6 +4,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blood_pulse/core/widgets/avatar_helper.dart';
+
 import '../../services/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -295,6 +297,7 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
     if (photoUrl != null && !photoUrl.startsWith('http')) {
       photoUrl = ApiClient.defaultBaseUrl + photoUrl;
     }
+    final String? googlePhotoUrl = authUser?.googlePhotoUrl;
 
     final pName = ' '.trim();
     final aName = authUser?.fullName.trim() ?? '';
@@ -422,25 +425,12 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          AvatarHelper(
                             radius: 20,
-                            backgroundColor: Colors.white,
-                            backgroundImage: (avatarBytes != null)
-                                ? MemoryImage(avatarBytes)
-                                : (photoUrl != null && photoUrl.isNotEmpty)
-                                    ? NetworkImage(photoUrl) as ImageProvider
-                                    : null,
-                            child: (avatarBytes == null && (photoUrl == null || photoUrl.isEmpty))
-                                ? Text(
-                                    displayInitials,
-                                    style: const TextStyle(
-                                      fontFamily: 'Georgia',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF850014),
-                                    ),
-                                  )
-                                : null,
+                            fallbackName: displayName,
+                            uploadedPhoto: avatarBytes,
+                            googlePhotoUrl: googlePhotoUrl,
+                            serverPhotoUrl: photoUrl,
                           ),
                           const SizedBox(width: 10),
                           Expanded(

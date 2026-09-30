@@ -7,6 +7,7 @@ import 'package:blood_pulse/services/location_mapping_service.dart';
 import 'package:blood_pulse/services/api_client.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('fetchNearbyDonors parses valid mock HTTP response into DonorPin list correctly', () async {
     final mockClient = MockClient((request) async {
       if (request.url.path.contains('donors-nearby')) {

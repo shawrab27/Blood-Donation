@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/avatar_helper.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
@@ -520,25 +521,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  AvatarHelper(
                     radius: 24,
-                    backgroundColor: const Color(0xFFFEE9EB),
-                    backgroundImage: (avatarBytes != null)
-                        ? MemoryImage(avatarBytes)
-                        : (photoUrl != null && photoUrl!.isNotEmpty)
-                            ? NetworkImage(photoUrl!) as ImageProvider
-                            : null,
-                    child: (avatarBytes == null && (photoUrl == null || photoUrl!.isEmpty))
-                        ? Text(
-                            displayName.isNotEmpty ? displayName[0].toUpperCase() : 'D',
-                            style: const TextStyle(
-                              fontFamily: 'Georgia',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: AppColors.primary,
-                            ),
-                          )
-                        : null,
+                    fallbackName: displayName,
+                    uploadedPhoto: avatarBytes,
+                    serverPhotoUrl: photoUrl,
+                    googlePhotoUrl: authUser?.googlePhotoUrl,
                   ),
                   const SizedBox(width: 14),
                   Expanded(

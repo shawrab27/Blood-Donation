@@ -390,6 +390,7 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
             final commentsList = (item['comments'] as List<dynamic>?)?.map((c) => FeedComment(
               id: c['id'].toString(),
               authorName: c['author']?.toString() ?? 'Community Member',
+              authorAvatar: c['author_photo']?.toString() ?? c['google_photo_url']?.toString(),
               text: c['text']?.toString() ?? '',
               timestamp: 'Recent',
             )).toList() ?? <FeedComment>[];
@@ -399,6 +400,7 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
             return FeedPostItem(
               id: item['id'].toString(),
               authorName: item['author_name']?.toString() ?? 'Blood Donor',
+              authorAvatar: item['author_photo']?.toString() ?? item['google_photo_url']?.toString(),
               authorRole: AuthorRole.donor,
               roleBadgeText: item['original_post'] != null ? 'Reposted Story' : 'Donor Story',
               timestamp: 'Recent',

@@ -64,6 +64,7 @@ import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/user_profile_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/settings/presentation/screens/privacy_policy_screen.dart';
+
 import 'widgets/blood_pulse_app_bar.dart';
 
 /// Standalone profile screen rendered when user taps the top-bar avatar.

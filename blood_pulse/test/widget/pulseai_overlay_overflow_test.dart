@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blood_pulse/features/assistant/presentation/widgets/pulseai_overlay.dart';
+import 'package:blood_pulse/core/app_router.dart';
 import 'package:blood_pulse/features/assistant/presentation/widgets/heartbeat_icon.dart';
 import 'package:blood_pulse/core/providers/pulse_ai_visibility_provider.dart';
 
@@ -13,8 +14,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       
       final router = GoRouter(
+        initialLocation: '/feed',
         routes: [
-          GoRoute(path: '/', builder: (context, state) => const Scaffold(body: Text('Home'))),
+          GoRoute(path: '/feed', builder: (context, state) => const Scaffold(body: Text('Home'))),
         ],
       );
 
@@ -22,6 +24,7 @@ void main() {
         ProviderScope(
           overrides: [
             pulseAiVisibilityProvider.overrideWith((ref) => PulseAiVisibilityNotifier()),
+            appRouterProvider.overrideWithValue(router),
           ],
           child: MaterialApp.router(
             routerConfig: router,
@@ -35,12 +38,14 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       
       // Tap the FAB to open the popup menu
       final fabFinder = find.byType(HeartbeatIcon);
       await tester.tap(fabFinder);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verify the pills are visible
       expect(find.text('Chat with PulseAI'), findsOneWidget);

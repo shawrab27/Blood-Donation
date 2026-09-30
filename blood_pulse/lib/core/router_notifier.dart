@@ -40,7 +40,12 @@ class RouterNotifier extends ChangeNotifier {
     
     // Explicitly block deep links to locked features when incomplete
     if (authState.status == AuthStatus.authenticatedIncomplete) {
-      if (path == '/profile' || path == '/blood-hub' || path == '/blood-hub/search') {
+      if (path == '/profile' || 
+          path.startsWith('/profile/') ||
+          path == '/edit-profile' || 
+          path.startsWith('/edit-profile/') ||
+          path == '/blood-hub' || 
+          path.startsWith('/blood-hub/')) {
         return '/feed';
       }
     }

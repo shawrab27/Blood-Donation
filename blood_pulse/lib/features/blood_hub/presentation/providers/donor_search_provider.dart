@@ -19,6 +19,8 @@ class DonorSearchResult {
     required this.isAvailable,
     required this.location,
     this.phone,
+    this.photoUrl,
+    this.googlePhotoUrl,
   });
 
   final String id;
@@ -32,11 +34,13 @@ class DonorSearchResult {
   final bool isAvailable;
   final LatLng location;
   final String? phone; // Could be null if not returned by search API
+  final String? photoUrl;
+  final String? googlePhotoUrl;
 
   factory DonorSearchResult.fromJson(Map<String, dynamic> json) {
     return DonorSearchResult(
-      id: json['id']?.toString() ?? '',
-      name: json['full_name'] ?? 'Unknown Donor',
+      id: json['id']?.toString() ?? json['donor_id']?.toString() ?? '',
+      name: json['full_name'] ?? json['display_name'] ?? 'Unknown Donor',
       bloodGroup: json['blood_group'] ?? 'Unknown',
       campusOrLocation: json['campus'] ?? json['institute'] ?? 'Unknown Campus',
       division: json['division'] ?? '',
@@ -45,10 +49,12 @@ class DonorSearchResult {
       isVerified: json['is_verified'] ?? false,
       isAvailable: json['is_available'] ?? true,
       location: LatLng(
-        (json['latitude'] ?? 23.7259).toDouble(),
-        (json['longitude'] ?? 90.3976).toDouble(),
+        (json['latitude'] ?? json['fuzzed_lat'] ?? 23.7259).toDouble(),
+        (json['longitude'] ?? json['fuzzed_lng'] ?? 90.3976).toDouble(),
       ),
-      phone: json['phone_masked'], // Often null/omitted in search results
+      phone: json['phone_masked'] ?? json['phone'], // Often null/omitted in search results
+      photoUrl: json['profile_picture']?.toString() ?? json['photo_url']?.toString(),
+      googlePhotoUrl: json['google_photo_url']?.toString(),
     );
   }
 }

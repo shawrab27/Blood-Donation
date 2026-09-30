@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
+import '../../../../core/widgets/avatar_helper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
 import '../../../blood_request/presentation/providers/blood_request_provider.dart';
@@ -1095,13 +1096,11 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
+          AvatarHelper(
             radius: 22,
-            backgroundColor: const Color(0xFFFEE9EB),
-            child: Text(
-              donor.name.isNotEmpty ? donor.name.substring(0, 1) : 'D',
-              style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-            ),
+            fallbackName: donor.name,
+            serverPhotoUrl: donor.photoUrl,
+            googlePhotoUrl: donor.googlePhotoUrl,
           ),
           const SizedBox(width: 12),
           Expanded(

@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/assistant_provider.dart';
 import '../../domain/models/assistant_message_model.dart';
 import '../../../../widgets/pulse_loading_indicator.dart';
+import '../../../../core/widgets/avatar_helper.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import 'dart:math' as math;
 
 class AssistantScreen extends ConsumerStatefulWidget {
@@ -367,6 +369,13 @@ class MessageWidget extends ConsumerWidget {
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
+            ),
+            const SizedBox(width: 8),
+            AvatarHelper(
+              radius: 16,
+              fallbackName: ref.watch(authProvider).user?.fullName ?? 'User',
+              serverPhotoUrl: ref.watch(authProvider).user?.photoUrl,
+              googlePhotoUrl: ref.watch(authProvider).user?.googlePhotoUrl,
             ),
           ],
         ),

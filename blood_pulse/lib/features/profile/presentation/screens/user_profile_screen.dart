@@ -2,6 +2,8 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:blood_pulse/core/widgets/avatar_helper.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/providers/profile_provider.dart';
@@ -55,13 +57,7 @@ class ProfileView extends ConsumerWidget {
         Stack(
           alignment: Alignment.center,
           children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundImage: profile.profilePicture != null 
-                  ? NetworkImage('https://blood-donation-liard.vercel.app${profile.profilePicture}') 
-                  : const NetworkImage('https://ui-avatars.com/api/?name=User&background=random') as ImageProvider,
-
-            ),
+            AvatarHelper(radius: 50, fallbackName: profile.fullName, serverPhotoUrl: profile.profilePicture != null ? 'https://blood-donation-liard.vercel.app${profile.profilePicture}' : null),
             Positioned(
               top: 0,
               right: -10,

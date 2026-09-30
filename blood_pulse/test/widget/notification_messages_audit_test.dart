@@ -28,11 +28,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authProvider.overrideWith((ref) {
-              final notifier = AuthNotifier();
-              notifier.setUserForTesting(aliceProfile);
-              return notifier;
-            }),
+            authProvider.overrideWith(() => AuthNotifier(
+              initialState: AuthState(
+                status: AuthStatus.authenticated,
+                user: aliceProfile,
+              ),
+            )),
           ],
           child: const MaterialApp(
             home: NotificationCenterScreen(),
@@ -77,11 +78,12 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authProvider.overrideWith((ref) {
-              final notifier = AuthNotifier();
-              notifier.setUserForTesting(bobProfile);
-              return notifier;
-            }),
+            authProvider.overrideWith(() => AuthNotifier(
+              initialState: AuthState(
+                status: AuthStatus.authenticated,
+                user: bobProfile,
+              ),
+            )),
           ],
           child: const MaterialApp(
             home: NotificationCenterScreen(),
