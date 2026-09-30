@@ -14,7 +14,7 @@ class TrustServiceTests(TestCase):
             district='Dhaka',
             is_verified=True,
         )
-        self.user = User.objects.create_user(username='gooduser', password='pass')
+        self.user = User.objects.create_user(username='gooduser', password='pass', first_name="Test")
         self.donor = DonorProfile.objects.create(
             user=self.user,
             blood_group='A+',
@@ -39,7 +39,7 @@ class TrustServiceTests(TestCase):
 
     def test_unverified_request_low_band(self):
         # Base (50) with no hospital and no slip
-        bad_user = User.objects.create_user(username='baduser', password='pass')
+        bad_user = User.objects.create_user(username='baduser', password='pass', first_name="Test")
         DonorProfile.objects.create(
             user=bad_user,
             blood_group='B+',

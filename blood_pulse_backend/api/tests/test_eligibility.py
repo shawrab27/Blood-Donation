@@ -11,7 +11,7 @@ from api.services.eligibility import evaluate_donor_eligibility
 
 class EligibilityServiceTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testdonor', password='password123')
+        self.user = User.objects.create_user(username='testdonor', password='password123', first_name="Test")
         self.donor = DonorProfile.objects.create(
             user=self.user,
             blood_group='O+',

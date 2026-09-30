@@ -8,11 +8,11 @@ from rest_framework.test import APIClient
 
 class BloodHubFulfillmentTests(TestCase):
     def setUp(self):
-        self.donor_user = User.objects.create(username='donor1')
-        self.donor = DonorProfile.objects.create(user=self.donor_user, phone_number='011', blood_group='A+')
+        self.donor_user = User.objects.create(username='donor1', first_name="Test")
+        self.donor = DonorProfile.objects.create(user=self.donor_user, phone_number='011', blood_group='A+', district="Dhaka")
         
-        self.requester_user = User.objects.create(username='req1')
-        self.requester = DonorProfile.objects.create(user=self.requester_user, phone_number='012', blood_group='O+')
+        self.requester_user = User.objects.create(username='req1', first_name="Test")
+        self.requester = DonorProfile.objects.create(user=self.requester_user, phone_number='012', blood_group='O+', district="Dhaka")
         
         self.blood_req = BloodRequest.objects.create(requester=self.requester_user, is_active=True, status='PENDING')
         self.acceptance = RequestAcceptance.objects.create(request=self.blood_req, donor=self.donor, status='ACCEPTED')

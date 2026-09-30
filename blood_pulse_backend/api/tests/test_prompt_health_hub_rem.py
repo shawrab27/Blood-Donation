@@ -9,8 +9,8 @@ from api.models import DonorProfile
 class HealthHubRemainingTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='+8801700000006', password='pw')
-        self.profile = DonorProfile.objects.create(user=self.user, phone_number='6')
+        self.user = User.objects.create_user(username='+8801700000006', password='pw', first_name="Test")
+        self.profile = DonorProfile.objects.create(user=self.user, phone_number='6', district="Dhaka", blood_group="O+")
         self.client.force_authenticate(user=self.user)
 
     def test_bmi_history_empty(self):

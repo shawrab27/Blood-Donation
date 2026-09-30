@@ -12,7 +12,7 @@ from api.services.email import hash_otp
 class AuthIntegrationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='+8801700000001', password='correct_password')
+        self.user = User.objects.create_user(username='+8801700000001', password='correct_password', first_name="Test")
         self.profile = DonorProfile.objects.create(
             user=self.user,
             phone_number='+8801700000001',

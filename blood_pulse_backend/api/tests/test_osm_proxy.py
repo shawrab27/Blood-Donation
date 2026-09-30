@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 class OSMProxyTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='osmtester')
+        self.user = User.objects.create_user(username='osmtester', first_name="Test")
         self.client.force_authenticate(user=self.user)
 
     @patch('api.osm_proxy.requests.get')

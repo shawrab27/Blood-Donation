@@ -11,12 +11,12 @@ from datetime import timedelta
 class LiveTrackingTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.requester_user = User.objects.create_user(username='+8801700000003', password='pw')
-        self.donor_user = User.objects.create_user(username='+8801700000004', password='pw')
-        self.third_user = User.objects.create_user(username='+8801700000005', password='pw')
+        self.requester_user = User.objects.create_user(username='+8801700000003', password='pw', first_name="Test")
+        self.donor_user = User.objects.create_user(username='+8801700000004', password='pw', first_name="Test")
+        self.third_user = User.objects.create_user(username='+8801700000005', password='pw', first_name="Test")
 
-        self.requester_profile = DonorProfile.objects.create(user=self.requester_user, phone_number='3')
-        self.donor_profile = DonorProfile.objects.create(user=self.donor_user, phone_number='4')
+        self.requester_profile = DonorProfile.objects.create(user=self.requester_user, phone_number='3', district="Dhaka", blood_group="O+")
+        self.donor_profile = DonorProfile.objects.create(user=self.donor_user, phone_number='4', district="Dhaka", blood_group="O+")
 
         self.req = BloodRequest.objects.create(
             patient_name='Patient',

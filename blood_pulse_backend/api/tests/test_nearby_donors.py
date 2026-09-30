@@ -7,7 +7,7 @@ import pygeohash
 
 class DonorProfileGeohashTest(TestCase):
     def test_geohash_computed_on_save(self):
-        user = User.objects.create_user(username='testgeo')
+        user = User.objects.create_user(username='testgeo', first_name="Test")
         # Provided a lat and lng, it should compute the geohash
         profile = DonorProfile.objects.create(
             user=user, 
@@ -23,9 +23,9 @@ class DonorProfileGeohashTest(TestCase):
 class NearbyDonorsViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create_user(username='d1')
-        self.user2 = User.objects.create_user(username='d2')
-        self.user3 = User.objects.create_user(username='d3')
+        self.user1 = User.objects.create_user(username='d1', first_name="Test")
+        self.user2 = User.objects.create_user(username='d2', first_name="Test")
+        self.user3 = User.objects.create_user(username='d3', first_name="Test")
         
         # Donor 1: Very close (distance ~1km)
         self.dp1 = DonorProfile.objects.create(

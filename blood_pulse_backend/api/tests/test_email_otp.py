@@ -19,7 +19,7 @@ from api.services.email import (
 class EmailOTPServiceAndEndpointTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='otpuser', email='donor@example.com', password='password123')
+        self.user = User.objects.create_user(username='otpuser', email='donor@example.com', password='password123', first_name="Test")
         self.donor = DonorProfile.objects.create(
             user=self.user,
             blood_group='O+',

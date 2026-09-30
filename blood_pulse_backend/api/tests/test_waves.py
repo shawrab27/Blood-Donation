@@ -10,10 +10,10 @@ from api.services.waves import get_candidate_donors_for_wave
 class WaveEngineTests(TestCase):
     def setUp(self):
         # Create Requester
-        self.req_user = User.objects.create_user(username='requester', password='password')
+        self.req_user = User.objects.create_user(username='requester', password='password', first_name="Test")
         
         # Create Candidate Donors
-        self.u1 = User.objects.create_user(username='donor_dhaka_local', password='password')
+        self.u1 = User.objects.create_user(username='donor_dhaka_local', password='password', first_name="Test")
         self.d1 = DonorProfile.objects.create(
             user=self.u1,
             blood_group='O+',
@@ -28,7 +28,7 @@ class WaveEngineTests(TestCase):
             response_count=9,
         )
 
-        self.u2 = User.objects.create_user(username='donor_chattogram', password='password')
+        self.u2 = User.objects.create_user(username='donor_chattogram', password='password', first_name="Test")
         self.d2 = DonorProfile.objects.create(
             user=self.u2,
             blood_group='O+',
@@ -42,7 +42,7 @@ class WaveEngineTests(TestCase):
         )
 
         # Incompatible donor (A+)
-        self.u3 = User.objects.create_user(username='donor_incompatible', password='password')
+        self.u3 = User.objects.create_user(username='donor_incompatible', password='password', first_name="Test")
         self.d3 = DonorProfile.objects.create(
             user=self.u3,
             blood_group='A+',

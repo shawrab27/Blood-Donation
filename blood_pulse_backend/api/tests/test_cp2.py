@@ -10,8 +10,8 @@ from unittest.mock import patch, MagicMock
 
 class CP2Tests(APITestCase):
     def setUp(self):
-        self.user_incomplete = User.objects.create_user(username='inc', password='123', email='inc@t.com')
-        self.profile_incomplete = DonorProfile.objects.create(user=self.user_incomplete, blood_group='', phone_number='+88000000000')
+        self.user_incomplete = User.objects.create_user(username='inc', password='123', email='inc@t.com', first_name="Test")
+        self.profile_incomplete = DonorProfile.objects.create(user=self.user_incomplete, blood_group='', phone_number='+88000000000', district="Dhaka")
         
         self.user_complete = User.objects.create_user(username='com', password='123', email='com@t.com', first_name='John')
         self.profile_complete = DonorProfile.objects.create(

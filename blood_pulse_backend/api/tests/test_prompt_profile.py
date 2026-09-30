@@ -11,8 +11,8 @@ from datetime import timedelta
 class ProfileIntegrationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='+8801700000010', password='pw')
-        self.profile = DonorProfile.objects.create(user=self.user, phone_number='10', blood_group='O+')
+        self.user = User.objects.create_user(username='+8801700000010', password='pw', first_name="Test")
+        self.profile = DonorProfile.objects.create(user=self.user, phone_number='10', blood_group='O+', district="Dhaka")
         self.client.force_authenticate(user=self.user)
 
     def test_edit_profile_fields(self):

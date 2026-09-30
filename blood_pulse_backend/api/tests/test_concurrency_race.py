@@ -10,12 +10,12 @@ from rest_framework.test import APIClient
 
 class AcceptanceConcurrencyTest(TransactionTestCase):
     def setUp(self):
-        self.requester = User.objects.create_user(username='req1', email='req@test.com', password='pw')
-        self.donor1 = User.objects.create_user(username='d1', email='d1@test.com', password='pw')
-        self.donor2 = User.objects.create_user(username='d2', email='d2@test.com', password='pw')
+        self.requester = User.objects.create_user(username='req1', email='req@test.com', password='pw', first_name="Test")
+        self.donor1 = User.objects.create_user(username='d1', email='d1@test.com', password='pw', first_name="Test")
+        self.donor2 = User.objects.create_user(username='d2', email='d2@test.com', password='pw', first_name="Test")
         
-        DonorProfile.objects.create(user=self.donor1, blood_group='O+', phone_number='1111')
-        DonorProfile.objects.create(user=self.donor2, blood_group='O+', phone_number='2222')
+        DonorProfile.objects.create(user=self.donor1, blood_group='O+', phone_number='1111', district="Dhaka")
+        DonorProfile.objects.create(user=self.donor2, blood_group='O+', phone_number='2222', district="Dhaka")
         
         self.req = BloodRequest.objects.create(
             requester=self.requester,

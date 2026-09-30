@@ -24,10 +24,10 @@ class LiveTrackingAndStandbyTests(TestCase):
         self.client = APIClient()
 
         # Requester
-        self.requester = User.objects.create_user(username='req_user', password='pass')
+        self.requester = User.objects.create_user(username='req_user', password='pass', first_name="Test")
         
         # Primary Donor
-        self.donor_user = User.objects.create_user(username='primary_donor', password='pass')
+        self.donor_user = User.objects.create_user(username='primary_donor', password='pass', first_name="Test")
         self.donor_profile = DonorProfile.objects.create(
             user=self.donor_user,
             blood_group='O+',
@@ -40,7 +40,7 @@ class LiveTrackingAndStandbyTests(TestCase):
         )
 
         # Standby Backup Donor
-        self.standby_user = User.objects.create_user(username='standby_donor', password='pass')
+        self.standby_user = User.objects.create_user(username='standby_donor', password='pass', first_name="Test")
         self.standby_profile = DonorProfile.objects.create(
             user=self.standby_user,
             blood_group='O+',
@@ -108,7 +108,7 @@ class LiveTrackingAndStandbyTests(TestCase):
         self.assertIn('destination', get_data)
 
     def test_unauthorized_user_location_access_forbidden(self):
-        other_user = User.objects.create_user(username='stranger', password='pass')
+        other_user = User.objects.create_user(username='stranger', password='pass', first_name="Test")
         self.client.force_authenticate(user=other_user)
 
         resp = self.client.get(f'/api/journeys/{self.acceptance.id}/location/')

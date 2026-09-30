@@ -10,7 +10,7 @@ import time
 class RateLimitTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='rateuser', password='pw')
+        self.user = User.objects.create_user(username='rateuser', password='pw', first_name="Test")
         self.client.force_authenticate(user=self.user)
 
     def test_emergency_broadcast_throttle(self):

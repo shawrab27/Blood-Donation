@@ -18,7 +18,7 @@ class BloodHubIntegrationTests(TestCase):
         # "request all" bulk endpoint against 0 available donors (expect graceful empty response)
         from django.contrib.auth import get_user_model
         User = get_user_model()
-        test_user = User.objects.create_user(username='req_user', email='req@test.com', password='password123')
+        test_user = User.objects.create_user(username='req_user', email='req@test.com', password='password123', first_name="Test")
         self.client.force_authenticate(user=test_user)
         res = self.client.post('/api/emergency/requests/bulk-dispatch/', {'blood_group': 'AB-', 'lat': 23.0, 'lng': 90.0})
         # Note: I might need to check the actual url for bulk dispatch.

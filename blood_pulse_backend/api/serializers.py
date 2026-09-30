@@ -116,19 +116,35 @@ class BloodRequestSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
+    author_photo = serializers.SerializerMethodField()
+    google_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'post', 'user', 'author', 'text', 'created_at']
-        read_only_fields = ['id', 'post', 'user', 'author', 'created_at']
+        fields = ['id', 'post', 'user', 'author', 'author_photo', 'google_photo_url', 'text', 'created_at']
+        read_only_fields = ['id', 'post', 'user', 'author', 'author_photo', 'google_photo_url', 'created_at']
 
     def get_author(self, obj):
         full_name = obj.user.get_full_name().strip()
         return full_name if full_name else obj.user.username
 
+    def get_author_photo(self, obj):
+        profile = getattr(obj.user, 'donorprofile', None)
+        if profile and profile.profile_picture:
+            return profile.profile_picture.url
+        return None
+
+    def get_google_photo_url(self, obj):
+        profile = getattr(obj.user, 'donorprofile', None)
+        if profile:
+            return profile.google_photo_url
+        return None
+
 
 class SocialPostSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
+    author_photo = serializers.SerializerMethodField()
+    google_photo_url = serializers.SerializerMethodField()
     author_blood_group = serializers.CharField(source='author.blood_group', read_only=True)
     reactions_count = serializers.IntegerField(source='reactions.count', read_only=True)
     comments_count = serializers.IntegerField(source='comments.count', read_only=True)
@@ -139,17 +155,27 @@ class SocialPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialPost
         fields = [
-            'id', 'author_name', 'author_blood_group', 'text_content', 
+            'id', 'author_name', 'author_photo', 'google_photo_url', 'author_blood_group', 'text_content', 
             'created_at', 'likes_count', 'reactions_count', 'comments_count', 
             'comments', 'original_post', 'reposted_by', 'original_author_name'
         ]
-        read_only_fields = ['id', 'created_at', 'likes_count', 'reactions_count', 'comments_count', 'comments', 'reposted_by', 'original_author_name']
+        read_only_fields = ['id', 'created_at', 'likes_count', 'reactions_count', 'comments_count', 'comments', 'reposted_by', 'original_author_name', 'author_photo', 'google_photo_url']
 
     def get_author_name(self, obj):
         if obj.author and obj.author.user:
             fn = obj.author.user.get_full_name().strip()
             return fn if fn else obj.author.user.username
         return 'Blood Donor'
+
+    def get_author_photo(self, obj):
+        if obj.author and obj.author.profile_picture:
+            return obj.author.profile_picture.url
+        return None
+
+    def get_google_photo_url(self, obj):
+        if obj.author:
+            return obj.author.google_photo_url
+        return None
 
     def get_reposted_by(self, obj):
         if obj.original_post:

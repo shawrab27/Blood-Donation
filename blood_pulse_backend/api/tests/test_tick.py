@@ -43,20 +43,20 @@ class TickEndpointTests(TestCase):
         from django.utils import timezone
         from datetime import timedelta
         
-        user1 = User.objects.create_user(username='d1', password='pw')
-        user2 = User.objects.create_user(username='d2', password='pw')
-        user3 = User.objects.create_user(username='d3', password='pw')
+        user1 = User.objects.create_user(username='d1', password='pw', first_name="Test")
+        user2 = User.objects.create_user(username='d2', password='pw', first_name="Test")
+        user3 = User.objects.create_user(username='d3', password='pw', first_name="Test")
         
         now = timezone.now().date()
         
         # d1: donated 10 days ago (should be deferred)
-        DonorProfile.objects.create(user=user1, phone_number='1', is_available=True, last_donation_date=now - timedelta(days=10))
+        DonorProfile.objects.create(user=user1, phone_number='1', is_available=True, last_donation_date=now - timedelta(days=10, district="Dhaka", blood_group="O+"))
         
         # d2: donated 91 days ago, currently deferred (should be re-enabled)
-        DonorProfile.objects.create(user=user2, phone_number='2', is_available=False, last_donation_date=now - timedelta(days=91))
+        DonorProfile.objects.create(user=user2, phone_number='2', is_available=False, last_donation_date=now - timedelta(days=91, district="Dhaka", blood_group="O+"))
         
         # d3: donated 100 days ago, currently deferred but suspended (should remain deferred)
-        DonorProfile.objects.create(user=user3, phone_number='3', is_available=False, is_suspended=True, last_donation_date=now - timedelta(days=100))
+        DonorProfile.objects.create(user=user3, phone_number='3', is_available=False, is_suspended=True, last_donation_date=now - timedelta(days=100, district="Dhaka", blood_group="O+"))
         
         client = APIClient()
         os.environ['EMERGENCY_TICK_TOKEN'] = 'super_secret_tick_token'

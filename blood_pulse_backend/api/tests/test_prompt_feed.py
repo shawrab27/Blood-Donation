@@ -9,7 +9,7 @@ from api.models import DonorProfile, SocialPost
 class FeedIntegrationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='+8801700000002', password='password')
+        self.user = User.objects.create_user(username='+8801700000002', password='password', first_name="Test")
         self.profile = DonorProfile.objects.create(
             user=self.user,
             phone_number='+8801700000002'

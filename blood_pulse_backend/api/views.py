@@ -45,7 +45,7 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create']:
             return [AllowAny()]
-        return [IsAuthenticated(), IsRegistrationComplete()]
+        return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
         """
@@ -279,7 +279,9 @@ class SocialPostViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAuthenticated(), IsRegistrationComplete()]
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         author = getattr(self.request.user, 'donorprofile', None)
@@ -441,7 +443,9 @@ class NearbyDonorsView(APIView):
                     'fuzzed_lat': f_lat,
                     'fuzzed_lng': f_lng,
                     'distance_km': round(dist, 1),
-                    'last_donation_date': d.last_donation_date
+                    'last_donation_date': d.last_donation_date,
+                    'profile_picture': d.profile_picture.url if d.profile_picture else None,
+                    'google_photo_url': d.google_photo_url,
                 })
 
         # Sort by distance
@@ -590,7 +594,9 @@ class LocalClubViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAuthenticated(), IsRegistrationComplete()]
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
 class ExecutiveMemberViewSet(viewsets.ModelViewSet):
     queryset = ExecutiveMember.objects.all()

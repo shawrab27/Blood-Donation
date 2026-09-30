@@ -14,10 +14,10 @@ class BloodHubEndpointsIntegrationTests(TestCase):
         self.client = APIClient()
 
         # Requester
-        self.requester_user = User.objects.create_user(username='requester_user', password='password123')
+        self.requester_user = User.objects.create_user(username='requester_user', password='password123', first_name="Test")
         
         # Donor
-        self.donor_user = User.objects.create_user(username='donor_user', password='password123')
+        self.donor_user = User.objects.create_user(username='donor_user', password='password123', first_name="Test")
         self.donor_profile = DonorProfile.objects.create(
             user=self.donor_user,
             blood_group='O+',
@@ -168,9 +168,9 @@ class BloodHubEndpointsIntegrationTests(TestCase):
             status='ACTIVE',
         )
 
-        u1 = User.objects.create_user(username='u1', password='p')
-        u2 = User.objects.create_user(username='u2', password='p')
-        u3 = User.objects.create_user(username='u3', password='p')
+        u1 = User.objects.create_user(username='u1', password='p', first_name="Test")
+        u2 = User.objects.create_user(username='u2', password='p', first_name="Test")
+        u3 = User.objects.create_user(username='u3', password='p', first_name="Test")
 
         self.client.force_authenticate(user=u1)
         self.client.post(f'/api/emergency/requests/{req.id}/report/', {'reason': 'Fake phone'})

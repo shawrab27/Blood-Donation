@@ -10,7 +10,7 @@ from django.utils import timezone
 class UserDeletionRetentionTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='deluser', email='test@test.com', password='pw', first_name='John', last_name='Doe')
-        self.profile = DonorProfile.objects.create(user=self.user, blood_group='A+', phone_number='123123123')
+        self.profile = DonorProfile.objects.create(user=self.user, blood_group='A+', phone_number='123123123', district="Dhaka")
         
         self.req = BloodRequest.objects.create(
             requester=self.user,

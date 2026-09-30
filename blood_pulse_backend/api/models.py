@@ -81,7 +81,7 @@ class DonorProfile(models.Model):
     google_uid = models.CharField(max_length=255, null=True, blank=True, unique=True)
     google_display_name = models.CharField(max_length=255, null=True, blank=True)
     google_photo_url = models.URLField(max_length=500, null=True, blank=True)
-    auth_provider = models.CharField(max_length=50, default='credentials')
+    auth_provider = models.CharField(max_length=50, default='password')
 
     @property
     def registration_complete(self):
