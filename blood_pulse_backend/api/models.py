@@ -78,6 +78,20 @@ class DonorProfile(models.Model):
 
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
 
+    google_uid = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    google_display_name = models.CharField(max_length=255, null=True, blank=True)
+    google_photo_url = models.URLField(max_length=500, null=True, blank=True)
+    auth_provider = models.CharField(max_length=50, default='credentials')
+
+    @property
+    def registration_complete(self):
+        has_name = bool(self.user.first_name)
+        has_blood = bool(self.blood_group)
+        has_phone = bool(self.phone_number)
+        has_district = bool(self.district)
+        return has_name and has_blood and has_phone and has_district
+
+
     manual_rank_override = models.CharField(max_length=50, blank=True, null=True, help_text="Admin override for badge (e.g. Gold, Platinum).")
 
     

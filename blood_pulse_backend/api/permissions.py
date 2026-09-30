@@ -1,3 +1,19 @@
+from rest_framework import permissions
+from rest_framework.exceptions import PermissionDenied
+
+class IsRegistrationComplete(permissions.BasePermission):
+    """
+    Requires the user to have completed their profile (name, blood group, district, phone).
+    """
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if not hasattr(request.user, 'donorprofile'):
+            return False
+        if not request.user.donorprofile.registration_complete:
+            raise PermissionDenied(detail={"code": "REGISTRATION_INCOMPLETE", "detail": "Please complete your profile first."})
+        return True
+
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -19,7 +35,6 @@ class IsProfileComplete(BasePermission):
         except Exception:
             return False
 
-from rest_framework import permissions
 
 class IsSuperAdminOrGroup(permissions.BasePermission):
     def has_permission(self, request, view):

@@ -1,3 +1,4 @@
+from rest_framework_simplejwt.tokens import RefreshToken
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -30,7 +31,7 @@ from .serializers import (
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from api.permissions import IsSuperAdminOrGroup
 from django.contrib.auth.models import User
-from .permissions import IsProfileComplete
+from .permissions import IsProfileComplete, IsRegistrationComplete
 from .utils import send_blood_request_notification
 
 class DonorProfileViewSet(viewsets.ModelViewSet):
@@ -44,7 +45,7 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create']:
             return [AllowAny()]
-        return [IsAuthenticated()]
+        return [IsAuthenticated(), IsRegistrationComplete()]
 
     def create(self, request, *args, **kwargs):
         """
@@ -255,7 +256,7 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create']:
             return [IsProfileComplete()]
-        return [IsAuthenticated()]
+        return [IsAuthenticated(), IsRegistrationComplete()]
 
     def perform_create(self, serializer):
         profile = getattr(self.request.user, 'donorprofile', None)
@@ -278,7 +279,7 @@ class SocialPostViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAuthenticated()]
+        return [IsAuthenticated(), IsRegistrationComplete()]
 
     def perform_create(self, serializer):
         author = getattr(self.request.user, 'donorprofile', None)
@@ -589,7 +590,7 @@ class LocalClubViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAuthenticated()]
+        return [IsAuthenticated(), IsRegistrationComplete()]
 
 class ExecutiveMemberViewSet(viewsets.ModelViewSet):
     queryset = ExecutiveMember.objects.all()
@@ -798,10 +799,6 @@ class GoogleAuthView(APIView):
     """
     POST /api/auth/google/
     Strictly validates Google OAuth access_token or id_token against Google's official endpoints.
-    - If id_token: validates against https://oauth2.googleapis.com/tokeninfo?id_token=...
-    - If access_token: validates against https://www.googleapis.com/oauth2/v3/userinfo with Bearer token.
-    Extracts verified email, email_verified, and name claims directly from Google's response.
-    NEVER trusts client-supplied email/identity in the request body without cryptographic verification.
     """
     permission_classes = [AllowAny]
 
@@ -817,9 +814,10 @@ class GoogleAuthView(APIView):
 
         verified_email = None
         verified_name = ''
+        verified_uid = None
+        verified_photo = None
         email_is_verified = False
 
-        # 1. Attempt verifying id_token against Google's tokeninfo endpoint
         if id_token_str:
             try:
                 import urllib.request
@@ -832,12 +830,13 @@ class GoogleAuthView(APIView):
                         info = json.loads(resp.read().decode('utf-8'))
                         verified_email = info.get('email')
                         verified_name = info.get('name', '')
+                        verified_uid = info.get('sub')
+                        verified_photo = info.get('picture')
                         ev = info.get('email_verified')
                         email_is_verified = ev is True or ev == 'true'
             except Exception as id_err:
                 logger.warning(f"[GoogleAuthView] id_token verification failed: {id_err}")
 
-        # 2. If id_token was absent or verification failed, verify access_token against Google UserInfo API
         if not verified_email and access_token:
             try:
                 import urllib.request
@@ -854,19 +853,19 @@ class GoogleAuthView(APIView):
                         info = json.loads(resp.read().decode('utf-8'))
                         verified_email = info.get('email')
                         verified_name = info.get('name', '')
+                        verified_uid = info.get('sub')
+                        verified_photo = info.get('picture')
                         ev = info.get('email_verified')
                         email_is_verified = ev is True or ev == 'true'
             except Exception as access_err:
                 logger.warning(f"[GoogleAuthView] access_token verification failed: {access_err}")
 
-        # Reject if neither token could be cryptographically validated with Google
         if not verified_email:
             return Response(
                 {'error': 'Invalid or expired Google credentials. Token could not be verified by Google.'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # Ensure email is verified by Google
         if not email_is_verified:
             return Response(
                 {'error': 'Google account email is not verified.'},
@@ -878,8 +877,17 @@ class GoogleAuthView(APIView):
         first_name = verified_name.split(' ')[0] if verified_name else username
         last_name = ' '.join(verified_name.split(' ')[1:]) if verified_name and len(verified_name.split(' ')) > 1 else ''
 
-        # Resolve or create user with verified identity
-        user = User.objects.filter(email=email).first()
+        # Match by google_uid or email
+        user = None
+        if verified_uid:
+            from api.models import DonorProfile
+            profile_by_uid = DonorProfile.objects.filter(google_uid=verified_uid).first()
+            if profile_by_uid:
+                user = profile_by_uid.user
+        
+        if not user:
+            user = User.objects.filter(email=email).first()
+
         if not user:
             base_username = username
             counter = 1
@@ -890,35 +898,60 @@ class GoogleAuthView(APIView):
                 username=username,
                 email=email,
                 first_name=first_name,
-                last_name=last_name,
+                last_name=last_name
             )
+            # Create profile for new user
+            profile = DonorProfile.objects.create(
+                user=user,
+                email_verified=True,
+                auth_provider='google',
+                google_uid=verified_uid,
+                google_display_name=verified_name,
+                google_photo_url=verified_photo,
+                phone_number=f'+880{user.id:08d}'
+            )
+        else:
+            # Update existing profile
+            profile = getattr(user, 'donorprofile', None)
+            if profile:
+                profile.email_verified = True
+                if not profile.google_uid and verified_uid:
+                    profile.google_uid = verified_uid
+                if not profile.google_display_name and verified_name:
+                    profile.google_display_name = verified_name
+                if not profile.google_photo_url and verified_photo:
+                    profile.google_photo_url = verified_photo
+                if profile.auth_provider == 'credentials':
+                    profile.auth_provider = 'google'
+                profile.save()
+            else:
+                profile = DonorProfile.objects.create(
+                    user=user,
+                    email_verified=True,
+                    auth_provider='google',
+                    google_uid=verified_uid,
+                    google_display_name=verified_name,
+                    google_photo_url=verified_photo
+                )
 
-        profile, _ = DonorProfile.objects.get_or_create(
-            user=user,
-            defaults={
-                'blood_group': '',
-                'district': '',
-                'phone_number': f"+880{user.id:08d}",
-                'is_profile_complete': False,
-            }
-        )
-
-        from rest_framework_simplejwt.tokens import RefreshToken
+        # Generate tokens
         refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
 
         return Response({
-            'access': str(refresh.access_token),
             'refresh': str(refresh),
+            'access': str(access),
             'user': {
                 'id': user.id,
                 'email': user.email,
-                'username': user.username,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
+                'is_verified': profile.is_verified,
                 'is_profile_complete': profile.is_profile_complete,
-                'blood_group': profile.blood_group,
-                'district': profile.district,
-                'phone_number': profile.phone_number,
+                'auth_provider': profile.auth_provider,
+                'google_display_name': profile.google_display_name,
+                'google_photo_url': profile.google_photo_url,
+                'registration_complete': profile.registration_complete,
             }
         }, status=status.HTTP_200_OK)
 

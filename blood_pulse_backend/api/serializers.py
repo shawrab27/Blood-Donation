@@ -77,7 +77,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
             'district', 'phone_number', 'nid_hash', 'last_donation_date', 'is_verified', 
             'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'institution', 'upazila_linked', 'address', 
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
-            'recent_logs', 'global_rank', 'badge'
+            'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider'
         ]
     def validate_phone_number(self, value):
         if not value:
