@@ -11,6 +11,7 @@ void main() {
     // 1. Pump the app
     await tester.pumpWidget(const ProviderScope(child: BloodPulseApp()));
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 3));
 
     // Verify Splash/Onboarding or Login is present
     // Just verifying the app boots up cleanly without crashes

@@ -4,6 +4,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../services/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -292,7 +293,7 @@ class _ProfileDrawerState extends ConsumerState<ProfileDrawer> {
     final Uint8List? avatarBytes = authUser?.avatarBytes;
     String? photoUrl = authUser?.photoUrl ?? profileData?.profilePicture;
     if (photoUrl != null && !photoUrl.startsWith('http')) {
-      photoUrl = 'https://blood-donation-liard.vercel.app' + photoUrl;
+      photoUrl = ApiClient.defaultBaseUrl + photoUrl;
     }
 
     final pName = ' '.trim();

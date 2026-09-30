@@ -1521,7 +1521,7 @@ class _ProfileCompletionBanner extends ConsumerWidget {
               const Icon(Icons.info_outline_rounded, color: Color(0xFFC30121), size: 18),
               const SizedBox(width: 8),
               const Text(
-                'Complete Your Profile',
+                'Complete Registration',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 14,
@@ -1564,7 +1564,7 @@ class _ProfileCompletionBanner extends ConsumerWidget {
             width: double.infinity,
             height: 40,
             child: ElevatedButton(
-              onPressed: () => context.push('/complete-profile'),
+              onPressed: () => context.push('/register'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
                 foregroundColor: Colors.white,

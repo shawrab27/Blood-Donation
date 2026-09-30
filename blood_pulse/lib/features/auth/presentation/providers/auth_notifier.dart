@@ -1,3 +1,4 @@
+import '../../../../features/profile/domain/providers/profile_provider.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -9,7 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import '../../../../services/api_client.dart';
 
 /// Authentication status for BloodPulse.
-enum AuthStatus { unauthenticated, loading, authenticated, error }
+enum AuthStatus { unauthenticated, loading, authenticated, authenticatedIncomplete, error }
 
 /// Represents registration info for a user.
 class UserProfile {
@@ -123,7 +124,6 @@ class AuthState {
   }
 }
 
-import '../../../../features/profile/domain/providers/profile_provider.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
@@ -152,8 +152,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _apiClient.login(identifier, password).timeout(const Duration(seconds: 15));
       final profile = await _apiClient.get('/api/donors/me/').timeout(const Duration(seconds: 15));
-      final pData = profile as Map<String, dynamic>;
+      if (profile.statusCode != 200) throw Exception('Status: ');
+      final pData = jsonDecode(profile.body) as Map<String, dynamic>;
 
+
+      final bool isRegComplete = pData['registration_complete'] == true || pData['registration_complete'] == 'true';
+      final statusEnum = isRegComplete ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete;
 
       final fullName = ((pData['first_name'] ?? '') + ' ' + (pData['last_name'] ?? '')).trim();
       final user = UserProfile(
@@ -170,10 +174,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isOtpVerified: true,
         photoUrl: pData['profile_picture'],
       );
-      if (ref != null) ref!.invalidate(profileProvider);
+      try { if (ref != null) ref!.invalidate(profileProvider); } catch (_) {}
 
       state = state.copyWith(
-        status: AuthStatus.authenticated,
+        status: statusEnum,
         user: user,
         errorMessage: null,
       );

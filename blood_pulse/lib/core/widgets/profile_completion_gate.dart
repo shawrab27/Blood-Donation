@@ -24,7 +24,7 @@ class ProfileCompletionGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final isComplete = user != null && user.isProfileComplete;
+    final isComplete = authState.status == AuthStatus.authenticated;
 
     if (isComplete) {
       return child;
@@ -87,7 +87,7 @@ class ProfileCompletionGate extends ConsumerWidget {
 
                   // Title
                   const Text(
-                    'Complete Your Profile',
+                    'Complete Registration',
                     style: TextStyle(
                       fontFamily: 'Georgia',
                       fontSize: 22,
@@ -140,7 +140,7 @@ class ProfileCompletionGate extends ConsumerWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/complete-profile');
+                        context.push('/register');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,

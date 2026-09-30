@@ -101,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (isProfileComplete) {
         context.go('/dashboard');
       } else {
-        context.go('/complete-profile');
+        context.go('/register');
       }
     } else {
       final err = ref.read(authProvider).errorMessage;

@@ -45,9 +45,11 @@ Future<void> main() async {
   );
 
   try {
-    FcmService.instance.initialize();
+    FcmService.instance.initialize().catchError((e) {
+      debugPrint('FCM async initialization warning: ');
+    });
   } catch (e) {
-    debugPrint('FCM initialization warning: ');
+    debugPrint('FCM synchronous initialization warning: ');
   }
 }
 
