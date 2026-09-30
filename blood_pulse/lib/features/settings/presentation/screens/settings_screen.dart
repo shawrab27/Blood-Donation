@@ -13,6 +13,7 @@ import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
 import '../../../profile/domain/providers/profile_provider.dart';
+import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 
 /// Settings & Security Screen for BloodPulse.
 /// 1:1 Parity with Stitch Screen `2247f788f26042908aa418ba2bfd621f`
@@ -673,6 +674,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           inactiveTrackColor: const Color(0xFFE4E2E1),
                           onChanged: (val) {
                             setState(() => _notificationsReceived = val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+
+                  // PulseAI Assistant Toggle
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFEE9EB),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.support_agent_rounded, color: AppColors.primary, size: 18),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Show PulseAI assistant',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF24191A),
+                                ),
+                              ),
+                              Text(
+                                'Floating clinical AI companion',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 11,
+                                  color: Color(0xFF5C3F3D),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final isVisible = ref.watch(pulseAiVisibilityProvider);
+                            return Switch.adaptive(
+                              value: isVisible,
+                              activeThumbColor: Colors.white,
+                              activeTrackColor: AppColors.primary,
+                              inactiveTrackColor: const Color(0xFFE4E2E1),
+                              onChanged: (val) {
+                                ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
+                              },
+                            );
                           },
                         ),
                       ],

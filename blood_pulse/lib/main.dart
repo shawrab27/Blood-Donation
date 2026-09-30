@@ -15,6 +15,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/app_router.dart';
 import 'core/constants.dart';
+import 'features/assistant/presentation/widgets/pulseai_overlay.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,8 @@ Future<void> main() async {
   );
 }
 
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class BloodPulseApp extends ConsumerWidget {
   const BloodPulseApp({super.key});
 
@@ -58,6 +61,7 @@ class BloodPulseApp extends ConsumerWidget {
     final currentLocale = ref.watch(localeProvider);
 
     return MaterialApp.router(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: AppConstants.appName,
       locale: currentLocale,
       localizationsDelegates: const [
@@ -72,6 +76,8 @@ class BloodPulseApp extends ConsumerWidget {
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => PulseAiOverlay(child: child ?? const SizedBox()),
     );
   }
 }
+
