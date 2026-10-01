@@ -126,14 +126,36 @@ WSGI_APPLICATION = 'blood_pulse_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# Reads from DATABASE_URL environment variable if set (e.g. Postgres), falling back to SQLite default.
+# Environment configuration: dev vs prod
+# DJANGO_ENV=dev uses DATABASE_URL_DEV from .env.dev (or SQLite default if empty/unset).
+# When DJANGO_ENV != 'dev', uses DATABASE_URL from .env.
+DJANGO_ENV = os.environ.get('DJANGO_ENV', '')
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-    )
-}
+if DJANGO_ENV == 'dev':
+    env_dev_path = BASE_DIR / '.env.dev'
+    if env_dev_path.exists():
+        load_dotenv(env_dev_path, override=True)
+
+    dev_db_url = os.environ.get('DATABASE_URL_DEV')
+    if dev_db_url:
+        DATABASES = {
+            'default': dj_database_url.parse(dev_db_url, conn_max_age=600)
+        }
+    else:
+        DATABASES = {
+            'default': dj_database_url.parse(
+                f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+                conn_max_age=600,
+            )
+        }
+else:
+    # Production / default: loads DATABASE_URL from .env
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+        )
+    }
 
 
 # Password validation
