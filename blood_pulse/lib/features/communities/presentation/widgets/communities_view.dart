@@ -447,11 +447,12 @@ class _NationalOrgCard extends StatelessWidget {
           // Details Button (Outlined Capsule)
           SizedBox(
             width: double.infinity,
-            height: 40,
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF8B0014), width: 1.5),
                 shape: const StadiumBorder(),
+                minimumSize: const Size(double.infinity, 48),
+                padding: const EdgeInsets.symmetric(vertical: 10),
               ),
               onPressed: () {
                 _showDetailsBottomSheet(context, org);

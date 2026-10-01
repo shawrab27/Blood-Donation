@@ -257,11 +257,12 @@ class LocalClubProfileView extends StatelessWidget {
                   // View All Members Button
                   SizedBox(
                     width: double.infinity,
-                    height: 44,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF8B0014), width: 1.5),
                         shape: const StadiumBorder(),
+                        minimumSize: const Size(double.infinity, 48),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
