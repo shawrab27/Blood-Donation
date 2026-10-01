@@ -28,8 +28,8 @@ if _prod_env_path.exists():
 _current_db = DATABASES.get('default', {})
 _current_host = _current_db.get('HOST', '')
 
-# Commands strictly forbidden on production host without ALLOW_PROD=1
-BLOCKED_PROD_COMMANDS = {'migrate', 'runserver', 'test', 'flush', 'loaddata'}
+# Strictly ALLOWED commands when target DB host is production
+ALLOWED_PROD_COMMANDS = {'check', 'showmigrations', 'sqlmigrate', 'help', 'version'}
 
 
 def _check_production_guard():
@@ -39,19 +39,32 @@ def _check_production_guard():
             command = arg
             break
 
-    is_blocked = False
-    if command:
-        if command in BLOCKED_PROD_COMMANDS or command.startswith('import_'):
-            is_blocked = True
+    # If no command passed (e.g. `python manage.py`), allow
+    if not command:
+        return
+
+    # Evaluate allowlist
+    is_allowed = False
+    if command in ALLOWED_PROD_COMMANDS:
+        is_allowed = True
+    elif command == 'makemigrations':
+        # Only allowed on production host when --dry-run is explicitly specified
+        if '--dry-run' in sys.argv:
+            is_allowed = True
+        else:
+            is_allowed = False
+    else:
+        is_allowed = False
 
     if _prod_host and _current_host and _current_host == _prod_host:
-        if is_blocked and os.environ.get('ALLOW_PROD') != '1':
+        if not is_allowed and os.environ.get('ALLOW_PROD') != '1':
             error_msg = (
                 f"\n{'='*70}\n"
                 f"[PRODUCTION SAFETY GUARD TRIGGERED]\n"
                 f"REFUSING to execute '{command}'!\n"
                 f"Target database host '{_current_host}' matches production host in .env.\n"
-                f"Blocked commands: {', '.join(sorted(BLOCKED_PROD_COMMANDS))}, import_*\n"
+                f"ALLOWLIST ONLY on production: check, showmigrations, sqlmigrate, makemigrations (--dry-run), help, version.\n"
+                f"Command '{command}' is NOT in allowlist.\n"
                 f"To override this guard for production maintenance, explicitly set:\n"
                 f"    ALLOW_PROD=1\n"
                 f"{'='*70}\n\n"

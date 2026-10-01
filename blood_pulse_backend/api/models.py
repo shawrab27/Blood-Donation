@@ -1341,24 +1341,23 @@ class PasswordResetOTP(models.Model):
 class Institution(models.Model):
 
     INSTITUTION_TYPES = (
-
         ('school', 'School'),
-
         ('college', 'College'),
-
         ('madrasa', 'Madrasa'),
-
         ('university', 'University'),
-
+        ('technical', 'Technical'),
+        ('professional', 'Professional'),
+        ('primary', 'Primary'),
+        ('other', 'Other'),
     )
-
     name = models.CharField(max_length=255, db_index=True)
-
     eiin = models.CharField(max_length=50, null=True, blank=True, db_index=True)
-
     institution_type = models.CharField(max_length=50, choices=INSTITUTION_TYPES)
-
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True, related_name='institutions')
+    division_name = models.CharField(max_length=100, null=True, blank=True)
+    district_name = models.CharField(max_length=100, null=True, blank=True)
+    upazila_name = models.CharField(max_length=100, null=True, blank=True)
+    source_file = models.CharField(max_length=100, null=True, blank=True)
 
 
 
