@@ -19,21 +19,34 @@ class RouterNotifier extends ChangeNotifier {
   String? redirectLogic(BuildContext context, dynamic state) {
     final authState = ref.read(authProvider);
     final path = state.uri.path;
-    final isLoggingIn = path == '/login' || 
-                        path == '/register' || 
-                        path == '/' || 
-                        path == '/onboarding' || 
-                        path == '/splash';
+    final isPreAuthRoute = path == '/login' || 
+                           path == '/register' || 
+                           path == '/otp-verify' ||
+                           path == '/forgot-password' ||
+                           path == '/verify-otp' ||
+                           path == '/language' ||
+                           path == '/' || 
+                           path == '/onboarding' || 
+                           path == '/splash' ||
+                           path == '/privacy-policy';
                         
     if (authState.status == AuthStatus.unauthenticated) {
-      if (!isLoggingIn) {
+      if (!isPreAuthRoute) {
         return '/login';
       }
       return null;
     }
 
     if (authState.status == AuthStatus.authenticated || authState.status == AuthStatus.authenticatedIncomplete) {
-      if (isLoggingIn) {
+      final isAuthFlow = path == '/login' || 
+                         path == '/register' || 
+                         path == '/otp-verify' ||
+                         path == '/forgot-password' ||
+                         path == '/verify-otp' ||
+                         path == '/' || 
+                         path == '/onboarding' || 
+                         path == '/splash';
+      if (isAuthFlow) {
         return '/feed'; // Feed is the default
       }
     }
