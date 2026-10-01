@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../domain/models/assistant_message_model.dart';
@@ -149,6 +150,8 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
       _saveToLocal();
     } on AssistantApiException catch (e) {
       state = state.copyWith(isSending: false, errorCode: e.code);
+    } on SocketException {
+      state = state.copyWith(isSending: false, errorCode: 'NO_INTERNET');
     } catch (e) {
       state = state.copyWith(isSending: false, errorCode: 'GENERIC_ERROR');
     }

@@ -1,7 +1,9 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../../services/api_client.dart'; // Standard API client using token
 import '../domain/models/assistant_message_model.dart';
@@ -21,25 +23,43 @@ class AssistantApiService {
   AssistantApiService(this._client);
 
   Future<AssistantMessage> sendMessage(String message, String locale, {int? conversationId, String? screenContext}) async {
-    final response = await _client.post(
-      '/api/assistant/chat/',
-      body: {
-        'message': message,
-        'locale': locale,
-        if (conversationId != null) 'conversation_id': conversationId,
-        if (screenContext != null) 'screen_context': screenContext,
-      },
-    );
+    try {
+      final response = await _client.post(
+        '/api/assistant/chat/',
+        body: {
+          'message': message,
+          'locale': locale,
+          if (conversationId != null) 'conversation_id': conversationId,
+          if (screenContext != null) 'screen_context': screenContext,
+        },
+      ).timeout(const Duration(seconds: 45));
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final json = jsonDecode(response.body);
-      return AssistantMessage.fromJson(json);
-    } else {
-      String code = 'GENERIC_ERROR';
-      if (response.statusCode == 429) code = 'RATE_LIMITED';
-      if (response.statusCode == 413) code = 'MESSAGE_TOO_LONG';
-      if (response.statusCode == 402) code = 'BUDGET_REACHED';
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final json = jsonDecode(response.body);
+        return AssistantMessage.fromJson(json);
+      }
+
+      String code;
+      if (response.statusCode == 401) {
+        code = 'LOGIN_REQUIRED';
+      } else if (response.statusCode == 404) {
+        code = 'NOT_AVAILABLE';
+      } else if (response.statusCode == 429) {
+        code = 'RATE_LIMITED';
+      } else if (response.statusCode == 413) {
+        code = 'MESSAGE_TOO_LONG';
+      } else if (response.statusCode == 402) {
+        code = 'BUDGET_REACHED';
+      } else if (response.statusCode >= 500) {
+        code = 'SERVER_ERROR';
+      } else {
+        code = 'GENERIC_ERROR';
+      }
       throw AssistantApiException(code, response.body);
+    } on SocketException {
+      throw AssistantApiException('NO_INTERNET', 'No internet connection');
+    } on TimeoutException {
+      throw AssistantApiException('BUSY', 'Request timed out');
     }
   }
 

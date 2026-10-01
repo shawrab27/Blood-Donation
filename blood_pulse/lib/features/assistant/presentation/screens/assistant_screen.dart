@@ -90,15 +90,30 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: Image.asset(
-          'assets/images/pulse_ai_icon.png',
-          width: 32,
-          height: 32,
-          errorBuilder: (_, _, _) => const Icon(
-            Icons.smart_toy_outlined,
-            size: 28,
-            color: Color(0xFFC30121),
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/pulse_ai_icon.png',
+              width: 32,
+              height: 32,
+              errorBuilder: (_, _, _) => const Icon(
+                Icons.smart_toy_outlined,
+                size: 28,
+                color: Color(0xFFC30121),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'PulseAI',
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Color(0xFFC30121),
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
@@ -147,41 +162,11 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                             if (index == 0 && state.errorCode != null) {
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFF2F4),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFC30121).withAlpha(40)),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        const Icon(Icons.wifi_off_rounded, color: Color(0xFFC30121), size: 32),
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          'Server unreachable',
-                                          style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        const Text(
-                                          'PulseAI could not connect to the server. Please try again.',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.black87),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        ElevatedButton.icon(
-                                          onPressed: () {
-                                            ref.read(assistantProvider.notifier).sendMessage('Retry', 'en', screenContext: widget.screenContext);
-                                          },
-                                          icon: const Icon(Icons.refresh, size: 16),
-                                          label: const Text('Retry'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFFC30121),
-                                            foregroundColor: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  child: _PulseAiErrorBanner(
+                                    errorCode: state.errorCode!,
+                                    onRetry: () => ref
+                                        .read(assistantProvider.notifier)
+                                        .sendMessage('Retry', 'en', screenContext: widget.screenContext),
                                   ),
                                 );
                             }
@@ -621,4 +606,80 @@ class TypingIndicator extends StatelessWidget {
       ],
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ERROR BANNER — distinct friendly messages per errorCode
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PulseAiErrorBanner extends StatelessWidget {
+  const _PulseAiErrorBanner({required this.errorCode, required this.onRetry});
+
+  final String errorCode;
+  final VoidCallback onRetry;
+
+  static _ErrorInfo _infoFor(String code) {
+    switch (code) {
+      case 'NO_INTERNET':
+        return const _ErrorInfo(Icons.wifi_off_rounded, 'No internet connection', 'Check your connection and try again.');
+      case 'NOT_AVAILABLE':
+        return const _ErrorInfo(Icons.smart_toy_outlined, 'PulseAI is not available yet', 'This feature is not yet enabled on the server.');
+      case 'LOGIN_REQUIRED':
+        return const _ErrorInfo(Icons.lock_outline_rounded, 'Please log in again', 'Your session may have expired. Re-open the app and sign in.');
+      case 'RATE_LIMITED':
+        return const _ErrorInfo(Icons.hourglass_top_rounded, 'Too many messages', 'You\'ve sent too many messages. Please wait a moment before trying again.');
+      default:
+        // Covers GENERIC_ERROR, network timeouts, 5xx
+        return const _ErrorInfo(Icons.cloud_off_rounded, 'PulseAI is busy', 'Something went wrong on our end. Please try again in a moment.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final info = _infoFor(errorCode);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF2F4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFC30121).withAlpha(40)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(info.icon, color: const Color(0xFFC30121), size: 32),
+          const SizedBox(height: 8),
+          Text(
+            info.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            info.body,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.black87),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC30121),
+              foregroundColor: Colors.white,
+              shape: const StadiumBorder(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorInfo {
+  const _ErrorInfo(this.icon, this.title, this.body);
+  final IconData icon;
+  final String title;
+  final String body;
 }
