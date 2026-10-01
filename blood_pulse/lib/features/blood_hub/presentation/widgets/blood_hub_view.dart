@@ -177,92 +177,37 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
 
         const SizedBox(height: 20),
 
-        // ── LIVE DONOR TRACKING & DISPATCH SEGMENT ──
-        _buildLiveDonorTrackingCard(isBangla),
-
-        const SizedBox(height: 20),
-
-        // ── Card 1: Search for Donor ──
+        // ── Card 1: Search for Blood ──
         _buildActionOptionCard(
           icon: Icons.person_search_rounded,
           iconBgColor: const Color(0xFFFEE9EB),
           iconColor: const Color(0xFFC30121),
-          title: isBangla ? 'দাতা খুঁজুন' : 'Search for Donor',
+          title: isBangla ? 'রক্ত খুঁজুন' : 'Search for Blood',
           subtitle: isBangla
-              ? 'রক্তের গ্রুপ, অবস্থান এবং উপস্থাতর উপর ভিত্তি করে আমাদের স্থানীয় যাচাইকৃত দাতাদের ডাটাবেস ব্রাউজ করুন।'
+              ? 'রক্তের গ্রুপ, অবস্থান এবং উপস্থাতর উপর ভিত্তি করে আমাদের স্থানীয় যাচাইকৃত দাতাদের ডাটাবেস ব্রাউজ করুন।'
               : 'Access our verified database of local donors filtered by blood type, proximity, and availability.',
-          badgeWidget: Row(
-            children: [
-              _buildBloodGroupPill('A+'),
-              const SizedBox(width: 6),
-              _buildBloodGroupPill('O+'),
-              const SizedBox(width: 6),
-              _buildBloodGroupPill('B+'),
-            ],
-          ),
           buttonText: isBangla ? 'এখনই খুঁজুন ➔' : 'Find Now ➔',
           onTap: () => context.push('/blood-hub/search'),
         ),
 
         const SizedBox(height: 16),
 
-        // ── Card 2: Request for Blood ──
-        _buildActionOptionCard(
-          icon: Icons.water_drop_rounded,
-          iconBgColor: const Color(0xFFC30121),
-          iconColor: Colors.white,
-          title: isBangla ? 'রক্তের জন্য অনুরোধ করুন' : 'Request for Blood',
-          subtitle: isBangla
-              ? 'জরুরি রক্ত সঞ্চালনের প্রয়োজনের জন্য আপনার এলাকার সকল যোগ্য দাতাকে তাৎক্ষণিকভাবে অবহিত করুন।'
-              : 'Instantly notify all eligible donors in your area for urgent transfusion needs or planned procedures.',
-          badgeWidget: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEE9EB),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'URGENT REQUESTS NEARBY: 12',
-              style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-            ),
-          ),
-          buttonText: isBangla ? 'অনুরোধ পোস্ট করুন ➔' : 'Post Request ➔',
-          onTap: () => context.push('/blood-hub/request/direct'),
-        ),
-
-        const SizedBox(height: 16),
-
-        // ── Card 3: Emergency Blood ──
+        // ── Card 2: Emergency ──
         _buildActionOptionCard(
           icon: Icons.crisis_alert_rounded,
           iconBgColor: const Color(0xFFFFF0F0),
           iconColor: const Color(0xFFC30121),
-          title: isBangla ? 'জরুরি রক্ত' : 'Emergency Blood',
+          title: isBangla ? 'জরুরি রক্ত' : 'Emergency',
           subtitle: isBangla
               ? 'জাতীয় দুর্যোগ বা ব্যক্তিগত জরুরি অবস্থায় তাৎক্ষণিক ওয়েভ অ্যালার্ট সক্রিয় করুন।'
               : 'Activate wave alerts for national disasters or personal emergencies — connects you fast.',
-          badgeWidget: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEE9EB),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'WAVE ALERTS • LIVE TRACKING',
-              style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFC30121)),
-            ),
-          ),
           buttonText: isBangla ? 'এখনই সাহায্য নিন ➔' : 'Get Help Now ➔',
           onTap: () => context.push('/emergency'),
         ),
 
         const SizedBox(height: 20),
 
-        // ── ACTIVE CAMPAIGN SEGMENT (LIVE DRIVES & PLEDGES) ──
+        // ── Card 3: Blood Campaign (Active Drives & Pledges) ──
         _buildActiveCampaignsSegment(isBangla),
 
         const SizedBox(height: 24),
@@ -1301,7 +1246,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
     required Color iconColor,
     required String title,
     required String subtitle,
-    required Widget badgeWidget,
+    required Widget? badgeWidget,
     required String buttonText,
     required VoidCallback onTap,
   }) {
@@ -1345,8 +1290,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
             style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF666666), height: 1.4),
           ),
           const SizedBox(height: 14),
-          badgeWidget,
-          const SizedBox(height: 16),
+          if (badgeWidget != null) ...[ badgeWidget, const SizedBox(height: 16) ],
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
