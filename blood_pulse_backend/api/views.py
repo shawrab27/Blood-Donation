@@ -51,54 +51,87 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         """
         Upsert: if a DonorProfile already exists for this user (or this phone),
         update it instead of returning a 400/500 duplicate error.
+        Safely validates foreign keys (institution, upazila) so unmigrated/missing
+        remote rows don't abort account creation.
         """
         user = request.user if request.user and request.user.is_authenticated else None
 
+        # Clean/sanitize payload copy so invalid FK IDs don't crash registration
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+
+        # Sanitize institution FK
+        inst_id = data.get('institution')
+        if inst_id:
+            from api.models import Institution
+            if not Institution.objects.filter(pk=inst_id).exists():
+                data['institution'] = None
+
+        # Sanitize upazila_linked FK
+        upazila_id = data.get('upazila_linked')
+        if upazila_id:
+            from api.models import Upazila
+            if not Upazila.objects.filter(pk=upazila_id).exists():
+                data['upazila_linked'] = None
+
+        phone = data.get('phone_number') or data.get('username')
+        full_name = data.get('full_name', '')
+        first_name = full_name.split(' ')[0] if full_name else data.get('first_name', '')
+        last_name = ' '.join(full_name.split(' ')[1:]) if full_name and len(full_name.split(' ')) > 1 else data.get('last_name', '')
+        email = (data.get('email') or '').strip()
+
         # Resolve or create the Django user for unauthenticated registrations
         if not user:
-            phone = request.data.get('phone_number') or request.data.get('username') or 'donor_guest'
-            username = str(phone).replace('+', '').replace(' ', '')
-            # Update first/last name fields on the user record if provided
-            full_name = request.data.get('full_name', '')
-            first_name = full_name.split(' ')[0] if full_name else request.data.get('first_name', '')
-            last_name = ' '.join(full_name.split(' ')[1:]) if full_name and len(full_name.split(' ')) > 1 else request.data.get('last_name', '')
-            user, created = User.objects.get_or_create(
-                username=username,
-                defaults={
-                    'email': request.data.get('email', ''),
-                    'first_name': first_name,
-                    'last_name': last_name,
-                }
-            )
-            if not created and (first_name or last_name):
-                if first_name:
+            clean_phone = str(phone or 'donor_guest').replace('+', '').replace(' ', '')
+            username = clean_phone
+            
+            # Check if this phone number is already registered to an existing profile
+            if phone and DonorProfile.objects.filter(phone_number=phone).exists():
+                return Response(
+                    {'phone_number': ['An account with this phone number is already registered.']},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if user with this username exists
+            user = User.objects.filter(username=username).first()
+            if not user and email:
+                user = User.objects.filter(email=email).first()
+
+            if not user:
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+            else:
+                if first_name and not user.first_name:
                     user.first_name = first_name
-                if last_name:
+                if last_name and not user.last_name:
                     user.last_name = last_name
-                user.save()
-            raw_password = request.data.get('password') or 'password123'
+                if email and not user.email:
+                    user.email = email
+
+            raw_password = data.get('password') or 'password123'
             user.set_password(raw_password)
             user.save()
         else:
-            # Authenticated user: update Django user name from registration payload
-            full_name = request.data.get('full_name', '')
             if full_name:
                 parts = full_name.split(' ', 1)
                 user.first_name = parts[0]
                 user.last_name = parts[1] if len(parts) > 1 else ''
                 user.save()
 
-        # Upsert DonorProfile
+        # Upsert DonorProfile for authenticated user
         existing = DonorProfile.objects.filter(user=user).first()
         if existing:
             # Profile already exists → update fields and return 200
-            serializer = self.get_serializer(existing, data=request.data, partial=True)
+            serializer = self.get_serializer(existing, data=data, partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         # No profile yet → create
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -937,7 +970,10 @@ class GoogleAuthView(APIView):
                     auth_provider='google',
                     google_uid=verified_uid,
                     google_display_name=verified_name,
-                    google_photo_url=verified_photo
+                    google_photo_url=verified_photo,
+                    phone_number=f'+880{user.id:08d}',
+                    blood_group='',
+                    district='',
                 )
 
         # Generate tokens

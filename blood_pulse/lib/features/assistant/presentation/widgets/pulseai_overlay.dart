@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import '../../../../core/app_router.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import 'heartbeat_icon.dart';
 import '../../../../main.dart'; // To access rootScaffoldMessengerKey if defined there.
 
@@ -90,9 +91,14 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
     const hiddenRoutes = [
       '/',
       '/splash',
+      '/language',
       '/login',
       '/register',
       '/onboarding',
+      '/forgot-password',
+      '/verify-otp',
+      '/otp-verify',
+      '/privacy-policy',
       '/assistant',
     ];
     return !hiddenRoutes.contains(_currentRoute);
@@ -156,10 +162,11 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
   @override
   Widget build(BuildContext context) {
     final isVisible = ref.watch(pulseAiVisibilityProvider);
+    final isAuthenticated = ref.watch(authProvider).isAuthenticated;
     final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final routeAllowed = _isRouteAllowed();
     
-    final showOverlay = isVisible && routeAllowed && !isKeyboardOpen;
+    final showOverlay = isVisible && isAuthenticated && routeAllowed && !isKeyboardOpen;
 
     return Stack(
       children: [

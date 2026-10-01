@@ -175,10 +175,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                     // Primary Action Button
                     CapsuleButton(
-                      label: isLastStep ? 'Get Started' : 'Next >',
-                      icon: isLastStep
-                          ? Icons.arrow_forward_rounded
-                          : Icons.chevron_right_rounded,
+                      label: isLastStep ? 'Get Started' : 'Next',
                       showGlow: true,
                       onPressed: _onNext,
                     ),

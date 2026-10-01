@@ -90,7 +90,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         return value
 
     def validate_blood_group(self, value):
-        if self.instance and self.instance.blood_group:
+        if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
             if self.instance.blood_group.strip() != value.strip():
                 request = self.context.get('request')
                 if not (request and request.user and request.user.is_staff):

@@ -28,16 +28,16 @@ class MultiFieldModelBackend(ModelBackend):
 
         # Phone digits extraction and normalization
         phone_digits = ''.join(filter(str.isdigit, clean_user))
-        normalized_phone = None
+        phone_variants = set()
         if len(phone_digits) >= 10:
-            if phone_digits.startswith('880'):
-                normalized_phone = '0' + phone_digits[3:]
-            elif phone_digits.startswith('88'):
-                normalized_phone = phone_digits[2:]
-            elif phone_digits.startswith('0'):
-                normalized_phone = phone_digits
-            else:
-                normalized_phone = '0' + phone_digits
+            core_10 = phone_digits[-10:]
+            phone_variants.add(core_10)
+            phone_variants.add('0' + core_10)
+            phone_variants.add('880' + core_10)
+            phone_variants.add('+880' + core_10)
+            phone_variants.add(phone_digits)
+            if not phone_digits.startswith('+'):
+                phone_variants.add('+' + phone_digits)
 
         # Query filter building
         q = (
@@ -47,12 +47,12 @@ class MultiFieldModelBackend(ModelBackend):
             Q(last_name__iexact=clean_user)
         )
 
-        if normalized_phone:
+        for pv in phone_variants:
             q |= (
-                Q(username=normalized_phone) |
-                Q(username__endswith=normalized_phone) |
-                Q(donorprofile__phone_number=normalized_phone) |
-                Q(donorprofile__phone_number__endswith=normalized_phone)
+                Q(username=pv) |
+                Q(username__endswith=pv) |
+                Q(donorprofile__phone_number=pv) |
+                Q(donorprofile__phone_number__endswith=pv)
             )
 
         if ' ' in clean_user:

@@ -6,6 +6,7 @@ import 'package:blood_pulse/features/assistant/presentation/widgets/pulseai_over
 import 'package:blood_pulse/core/app_router.dart';
 import 'package:blood_pulse/features/assistant/presentation/widgets/heartbeat_icon.dart';
 import 'package:blood_pulse/core/providers/pulse_ai_visibility_provider.dart';
+import 'package:blood_pulse/features/auth/presentation/providers/auth_notifier.dart';
 
 void main() {
   testWidgets('PulseAiOverlay FAB popup does not overflow at textScale 1.0 and 1.3', (WidgetTester tester) async {
@@ -25,6 +26,23 @@ void main() {
           overrides: [
             pulseAiVisibilityProvider.overrideWith((ref) => PulseAiVisibilityNotifier()),
             appRouterProvider.overrideWithValue(router),
+            authProvider.overrideWith(() => AuthNotifier(
+              initialState: const AuthState(
+                status: AuthStatus.authenticated,
+                user: UserProfile(
+                  fullName: 'Test User',
+                  email: 'test@example.com',
+                  primaryPhone: '01700000000',
+                  age: 25,
+                  gender: 'Male',
+                  bloodGroup: 'O+',
+                  category: 'civilian',
+                  categoryDetails: {},
+                  neverDonated: true,
+                  totalBagsDonated: 0,
+                ),
+              ),
+            )),
           ],
           child: MaterialApp.router(
             routerConfig: router,

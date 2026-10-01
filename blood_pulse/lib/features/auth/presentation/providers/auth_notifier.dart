@@ -219,6 +219,7 @@ class AuthNotifier extends Notifier<AuthState> {
       debugPrint('[GoogleSignIn] ▶ Starting Google Sign-In flow...');
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com',
         scopes: ['email', 'profile'],
       );
 

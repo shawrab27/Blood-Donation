@@ -17,9 +17,9 @@ class SplashVideoScreen extends StatefulWidget {
 }
 
 class _SplashVideoScreenState extends State<SplashVideoScreen> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _hasNavigated = false;
-  bool _isError = false;
+  Timer? _fallbackTimer;
 
   @override
   void initState() {
@@ -30,23 +30,33 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
   }
 
   Future<void> _initializeAndPlayVideo() async {
-    _controller = VideoPlayerController.asset('assets/vedio/splash.mp4');
+    // Safety max timer (3.5s total) so the user is never stuck waiting
+    _fallbackTimer = Timer(const Duration(milliseconds: 3500), () {
+      if (mounted && !_hasNavigated) {
+        _navigateToNext();
+      }
+    });
 
     try {
-      await _controller.initialize();
+      final controller = VideoPlayerController.asset(
+        'assets/vedio/splash.mp4',
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+      _controller = controller;
+
+      // Timeout initialization to 1.8s so slow decoders do not hang the app
+      await controller.initialize().timeout(const Duration(milliseconds: 1800));
       if (!mounted) return;
 
-      _controller.addListener(_videoListener);
-      await _controller.setLooping(false);
-      await _controller.play();
+      controller.addListener(_videoListener);
+      await controller.setLooping(false);
+      await controller.play();
 
       setState(() {});
     } catch (e) {
-      debugPrint('[SplashVideoScreen] Video initialization failed: $e');
+      debugPrint('[SplashVideoScreen] Video initialization failed or timed out: $e');
       if (mounted) {
-        setState(() => _isError = true);
-        // Fallback: navigate after a brief moment if video fails to initialize
-        Timer(const Duration(milliseconds: 1200), _navigateToNext);
+        Timer(const Duration(milliseconds: 800), _navigateToNext);
       }
     }
   }
@@ -54,17 +64,19 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
   void _videoListener() {
     if (_hasNavigated || !mounted) return;
 
-    final value = _controller.value;
-    if (value.isInitialized &&
-        value.duration > Duration.zero &&
-        value.position >= value.duration) {
+    final controller = _controller;
+    if (controller != null &&
+        controller.value.isInitialized &&
+        controller.value.duration > Duration.zero &&
+        controller.value.position >= controller.value.duration) {
       _navigateToNext();
     }
   }
 
   Future<void> _navigateToNext() async {
-    if (_hasNavigated || !mounted) return;
+    if (_hasNavigated) return;
     _hasNavigated = true;
+    _fallbackTimer?.cancel();
 
     // Restore standard UI mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -89,14 +101,17 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
   @override
   void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _controller.removeListener(_videoListener);
-    _controller.dispose();
+    _fallbackTimer?.cancel();
+    _controller?.removeListener(_videoListener);
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     const darkThemeBg = Color(0xFF271816);
+    final controller = _controller;
+    final isInitialized = controller != null && controller.value.isInitialized;
 
     return Scaffold(
       backgroundColor: darkThemeBg,
@@ -106,25 +121,58 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // ── Full-Screen Video Player ────────────────────────────────────
-            SizedBox.expand(
-              child: _controller.value.isInitialized
-                  ? FittedBox(
+            // ── Fallback / Loading Brand Logo (shown immediately so no blank wait) ──
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/images/Blood Pulse logo.jpg',
+                      width: 80,
+                      height: 80,
                       fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _controller.value.size.width,
-                        height: _controller.value.size.height,
-                        child: VideoPlayer(_controller),
-                      ),
-                    )
-                  : _isError
-                      ? const SizedBox.shrink()
-                      : const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFFC30121),
-                          ),
-                        ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'BloodPulse',
+                    style: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Every Drop Counts',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      color: Color(0xFFE0E0E0),
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
             ),
+
+            // ── Full-Screen Video Player (smoothly overlays once ready) ──────
+            if (isInitialized)
+              SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: controller.value.size.width,
+                    height: controller.value.size.height,
+                    child: VideoPlayer(controller),
+                  ),
+                ),
+              ),
+
             // Skip button in top-right corner
             Positioned(
               top: MediaQuery.paddingOf(context).top + 16,

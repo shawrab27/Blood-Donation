@@ -255,7 +255,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                                   child: CapsuleButton(
                                     label: isBangla
                                         ? 'এগিয়ে যান'
-                                        : 'Continue / এগিয়ে যান',
+                                        : 'Continue',
                                     icon: Icons.arrow_forward_rounded,
                                     showGlow: true,
                                     onPressed: () {
