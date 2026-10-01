@@ -186,10 +186,10 @@ class _FeedViewState extends ConsumerState<FeedView> {
   }
 
   Widget _buildSegmentFilterBar(String? currentFilter) {
-    final segments = [
-      {'id': null, 'label': 'All Updates', 'icon': Icons.dynamic_feed_rounded},
-      {'id': 'campaign', 'label': 'Campaigns & Drives 🩸', 'icon': Icons.campaign_rounded},
-      {'id': 'emergency', 'label': 'Emergency SOS 🚨', 'icon': Icons.emergency_rounded},
+    const segments = [
+      {'id': null, 'label': 'All Updates'},
+      {'id': 'campaign', 'label': 'Campaign'},
+      {'id': 'emergency', 'label': 'Emergency'},
     ];
 
     return SingleChildScrollView(
@@ -201,11 +201,6 @@ class _FeedViewState extends ConsumerState<FeedView> {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              avatar: Icon(
-                seg['icon'] as IconData,
-                size: 15,
-                color: isSelected ? Colors.white : const Color(0xFFC30121),
-              ),
               label: Text(seg['label'] as String),
               selected: isSelected,
               onSelected: (selected) {
