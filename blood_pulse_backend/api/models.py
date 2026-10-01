@@ -1362,8 +1362,29 @@ class Institution(models.Model):
 
 
     def __str__(self):
-
         return f"{self.name} ({self.institution_type})"
+
+
+class InstitutionAlias(models.Model):
+    alias = models.CharField(max_length=100, db_index=True)
+    eiin = models.CharField(max_length=50, db_index=True)
+    institution = models.ForeignKey(
+        'Institution',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='aliases',
+    )
+    source_note = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        db_table = 'api_institution_alias'
+        verbose_name_plural = 'Institution Aliases'
+        unique_together = ('alias', 'eiin')
+
+    def __str__(self):
+        return f"{self.alias} -> {self.eiin}"
+
 
 
 
