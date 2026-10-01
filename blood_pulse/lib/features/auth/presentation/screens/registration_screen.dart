@@ -10,13 +10,13 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:blood_pulse/services/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../providers/auth_notifier.dart';
-import '../providers/otp_provider.dart';
+import '../widgets/institution_autocomplete.dart';
+
 
 enum _Gender { male, female }
 
@@ -83,8 +83,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   String? _confirmBloodGroup;
   String? _selectedInstitutionId;
   String? _selectedUpazilaId;
-  bool _manualInstitution = false;
   final _apiClient = ApiClient();
+
 
   String? _selectedDivision;
   String? _selectedZila;
@@ -188,9 +188,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     if (_category == _UserCategory.student) {
       if (_selectedInstitutionId != null) {
         catDetails['institution_id'] = _selectedInstitutionId!;
-      } else {
-        catDetails['institute'] = _instituteCtrl.text.trim();
       }
+      catDetails['institute'] = _instituteCtrl.text.trim();
+
+
       if (_classCtrl.text.isNotEmpty) catDetails['class'] = _classCtrl.text.trim();
       if (_groupCtrl.text.isNotEmpty) catDetails['group'] = _groupCtrl.text.trim();
       if (_deptCtrl.text.isNotEmpty) catDetails['dept'] = _deptCtrl.text.trim();
@@ -768,71 +769,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _fieldLabel('Institution / University'),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _manualInstitution = !_manualInstitution;
-                    _instituteCtrl.clear();
-                    _selectedInstitutionId = null;
-                  });
-                },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  _manualInstitution ? 'Search instead' : 'Enter manually',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFFC30121)),
-                ),
-              ),
-            ],
-          ),
+          _fieldLabel('Institution / University'),
           const SizedBox(height: 6),
-          if (_manualInstitution)
-            CustomInputField(
-              controller: _instituteCtrl,
-              hint: 'Enter your institution name',
-              prefixIcon: Icons.school_outlined,
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
-            )
-          else
-            TypeAheadField<Map<String, dynamic>>(
-              controller: _instituteCtrl,
-              builder: (context, controller, focusNode) {
-                return CustomInputField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  hint: 'Search institution...',
-                  prefixIcon: Icons.school_outlined,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
-                );
-              },
-              debounceDuration: const Duration(milliseconds: 300),
-              suggestionsCallback: (pattern) async {
-                if (pattern.trim().length < 2) return [];
-                return await _apiClient.searchInstitutions(pattern);
-              },
-              itemBuilder: (context, suggestion) {
-                return ListTile(
-                  title: Text(suggestion['name'] ?? ''),
-                  subtitle: Text("${suggestion['institution_type'] ?? ''} • ${suggestion['eiin'] ?? ''}"),
-                );
-              },
-              onSelected: (suggestion) {
-                _instituteCtrl.text = suggestion['name'] ?? '';
-                _selectedInstitutionId = suggestion['id']?.toString();
-              },
-              emptyBuilder: (context) => const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('No institutions found.'),
-              ),
-            ),
+          InstitutionAutocomplete(
+            controller: _instituteCtrl,
+            apiClient: _apiClient,
+            validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
+            onSelected: (suggestion) {
+              _selectedInstitutionId = suggestion?['id']?.toString();
+            },
+          ),
           const SizedBox(height: 16),
+
 
           _fieldLabel('Department / Subject'),
           const SizedBox(height: 6),

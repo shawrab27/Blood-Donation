@@ -454,27 +454,27 @@ class ApiClient {
   static List<Map<String, dynamic>>? _cachedLocalInstitutions;
 
   Future<List<Map<String, dynamic>>> searchInstitutions(String query) async {
-    final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isEmpty) return [];
+    final cleanQuery = query.trim();
+    if (cleanQuery.length < 2) return [];
 
     // 1. Try Live API Endpoint first
     try {
       final response = await _client
-          .get(Uri.parse(_normalizeUrl('institutions/search/?q=${Uri.encodeComponent(query)}')))
+          .get(Uri.parse(_normalizeUrl('institutions/search/?q=${Uri.encodeComponent(cleanQuery)}')))
           .timeout(const Duration(seconds: 4));
       
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        final list = data.cast<Map<String, dynamic>>();
-        if (list.isNotEmpty) return list;
+        return data.cast<Map<String, dynamic>>();
       }
     } catch (e) {
       debugPrint('[ApiClient] searchInstitutions API error: $e. Falling back to bundled dataset.');
     }
 
-    // 2. Bundled local JSON fallback with case-insensitive substring match
-    return _searchLocalInstitutions(cleanQuery);
+    // 2. Bundled local JSON fallback with case-insensitive substring match on network error
+    return _searchLocalInstitutions(cleanQuery.toLowerCase());
   }
+
 
   Future<List<Map<String, dynamic>>> _searchLocalInstitutions(String query) async {
     try {
