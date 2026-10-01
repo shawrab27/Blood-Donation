@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import '../../../services/api_client.dart'; // Standard API client using token
 import '../domain/models/assistant_message_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

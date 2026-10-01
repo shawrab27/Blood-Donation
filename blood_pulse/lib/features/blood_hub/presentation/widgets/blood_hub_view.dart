@@ -186,6 +186,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           subtitle: isBangla
               ? 'রক্তের গ্রুপ, অবস্থান এবং উপস্থাতর উপর ভিত্তি করে আমাদের স্থানীয় যাচাইকৃত দাতাদের ডাটাবেস ব্রাউজ করুন।'
               : 'Access our verified database of local donors filtered by blood type, proximity, and availability.',
+          badgeWidget: null,
           buttonText: isBangla ? 'এখনই খুঁজুন ➔' : 'Find Now ➔',
           onTap: () => context.push('/blood-hub/search'),
         ),
@@ -201,6 +202,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           subtitle: isBangla
               ? 'জাতীয় দুর্যোগ বা ব্যক্তিগত জরুরি অবস্থায় তাৎক্ষণিক ওয়েভ অ্যালার্ট সক্রিয় করুন।'
               : 'Activate wave alerts for national disasters or personal emergencies — connects you fast.',
+          badgeWidget: null,
           buttonText: isBangla ? 'এখনই সাহায্য নিন ➔' : 'Get Help Now ➔',
           onTap: () => context.push('/emergency'),
         ),

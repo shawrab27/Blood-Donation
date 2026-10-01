@@ -10,7 +10,6 @@ import '../../domain/models/assistant_message_model.dart';
 import '../../../../widgets/pulse_loading_indicator.dart';
 import '../../../../core/widgets/avatar_helper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
-import 'dart:math' as math;
 
 class AssistantScreen extends ConsumerStatefulWidget {
   final String? screenContext;
