@@ -321,6 +321,10 @@ class AuthNotifier extends Notifier<AuthState> {
       String msg = e.toString().replaceAll('Exception: ', '');
       if (kIsWeb && msg.contains('Null check operator')) {
         msg = 'Google Sign-In on Web requires a Google Cloud Web Client ID. Please test Google Sign-In on your mobile device (flutter run), or log in with Username/Password.';
+      } else if (msg.contains('ApiException: 10') || msg.contains('Api10')) {
+        msg = 'Google Sign-In configuration mismatch (ApiException 10). The app signing certificate must be registered in Firebase Console.';
+      } else if (msg.contains('network_error') || msg.contains('7:')) {
+        msg = 'Network error while connecting to Google. Please check your internet connection.';
       }
       state = state.copyWith(
         status: AuthStatus.error,

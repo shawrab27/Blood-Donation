@@ -52,9 +52,9 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("release")
+            // Signed with debug keystore to match Firebase registered SHA-1 (42:87:15:C4:DA:C5:E7:60:83:9D:1D:60:6C:C1:50:4D:23:8B:87:C1).
+            // When building for Play Store, add release-key.jks SHA-1 to Firebase Console and switch to signingConfigs.getByName("release").
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             isShrinkResources = false
         }

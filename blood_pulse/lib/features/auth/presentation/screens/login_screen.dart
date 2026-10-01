@@ -270,7 +270,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               CapsuleButton(
                                 label: 'Continue with Google',
                                 isOutlined: true,
-                                icon: Icons.g_mobiledata_rounded,
+                                leading: Image.asset(
+                                  'assets/images/google_logo.png',
+                                  width: 20,
+                                  height: 20,
+                                ),
                                 backgroundColor: Colors.white,
                                 foregroundColor: AppColors.secondary,
                                 isLoading: auth.isLoading,

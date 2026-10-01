@@ -28,6 +28,7 @@ class CapsuleButton extends StatefulWidget {
     required this.label,
     this.onPressed,
     this.icon,
+    this.leading,
     this.isOutlined = false,
     this.isLoading = false,
     this.showGlow = false,
@@ -45,6 +46,9 @@ class CapsuleButton extends StatefulWidget {
 
   /// Optional leading icon.
   final IconData? icon;
+
+  /// Optional custom leading widget (takes priority over [icon]).
+  final Widget? leading;
 
   /// When true, renders an outlined (ghost) variant.
   final bool isOutlined;
@@ -112,7 +116,10 @@ class _CapsuleButtonState extends State<CapsuleButton>
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (widget.icon != null) ...[
+          if (widget.leading != null) ...[
+            widget.leading!,
+            const SizedBox(width: 10),
+          ] else if (widget.icon != null) ...[
             Icon(widget.icon, size: 20, color: fg),
             const SizedBox(width: 8),
           ],
