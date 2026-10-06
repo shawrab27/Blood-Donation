@@ -15,7 +15,7 @@ def check_numeric_claims(reply_text: str, kb_texts: list[str]) -> bool:
         return True
     if not kb_texts:
         # If no knowledge base texts available, reject any clinical numeric claims
-        units_pattern = r'\b(\d+(?:\.\d+)?)\s*(days?|months?|years?|weeks?|hours?|kg|g/dl|ml|দিন|দিনের|মাস|মাসের|বছর|বছরের|ঘণ্টা|ঘণ্টার|কেজি|কেজির|মিলি)\b'
+        units_pattern = r'(\d+(?:\.\d+)?)\s*(days?|months?|years?|weeks?|hours?|kg|g/dl|ml|দিন|দিনের|মাস|মাসের|বছর|বছরের|ঘণ্টা|ঘণ্টার|ঘন্টা|ঘন্টার|কেজি|কেজির|মিলি)'
         norm_reply = convert_bangla_digits(reply_text)
         return not bool(re.search(units_pattern, norm_reply, re.IGNORECASE))
         
@@ -28,7 +28,7 @@ def check_numeric_claims(reply_text: str, kb_texts: list[str]) -> bool:
     kb_numbers = set(re.findall(r'\b\d+(?:\.\d+)?\b', kb_norm))
 
     # Pattern for numbers tied to clinical / eligibility units
-    units_pattern = r'\b(\d+(?:\.\d+)?)\s*(days?|months?|years?|weeks?|hours?|kg|g/dl|ml|দিন|দিনের|মাস|মাসের|বছর|বছরের|ঘণ্টা|ঘণ্টার|কেজি|কেজির|মিলি)\b'
+    units_pattern = r'(\d+(?:\.\d+)?)\s*(days?|months?|years?|weeks?|hours?|kg|g/dl|ml|দিন|দিনের|মাস|মাসের|বছর|বছরের|ঘণ্টা|ঘণ্টার|ঘন্টা|ঘন্টার|কেজি|কেজির|মিলি)'
     matches = list(re.finditer(units_pattern, reply_norm, re.IGNORECASE))
     
     for match in matches:
