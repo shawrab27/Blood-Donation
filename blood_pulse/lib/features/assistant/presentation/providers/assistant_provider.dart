@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -150,10 +151,16 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
       _saveToLocal();
     } on AssistantApiException catch (e) {
       state = state.copyWith(isSending: false, errorCode: e.code);
+      rethrow;
     } on SocketException {
       state = state.copyWith(isSending: false, errorCode: 'NO_INTERNET');
+      rethrow;
+    } on TimeoutException {
+      state = state.copyWith(isSending: false, errorCode: 'BUSY');
+      rethrow;
     } catch (e) {
       state = state.copyWith(isSending: false, errorCode: 'GENERIC_ERROR');
+      rethrow;
     }
   }
 

@@ -2,6 +2,8 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 // ignore_for_file: avoid_print
+import 'dart:async';
+import 'dart:io';
 import 'package:blood_pulse/features/assistant/domain/models/assistant_message_model.dart';
 import 'package:blood_pulse/features/assistant/presentation/providers/assistant_provider.dart';
 import 'package:blood_pulse/features/assistant/presentation/screens/assistant_screen.dart';
@@ -46,6 +48,18 @@ class _FakeAssistantNotifier extends StateNotifier<AssistantState>
 
   @override
   Future<void> clearChat() async {}
+}
+
+class _ErrorThrowingNotifier extends _FakeAssistantNotifier {
+  final Object errorToThrow;
+  _ErrorThrowingNotifier(AssistantState initial, this.errorToThrow)
+      : super(initial);
+
+  @override
+  Future<void> sendMessage(String text, String locale,
+      {String? screenContext}) async {
+    throw errorToThrow;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -427,5 +441,70 @@ void main() {
       expect(find.textContaining('You must weigh at least 50kg to donate blood'), findsOneWidget);
     });
   });
+
+  // ── 11. FRIENDLY ERROR DIALOG ON GEMINI API ERROR (NO RED SCREEN) ───────────
+  group('PulseAI Error Handling & Dialog', () {
+    testWidgets('SocketException shows Connection Issue dialog', (tester) async {
+      final fake = _ErrorThrowingNotifier(
+        _state(),
+        const SocketException('Failed host lookup'),
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          assistantProvider.overrideWith((ref) => fake),
+        ],
+        child: const MaterialApp(home: AssistantScreen()),
+      ));
+      await tester.pump();
+
+      // Enter text and submit
+      final input = find.byType(TextField);
+      await tester.enterText(input, 'Hello PulseAI');
+      await tester.pump();
+
+      final sendBtn = find.byIcon(Icons.arrow_upward_rounded);
+      await tester.tap(sendBtn);
+      await tester.pumpAndSettle();
+
+      // Expect AlertDialog with Connection Issue title
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Connection Issue'), findsOneWidget);
+      expect(find.textContaining('Please call our hotline'), findsOneWidget);
+
+      // Tap OK
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('Generic exception shows Something went wrong dialog', (tester) async {
+      final fake = _ErrorThrowingNotifier(
+        _state(),
+        Exception('500 Internal Server Error'),
+      );
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          assistantProvider.overrideWith((ref) => fake),
+        ],
+        child: const MaterialApp(home: AssistantScreen()),
+      ));
+      await tester.pump();
+
+      final input = find.byType(TextField);
+      await tester.enterText(input, 'Hello PulseAI');
+      await tester.pump();
+
+      final sendBtn = find.byIcon(Icons.arrow_upward_rounded);
+      await tester.tap(sendBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Something went wrong'), findsOneWidget);
+      expect(find.text('Please try again'), findsOneWidget);
+    });
+  });
 }
+
 

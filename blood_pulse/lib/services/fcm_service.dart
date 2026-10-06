@@ -236,7 +236,11 @@ class FcmService {
       debugPrint('🔑 Token: $token');
         if (token != null) {
           try {
-            await ApiClient().post('/api/users/update-fcm/', body: {'token': token});
+            final response = await ApiClient().post('/api/users/update-fcm/', body: {
+              'token': token,
+              'fcm_token': token,
+            });
+            debugPrint('[DEBUG] FCM token posted: ${response.statusCode}');
             debugPrint('[FCM] Token registered with Django backend.');
           } catch (apiErr) {
             debugPrint('[FCM] Failed to register token with backend: $apiErr');
@@ -249,9 +253,29 @@ class FcmService {
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
         debugPrint('[FCM] token refreshed: $newToken');
         try {
-          await ApiClient().post('/api/users/update-fcm/', body: {'token': newToken});
+          final response = await ApiClient().post('/api/users/update-fcm/', body: {
+            'token': newToken,
+            'fcm_token': newToken,
+          });
+          debugPrint('[DEBUG] FCM token posted: ${response.statusCode}');
         } catch (apiErr) {}
       });
+  }
+
+  /// Callable helper for posting FCM device token directly.
+  Future<void> updateFCMToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        final response = await ApiClient().post(
+          '/api/users/update-fcm/',
+          body: {'fcm_token': token, 'token': token},
+        );
+        debugPrint('[DEBUG] FCM token posted: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('[DEBUG] FCM update error: $e');
+    }
   }
 
   // ── Topic Subscription ─────────────────────────────────────────────────

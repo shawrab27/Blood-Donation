@@ -9,7 +9,7 @@ from api.models import DonorProfile
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_fcm_view(request):
-    token = request.data.get('token')
+    token = request.data.get('token') or request.data.get('fcm_token')
     if not token:
         return Response({"error": "Token is required"}, status=400)
     

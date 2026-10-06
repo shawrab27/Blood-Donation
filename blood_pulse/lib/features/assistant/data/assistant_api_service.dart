@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import '../../../services/api_client.dart'; // Standard API client using token
 import '../domain/models/assistant_message_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +14,11 @@ final assistantApiProvider = Provider((ref) => AssistantApiService(ApiClient()))
 class AssistantApiException implements Exception {
   final String code;
   final String message;
-  AssistantApiException(this.code, this.message);
+  final int? statusCode;
+  AssistantApiException(this.code, this.message, {this.statusCode});
+
+  @override
+  String toString() => 'AssistantApiException($code: $message, statusCode: $statusCode)';
 }
 
 class AssistantApiService {
@@ -21,7 +26,13 @@ class AssistantApiService {
 
   AssistantApiService(this._client);
 
-  Future<AssistantMessage> sendMessage(String message, String locale, {int? conversationId, String? screenContext}) async {
+  Future<AssistantMessage> sendMessage(
+    String message,
+    String locale, {
+    int? conversationId,
+    String? screenContext,
+    int attempt = 0,
+  }) async {
     try {
       final response = await _client.post(
         '/api/assistant/chat/',
@@ -36,6 +47,17 @@ class AssistantApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final json = jsonDecode(response.body);
         return AssistantMessage.fromJson(json);
+      }
+
+      if (response.statusCode == 429 && attempt < 3) {
+        await Future.delayed(Duration(seconds: pow(2, attempt).toInt()));
+        return await sendMessage(
+          message,
+          locale,
+          conversationId: conversationId,
+          screenContext: screenContext,
+          attempt: attempt + 1,
+        );
       }
 
       String code;
@@ -54,11 +76,11 @@ class AssistantApiService {
       } else {
         code = 'GENERIC_ERROR';
       }
-      throw AssistantApiException(code, response.body);
+      throw AssistantApiException(code, response.body, statusCode: response.statusCode);
     } on SocketException {
-      throw AssistantApiException('NO_INTERNET', 'No internet connection');
+      rethrow;
     } on TimeoutException {
-      throw AssistantApiException('BUSY', 'Request timed out');
+      rethrow;
     }
   }
 

@@ -1,11 +1,14 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/assistant_provider.dart';
+import '../../data/assistant_api_service.dart';
 import '../../domain/models/assistant_message_model.dart';
 import '../../../../widgets/pulse_loading_indicator.dart';
 import '../../../../core/widgets/avatar_helper.dart';
@@ -62,11 +65,95 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     );
   }
 
-  void _sendMessage(String text) {
+  String _lastQuery = '';
+
+  Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+    final userQuery = text.trim();
+    _lastQuery = userQuery;
     _textController.clear();
-    ref.read(assistantProvider.notifier).sendMessage(text, 'en', screenContext: widget.screenContext);
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+
+    final currentLocale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+
+    try {
+      await ref.read(assistantProvider.notifier).sendMessage(
+            userQuery,
+            currentLocale,
+            screenContext: widget.screenContext,
+          );
+    } catch (e) {
+      // Log silently (no stack trace to user)
+      debugPrint('[DEBUG] Gemini error: ${e.toString()}');
+
+      if (!mounted) return;
+
+      // Show localized friendly message
+      if (e is SocketException || e is TimeoutException) {
+        _showError(
+          context,
+          title: 'কানেকশন সমস্যা', // Bangla
+          message:
+              'আমি এখন সাহায্য করতে পারছি না। অনুগ্রহ করে আমাদের হটলাইন ফোন করুন: +880-17-XXXX-XXXX',
+          englishTitle: 'Connection Issue', // English
+          englishMessage:
+              'I\'m unable to help right now. Please call our hotline: +880-17-XXXX-XXXX',
+        );
+      } else if (e is AssistantApiException &&
+          (e.code == 'NO_INTERNET' || e.code == 'BUSY')) {
+        _showError(
+          context,
+          title: 'কানেকশন সমস্যা',
+          message:
+              'আমি এখন সাহায্য করতে পারছি না। অনুগ্রহ করে আমাদের হটলাইন ফোন করুন: +880-17-XXXX-XXXX',
+          englishTitle: 'Connection Issue',
+          englishMessage:
+              'I\'m unable to help right now. Please call our hotline: +880-17-XXXX-XXXX',
+        );
+      } else {
+        _showError(
+          context,
+          title: 'একটি সমস্যা হয়েছে',
+          message: 'আবার চেষ্টা করুন',
+          englishTitle: 'Something went wrong',
+          englishMessage: 'Please try again',
+        );
+      }
+    }
+  }
+
+  Future<void> _showError(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String englishTitle,
+    required String englishMessage,
+  }) async {
+    final isBangla = (Localizations.maybeLocaleOf(context)?.languageCode == 'bn') ||
+        (GetLocale.locale?.languageCode == 'bn');
+
+    return showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          isBangla ? title : englishTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+        ),
+        content: Text(
+          isBangla ? message : englishMessage,
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK',
+                style: TextStyle(
+                    color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -163,9 +250,21 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   child: _PulseAiErrorBanner(
                                     errorCode: state.errorCode!,
-                                    onRetry: () => ref
-                                        .read(assistantProvider.notifier)
-                                        .sendMessage('Retry', 'en', screenContext: widget.screenContext),
+                                    onRetry: () {
+                                      if (_lastQuery.isNotEmpty) {
+                                        _sendMessage(_lastQuery);
+                                      } else {
+                                        final lastUserMsg = state.messages.reversed
+                                            .firstWhere(
+                                              (m) => m.isUser,
+                                              orElse: () => AssistantMessage(isUser: true, text: ''),
+                                            )
+                                            .text;
+                                        if (lastUserMsg.isNotEmpty) {
+                                          _sendMessage(lastUserMsg);
+                                        }
+                                      }
+                                    },
                                   ),
                                 );
                             }
@@ -608,8 +707,13 @@ class TypingIndicator extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // ERROR BANNER — distinct friendly messages per errorCode
 // ─────────────────────────────────────────────────────────────────────────────
+
+class GetLocale {
+  static Locale? locale;
+}
 
 class _PulseAiErrorBanner extends StatelessWidget {
   const _PulseAiErrorBanner({required this.errorCode, required this.onRetry});
@@ -617,25 +721,58 @@ class _PulseAiErrorBanner extends StatelessWidget {
   final String errorCode;
   final VoidCallback onRetry;
 
-  static _ErrorInfo _infoFor(String code) {
+  static _ErrorInfo _infoFor(String code, bool isBangla) {
     switch (code) {
       case 'NO_INTERNET':
-        return const _ErrorInfo(Icons.wifi_off_rounded, 'No internet connection', 'Check your connection and try again.');
+        return _ErrorInfo(
+          Icons.wifi_off_rounded,
+          isBangla ? 'ইন্টারনেট সংযোগ নেই' : 'No internet connection',
+          isBangla
+              ? 'আপনার ইন্টারনেট সংযোগ পরীক্ষা করে পুনরায় চেষ্টা করুন।'
+              : 'Check your connection and try again.',
+        );
       case 'NOT_AVAILABLE':
-        return const _ErrorInfo(Icons.smart_toy_outlined, 'PulseAI is not available yet', 'This feature is not yet enabled on the server.');
+        return _ErrorInfo(
+          Icons.smart_toy_outlined,
+          isBangla ? 'PulseAI এখনও উপলব্ধ নয়' : 'PulseAI is not available yet',
+          isBangla
+              ? 'এই সুবিধাটি সার্ভারে এখনও চালু করা হয়নি।'
+              : 'This feature is not yet enabled on the server.',
+        );
       case 'LOGIN_REQUIRED':
-        return const _ErrorInfo(Icons.lock_outline_rounded, 'Please log in again', 'Your session may have expired. Re-open the app and sign in.');
+        return _ErrorInfo(
+          Icons.lock_outline_rounded,
+          isBangla ? 'অনুগ্রহ করে আবার লগইন করুন' : 'Please log in again',
+          isBangla
+              ? 'আপনার সেশন শেষ হয়ে গেছে। পুনরায় অ্যাপে লগইন করুন।'
+              : 'Your session may have expired. Re-open the app and sign in.',
+        );
       case 'RATE_LIMITED':
-        return const _ErrorInfo(Icons.hourglass_top_rounded, 'Too many messages', 'You\'ve sent too many messages. Please wait a moment before trying again.');
+        return _ErrorInfo(
+          Icons.hourglass_top_rounded,
+          isBangla ? 'অতিরিক্ত বার্তা' : 'Too many messages',
+          isBangla
+              ? 'আপনি অনেক বার্তা পাঠিয়েছেন। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।'
+              : 'You\'ve sent too many messages. Please wait a moment before trying again.',
+        );
       default:
         // Covers GENERIC_ERROR, network timeouts, 5xx
-        return const _ErrorInfo(Icons.cloud_off_rounded, 'PulseAI is busy', 'Something went wrong on our end. Please try again in a moment.');
+        return _ErrorInfo(
+          Icons.cloud_off_rounded,
+          isBangla ? 'একটি সমস্যা হয়েছে' : 'PulseAI is busy',
+          isBangla
+              ? 'কিছুক্ষণ পর আবার চেষ্টা করুন।'
+              : 'Something went wrong on our end. Please try again in a moment.',
+        );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final info = _infoFor(errorCode);
+    final isBangla = (Localizations.maybeLocaleOf(context)?.languageCode == 'bn') ||
+        (GetLocale.locale?.languageCode == 'bn');
+    final info = _infoFor(errorCode, isBangla);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -651,19 +788,23 @@ class _PulseAiErrorBanner extends StatelessWidget {
           Text(
             info.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
+            style: const TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFC30121)),
           ),
           const SizedBox(height: 4),
           Text(
             info.body,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.black87),
+            style: const TextStyle(
+                fontFamily: 'Inter', fontSize: 13, color: Colors.black87),
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Retry'),
+            label: Text(isBangla ? 'আবার চেষ্টা করুন' : 'Retry'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFC30121),
               foregroundColor: Colors.white,
