@@ -65,12 +65,10 @@ def call_gemini(user_message: str, history, kb_entries, guide_entries, temperatu
         response_schema=AssistantReplySchema,
     )
     
-    # Attempt generation with a simple retry
-    for attempt in range(2):
+    # Attempt generation with exponential backoff retry on 503/429
+    max_attempts = 4
+    for attempt in range(max_attempts):
         try:
-            # We don't have a direct timeout config in the new SDK types GenerateContentConfig,
-            # but usually it's handled at the client or httpx level if needed. 
-            # We will rely on standard behavior or add client timeout if supported.
             start_time = time.time()
             response = client.models.generate_content(
                 model=GEMINI_MODEL,
@@ -94,8 +92,11 @@ def call_gemini(user_message: str, history, kb_entries, guide_entries, temperatu
             }
             
         except Exception as e:
-            # Usually we catch generic exception for 429/503 from the SDK
-            if attempt == 0 and ("429" in str(e) or "503" in str(e) or "Too Many Requests" in str(e)):
-                time.sleep(1.5)
+            # Catch rate limit or temporary server capacity spikes (429/503)
+            err_str = str(e)
+            if attempt < max_attempts - 1 and ("429" in err_str or "503" in err_str or "Too Many Requests" in err_str or "UNAVAILABLE" in err_str):
+                backoff = (attempt + 1) * 2.0
+                time.sleep(backoff)
                 continue
             raise e
+
