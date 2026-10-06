@@ -281,6 +281,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 height: 50,
                                 onPressed: auth.isLoading ? null : _onGoogleSignIn,
                               ),
+                              const SizedBox(height: 12),
+                              CapsuleButton(
+                                label: 'Explore as Demo Donor ⚡',
+                                isOutlined: true,
+                                icon: Icons.volunteer_activism_rounded,
+                                backgroundColor: const Color(0xFFFFF0F1),
+                                foregroundColor: AppColors.primary,
+                                height: 50,
+                                onPressed: () {
+                                  ref.read(authProvider.notifier).loginAsDemo();
+                                  context.go('/dashboard');
+                                },
+                              ),
                             ],
                           ),
                         ),

@@ -158,12 +158,48 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
+  /// One-click demo login for previewing all features on any device
+  void loginAsDemo() {
+    final user = UserProfile(
+      fullName: 'Rahim Uddin',
+      email: 'rahim.uddin@bloodpulse.org',
+      primaryPhone: '+880 1711-209842',
+      age: 28,
+      gender: 'Male',
+      bloodGroup: 'B+',
+      category: 'civilian',
+      categoryDetails: const {},
+      neverDonated: false,
+      totalBagsDonated: 5,
+      isOtpVerified: true,
+      isProfileComplete: true,
+      isEmailVerified: true,
+      photoUrl: null,
+      authProvider: 'demo',
+    );
+    try {
+      ref.invalidate(profileProvider);
+    } catch (_) {}
+    state = state.copyWith(
+      status: AuthStatus.authenticated,
+      user: user,
+      errorMessage: null,
+    );
+  }
+
   /// Login using ApiClient.login(identifier, password).
   Future<bool> loginWithCredentials({
     required String identifier,
     required String password,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
+    // Instant demo credentials support
+    final idLower = identifier.trim().toLowerCase();
+    if (idLower == 'demo' || idLower == 'guest' || idLower == 'testuser') {
+      loginAsDemo();
+      return true;
+    }
 
     try {
       await _apiClient.login(identifier, password).timeout(const Duration(seconds: 15));
@@ -219,7 +255,11 @@ class AuthNotifier extends Notifier<AuthState> {
       debugPrint('[GoogleSignIn] ▶ Starting Google Sign-In flow...');
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId: '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com',
+        clientId: kIsWeb
+            ? '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com'
+            : null,
+        serverClientId:
+            '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com',
         scopes: ['email', 'profile'],
       );
 
