@@ -18,6 +18,7 @@ import '../../../blood_request/presentation/providers/blood_request_provider.dar
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../providers/donor_search_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 
 const Map<String, List<String>> _divisionDistricts = {
   'Dhaka': ['Dhaka', 'Gazipur', 'Narayanganj', 'Tangail', 'Faridpur', 'Manikganj', 'Munshiganj', 'Narsingdi', 'Gopalganj', 'Kishoreganj', 'Madaripur', 'Rajbari', 'Shariatpur'],
@@ -1686,14 +1687,66 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
 
             const SizedBox(height: 32),
 
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              child: CapsuleButton(
-                label: 'Submit Request ➔',
-                showGlow: true,
-                onPressed: _submitRequest,
-              ),
+            // Action Buttons: Create Poster & Submit Request
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () {
+                      final patientName = _patientNameCtrl.text.trim();
+                      final posterData = PosterData(
+                        patientName: patientName.isNotEmpty
+                            ? patientName
+                            : 'Emergency Patient',
+                        bloodGroup: _selectedBloodType ?? 'B+',
+                        location: _hospitalLocationCtrl.text.trim().isNotEmpty
+                            ? _hospitalLocationCtrl.text.trim()
+                            : 'Dhaka, Bangladesh',
+                        unitsNeeded: 1,
+                        urgencyLevel: _urgencyLevel,
+                        condition: _conditionCtrl.text.trim().isNotEmpty
+                            ? _conditionCtrl.text.trim()
+                            : 'Urgent Transfusion',
+                        hospitalName: _hospitalLocationCtrl.text.trim().isNotEmpty
+                            ? _hospitalLocationCtrl.text.trim()
+                            : null,
+                        contactNumber: _contactPhoneCtrl.text.trim().isNotEmpty
+                            ? _contactPhoneCtrl.text.trim()
+                            : null,
+                        dateNeeded: _dateTimeCtrl.text.trim(),
+                        photoBytes: _patientPhotoBytes,
+                      );
+                      context.push('/blood-hub/poster', extra: posterData);
+                    },
+                    icon: const Icon(Icons.palette_outlined,
+                        color: Color(0xFFC30121), size: 18),
+                    label: const Text(
+                      'Create Poster',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFC30121),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: CapsuleButton(
+                    label: 'Submit Request ➔',
+                    showGlow: true,
+                    onPressed: _submitRequest,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

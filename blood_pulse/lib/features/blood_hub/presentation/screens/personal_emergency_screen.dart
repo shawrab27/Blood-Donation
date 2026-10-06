@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
+import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -967,35 +968,87 @@ class _PersonalEmergencyScreenState
             )
           ],
         ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _kPrimary,
-              foregroundColor: Colors.white,
-              shape: const StadiumBorder(),
-              elevation: 0,
-            ),
-            onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : const Text(
-                    'Broadcast Emergency Alert',
+        child: Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: const StadiumBorder(),
+                    side: const BorderSide(color: _kPrimary, width: 1.5),
+                  ),
+                  onPressed: () {
+                    final patientName = _patientNameController.text.trim();
+                    final hospital = _hospitalController.text.trim();
+                    final loc = [_district, _division]
+                        .where((s) => s != null && s.isNotEmpty)
+                        .join(', ');
+
+                    final posterData = PosterData(
+                      patientName: patientName.isNotEmpty
+                          ? patientName
+                          : 'Emergency Patient',
+                      bloodGroup: _bloodGroup ?? 'B+',
+                      location: loc.isNotEmpty ? loc : 'Dhaka, Bangladesh',
+                      unitsNeeded: _unitsNeeded,
+                      urgencyLevel: _urgency,
+                      condition: _condition,
+                      hospitalName: hospital.isNotEmpty ? hospital : null,
+                      contactNumber: _contactController.text.trim().isNotEmpty
+                          ? _contactController.text.trim()
+                          : null,
+                      photoBytes: _patientPhotoBytes,
+                    );
+                    context.push('/blood-hub/poster', extra: posterData);
+                  },
+                  icon: const Icon(Icons.palette_outlined,
+                      color: _kPrimary, size: 18),
+                  label: const Text(
+                    'Create Poster',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w700,
-                      fontSize: 15,
+                      fontSize: 13,
+                      color: _kPrimary,
                     ),
                   ),
-          ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _kPrimary,
+                    foregroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    elevation: 0,
+                  ),
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Broadcast Alert',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     ],

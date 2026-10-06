@@ -42,6 +42,8 @@ import '../features/blood_hub/presentation/screens/journey_detail_screen.dart';
 import '../features/blood_hub/presentation/screens/standby_offer_screen.dart';
 import '../features/blood_hub/presentation/screens/national_emergency_screen.dart';
 import '../features/blood_hub/presentation/screens/journey_list_screen.dart';
+import 'package:blood_pulse/features/blood_hub/presentation/screens/poster_generator_screen.dart';
+import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 
 // Health Hub 7 Sub-Screens
 import '../features/health_hub/presentation/screens/ai_report_analysis_screen.dart';
@@ -450,6 +452,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     GoRoute(
       path: '/create-request',
       builder: (context, state) => const EmergencyRequestScreen(),
+    ),
+    GoRoute(
+      path: '/blood-hub/poster',
+      builder: (context, state) {
+        final extra = state.extra;
+        PosterData? posterData;
+        if (extra is PosterData) {
+          posterData = extra;
+        } else if (extra is Map<String, dynamic>) {
+          posterData = PosterData(
+            patientName: extra['patientName'] as String? ?? 'Patient Name',
+            bloodGroup: extra['bloodGroup'] as String? ?? 'B+',
+            location: extra['location'] as String? ?? 'Dhaka',
+            unitsNeeded: (extra['unitsNeeded'] as num?)?.toInt() ?? 1,
+            urgencyLevel: extra['urgencyLevel'] as String? ?? 'HIGH',
+            condition: extra['condition'] as String? ?? 'Emergency',
+            hospitalName: extra['hospitalName'] as String?,
+            contactNumber: extra['contactNumber'] as String?,
+            photoPath: extra['photoPath'] as String?,
+            customHeadline: extra['customHeadline'] as String?,
+            customMessage: extra['customMessage'] as String?,
+          );
+        }
+        return PosterGeneratorScreen(initialData: posterData);
+      },
     ),
 
     GoRoute(

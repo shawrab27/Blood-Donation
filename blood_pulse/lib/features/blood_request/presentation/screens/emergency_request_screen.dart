@@ -13,6 +13,7 @@ import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/email_verification_modal.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../providers/blood_request_provider.dart';
+import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 
 enum UrgencyLevel { critical, moderate }
 
@@ -301,12 +302,65 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                 _buildSimulateFakeSwitch(),
                 const SizedBox(height: 28),
 
-                // Submit Button
-                CapsuleButton(
-                  label: 'Broadcast Emergency Request',
-                  icon: Icons.send_rounded,
-                  showGlow: true,
-                  onPressed: _onSubmitRequest,
+                // Action Buttons: Create Poster & Broadcast Request
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          side: const BorderSide(color: AppColors.primary, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () {
+                          final patientName = _patientNameCtrl.text.trim();
+                          final district = _districtCtrl.text.trim();
+                          final hospital = _hospitalNameCtrl.text.trim();
+                          final loc = [hospital, district, _selectedDivision]
+                              .where((s) => s != null && s.isNotEmpty)
+                              .join(', ');
+
+                          final posterData = PosterData(
+                            patientName: patientName.isNotEmpty ? patientName : 'Emergency Patient',
+                            bloodGroup: _selectedBloodGroup ?? 'B+',
+                            location: loc.isNotEmpty ? loc : 'Dhaka, Bangladesh',
+                            unitsNeeded: _unitsNeeded,
+                            urgencyLevel: _urgency == UrgencyLevel.critical ? 'CRITICAL' : 'MODERATE',
+                            condition: _conditionReasonCtrl.text.trim().isNotEmpty
+                                ? _conditionReasonCtrl.text.trim()
+                                : 'Emergency Blood Request',
+                            hospitalName: hospital.isNotEmpty ? hospital : null,
+                            contactNumber: _contactPhoneCtrl.text.trim().isNotEmpty
+                                ? _contactPhoneCtrl.text.trim()
+                                : null,
+                            photoPath: _medicalReportFile?.path,
+                          );
+                          context.push('/blood-hub/poster', extra: posterData);
+                        },
+                        icon: const Icon(Icons.palette_outlined, color: AppColors.primary, size: 18),
+                        label: const Text(
+                          'Create Poster',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: CapsuleButton(
+                        label: 'Broadcast Request',
+                        icon: Icons.send_rounded,
+                        showGlow: true,
+                        onPressed: _onSubmitRequest,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
