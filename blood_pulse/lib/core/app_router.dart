@@ -28,6 +28,7 @@ import '../features/assistant/presentation/screens/assistant_screen.dart';
 import '../features/donor/presentation/screens/donor_map_screen.dart';
 import '../features/blood_request/presentation/screens/identity_verification_screen.dart';
 import '../features/donor/presentation/screens/live_dispatch_screen.dart';
+import '../features/blood_hub/presentation/donor_tracking_map.dart';
 
 // Admin Screens
 import '../features/admin/admin_screen.dart';
@@ -440,6 +441,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           donorPhone: extra?['donorPhone'] as String?,
           destinationLat: (extra?['destinationLat'] as num?)?.toDouble(),
           destinationLng: (extra?['destinationLng'] as num?)?.toDouble(),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/blood-hub/tracking',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return DonorTrackingMapScreen(
+          requestId: extra?['requestId'] as String?,
+          patientName: extra?['patientName'] as String? ?? 'Urgent Patient',
+          hospitalName: extra?['hospitalName'] as String? ?? 'Dhaka Medical College Hospital',
+          bloodGroup: extra?['bloodGroup'] as String? ?? 'O+',
+          donorName: extra?['donorName'] as String? ?? 'Verified Donor',
+          donorPhone: extra?['donorPhone'] as String? ?? '+8801700000000',
+          isDonorView: extra?['isDonorView'] == true,
         );
       },
     ),

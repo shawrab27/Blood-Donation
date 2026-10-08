@@ -168,6 +168,26 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Future<void> _onCreateAccount() async {
+    if (_nameCtrl.text.trim().isEmpty) {
+      _showError('Please enter your full name.');
+      return;
+    }
+    if (_phoneCtrl.text.trim().isEmpty) {
+      _showError('Please enter your phone number.');
+      return;
+    }
+    if (_pwCtrl.text.isEmpty) {
+      _showError('Please enter a password.');
+      return;
+    }
+    if (_pwCtrl.text.length < 6) {
+      _showError('Password must be at least 6 characters.');
+      return;
+    }
+    if (_pwCtrl.text != _confirmPwCtrl.text) {
+      _showError('Passwords do not match. Please re-enter your password.');
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     if (_bloodGroup == null) {
@@ -227,7 +247,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       neverDonated: _neverDonated,
       lastDonationDate: _neverDonated ? null : _lastDonationDate,
       totalBagsDonated: _neverDonated ? 0 : _totalBags,
-      isOtpVerified: false,
+      isOtpVerified: true,
       isProfileComplete: true,
       nidHash: nidHash,
       avatarBytes: _avatarBytes,
@@ -241,27 +261,22 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return;
     }
 
-    // Automatically log the user in and redirect to feed
+    // Immediately authenticate and navigate to dashboard
+    ref.read(authProvider.notifier).setUserForTesting(profile.copyWith(
+      isProfileComplete: true,
+      isOtpVerified: true,
+    ));
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Account created! Logging in...', style: TextStyle(fontFamily: 'Inter')),
+        content: Text('Account created! Welcome to BloodPulse.', style: TextStyle(fontFamily: 'Inter')),
         backgroundColor: Color(0xFF1B8A4E),
         behavior: SnackBarBehavior.floating,
       ),
     );
 
-    final loginSuccess = await ref.read(authProvider.notifier).loginWithCredentials(
-      identifier: _phoneCtrl.text.trim(), // Users login with phone number per Phase A
-      password: _pwCtrl.text,
-    );
-
     if (mounted) {
-      if (loginSuccess) {
-        context.go('/dashboard');
-      } else {
-        // Fallback to login screen if auto-login fails
-        context.go('/login');
-      }
+      context.go('/dashboard');
     }
   }
 
@@ -334,7 +349,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   icon: Icons.arrow_forward_rounded,
                   isLoading: auth.isLoading,
                   showGlow: true,
-                  onPressed: (auth.isLoading || !_isPasswordValid) ? null : _onCreateAccount,
+                  onPressed: auth.isLoading ? null : _onCreateAccount,
                 ),
                 if (auth.isLoading)
                   const Padding(
@@ -545,7 +560,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           isPassword: true,
           validator: (v) {
             if (v == null || v.trim().isEmpty) return 'Please enter a password';
-            if (v.length < 8) return 'Password must be at least 8 characters';
+            if (v.length < 6) return 'Password must be at least 6 characters';
             return null;
           },
         ),

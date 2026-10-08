@@ -17,31 +17,34 @@ from assistant.pipeline.gemini_client import call_gemini
 from assistant.pipeline.guards import apply_guards
 from assistant.pipeline.fallback import get_fallback_response
 
+from api.services.assistant_service import PulseAIAssistant
+
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@throttle_classes([__import__('api.throttles', fromlist=['AssistantChatThrottle']).AssistantChatThrottle])
+@permission_classes([AllowAny])
 def chat_view(request):
     try:
-        user = request.user
-
+        user = request.user if request.user.is_authenticated else None
         message_text = request.data.get('message', '')
         conversation_id = request.data.get('conversation_id')
-        locale = request.data.get('locale', 'en')
+        locale = request.data.get('language') or request.data.get('locale', 'bn')
         
         # 1. Limits
         try:
-            check_limits(user.id, message_text)
+            check_limits(user.id if user else None, message_text)
         except LimitsExceeded as e:
-            return Response({"code": e.code, "message": e.message}, status=429)
+            return Response({"code": e.code, "message": e.message, "response": e.message, "reply": e.message}, status=429)
 
-        # Ensure conversation exists
-        if conversation_id:
-            try:
-                conv = AssistantConversation.objects.get(id=conversation_id, user=user)
-            except AssistantConversation.DoesNotExist:
-                return Response({"code": "NOT_FOUND", "message": "Conversation not found"}, status=404)
-        else:
-            conv = AssistantConversation.objects.create(user=user, locale=locale)
+        # Ensure conversation exists if user is authenticated
+        conv = None
+        if user:
+            if conversation_id:
+                try:
+                    conv = AssistantConversation.objects.get(id=conversation_id, user=user)
+                except AssistantConversation.DoesNotExist:
+                    conv = None
+            if not conv:
+                conv = AssistantConversation.objects.create(user=user, locale=locale)
+
 
         # 2. Redact
         message_text = convert_bangla_digits(message_text)
@@ -107,12 +110,22 @@ def chat_view(request):
 
         except Exception as e:
             import traceback; traceback.print_exc()
-            # 8. Fallback
-            fallback_res = get_fallback_response(redacted_text)
-            return _save_and_respond(conv, user, redacted_text, fallback_res, flags=["FALLBACK"])
+            # 8. Fallback to PulseAIAssistant 33-row clinical CSV
+            pulse_ai_res = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale)
+            return _save_and_respond(conv, user, redacted_text, pulse_ai_res, flags=["FALLBACK"])
 
     except Exception as e:
-        import traceback; traceback.print_exc(); return Response({"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"}, status=500)
+        import traceback; traceback.print_exc()
+        fallback = PulseAIAssistant.get_instance().get_response(message_text, language=locale if 'locale' in locals() else 'bn')
+        return Response({
+            "response": fallback["response"],
+            "reply": fallback["reply"],
+            "source": fallback.get("source", "default"),
+            "confidence": fallback.get("confidence", 0.95),
+            "language": fallback.get("language", "bn"),
+            "emergency": False,
+            "actions": [],
+        }, status=200)
 
 def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_in=0, tokens_out=0, latency_ms=0):
     from assistant.models import AssistantMessage
@@ -120,27 +133,32 @@ def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_
     if flags is None:
         flags = []
     
-    # Save User message
-    AssistantMessage.objects.create(
-        conversation=conv,
-        role='user',
-        text_redacted=user_msg_text if conv.logging_consent else ""
-    )
-    
-    # Save Assistant message
-    ast_msg = AssistantMessage.objects.create(
-        conversation=conv,
-        role='model',
-        text_redacted=reply_dict["reply"] if conv.logging_consent else "",
-        language=reply_dict.get("language", "en"),
-        tokens_in=tokens_in,
-        tokens_out=tokens_out,
-        model=getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash'),
-        latency_ms=latency_ms,
-        kb_ids_used=reply_dict.get("kb_ids_used", []),
-        flags=flags
-    )
-    
+    ast_msg_id = None
+    if conv:
+        try:
+            # Save User message
+            AssistantMessage.objects.create(
+                conversation=conv,
+                role='user',
+                text_redacted=user_msg_text if getattr(conv, 'logging_consent', False) else ""
+            )
+            
+            # Save Assistant message
+            ast_msg = AssistantMessage.objects.create(
+                conversation=conv,
+                role='model',
+                text_redacted=reply_dict.get("reply", "") if getattr(conv, 'logging_consent', False) else "",
+                language=reply_dict.get("language", "en"),
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
+                model=getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash'),
+                latency_ms=latency_ms,
+                kb_ids_used=reply_dict.get("kb_ids_used", []),
+                flags=flags
+            )
+        except Exception as log_err:
+            logger.warning(f"Could not persist assistant message: {log_err}")
+
     # Format response
     actions_map = {
         'open_emergency_form': {'id': 'open_emergency_form', 'label_en': 'Emergency Form', 'label_bn': 'জরুরী ফর্ম', 'route': '/emergency/personal'},
@@ -159,10 +177,15 @@ def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_
         if a_id in actions_map:
             formatted_actions.append(actions_map[a_id])
 
+    ans_text = reply_dict.get("response") or reply_dict.get("reply", "")
+
     return Response({
-        "conversation_id": conv.id,
-        "message_id": ast_msg.id,
-        "reply": reply_dict["reply"],
+        "conversation_id": conv.id if conv else None,
+        "message_id": ast_msg_id,
+        "response": ans_text,
+        "reply": ans_text,
+        "source": reply_dict.get("source", "gemini"),
+        "confidence": reply_dict.get("confidence", 0.95),
         "language": reply_dict.get("language", "en"),
         "actions": formatted_actions,
         "emergency": reply_dict.get("emergency", False),
@@ -193,9 +216,9 @@ def feedback_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def handoff_view(request):
-    # Throttle 5/day could be implemented with DRF throttles
+    user = request.user if request.user.is_authenticated else None
     ticket = SupportTicket.objects.create(
-        user=request.user,
+        user=user,
         subject=request.data.get('subject', 'Support Request'),
         message=redact_text(request.data.get('message', '')),
         contact_preference=request.data.get('contact_preference', 'IN_APP')

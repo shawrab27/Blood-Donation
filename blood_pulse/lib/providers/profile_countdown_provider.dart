@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../constants/app_config.dart';
 import '../models/user_model.dart';
 
 class ProfileCountdownState {
@@ -15,7 +16,7 @@ class ProfileCountdownState {
 
   int get daysRemaining {
     if (user?.lastDonationDate == null) return 0;
-    final nextEligible = user!.lastDonationDate!.add(const Duration(days: 120));
+    final nextEligible = user!.lastDonationDate!.add(const Duration(days: AppConfig.donorCooldownDays));
     final diff = nextEligible.difference(DateTime.now()).inDays;
     return diff < 0 ? 0 : diff;
   }
@@ -87,7 +88,7 @@ class ProfileCountdownNotifier extends StateNotifier<ProfileCountdownState> {
     return true;
   }
 
-  /// Updates last donation date and recalculates 120-day countdown.
+  /// Updates last donation date and recalculates 90-day countdown.
   void recordDonation(DateTime donationDate) {
     if (state.user != null) {
       state = state.copyWith(

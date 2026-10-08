@@ -1,7 +1,9 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-/// UserModel representing user profile, verification status, and 120-day donation eligibility.
+import '../constants/app_config.dart';
+
+/// UserModel representing user profile, verification status, and 90-day donation eligibility.
 class UserModel {
   const UserModel({
     required this.uid,
@@ -37,17 +39,17 @@ class UserModel {
   final String? profileImageUrl;
   final String badgeTier; // 'Golden', 'Silver', 'Bronze'
 
-  /// Calculates whether the user is physiologically eligible to donate blood based on the 120-day rule.
+  /// Calculates whether the user is physiologically eligible to donate blood based on the 90-day rule.
   bool get isEligibleToDonate {
     if (lastDonationDate == null) return true;
     final daysSinceDonation = DateTime.now().difference(lastDonationDate!).inDays;
-    return daysSinceDonation >= 120;
+    return daysSinceDonation >= AppConfig.donorCooldownDays;
   }
 
-  /// Calculates exact number of days remaining in the 120-day cooldown interval.
+  /// Calculates exact number of days remaining in the 90-day cooldown interval.
   int get cooldownDaysRemaining {
     if (lastDonationDate == null) return 0;
-    final nextEligible = lastDonationDate!.add(const Duration(days: 120));
+    final nextEligible = lastDonationDate!.add(const Duration(days: AppConfig.donorCooldownDays));
     final diff = nextEligible.difference(DateTime.now()).inDays;
     return diff < 0 ? 0 : diff;
   }

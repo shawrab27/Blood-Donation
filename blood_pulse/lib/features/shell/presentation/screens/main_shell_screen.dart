@@ -20,6 +20,8 @@ import '../../../health_hub/presentation/screens/health_hub_dashboard_screen.dar
 import '../../../profile/presentation/widgets/profile_view.dart';
 import '../../../blood_hub/presentation/widgets/global_live_banner.dart';
 
+import '../../../../widgets/pulseai_fab.dart';
+
 /// The Main Responsive 5-Tab Navigation Shell of BloodPulse.
 class MainShellScreen extends ConsumerStatefulWidget {
   const MainShellScreen({super.key});
@@ -50,6 +52,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           Expanded(child: tabs[activeTabIndex]),
         ],
       ),
+      floatingActionButton: const PulseAIFAB(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -280,10 +284,7 @@ class _CommunitiesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ProfileCompletionGate(
-      featureName: 'Community Donors & Clubs',
-      child: CommunitiesView(),
-    );
+    return const CommunitiesView();
   }
 }
 
@@ -301,6 +302,9 @@ class _ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ProfileView();
+    return const ProfileCompletionGate(
+      featureName: 'User Profile & Donation History',
+      child: ProfileView(),
+    );
   }
 }

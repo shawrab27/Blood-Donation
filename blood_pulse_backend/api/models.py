@@ -221,10 +221,17 @@ class DonorProfile(models.Model):
 
 
     def save(self, *args, **kwargs):
-
         is_comp, _ = self.check_is_complete()
-
         self.is_profile_complete = is_comp
+
+        lat = self.last_lat if self.last_lat is not None else self.latitude
+        lng = self.last_lng if self.last_lng is not None else self.longitude
+        if lat is not None and lng is not None:
+            try:
+                from api.services.geo import encode_geohash
+                self.geohash = encode_geohash(lat, lng, precision=12)
+            except Exception:
+                pass
 
         super().save(*args, **kwargs)
 

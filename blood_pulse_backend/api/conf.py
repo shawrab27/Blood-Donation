@@ -6,8 +6,9 @@ Configuration constants for BloodPulse Blood Hub engine.
 Centralized parameters for wave delays, geofencing, trust scoring, and cooldowns.
 """
 
-# Donation cooldowns (in days)
-WHOLE_BLOOD_COOLDOWN_DAYS = 120
+# Donation cooldowns (in days) - Fixed 90 Days Standard
+DONOR_COOLDOWN_DAYS = 90
+WHOLE_BLOOD_COOLDOWN_DAYS = 90
 PLATELET_COOLDOWN_DAYS = 14
 PLASMA_COOLDOWN_DAYS = 28
 

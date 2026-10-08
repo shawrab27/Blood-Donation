@@ -79,3 +79,5 @@ Thumbs.db
 *.bak
 blood_pulse/android/.kotlin/errors/
 stitch_bloodpulse_ui..zip
+.firebase/
+blood_pulse/.firebase/

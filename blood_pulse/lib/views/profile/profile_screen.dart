@@ -10,11 +10,13 @@ import '../../core/widgets/capsule_button.dart';
 import '../../core/widgets/custom_input_field.dart';
 import '../../providers/profile_countdown_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../constants/app_config.dart';
 import '../../features/feed/presentation/providers/feed_provider.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 
 /// Interactive Profile Screen with Edit Profile Modal, Date Picker for Last Donation Date,
-/// 120-Day Countdown Widget, Admin-Locked Blood Group Banner, and Activity Feed.
+/// 90-Day Countdown Widget, Admin-Locked Blood Group Banner, and Activity Feed.
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -477,7 +479,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('📅 Last donation date recorded: ${picked.day}/${picked.month}/${picked.year}. 120-Day countdown updated!'),
+            content: Text('📅 Last donation date recorded: ${picked.day}/${picked.month}/${picked.year}. 90-Day countdown updated!'),
             backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
           ),
@@ -487,15 +489,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
   }
 
   String _getBadgeEmoji(String tier) {
-    switch (tier.toLowerCase()) {
-      case 'golden':
-        return '🥇';
-      case 'silver':
-        return '🥈';
-      case 'bronze':
-      default:
-        return '🥉';
-    }
+    final lower = tier.toLowerCase();
+    if (lower.contains('gold')) return '🥇';
+    if (lower.contains('silver')) return '🥈';
+    if (lower.contains('bronze')) return '🥉';
+    return '🩸';
   }
 
   @override
@@ -503,8 +501,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
     final state = ref.watch(profileCountdownProvider);
     final user = state.user;
     final authUser = ref.watch(authProvider).user;
+    final profileAsync = ref.watch(profileProvider);
+    final profile = profileAsync.asData?.value;
     final allPosts = ref.watch(feedProvider);
     final l10n = AppLocalizations.of(context);
+
+    // Calculate non-competitive Lifesaver Tier & XP
+    final donationsCount = (profile?.totalBagsDonated != null && profile!.totalBagsDonated > 0)
+        ? profile.totalBagsDonated
+        : (user?.lastDonationDate != null ? 3 : 1);
+    final badgeTierName = AppConfig.getBadgeTier(donationsCount);
+    final int userXp = 120 + (donationsCount > 3 ? (donationsCount - 3) * 50 : 0);
 
     final currentUserName = (authUser?.fullName.isNotEmpty == true)
         ? authUser!.fullName
@@ -531,6 +538,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 // ── Section 1: Header, Avatar & Badge Tier ───────────────────────
                 Center(
                   child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
                       Container(
                         width: 104,
@@ -560,7 +568,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         ),
                       ),
 
-                      // Camera Overlay
+                      // Camera Overlay (Bottom-Right)
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -578,14 +586,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         ),
                       ),
 
-                      // Tier Badge Display
+                      // Lifesaver Tier Badge Display (Top-Right)
                       Positioned(
-                        top: 0,
-                        left: 0,
+                        top: -4,
+                        right: -10,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: Text(_getBadgeEmoji(user?.badgeTier ?? 'Golden'), style: const TextStyle(fontSize: 18)),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(color: AppColors.primary, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(25),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(_getBadgeEmoji(badgeTierName), style: const TextStyle(fontSize: 14)),
+                              const SizedBox(width: 4),
+                              Text(
+                                badgeTierName,
+                                style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -593,7 +627,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 ),
                 const SizedBox(height: 14),
 
-                // Name, Edit Profile Button & Role Badge
+                // Name, Edit Profile Button & Lifesaver XP / Tier
                 Center(
                   child: Column(
                     children: [
@@ -617,6 +651,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                         ],
                       ),
                       const SizedBox(height: 2),
+
+                      // Lifesaver XP & Tier Badge Display (Single Non-Competitive Display)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF0F1),
+                          borderRadius: BorderRadius.circular(50),
+                          border: Border.all(color: const Color(0xFFE6BDBA)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.stars_rounded, color: AppColors.primary, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$userXp XP · $badgeTierName',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
@@ -708,7 +770,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                 ),
                 const SizedBox(height: 18),
 
-                // ── Section 4: 120-Day Donation Countdown & Date Update Widget ────
+                // ── Section 4: 90-Day Donation Countdown & Date Update Widget ────
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -730,7 +792,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 width: 72,
                                 height: 72,
                                 child: CircularProgressIndicator(
-                                  value: state.daysRemaining == 0 ? 1.0 : (120 - state.daysRemaining) / 120.0,
+                                  value: state.daysRemaining == 0
+                                      ? 1.0
+                                      : (AppConfig.donorCooldownDays - state.daysRemaining) / AppConfig.donorCooldownDays.toDouble(),
                                   strokeWidth: 7,
                                   backgroundColor: const Color(0xFFF3DDE0),
                                   valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
@@ -754,7 +818,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                 const SizedBox(height: 4),
                                 Text(
                                   state.daysRemaining == 0
-                                      ? 'Your 120-day recovery countdown is complete. Respond to emergency requests now!'
+                                      ? 'Your 90-day recovery countdown is complete. Respond to emergency requests now!'
                                       : 'Resting interval required to restore hemoglobin and iron levels.',
                                   style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral, height: 1.3),
                                 ),
@@ -783,6 +847,125 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                             ),
                           ),
                         ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Section 4b: Passive Donor Achievements (Non-Competitive) ─────
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.workspace_premium_rounded, color: AppColors.primary, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Passive Donor Achievements',
+                                style: TextStyle(
+                                  fontFamily: 'Georgia',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.secondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF0F1),
+                              borderRadius: BorderRadius.circular(50),
+                              border: Border.all(color: const Color(0xFFE6BDBA)),
+                            ),
+                            child: Text(
+                              '$userXp XP Total',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Earn Lifesaver XP and support patients through active community participation.',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral, height: 1.3),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // 4 XP activities
+                      _PassiveAchievementTile(
+                        icon: Icons.share_rounded,
+                        color: AppColors.tertiary,
+                        title: 'Share BloodPulse App',
+                        subtitle: 'Spread awareness to recruit nearby donors',
+                        xpReward: '+${AppConfig.xpShareApp} XP',
+                        onTap: () {
+                          Share.share(
+                            'Join BloodPulse to save lives! Urgent blood requests and donor network: https://bloodpulse-283dc.web.app',
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _PassiveAchievementTile(
+                        icon: Icons.menu_book_rounded,
+                        color: const Color(0xFF1B8A4E),
+                        title: 'Read Clinical Guidelines',
+                        subtitle: 'Learn eligibility, interval rules, and post-donation care',
+                        xpReward: '+${AppConfig.xpReadGuide} XP',
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('📖 Clinical Rule: Minimum 90 days required between whole blood donations.'),
+                              backgroundColor: Color(0xFF1B8A4E),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      _PassiveAchievementTile(
+                        icon: Icons.manage_accounts_rounded,
+                        color: AppColors.primary,
+                        title: 'Complete Profile Details',
+                        subtitle: 'Ensure location and blood group are ready for alerts',
+                        xpReward: '+${AppConfig.xpUpdateProfile} XP',
+                        onTap: _showEditProfileModal,
+                      ),
+                      const SizedBox(height: 8),
+                      _PassiveAchievementTile(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        color: const Color(0xFFE67E22),
+                        title: 'Support Requests in Chat',
+                        subtitle: 'Coordinate logistics and encourage donor volunteers',
+                        xpReward: '+${AppConfig.xpSendMessage} XP',
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('💬 Head over to Messages or Blood Hub tracking to connect with donors!'),
+                              backgroundColor: AppColors.tertiary,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -904,7 +1087,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                                     icon: Icons.verified_rounded,
                                     color: AppColors.success,
                                     title: item.location,
-                                    subtitle: '\ • \ Bag(s)',
+                                    subtitle: '${item.date} • ${item.bagsDonated} Bag(s)',
                                     status: item.notes ?? 'Verified',
                                   );
                                 },
@@ -975,3 +1158,94 @@ class _ActivityTile extends StatelessWidget {
     );
   }
 }
+
+class _PassiveAchievementTile extends StatelessWidget {
+  const _PassiveAchievementTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.xpReward,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final String xpReward;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9F9FB),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withAlpha(25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 10,
+                      color: AppColors.neutral,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDF4FF),
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(color: const Color(0xFFD0E4FF)),
+              ),
+              child: Text(
+                xpReward,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.tertiary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

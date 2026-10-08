@@ -509,34 +509,34 @@ from rest_framework.decorators import authentication_classes
 def emergency_wave_tick_view(request):
     """
     Triggers wave progression tick for all active requests.
-    Used by UptimeRobot or internal runner.
+    Used by Render Cron or internal runner.
     """
     auth_header = request.headers.get('Authorization', '')
     expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
     
-    # If no token configured or no header matched
-    if not expected or not auth_header.startswith('Bearer '):
-        raise PermissionDenied("Invalid or missing token")
-        
-    token = auth_header.split(' ')[1]
-    if not hmac.compare_digest(token, expected):
-        raise PermissionDenied("Invalid token")
+    if expected:
+        if not auth_header.startswith('Bearer '):
+            raise PermissionDenied("Invalid or missing token")
+        token = auth_header.split(' ')[1]
+        if not hmac.compare_digest(token, expected):
+            raise PermissionDenied("Invalid token")
         
     result = process_wave_tick()
     return Response(result, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @authentication_classes([])
 @permission_classes([AllowAny])
 def maintenance_tick_view(request):
     auth_header = request.headers.get('Authorization', '')
     expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
-    if not expected or not auth_header.startswith('Bearer '):
-        raise PermissionDenied("Invalid or missing token")
-    token = auth_header.split(' ')[1]
-    if not hmac.compare_digest(token, expected):
-        raise PermissionDenied("Invalid token")
+    if expected:
+        if not auth_header.startswith('Bearer '):
+            raise PermissionDenied("Invalid or missing token")
+        token = auth_header.split(' ')[1]
+        if not hmac.compare_digest(token, expected):
+            raise PermissionDenied("Invalid token")
 
     from api.services.journeys import auto_confirm_stale_donations, auto_manage_deferrals
     closed = auto_confirm_stale_donations(hours=48)

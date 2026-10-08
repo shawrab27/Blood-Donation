@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../features/auth/presentation/registration_completion_screen.dart';
 
 /// Wraps any screen or tab with a frosted blur lock gate if the user's
 /// profile is incomplete (e.g. Google Sign-In or guest without blood group/district).
@@ -24,7 +25,15 @@ class ProfileCompletionGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final isComplete = authState.status == AuthStatus.authenticated;
+    final bool hasValidPhone = user?.primaryPhone.isNotEmpty == true &&
+        !user!.primaryPhone.startsWith('+8800000');
+    final bool hasBloodGroup = user?.bloodGroup.isNotEmpty == true;
+    final bool hasAddress = (user?.categoryDetails['district']?.isNotEmpty == true) ||
+        (user?.categoryDetails['address']?.isNotEmpty == true);
+
+    final bool isComplete = authState.status == AuthStatus.authenticated &&
+        user != null &&
+        (user.isProfileComplete || (hasBloodGroup && hasValidPhone && hasAddress));
 
     if (isComplete) {
       return child;
@@ -85,9 +94,9 @@ class ProfileCompletionGate extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Title
+                  // Title (Bengali & English)
                   const Text(
-                    'Complete Registration',
+                    'সম্পূর্ণ করুন আপনার প্রোফাইল',
                     style: TextStyle(
                       fontFamily: 'Georgia',
                       fontSize: 22,
@@ -96,14 +105,25 @@ class ProfileCompletionGate extends ConsumerWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Complete Your Profile to Unlock $featureName',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 10),
 
                   // Subtitle
-                  Text(
-                    'To unlock , donor contacts, and emergency requests, please declare your blood group, phone number, and district.',
-                    style: const TextStyle(
+                  const Text(
+                    'জরুরি রক্তের অনুরোধ, ডোনারদের সাথে যোগাযোগ এবং প্রোফাইল সম্পূর্ণ করতে অনুগ্রহ করে আপনার রক্তের গ্রুপ, ফোন নম্বর ও জেলা তথ্য নিশ্চিত করুন।',
+                    style: TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Color(0xFF666666),
                       height: 1.45,
                     ),
@@ -118,17 +138,16 @@ class ProfileCompletionGate extends ConsumerWidget {
                     alignment: WrapAlignment.center,
                     children: [
                       _buildPill(
-                        'Blood Group',
-                        user?.bloodGroup.isNotEmpty == true,
+                        'রক্তের গ্রুপ',
+                        hasBloodGroup,
                       ),
                       _buildPill(
-                        'District / City',
-                        user?.categoryDetails['district']?.isNotEmpty == true,
+                        'জেলা / ঠিকানা',
+                        hasAddress,
                       ),
                       _buildPill(
-                        'Phone Number',
-                        user?.primaryPhone.isNotEmpty == true &&
-                            !user!.primaryPhone.startsWith('+8800000'),
+                        'ফোন নম্বর',
+                        hasValidPhone,
                       ),
                     ],
                   ),
@@ -140,7 +159,7 @@ class ProfileCompletionGate extends ConsumerWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/register');
+                        RegistrationCompletionModal.show(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -154,7 +173,7 @@ class ProfileCompletionGate extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Complete Registration',
+                            'সম্পূর্ণ করুন / Complete Profile',
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 15,
