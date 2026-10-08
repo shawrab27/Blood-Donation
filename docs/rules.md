@@ -12,7 +12,7 @@ Read this file before every task. These rules override convenience.
 ## B. Scope Control
 6. **One task at a time.** Finish, verify, report, then wait.
 7. **Do not propose architecture changes.** Architecture is locked (see Architecture.md).
-8. **Do not add parked features** (Google/Facebook/WhatsApp login, monetization, doctor directory, Redis/load balancing, Community President RBAC, national DB tuning, Flutter Web in the mobile app).
+8. **Google Sign-In allowed (incomplete-profile gate); parked = Facebook/WhatsApp OTP** (monetization, doctor directory, Redis/load balancing, Community President RBAC, national DB tuning, Flutter Web in the mobile app).
 9. Do not create unrequested files (docs, plans, READMEs, notes). If you think one is needed, ask.
 10. Do not refactor unrelated code. Touch only what the task needs.
 11. Minimal unnecessary explanation. Report: what changed, evidence, what is still unverified.
@@ -45,7 +45,7 @@ Read this file before every task. These rules override convenience.
 28. Never use `git push --force`, never rewrite history, never delete branches without asking.
 
 ## F. Product Rules (locked)
-29. Only cooldown number: **120 days**.
+29. Only cooldown: **90 days, from one constant only**.
 30. Wording: "Donations completed" / "Requests supported". Never "Successfully Transfused" or "Life Saved".
 31. Gender: Male / Female only.
 32. Blood group locked after save; admin-only edit.

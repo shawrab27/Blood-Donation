@@ -66,13 +66,13 @@ Three segments, each with its own search bar: Blood Donation Communities · Hosp
 Dashboard landing + 7 segments: AI Report Analyzer · BMI/Weight Tracker · Blood Science · Compatibility matrix · Donation Guide/FAQs · Resources Hub · Recovery/Aftercare.
 
 ### Profile
-Avatar with tier badge (Golden/Silver/Bronze) overlapping border · bio · locked blood group · edit modal · last-donation box · 120-day countdown widget · requests chart · posts + Add Post · donation history.
+Avatar with tier badge (Golden/Silver/Bronze) overlapping border · bio · locked blood group · edit modal · last-donation box · 90-day countdown widget · requests chart · posts + Add Post · donation history.
 
 ### Notifications
 Tap opens a wallpaper-style overlay popup with **Call Now** (tel: intent) and **Message/Chat**.
 
 ### PulseAI
-Floating entry point; calm, supportive tone; bilingual; shows guarded responses (no red-screen on failure).
+Floating entry point; FAB: #C30121 circle, #FF6B7A blood drop + ECG, 1600ms pulse, hidden on auth screens, 4-action sheet; calm, supportive tone; bilingual; shows guarded responses (no red-screen on failure).
 
 ## 7. Content and Copy Rules
 - Use "Donations completed" / "Requests supported". Never "Successfully Transfused" or "Life Saved".

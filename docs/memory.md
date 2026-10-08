@@ -20,7 +20,7 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 - Maps: OpenStreetMap (`flutter_map`), not Google Maps.
 - Verification: campus Student/Teacher ID for pilot; hospital verification/referral removed from scope.
 - OTP: Just-In-Time only; none at login/registration.
-- 120 days is the only cooldown. Wording "Donations completed" / "Requests supported".
+- 90 days is the only cooldown (from one constant only). Wording "Donations completed" / "Requests supported".
 - Gender: Male/Female only. Blood group admin-locked after save.
 - Navbar: Feed, Blood Hub, Communities, Health Hub, Profile.
 - Admin panel = web dashboard (not Django admin theme, not Flutter Web).
@@ -35,6 +35,7 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 - PulseAI RAG pipeline built; answer quality still being fixed.
 - Ownership/copyright pass done (LICENSE + headers).
 - Firebase config files untracked from git; `.example` templates exist.
+- commit 0a2671c on fix/ui-polish, features reported, NOT VERIFIED.
 
 ## 5. Open Issues and Risks
 - Mock names still in some Dart files (remove).
@@ -46,6 +47,7 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 - No device golden-path evidence; admin dashboard not built.
 - Model/DB drift left unfixed on purpose.
 - An earlier migration run dropped `auth_provider` and `google_photo_url` from `api_donorprofile` on Neon (test data only; no recovery needed).
+- 2026-10-08 proof: flutter test +70 -2; analyze 13 warnings; Render=main, DEBUG=True; Neon 0034-0037 unapplied; map simulated; 7 Argon2 users; Flutter Web deployed against locked decision (pending user decision).
 
 ## 6. Research Paper Notes
 - Working title: "BloodPulse: An AI-Verified, NID-Authenticated Federated Blood Donor Management Platform for National Deployment in Bangladesh". Targets: IEEE Access or JMIR.

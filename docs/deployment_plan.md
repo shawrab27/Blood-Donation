@@ -19,7 +19,7 @@ This report corrects the generic deployment plan, aligning with the real state o
 ## 2. Terminology & Core Rules Settled
 
 *   **Wording:** We will strictly use **"Donations completed"** and **"Requests supported"**. All instances of "Successfully Transfused", "Life Saved", or "Lives Saved" will be purged to prevent unprovable claims.
-*   **Cooldown Interval:** We are standardizing entirely on the **120-day** cooldown. Any stray references to a 90-day deferral in the code or the paper will be updated to 120 days.
+*   **Cooldown Interval:** We are standardizing entirely on the **90-day** cooldown (from one constant only). Any stray references to a 120-day deferral in the code or the paper will be updated to 90 days.
 
 ---
 
@@ -38,11 +38,12 @@ The deployment separates the BAUST pilot requirements from paper extras and futu
 
 ### Phase 2: Do After the App is Stable
 *   **Auto Poster (Flutter-side, one widget):** Cheap and useful for social amplification.
+*   **Passive-donor XP + tier badge (no leaderboard):** Donor engagement without gamification distortions.
 
 ### Phase 3: Later (Post-Pilot / Future Scope)
 *   **Multi-bag progress bars:** Pushed to later (requires per-donor tracking).
-*   **XP and badges, IMEI ban, Support button:** Pushed to after the pilot (low value for the paper, adds risk).
-*   **In-app VoIP, Fast-Track QR, hospital 120-day portal, stock ping:** Future work (requires hospital cooperation).
+*   **IMEI ban, Support button:** Pushed to after the pilot (low value for the paper, adds risk).
+*   **In-app VoIP, Fast-Track QR, hospital 90-day portal, stock ping:** Future work (requires hospital cooperation).
 *   **Panic-syntax NLP, retention ML, epidemiology map:** Future work (requires real data gathering first).
 
 ---

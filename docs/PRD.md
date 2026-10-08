@@ -16,7 +16,7 @@
 1. Emergency blood requests spread through scattered Facebook posts and phone calls — slow and unverifiable.
 2. Fake / spam requests waste donors' time and erode trust.
 3. Donor communities (Badhan, Sandhani, Ashar Alo, etc.) work in silos with no shared tooling.
-4. Donors do not know their eligibility (120-day cooldown) and have little health guidance.
+4. Donors do not know their eligibility (90-day cooldown) and have little health guidance.
 5. Donor location data is sensitive; existing tools expose it carelessly.
 
 ## 3. Goals and Non-Goals
@@ -24,7 +24,7 @@
 - Fast donor search by blood group + location, with privacy-safe proximity.
 - Emergency request flow with AI trust scoring before broadcast.
 - Private, encrypted donor ↔ requester communication.
-- Eligibility tracking (120-day countdown).
+- Eligibility tracking (90-day countdown).
 - Health Hub (education, compatibility, report analysis, aftercare).
 - Admin tooling for trust/fraud handling.
 - A defensible research paper built on honest, measured pilot data.
@@ -52,10 +52,11 @@
 ### 5.1 Onboarding and Auth
 - Splash (logo + slogan + capsule "Let's Start") → Language select (EN/BN) → Login (phone + password) → Registration.
 - Login has **no OTP**. OTP is **Just-In-Time (JIT)** only: when submitting/accepting a blood request.
-- Registration fields: optional avatar; email; primary phone (mandatory); secondary phone (optional); password + confirm; age; gender (Male/Female only); blood group + confirm (locked after save, admin-editable only); Student (institute/dept/batch/class) vs Civilian (division/zila/upazila/village/NID optional); last donation date or "never donated" (feeds 120-day countdown).
+- Registration fields: optional avatar; email; primary phone (mandatory); secondary phone (optional); password + confirm; age; gender (Male/Female only); blood group + confirm (locked after save, admin-editable only); Student (institute/dept/batch/class) vs Civilian (division/zila/upazila/village/NID optional); last donation date or "never donated" (feeds 90-day countdown).
 - NID / birth certificate / medical report are **not** required at registration; required only inside Blood Hub when submitting an emergency request (JIT security layer).
 - Verification uses campus Student/Teacher ID (not government NID) for the pilot.
 - Google Sign-In and phone auth exist in the build.
+- Google user with incomplete profile: Feed/Health/Communities only; Blood Hub and Profile locked with 'complete your registration'.
 
 ### 5.2 Navigation (5 tabs, locked order)
 **Feed · Blood Hub · Communities · Health Hub · Profile**
@@ -82,7 +83,7 @@ Three options: **Search for Donor**, **Emergency Blood**, **Blood Campaigns**.
 Dashboard + 7 segments: AI Report Analyzer, BMI/Weight Tracker, Blood Science education, Blood Compatibility matrix, Donation Guide/FAQs, Resources Hub (hospitals/hotlines), Recovery/Aftercare tracker.
 
 ### 5.7 Profile
-Avatar with tier badge (Golden/Silver/Bronze), bio, admin-locked blood group, edit-profile (blood group excluded), last-donation update, 120-day countdown, requests chart, user posts, donation history.
+Avatar with tier badge (Golden/Silver/Bronze), bio, admin-locked blood group, edit-profile (blood group excluded), last-donation update, 90-day countdown, requests chart, user posts, donation history; passive-donor XP + tier badge, no leaderboard.
 
 ### 5.8 Chat and Notifications
 - WhatsApp-style chat, E2EE (RSA keypair + AES-256 session), read receipts, Firestore for MVP.
@@ -97,7 +98,7 @@ Avatar with tier badge (Golden/Silver/Bronze), bio, admin-locked blood group, ed
 Pages: Wave Engine Control, Role & Permission Editor, Trust & Fraud Engine, System Health & Ops, Donor Management (Full Erase + Export Data).
 
 ## 6. Business Rules (locked)
-- **120 days** is the only donation cooldown (90-day idea dropped).
+- **90 days** is the only donation cooldown (from one constant only).
 - Wording: "Donations completed" / "Requests supported". **Never** "Successfully Transfused" or "Life Saved".
 - Gender options: Male / Female only.
 - Blood group is locked after save; only admin can change.
