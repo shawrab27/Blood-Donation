@@ -1,4 +1,5 @@
 import '../../../../features/profile/domain/providers/profile_provider.dart';
+import '../../../../core/access/access_guard.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -29,6 +30,7 @@ class UserProfile {
     required this.totalBagsDonated,
     this.isOtpVerified = false,
     this.isProfileComplete = false,
+    this.missingFields = const [],
     this.isEmailVerified = false,
     this.nidHash,
     this.photoUrl,
@@ -51,6 +53,7 @@ class UserProfile {
   final int totalBagsDonated;
   final bool isOtpVerified;
   final bool isProfileComplete;
+  final List<String> missingFields;
   final bool isEmailVerified;
   final String? nidHash;
   final String? photoUrl;
@@ -73,6 +76,7 @@ class UserProfile {
     int? totalBagsDonated,
     bool? isOtpVerified,
     bool? isProfileComplete,
+    List<String>? missingFields,
     bool? isEmailVerified,
     String? nidHash,
     String? photoUrl,
@@ -95,6 +99,7 @@ class UserProfile {
       totalBagsDonated: totalBagsDonated ?? this.totalBagsDonated,
       isOtpVerified:    isOtpVerified    ?? this.isOtpVerified,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      missingFields:    missingFields    ?? this.missingFields,
       isEmailVerified:  isEmailVerified  ?? this.isEmailVerified,
       nidHash:          nidHash          ?? this.nidHash,
       photoUrl:         photoUrl         ?? this.photoUrl,
@@ -134,19 +139,94 @@ class AuthState {
 
 
 class AuthNotifier extends Notifier<AuthState> {
-  final ApiClient? _customApiClient;
+  final ApiClient _apiClient;
   final AuthState? _initialState;
 
   AuthNotifier({ApiClient? apiClient, AuthState? initialState})
-      : _customApiClient = apiClient,
+      : _apiClient = apiClient ?? ApiClient(),
         _initialState = initialState;
-
-  late final ApiClient _apiClient;
 
   @override
   AuthState build() {
-    _apiClient = _customApiClient ?? ApiClient();
-    return _initialState ?? const AuthState();
+    final cached = ApiClient.cachedAccessToken;
+    final hasStoredToken = cached != null && cached.isNotEmpty;
+    return _initialState ?? AuthState(
+      status: hasStoredToken ? AuthStatus.loading : AuthStatus.unauthenticated,
+    );
+  }
+
+  /// Restores session on app startup by validating stored token and fetching /api/profile/me/
+  Future<void> restoreSession() async {
+    final isGuest = ref.read(isGuestProvider);
+    if (isGuest) {
+      return;
+    }
+
+    try {
+      final token = await _apiClient.getAccessToken();
+      if (token == null || token.isEmpty) {
+        state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+        return;
+      }
+
+      state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
+      final response = await _apiClient.get('profile/me/').timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final pData = jsonDecode(response.body) as Map<String, dynamic>;
+        final bool isComp = pData['is_profile_complete'] == true ||
+            pData['registration_complete'] == true ||
+            pData['registration_complete'] == 'true';
+        final statusEnum = isComp ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete;
+
+        final fullName = ((pData['first_name'] ?? '') + ' ' + (pData['last_name'] ?? '')).trim();
+        final missingFields = (pData['missing_fields'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            <String>[];
+
+        final user = UserProfile(
+          fullName: fullName.isEmpty ? 'Donor User' : fullName,
+          email: pData['email'] ?? '',
+          primaryPhone: pData['phone_number'] ?? '',
+          age: int.tryParse(pData['age']?.toString() ?? '') ?? 25,
+          gender: pData['gender'] ?? 'Not specified',
+          bloodGroup: pData['blood_group'] ?? '',
+          category: pData['category'] ?? 'civilian',
+          categoryDetails: {
+            if (pData['district'] != null) 'district': pData['district'].toString(),
+            if (pData['address'] != null) 'address': pData['address'].toString(),
+          },
+          neverDonated: pData['never_donated'] ?? true,
+          totalBagsDonated: pData['total_bags_donated'] ?? 0,
+          isOtpVerified: true,
+          isProfileComplete: isComp,
+          missingFields: missingFields,
+          photoUrl: pData['profile_picture'],
+          googlePhotoUrl: pData['google_photo_url'],
+          authProvider: pData['auth_provider'],
+        );
+
+        try {
+          ref.invalidate(profileProvider);
+        } catch (_) {}
+
+        state = state.copyWith(
+          status: statusEnum,
+          user: user,
+          errorMessage: null,
+        );
+      } else {
+        await _apiClient.clearTokens();
+        state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      }
+    } catch (e) {
+      debugPrint('[AuthNotifier] restoreSession error: $e');
+      try {
+        await _apiClient.clearTokens();
+      } catch (_) {}
+      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+    }
   }
 
   /// Sets user state directly for testing
@@ -154,6 +234,14 @@ class AuthNotifier extends Notifier<AuthState> {
   void setUserForTesting(UserProfile user) {
     state = state.copyWith(
       status: AuthStatus.authenticated,
+      user: user,
+    );
+  }
+
+  /// Updates the current user profile in state upon profile completion or update
+  void updateUser(UserProfile user) {
+    state = state.copyWith(
+      status: user.isProfileComplete ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete,
       user: user,
     );
   }
@@ -208,10 +296,11 @@ class AuthNotifier extends Notifier<AuthState> {
       final pData = jsonDecode(profile.body) as Map<String, dynamic>;
 
 
-      final bool isRegComplete = pData['registration_complete'] == true || pData['registration_complete'] == 'true';
+      final bool isRegComplete = pData['is_profile_complete'] == true || pData['registration_complete'] == true || pData['registration_complete'] == 'true';
       final statusEnum = isRegComplete ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete;
 
       final fullName = ((pData['first_name'] ?? '') + ' ' + (pData['last_name'] ?? '')).trim();
+      final missingFields = (pData['missing_fields'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? <String>[];
       final user = UserProfile(
         fullName: fullName.isEmpty ? 'Donor User' : fullName,
         email: pData['email'] ?? '',
@@ -220,10 +309,15 @@ class AuthNotifier extends Notifier<AuthState> {
         gender: pData['gender'] ?? 'Not specified',
         bloodGroup: pData['blood_group'] ?? '',
         category: pData['category'] ?? 'civilian',
-        categoryDetails: {},
+        categoryDetails: {
+          if (pData['district'] != null) 'district': pData['district'].toString(),
+          if (pData['address'] != null) 'address': pData['address'].toString(),
+        },
         neverDonated: true,
         totalBagsDonated: 0,
         isOtpVerified: true,
+        isProfileComplete: isRegComplete,
+        missingFields: missingFields,
         photoUrl: pData['profile_picture'],
         googlePhotoUrl: pData['google_photo_url'],
         authProvider: pData['auth_provider'],
@@ -327,8 +421,8 @@ class AuthNotifier extends Notifier<AuthState> {
       final String? photoUrl = firebaseUser.photoURL ?? account.photoUrl;
       final bloodGroup = (userData?['blood_group'] as String?) ?? '';
       final phoneNumber = (userData?['phone_number'] as String?) ?? '';
-      final bool isProfileComplete = userData?['is_profile_complete'] == true ||
-          (bloodGroup.isNotEmpty && phoneNumber.isNotEmpty);
+      final bool isProfileComplete = userData?['is_profile_complete'] == true;
+      final missingFields = (userData?['missing_fields'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? <String>[];
 
       final user = UserProfile(
         fullName: firebaseUser.displayName ?? account.displayName ?? 'Google Donor',
@@ -345,6 +439,7 @@ class AuthNotifier extends Notifier<AuthState> {
         totalBagsDonated: 0,
         isOtpVerified: true,
         isProfileComplete: isProfileComplete,
+        missingFields: missingFields,
         photoUrl: photoUrl,
       );
 
@@ -529,11 +624,13 @@ class AuthNotifier extends Notifier<AuthState> {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         final isComplete = data['is_complete'] == true;
         final isEmailVerified = data['email_verified'] == true;
+        final missing = (data['missing_fields'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? <String>[];
         if (state.user != null) {
           state = state.copyWith(
             user: state.user!.copyWith(
               isProfileComplete: isComplete,
               isEmailVerified: isEmailVerified,
+              missingFields: missing,
             ),
           );
         }

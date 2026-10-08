@@ -13,6 +13,9 @@ import '../../domain/models/assistant_message_model.dart';
 import '../../../../widgets/pulse_loading_indicator.dart';
 import '../../../../core/widgets/avatar_helper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../../core/access/access_guard.dart';
+import '../../../../core/access/registration_gate_popup.dart';
+import '../../../../core/access/profile_completion_modal.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
   final String? screenContext;
@@ -31,8 +34,11 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(isGuestProvider)) {
+        RegistrationGatePopup.show(context, isGuest: true);
+        return;
+      }
       _checkFirstRun();
-
     });
   }
 
@@ -69,6 +75,10 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+    if (ref.read(isGuestProvider)) {
+      RegistrationGatePopup.show(context, isGuest: true);
+      return;
+    }
     final userQuery = text.trim();
     _lastQuery = userQuery;
     _textController.clear();
@@ -482,6 +492,34 @@ class MessageWidget extends ConsumerWidget {
               children: [
                 _AssistantBubble(text: message.text),
                 
+                if (message.action == 'complete_profile')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFC30121),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      icon: const Icon(Icons.assignment_turned_in_outlined, size: 16),
+                      label: const Text(
+                        'Complete profile',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onPressed: () {
+                        ProfileCompletionModal.show(context);
+                      },
+                    ),
+                  ),
+
                 if (message.actions.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),

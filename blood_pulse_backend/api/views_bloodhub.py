@@ -12,6 +12,7 @@ from datetime import timedelta
 from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from api.permissions import IsProfileComplete
 from rest_framework.response import Response
 from api.throttles import OTPAnonThrottle, OTPUserThrottle
 from rest_framework import status
@@ -231,6 +232,9 @@ def emergency_requests_list_create_view(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # POST: Create request
+    if request.user and request.user.is_authenticated:
+        IsProfileComplete().has_permission(request, None)
+
     client_request_id = request.data.get('client_request_id')
     if client_request_id:
         existing = BloodRequest.objects.filter(client_request_id=client_request_id).first()
@@ -370,7 +374,7 @@ def emergency_request_detail_view(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsProfileComplete])
 def emergency_request_accept_view(request, pk):
     """
     Donor accepts an emergency request.
@@ -786,7 +790,7 @@ def standby_offer_detail_view(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsProfileComplete])
 def standby_offer_respond_view(request, pk):
     """
     Standby donor responds to offer: 'ACCEPT' or 'DECLINE'.
@@ -1252,7 +1256,7 @@ def active_national_emergency_view(request):
     return Response({'is_active': True, 'event': serializer.data})
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsProfileComplete])
 def pledge_to_donate_view(request):
     """
     POST /api/emergency/national/pledge/
@@ -1329,37 +1333,21 @@ def my_pledge_view(request):
         'pledge': DisasterPledgeSerializer(pledge).data
     })
 @api_view(['POST'])
-
-@permission_classes([IsAuthenticated])
-
+@permission_classes([IsAuthenticated, IsProfileComplete])
 def emergency_request_all_view(request, pk):
-
     """
-
     Manually dispatch notifications to all eligible donors in the area.
-
     """
-
     blood_req = BloodRequest.objects.filter(id=pk).first()
-
     if not blood_req:
-
         return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-
-
     candidates = get_candidate_donors_for_wave(blood_req, wave_number=3) # Wave 3 or max wave usually targets everyone in district
-
     if not candidates:
-
         return Response({'message': 'No eligible donors found.', 'notified': 0}, status=status.HTTP_200_OK)
 
-        
-
     dispatch_wave_notifications(blood_req, candidates, wave_number=3)
-
     return Response({'message': f'Notified {len(candidates)} donors.', 'notified': len(candidates)}, status=status.HTTP_200_OK)
-
 
 
 @api_view(['POST'])

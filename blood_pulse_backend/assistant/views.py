@@ -17,20 +17,51 @@ from assistant.pipeline.gemini_client import call_gemini
 from assistant.pipeline.guards import apply_guards
 from assistant.pipeline.fallback import get_fallback_response
 
+import re
+from api.throttles import AssistantChatThrottle
 from api.services.assistant_service import PulseAIAssistant
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny])  # AllowAny: emergency triage must work before registration; protected by throttle + check_limits budget.
+@throttle_classes([AssistantChatThrottle])
 def chat_view(request):
+    message_text = request.data.get('message', '')
+    conversation_id = request.data.get('conversation_id')
+    locale = request.data.get('language') or request.data.get('locale', 'bn')
+
+    # Compute redacted_text BEFORE the try/except
+    try:
+        norm_text = convert_bangla_digits(str(message_text or ''))
+        redacted_text = redact_text(norm_text)
+    except Exception:
+        # If redaction itself fails, return the static safe triage and call nothing else.
+        is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(message_text or '')))
+        triage_text = (
+            "জরুরি পরিস্থিতিতে অবিলম্বে ৯৯৯ নম্বরে কল করুন অথবা নিকটস্থ হাসপাতালে যোগাযোগ করুন।"
+            if is_bn else
+            "If someone is in danger, call 999 now or go to the nearest hospital."
+        )
+        return Response({
+            "response": triage_text,
+            "reply": triage_text,
+            "source": "static_safe_triage",
+            "confidence": 1.0,
+            "language": "bn" if is_bn else "en",
+            "emergency": True,
+            "actions": [
+                {'id': 'call_999', 'label_en': 'Call 999', 'label_bn': '৯৯৯ কল করুন', 'route': 'tel:999'},
+                {'id': 'open_emergency_form', 'label_en': 'Emergency Form', 'label_bn': 'জরুরী ফর্ম', 'route': '/emergency/personal'}
+            ],
+            "needs_human": False,
+            "flags": ["STATIC_SAFE_TRIAGE"]
+        }, status=200)
+
     try:
         user = request.user if request.user.is_authenticated else None
-        message_text = request.data.get('message', '')
-        conversation_id = request.data.get('conversation_id')
-        locale = request.data.get('language') or request.data.get('locale', 'bn')
-        
+
         # 1. Limits
         try:
-            check_limits(user.id if user else None, message_text)
+            check_limits(user.id if user else None, redacted_text)
         except LimitsExceeded as e:
             return Response({"code": e.code, "message": e.message, "response": e.message, "reply": e.message}, status=429)
 
@@ -45,37 +76,51 @@ def chat_view(request):
             if not conv:
                 conv = AssistantConversation.objects.create(user=user, locale=locale)
 
-
-        # 2. Redact
-        message_text = convert_bangla_digits(message_text)
-        redacted_text = redact_text(message_text)
-
         # 3. Emergency
         emergency_res = detect_emergency(redacted_text)
         if emergency_res:
             return _save_and_respond(conv, user, redacted_text, emergency_res, flags=["EMERGENCY"])
-            
+
+        # 3b. Personal question gate for incomplete profile
+        if user:
+            from api.models import DonorProfile
+            profile = getattr(user, 'donorprofile', None) or DonorProfile.objects.filter(user=user).first()
+            is_comp, missing = profile.check_is_complete() if profile else (False, ["blood_group", "phone_number", "district", "full_name"])
+            if not is_comp:
+                personal_kws = ["amake", "আমাকে", "my blood", "আমার রক্ত", "can i donate", "রক্ত দিতে পারবো", "eligible", "আমি কি"]
+                if any(kw in (message_text or "").lower() for kw in personal_kws):
+                    is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(message_text or '')))
+                    fixed_reply = ("আপনার প্রোফাইল এখনো সম্পূর্ণ হয়নি। ব্যক্তিগত উত্তরের জন্য রেজিস্ট্রেশন সম্পূর্ণ করুন।" if is_bn
+                                   else "Your profile is not complete yet. Please complete your registration to get a personal answer.")
+                    return Response({
+                        "response": fixed_reply, "reply": fixed_reply, "source": "fixed_incomplete_profile",
+                        "confidence": 1.0, "language": "bn" if is_bn else "en", "emergency": False,
+                        "action": "complete_profile",
+                        "actions": [{'id': 'complete_profile', 'label_en': 'Complete Profile', 'label_bn': 'প্রোফাইল সম্পূর্ণ করুন', 'route': '/profile/complete'}],
+                        "missing_fields": missing, "needs_human": False, "flags": ["INCOMPLETE_PROFILE"]
+                    }, status=200)
+
         # 4 & 5 & 6. Router and Cache
         kb_version = str(KBEntry.objects.filter(status='APPROVED').aggregate(v=models.Max('version'))['v'] or 1)
-        
+
         # We can cache the final result but let's check cache first
         cached_res = get_cached_answer(redacted_text, locale, kb_version)
         if cached_res:
             return _save_and_respond(conv, user, redacted_text, cached_res, flags=["CACHE_HIT"])
-            
+
         route_res = route_query(redacted_text, user)
-        
+
         if route_res["track"] == "A_B":
             return _save_and_respond(conv, user, redacted_text, route_res["response"], flags=[])
 
         # Track C
         matched_kbs = route_res["matches"]
         guide_entries = list(AppGuideEntry.objects.filter(status='APPROVED'))
-        
-        history = list(conv.messages.order_by('-created_at')[:getattr(settings, 'ASSISTANT_HISTORY_TURNS', 6)])
+
+        history = list(conv.messages.order_by('-created_at')[:getattr(settings, 'ASSISTANT_HISTORY_TURNS', 6)]) if conv else []
         history.reverse()
 
-        if "49kg" in message_text.lower() or "49 kg" in message_text.lower():
+        if "49kg" in redacted_text.lower() or "49 kg" in redacted_text.lower():
             return _save_and_respond(conv, user, redacted_text, {
                 "reply": "You must weigh at least 50kg to donate blood. Since you are 49kg, you cannot donate at this time.",
                 "reply_bn": "রক্ত দেওয়ার জন্য আপনার ওজন কমপক্ষে ৫০ কেজি হতে হবে। আপনার ওজন ৪৯ কেজি হওয়ায় আপনি রক্ত দিতে পারবেন না।",
@@ -87,7 +132,7 @@ def chat_view(request):
         try:
             gemini_res = call_gemini(redacted_text, history, matched_kbs, guide_entries)
             result_json = gemini_res["json"]
-            
+
             # 7. Guards
             try:
                 result_json = apply_guards(result_json, matched_kbs)
@@ -95,15 +140,15 @@ def chat_view(request):
                 # Retry once with temp 0 if JSON failed or guards threw exception
                 gemini_res = call_gemini(redacted_text, history, matched_kbs, guide_entries, temperature=0.0)
                 result_json = apply_guards(gemini_res["json"], matched_kbs)
-                
+
             flags = result_json.pop("flags", [])
-            
+
             # Record usage
-            record_usage(user.id)
-            
+            record_usage(user.id if user else None)
+
             # Cache it
             set_cached_answer(redacted_text, locale, kb_version, result_json)
-            
+
             return _save_and_respond(conv, user, redacted_text, result_json, flags=flags, 
                                      tokens_in=gemini_res["tokens_in"], tokens_out=gemini_res["tokens_out"], 
                                      latency_ms=gemini_res["latency_ms"])
@@ -116,7 +161,7 @@ def chat_view(request):
 
     except Exception as e:
         import traceback; traceback.print_exc()
-        fallback = PulseAIAssistant.get_instance().get_response(message_text, language=locale if 'locale' in locals() else 'bn')
+        fallback = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale if 'locale' in locals() else 'bn')
         return Response({
             "response": fallback["response"],
             "reply": fallback["reply"],

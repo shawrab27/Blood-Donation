@@ -70,6 +70,8 @@ class GuardsTests(TestCase):
         class MockKB:
             def __init__(self):
                 self.id = 1
+                self.title_en = "Donation interval"
+                self.title_bn = ""
                 self.body_en = "You can donate blood every 120 days."
                 self.body_bn = ""
         reply = {"reply": "You can donate after 120 days.", "kb_ids_used": [1]}

@@ -6,6 +6,8 @@ class AssistantMessage {
   final bool isUser;
   final String text;
   final List<AssistantAction> actions;
+  final String? action;
+  final List<String> missingFields;
   final bool emergency;
   final bool needsHuman;
   final int? conversationId;
@@ -17,6 +19,8 @@ class AssistantMessage {
     required this.isUser,
     required this.text,
     this.actions = const [],
+    this.action,
+    this.missingFields = const [],
     this.emergency = false,
     this.needsHuman = false,
     this.hasThumbsDown = false,
@@ -32,6 +36,11 @@ class AssistantMessage {
               ?.map((e) => AssistantAction.fromJson(e))
               .toList() ??
           [],
+      action: json['action'] as String?,
+      missingFields: (json['missing_fields'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       emergency: json['emergency'] ?? false,
       needsHuman: json['needs_human'] ?? false,
       hasThumbsDown: json['has_thumbs_down'] ?? false,
@@ -45,6 +54,8 @@ class AssistantMessage {
       'text': text,
       'reply': text,
       'actions': actions.map((e) => e.toJson()).toList(),
+      if (action != null) 'action': action,
+      if (missingFields.isNotEmpty) 'missing_fields': missingFields,
       'emergency': emergency,
       'needs_human': needsHuman,
       'has_thumbs_down': hasThumbsDown,
@@ -56,6 +67,8 @@ class AssistantMessage {
     bool? isUser,
     String? text,
     List<AssistantAction>? actions,
+    String? action,
+    List<String>? missingFields,
     bool? emergency,
     bool? needsHuman,
     bool? hasThumbsDown,
@@ -65,6 +78,8 @@ class AssistantMessage {
       isUser: isUser ?? this.isUser,
       text: text ?? this.text,
       actions: actions ?? this.actions,
+      action: action ?? this.action,
+      missingFields: missingFields ?? this.missingFields,
       emergency: emergency ?? this.emergency,
       needsHuman: needsHuman ?? this.needsHuman,
       hasThumbsDown: hasThumbsDown ?? this.hasThumbsDown,

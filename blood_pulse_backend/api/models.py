@@ -85,11 +85,8 @@ class DonorProfile(models.Model):
 
     @property
     def registration_complete(self):
-        has_name = bool(self.user.first_name)
-        has_blood = bool(self.blood_group)
-        has_phone = bool(self.phone_number)
-        has_district = bool(self.district)
-        return has_name and has_blood and has_phone and has_district
+        is_comp, _ = self.check_is_complete()
+        return is_comp
 
 
     manual_rank_override = models.CharField(max_length=50, blank=True, null=True, help_text="Admin override for badge (e.g. Gold, Platinum).")
@@ -175,54 +172,43 @@ class DonorProfile(models.Model):
 
 
     def check_is_complete(self):
-
         missing = []
-
         full_name = ""
-
         if self.user:
-
             full_name = f"{self.user.first_name or ''} {self.user.last_name or ''}".strip()
-
         if not full_name:
-
             missing.append("full_name")
 
-
-
         phone = (self.phone_number or "").strip()
-
-        if not phone or (phone.startswith('+8800000') and len(phone) == 12):
-
+        placeholder_phones = {'+8801700000000', '01700000000', '+88000000000', '00000000000'}
+        is_placeholder = (
+            phone in placeholder_phones or
+            (phone.startswith('+8800000') and len(phone) == 12) or
+            phone.startswith('+8801700000000')
+        )
+        if not phone or is_placeholder:
             missing.append("phone_number")
 
-
-
         bg = (self.blood_group or "").strip()
-
         valid_bgs = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
-
         if not bg or bg not in valid_bgs:
-
             missing.append("blood_group")
 
-
-
         dist = (self.district or "").strip()
-
         if not dist:
-
             missing.append("district")
 
-
-
         return len(missing) == 0, missing
-
-
 
     def save(self, *args, **kwargs):
         is_comp, _ = self.check_is_complete()
         self.is_profile_complete = is_comp
+
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.add('is_profile_complete')
+            kwargs['update_fields'] = update_fields
 
         lat = self.last_lat if self.last_lat is not None else self.latitude
         lng = self.last_lng if self.last_lng is not None else self.longitude

@@ -184,26 +184,20 @@ class PulseAIAssistant:
 
     def get_response(self, message: str, language: str = 'bn') -> dict:
         """
-        Main response generator. Guarantees <5 second response, never crashes.
+        Fallback response generator (CSV matching or static triage only).
+        Ungrounded Gemini call removed: bypasses RAG and numeric guard.
         """
         start_time = time.time()
         is_bn = (language == 'bn') or self._is_bangla(message)
 
-        # 1. Try Gemini
-        gemini_result = self._call_gemini(message, is_bn)
-        if gemini_result:
-            gemini_result['language'] = 'bn' if is_bn else 'en'
-            self._log_conversation(message, gemini_result['response'], gemini_result['source'])
-            return gemini_result
-
-        # 2. Fallback: CSV Matching
+        # 1. Fallback: CSV Matching
         csv_result = self._match_csv(message, is_bn)
         if csv_result:
             csv_result['language'] = 'bn' if is_bn else 'en'
             self._log_conversation(message, csv_result['response'], csv_result['source'])
             return csv_result
 
-        # 3. Last Resort: Generic Medical Triage
+        # 2. Last Resort: Generic Medical Triage
         default_reply = (
             "রক্তদান ও স্বাস্থ্য সংক্রান্ত যেকোনো জরুরি তথ্যের জন্য ব্লাডপালস ২৪/৭ প্রস্তুত। "
             "সাধারণ রক্তদানের ন্যূনতম বিরতি ৯০ দিন। জরুরি প্রয়োজনে ১৬১৬৩ বা ৯৯৯ এ যোগাযোগ করুন।"

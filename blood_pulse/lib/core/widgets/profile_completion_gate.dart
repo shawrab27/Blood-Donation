@@ -25,19 +25,19 @@ class ProfileCompletionGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final bool hasValidPhone = user?.primaryPhone.isNotEmpty == true &&
-        !user!.primaryPhone.startsWith('+8800000');
-    final bool hasBloodGroup = user?.bloodGroup.isNotEmpty == true;
-    final bool hasAddress = (user?.categoryDetails['district']?.isNotEmpty == true) ||
-        (user?.categoryDetails['address']?.isNotEmpty == true);
 
     final bool isComplete = authState.status == AuthStatus.authenticated &&
         user != null &&
-        (user.isProfileComplete || (hasBloodGroup && hasValidPhone && hasAddress));
+        user.isProfileComplete;
 
     if (isComplete) {
       return child;
     }
+
+    final missing = user?.missingFields ?? const <String>[];
+    final bool bloodGroupDone = !missing.contains('blood_group');
+    final bool districtDone = !missing.contains('district');
+    final bool phoneDone = !missing.contains('phone_number');
 
     return Stack(
       children: [
@@ -139,15 +139,15 @@ class ProfileCompletionGate extends ConsumerWidget {
                     children: [
                       _buildPill(
                         'রক্তের গ্রুপ',
-                        hasBloodGroup,
+                        bloodGroupDone,
                       ),
                       _buildPill(
-                        'জেলা / ঠিকানা',
-                        hasAddress,
+                        'জেলা',
+                        districtDone,
                       ),
                       _buildPill(
                         'ফোন নম্বর',
-                        hasValidPhone,
+                        phoneDone,
                       ),
                     ],
                   ),

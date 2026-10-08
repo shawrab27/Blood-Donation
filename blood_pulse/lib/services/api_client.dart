@@ -50,6 +50,8 @@ class ApiClient {
   static String? _cachedAccessToken;
   static String? _cachedRefreshToken;
 
+  static String? get cachedAccessToken => _cachedAccessToken;
+
   static void setStaticTokens({String? access, String? refresh}) {
     _cachedAccessToken = access;
     _cachedRefreshToken = refresh;

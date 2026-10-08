@@ -43,6 +43,7 @@ class _RegistrationCompletionModalState
   String? _bloodGroup;
   String _gender = 'Male';
   final _phoneCtrl = TextEditingController();
+  final _districtCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
   final _ageCtrl = TextEditingController(text: '22');
 
@@ -61,14 +62,16 @@ class _RegistrationCompletionModalState
       if (user.bloodGroup.isNotEmpty && _kBloodGroups.contains(user.bloodGroup)) {
         _bloodGroup = user.bloodGroup;
       }
-      if (user.primaryPhone.isNotEmpty && !user.primaryPhone.startsWith('+8800000')) {
+      if (user.primaryPhone.isNotEmpty && !user.missingFields.contains('phone_number')) {
         _phoneCtrl.text = user.primaryPhone;
+      }
+      final dist = user.categoryDetails['district'];
+      if (dist != null && dist.isNotEmpty) {
+        _districtCtrl.text = dist;
       }
       if (user.categoryDetails['address'] != null &&
           user.categoryDetails['address']!.isNotEmpty) {
         _addressCtrl.text = user.categoryDetails['address']!;
-      } else if (user.categoryDetails['district'] != null) {
-        _addressCtrl.text = user.categoryDetails['district']!;
       }
       if (user.age > 0) {
         _ageCtrl.text = user.age.toString();
@@ -82,6 +85,7 @@ class _RegistrationCompletionModalState
   @override
   void dispose() {
     _phoneCtrl.dispose();
+    _districtCtrl.dispose();
     _addressCtrl.dispose();
     _ageCtrl.dispose();
     super.dispose();
@@ -100,6 +104,9 @@ class _RegistrationCompletionModalState
     });
 
     final phone = _phoneCtrl.text.trim();
+    final district = _districtCtrl.text.trim().isNotEmpty
+        ? _districtCtrl.text.trim()
+        : (ref.read(authProvider).user?.categoryDetails['district'] ?? 'Dhaka');
     final address = _addressCtrl.text.trim();
     final age = int.tryParse(_ageCtrl.text.trim()) ?? 25;
 
@@ -111,10 +118,11 @@ class _RegistrationCompletionModalState
             gender: _gender,
             age: age,
             isProfileComplete: true,
+            missingFields: const [],
             categoryDetails: {
               ...currentUser.categoryDetails,
-              'district': address,
-              'address': address,
+              'district': district,
+              if (address.isNotEmpty) 'address': address,
             },
           )
         : UserProfile(
@@ -126,12 +134,13 @@ class _RegistrationCompletionModalState
             gender: _gender,
             category: 'civilian',
             categoryDetails: {
-              'district': address,
-              'address': address,
+              'district': district,
+              if (address.isNotEmpty) 'address': address,
             },
             neverDonated: true,
             totalBagsDonated: 0,
             isProfileComplete: true,
+            missingFields: const [],
           );
 
     // Call PUT /api/users/profile/ or update profile via client
@@ -140,8 +149,8 @@ class _RegistrationCompletionModalState
       final payload = {
         'blood_group': _bloodGroup,
         'phone_number': phone,
-        'district': address,
-        'address': address,
+        'district': district,
+        if (address.isNotEmpty) 'address': address,
         'age': age,
         'gender': _gender,
         'is_profile_complete': true,
@@ -341,18 +350,27 @@ class _RegistrationCompletionModalState
                 ),
                 const SizedBox(height: 14),
 
-                // Address / District Field
+                // District Field (Required by backend)
                 CustomInputField(
-                  controller: _addressCtrl,
-                  label: 'ঠিকানা বা জেলা / District / City Address *',
-                  hint: 'Dhaka, Bangladesh',
-                  prefixIcon: Icons.location_on_outlined,
+                  controller: _districtCtrl,
+                  label: 'জেলা / District *',
+                  hint: 'Dhaka',
+                  prefixIcon: Icons.location_city_rounded,
                   validator: (val) {
                     if (val == null || val.trim().isEmpty) {
-                      return 'ঠিকানা আবশ্যক / Address is required';
+                      return 'জেলা আবশ্যক / District is required';
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 14),
+
+                // Address Field (Optional)
+                CustomInputField(
+                  controller: _addressCtrl,
+                  label: 'ঠিকানা / Address (Optional)',
+                  hint: 'Thana, Area / ঠিকানা',
+                  prefixIcon: Icons.location_on_outlined,
                 ),
                 const SizedBox(height: 14),
 

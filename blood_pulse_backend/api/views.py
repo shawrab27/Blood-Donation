@@ -193,9 +193,9 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         except DonorProfile.DoesNotExist:
             return Response({"error": "Profile not found"}, status=404)
 
-    @action(detail=False, methods=['get', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get', 'put', 'patch', 'delete'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """GET or DELETE /api/donors/me/ — retrieves or deletes the currently authenticated user's account."""
+        """GET, PUT, PATCH, or DELETE /api/donors/me/ — retrieves, updates, or deletes the currently authenticated user's account."""
         profile = DonorProfile.objects.filter(user=request.user).first()
         if request.method == 'DELETE':
             user = request.user
@@ -215,8 +215,30 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
 
         if not profile:
             return Response({'detail': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method in ['PUT', 'PATCH']:
+            serializer = self.get_serializer(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            if 'first_name' in request.data:
+                request.user.first_name = request.data['first_name']
+            if 'last_name' in request.data:
+                request.user.last_name = request.data['last_name']
+            if 'email' in request.data:
+                request.user.email = request.data['email']
+            request.user.save()
+            serializer.save()
+            data = dict(serializer.data)
+            is_comp, missing = profile.check_is_complete()
+            data['is_profile_complete'] = is_comp
+            data['missing_fields'] = missing
+            return Response(data)
+
         serializer = self.get_serializer(profile)
-        return Response(serializer.data)
+        data = dict(serializer.data)
+        is_comp, missing = profile.check_is_complete()
+        data['is_profile_complete'] = is_comp
+        data['missing_fields'] = missing
+        return Response(data)
 
     @action(detail=True, methods=['get'])
     def certificate(self, request, pk=None):
@@ -288,8 +310,8 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['create']:
-            return [IsProfileComplete()]
-        return [IsAuthenticated(), IsRegistrationComplete()]
+            return [IsAuthenticated(), IsProfileComplete()]
+        return [IsAuthenticated(), IsProfileComplete()]
 
     def perform_create(self, serializer):
         profile = getattr(self.request.user, 'donorprofile', None)

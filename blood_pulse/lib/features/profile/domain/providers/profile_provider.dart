@@ -47,15 +47,16 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
 
   Future<bool> updateProfile(Map<String, dynamic> data) async {
     final currentProfile = state.value;
-    if (currentProfile == null) return false;
-
     try {
+      final endpoint = (currentProfile != null && currentProfile.id > 0)
+          ? 'donors/${currentProfile.id}/'
+          : 'donors/me/';
       final response = await ApiClient().patch(
-        'donors/${currentProfile.id}/',
+        endpoint,
         body: data,
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         final updatedProfile = ProfileModel.fromJson(jsonDecode(response.body));
         state = AsyncValue.data(updatedProfile);
         return true;

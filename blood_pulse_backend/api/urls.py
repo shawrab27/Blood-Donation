@@ -130,6 +130,7 @@ urlpatterns = [
     path('health-hub/analyze-report/', GeminiReportAnalyzeView.as_view(), name='analyze-report'),
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     path('auth/firebase/', FirebaseAuthView.as_view(), name='firebase-auth'),
+    path('profile/me/', DonorProfileViewSet.as_view({'get': 'me', 'put': 'me', 'patch': 'me', 'delete': 'me'}), name='profile-me'),
     path('profile/completion-status/', ProfileCompletionStatusView.as_view(), name='profile-completion-status'),
     path('notifications/', NotificationListView.as_view(), name='notifications-list'),
     path('notifications/unread-count/', UnreadNotificationCountView.as_view(), name='unread-notification-count'),

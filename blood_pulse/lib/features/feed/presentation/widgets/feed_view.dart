@@ -7,9 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blood_pulse/core/widgets/avatar_helper.dart';
 
 import 'package:image_picker/image_picker.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../../core/access/access_guard.dart';
+import '../../../../core/access/profile_completion_modal.dart';
+import 'guest_lock_card.dart';
 import '../providers/feed_provider.dart';
 
 /// Comprehensive Feed View supporting both Mobile and Desktop layout parity.
@@ -65,12 +67,18 @@ class _FeedViewState extends ConsumerState<FeedView> {
         itemCount: posts.length + (posts.isEmpty ? 2 : 1),
         itemBuilder: (context, index) {
           if (index == 0) {
+            final isGuest = ref.watch(isGuestProvider);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (filter == null) ...[
-                  const _ProfileCompletionBanner(),
-                  _PostCreatorCard(picker: _picker),
+                  if (isGuest) ...[
+                    const GuestPulseAICard(),
+                    const GuestLockCard(),
+                  ] else ...[
+                    const _ProfileCompletionBanner(),
+                    _PostCreatorCard(picker: _picker),
+                  ],
                   const SizedBox(height: 12),
                 ],
                 _buildSegmentFilterBar(filter),
@@ -1552,7 +1560,7 @@ class _ProfileCompletionBanner extends ConsumerWidget {
             width: double.infinity,
             height: 40,
             child: ElevatedButton(
-              onPressed: () => context.push('/register'),
+              onPressed: () => ProfileCompletionModal.show(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
                 foregroundColor: Colors.white,

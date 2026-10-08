@@ -69,6 +69,11 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     recent_logs = RecentLogSerializer(many=True, read_only=True)
     global_rank = serializers.IntegerField(read_only=True)
     badge = serializers.CharField(read_only=True)
+    missing_fields = serializers.SerializerMethodField()
+
+    def get_missing_fields(self, obj):
+        _, missing = obj.check_is_complete()
+        return missing
 
     class Meta:
         model = DonorProfile
@@ -77,7 +82,8 @@ class DonorProfileSerializer(serializers.ModelSerializer):
             'district', 'phone_number', 'nid_hash', 'last_donation_date', 'is_verified', 
             'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'institution', 'upazila_linked', 'address', 
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
-            'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider'
+            'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
+            'missing_fields'
         ]
     def validate_phone_number(self, value):
         if not value:

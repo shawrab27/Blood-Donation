@@ -9,8 +9,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
-import '../../../../services/api_client.dart';
 import '../providers/auth_notifier.dart';
+import '../../../../core/access/access_guard.dart';
 
 /// Login Screen — Phone/Username + Password.
 ///
@@ -94,15 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     if (!mounted) return;
     if (success) {
-      final user = ref.read(authProvider).user;
-      final bool isProfileComplete = user?.isProfileComplete == true &&
-          (user?.bloodGroup.isNotEmpty ?? false) &&
-          (user?.primaryPhone.isNotEmpty ?? false);
-      if (isProfileComplete) {
-        context.go('/dashboard');
-      } else {
-        context.go('/register');
-      }
+      context.go('/feed');
     } else {
       final err = ref.read(authProvider).errorMessage;
       if (err != null && err.isNotEmpty) {
@@ -283,15 +275,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                               const SizedBox(height: 12),
                               CapsuleButton(
-                                label: 'Explore as Demo Donor ⚡',
+                                label: 'Continue as Guest',
                                 isOutlined: true,
-                                icon: Icons.volunteer_activism_rounded,
-                                backgroundColor: const Color(0xFFFFF0F1),
-                                foregroundColor: AppColors.primary,
+                                icon: Icons.person_outline,
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.secondary,
                                 height: 50,
                                 onPressed: () {
-                                  ref.read(authProvider.notifier).loginAsDemo();
-                                  context.go('/dashboard');
+                                  ref.read(isGuestProvider.notifier).state = true;
+                                  context.go('/feed');
                                 },
                               ),
                             ],

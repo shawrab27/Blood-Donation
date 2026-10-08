@@ -13,6 +13,7 @@ class ProfileModel {
   final String? lastDonationDate;
   final bool isVerified;
   final bool isProfileComplete;
+  final List<String> missingFields;
   final String? bio;
   final String? institute;
   final String? address;
@@ -35,6 +36,7 @@ class ProfileModel {
     this.lastDonationDate,
     this.isVerified = false,
     this.isProfileComplete = false,
+    this.missingFields = const [],
     this.bio,
     this.institute,
     this.address,
@@ -59,6 +61,10 @@ class ProfileModel {
       lastDonationDate: json['last_donation_date'],
       isVerified: json['is_verified'] ?? false,
       isProfileComplete: json['is_profile_complete'] ?? false,
+      missingFields: (json['missing_fields'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       bio: json['bio'],
       institute: json['institute'],
       address: json['address'],

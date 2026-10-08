@@ -30,6 +30,10 @@ class RouterNotifier extends ChangeNotifier {
                            path == '/splash' ||
                            path == '/privacy-policy';
                         
+    if (authState.status == AuthStatus.loading) {
+      return null;
+    }
+
     if (authState.status == AuthStatus.unauthenticated) {
       if (!isPreAuthRoute) {
         return '/login';

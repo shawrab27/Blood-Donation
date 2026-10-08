@@ -9,6 +9,7 @@ import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/profile_completion_gate.dart';
+import '../../../../core/access/access_guard.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/otp_provider.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
@@ -66,7 +67,15 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         ),
         child: BottomNavigationBar(
           currentIndex: activeTabIndex,
-          onTap: (index) => ref.read(shellTabProvider.notifier).state = index,
+          onTap: (index) {
+            final feature = _featureForIndex(index);
+            AccessGuard.checkAndHandle(
+              context: context,
+              ref: ref,
+              feature: feature,
+              onAllowed: () => ref.read(shellTabProvider.notifier).state = index,
+            );
+          },
           type: BottomNavigationBarType.fixed,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.neutral,
@@ -102,6 +111,23 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         ),
       ),
     );
+  }
+
+  AccessFeature _featureForIndex(int index) {
+    switch (index) {
+      case 0:
+        return AccessFeature.feed;
+      case 1:
+        return AccessFeature.bloodHub;
+      case 2:
+        return AccessFeature.community;
+      case 3:
+        return AccessFeature.healthHub;
+      case 4:
+        return AccessFeature.profile;
+      default:
+        return AccessFeature.feed;
+    }
   }
 }
 

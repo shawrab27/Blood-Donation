@@ -4,28 +4,31 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
-import 'services/api_client.dart';
+import 'features/auth/presentation/providers/auth_notifier.dart';
 
 /// Splash screen that plays the official intro video asset before routing into the app.
-class SplashVideoScreen extends StatefulWidget {
+class SplashVideoScreen extends ConsumerStatefulWidget {
   const SplashVideoScreen({super.key});
 
   @override
-  State<SplashVideoScreen> createState() => _SplashVideoScreenState();
+  ConsumerState<SplashVideoScreen> createState() => _SplashVideoScreenState();
 }
 
-class _SplashVideoScreenState extends State<SplashVideoScreen> {
+class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
   VideoPlayerController? _controller;
   bool _hasNavigated = false;
   Timer? _fallbackTimer;
+  late final Future<void> _restoreFuture;
 
   @override
   void initState() {
     super.initState();
     // Enable immersive full screen during splash
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _restoreFuture = ref.read(authProvider.notifier).restoreSession();
     _initializeAndPlayVideo();
   }
 
@@ -81,20 +84,22 @@ class _SplashVideoScreenState extends State<SplashVideoScreen> {
     // Restore standard UI mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-    // Check if user is already authenticated to choose next destination
+    // Wait for session restoration to complete
     try {
-      final token = await ApiClient().getAccessToken();
-      if (!mounted) return;
+      await _restoreFuture;
+    } catch (_) {}
 
-      if (token != null && token.isNotEmpty) {
-        context.go('/dashboard');
-      } else {
-        context.go('/onboarding');
-      }
-    } catch (_) {
-      if (mounted) {
-        context.go('/onboarding');
-      }
+    if (!mounted) return;
+
+    final currentPath = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+    if (currentPath != '/' && currentPath != '/splash') return;
+
+    final authStatus = ref.read(authProvider).status;
+    if (authStatus == AuthStatus.authenticated ||
+        authStatus == AuthStatus.authenticatedIncomplete) {
+      context.go('/feed');
+    } else {
+      context.go('/onboarding');
     }
   }
 

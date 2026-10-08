@@ -28,17 +28,104 @@ class CP2Tests(APITestCase):
         self.token_complete = str(refresh2.access_token)
 
     def test_blood_hub_access_incomplete(self):
-        # We need an endpoint protected by IsRegistrationComplete. Let's use /api/requests/
+        # Protected endpoint returns 403 with code 'profile_incomplete'
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token_incomplete)
         response = self.client.get('/api/requests/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data['code'], 'REGISTRATION_INCOMPLETE')
+        self.assertEqual(response.data['code'], 'profile_incomplete')
 
     def test_blood_hub_access_complete(self):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token_complete)
         response = self.client.get('/api/requests/')
-        # Should be 200 OK (or 404/others, but not 403 REGISTRATION_INCOMPLETE)
         self.assertNotEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_google_user_blood_group_missing_personal_endpoint(self):
+        # (a) Google-style user with blood_group missing gets 403, code "profile_incomplete", on a personal endpoint.
+        google_user = User.objects.create_user(username='guser_a', email='guser_a@gmail.com', first_name='GUserA')
+        DonorProfile.objects.create(
+            user=google_user,
+            phone_number='+88099999991',
+            district='Dhaka',
+            blood_group='',
+            auth_provider='google'
+        )
+        refresh = RefreshToken.for_user(google_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+        res = self.client.post('/api/requests/', {'patient_name': 'Patient A', 'blood_group': 'A+'})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data['code'], 'profile_incomplete')
+        self.assertIn('blood_group', res.data['missing_fields'])
+
+    def test_google_user_feed_read_allowed(self):
+        # (b) Same user gets 200 on public feed read.
+        google_user = User.objects.create_user(username='guser_b', email='guser_b@gmail.com', first_name='GUserB')
+        DonorProfile.objects.create(
+            user=google_user,
+            phone_number='+88099999992',
+            district='Dhaka',
+            blood_group='',
+            auth_provider='google'
+        )
+        refresh = RefreshToken.for_user(google_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+        res = self.client.get('/api/posts/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_google_user_profile_update_sets_blood_group(self):
+        # (c) Same user gets 200 on profile update that sets blood group.
+        google_user = User.objects.create_user(username='guser_c', email='guser_c@gmail.com', first_name='GUserC')
+        profile = DonorProfile.objects.create(
+            user=google_user,
+            phone_number='+88099999993',
+            district='Dhaka',
+            blood_group='',
+            auth_provider='google'
+        )
+        refresh = RefreshToken.for_user(google_user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+        res = self.client.patch(f'/api/donors/{profile.id}/', {'blood_group': 'B+'})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertEqual(profile.blood_group, 'B+')
+        self.assertTrue(profile.is_profile_complete)
+
+    def test_placeholder_phone_counts_as_missing(self):
+        # (d) Placeholder phone (+8801700000000) counts as missing.
+        user = User.objects.create_user(username='ph_user_d', email='ph_d@example.com', first_name='PhoneUser')
+        profile = DonorProfile.objects.create(
+            user=user,
+            phone_number='+8801700000000',
+            district='Dhaka',
+            blood_group='A+'
+        )
+        is_comp, missing = profile.check_is_complete()
+        self.assertFalse(is_comp)
+        self.assertIn('phone_number', missing)
+
+    @patch('assistant.views.call_gemini')
+    def test_pulseai_personal_question_incomplete_profile(self, mock_gemini):
+        # (e) PulseAI personal question with incomplete profile returns the fixed reply, and AI mock is NOT called.
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token_incomplete)
+        res = self.client.post('/api/assistant/chat/', {
+            'message': 'can I donate blood?',
+            'language': 'en'
+        })
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data.get('action'), 'complete_profile')
+        self.assertEqual(res.data.get('response'), "Your profile is not complete yet. Please complete your registration to get a personal answer.")
+        self.assertIn('blood_group', res.data.get('missing_fields', []))
+        mock_gemini.assert_not_called()
+
+    def test_complete_profile_user_normal_behavior(self):
+        # (f) Complete profile user gets normal behavior.
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token_complete)
+        res = self.client.get('/api/requests/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res_me = self.client.get('/api/donors/me/')
+        self.assertEqual(res_me.status_code, status.HTTP_200_OK)
+        self.assertTrue(res_me.data['is_profile_complete'])
+        self.assertEqual(res_me.data['missing_fields'], [])
 
     @patch('urllib.request.urlopen')
     def test_repeat_google_login(self, mock_urlopen):

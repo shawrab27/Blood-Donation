@@ -2,22 +2,19 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../core/access/access_guard.dart';
 
 /// Floating Action Button for PulseAI Assistant.
-/// Features:
-/// - Deep red (#C30121) circular core
-/// - Soft red (#FF6B7A) blood drop + animated ECG pulse line
-/// - 1600ms heartbeat pulse cycle (8px up-down bounce + outer ripple fade 1 -> 0)
-/// - Modal bottom sheet with 4 quick action options
-class PulseAIFAB extends StatefulWidget {
+class PulseAIFAB extends ConsumerStatefulWidget {
   const PulseAIFAB({super.key});
 
   @override
-  State<PulseAIFAB> createState() => _PulseAIFABState();
+  ConsumerState<PulseAIFAB> createState() => _PulseAIFABState();
 }
 
-class _PulseAIFABState extends State<PulseAIFAB>
+class _PulseAIFABState extends ConsumerState<PulseAIFAB>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _bounceAnimation;
@@ -100,6 +97,15 @@ class _PulseAIFABState extends State<PulseAIFAB>
     );
   }
 
+  void _handleTap() {
+    AccessGuard.checkAndHandle(
+      context: context,
+      ref: ref,
+      feature: AccessFeature.chat,
+      onAllowed: _showQuickMenu,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
@@ -131,7 +137,7 @@ class _PulseAIFABState extends State<PulseAIFAB>
 
               // Main Deep Red Action Button
               GestureDetector(
-                onTap: _showQuickMenu,
+                onTap: _handleTap,
                 child: Container(
                   width: 58,
                   height: 58,
