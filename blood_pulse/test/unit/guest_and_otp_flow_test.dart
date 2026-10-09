@@ -27,7 +27,7 @@ void main() {
       expect(container.read(authProvider).isAuthenticated, isFalse);
     });
 
-    test('logout() clears tokens, resets isGuest to false, and clears pending redirect', () {
+    test('logout() clears tokens, resets isGuest to false, and clears pending redirect', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -39,7 +39,7 @@ void main() {
       expect(container.read(pendingRedirectRouteProvider), equals('/emergency/requests'));
 
       // Perform logout
-      container.read(authProvider.notifier).logout();
+      await container.read(authProvider.notifier).logout();
 
       // Assert everything is reset
       expect(container.read(isGuestProvider), isFalse);

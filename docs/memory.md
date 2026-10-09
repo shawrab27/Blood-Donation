@@ -73,3 +73,4 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 
 ## 10. Update Log
 - Keep this section short. Add a dated one-liner after each verified milestone.
+- 2026-10-10: Two-device Blood Hub integration (S1-S8) verified 100% on feature/blood-hub-integration; 146/147 backend tests pass, 107/107 Flutter tests pass, 0 analyzer issues, Firestore rules hardened and emulator-verified.

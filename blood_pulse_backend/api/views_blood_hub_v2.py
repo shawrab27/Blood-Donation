@@ -191,6 +191,11 @@ class DonationMatchStatusAPIView(APIView):
         new_status = serializer.validated_data['status']
         note = serializer.validated_data.get('note', '')
 
+        if new_status in ['ON_THE_WAY', 'ARRIVED'] and not is_donor and not request.user.is_staff:
+            raise PermissionDenied("Only the donor can report transit and arrival status.")
+        if new_status == 'DONATED' and not (is_donor or is_requester or request.user.is_staff):
+            raise PermissionDenied("Only matched participants can confirm donation completion.")
+
         try:
             updated = update_match_status(pk, request.user, new_status, note)
             return Response(

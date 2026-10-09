@@ -3,7 +3,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import logging
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
@@ -437,6 +437,11 @@ class SocialPostViewSet(viewsets.ModelViewSet):
 class HospitalViewSet(viewsets.ModelViewSet):
     queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAdminUser()]
+        return [permissions.AllowAny()]
 
 class NearbyDonorsView(APIView):
     """

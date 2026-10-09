@@ -48,6 +48,9 @@ import '../features/blood_hub/presentation/screens/national_emergency_screen.dar
 import '../features/blood_hub/presentation/screens/journey_list_screen.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/screens/poster_generator_screen.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
+import '../features/blood_hub/presentation/screens/thank_you_letter_screen.dart';
+import '../features/blood_hub/presentation/screens/follow_up_screen.dart';
+import '../features/blood_hub/presentation/screens/email_otp_screen.dart';
 
 // Health Hub 7 Sub-Screens
 import '../features/health_hub/presentation/screens/ai_report_analysis_screen.dart';
@@ -282,41 +285,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return StandbyOfferScreen(offerId: offerId);
       },
     ),
-    // /identity/verify — Email OTP verification (Prompt 5 scope; bridges to existing)
+    // /identity/verify — Email OTP verification (Prompt 5 scope; strictly 6-digit email OTP)
     GoRoute(
       path: '/identity/verify',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        return Scaffold(
-          backgroundColor: const Color(0xFFFFF8F7),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded,
-                  color: Color(0xFF2B2B2B)),
-              onPressed: () =>
-                  context.canPop() ? context.pop() : context.go('/blood-hub'),
-            ),
-            title: const Text(
-              'Identity Verification',
-              style: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2B2B2B),
-              ),
-            ),
-          ),
-          body: IdentityVerificationScreen(
-            patientName: extra?['patientName'] as String?,
-            bloodGroup: extra?['bloodGroup'] as String?,
-            urgencyLevel: extra?['urgencyLevel'] as String?,
-            hospitalLocation: extra?['hospitalLocation'] as String?,
-            contactNumber: extra?['contactNumber'] as String?,
-            returnRoute:
-                extra?['returnRoute'] as String? ?? '/blood-hub',
-          ),
+        return EmailOtpScreen(
+          requestId: (extra?['requestId'] as num?)?.toInt(),
+          patientName: extra?['patientName'] as String?,
+          bloodGroup: extra?['bloodGroup'] as String?,
+          urgencyLevel: extra?['urgencyLevel'] as String?,
+          hospitalLocation: extra?['hospitalLocation'] as String?,
+          contactNumber: extra?['contactNumber'] as String?,
+          email: extra?['email'] as String?,
+          returnRoute: extra?['returnRoute'] as String? ?? '/blood-hub/poster',
         );
       },
     ),
@@ -405,12 +387,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final extra = state.extra as Map<String, dynamic>?;
         return DonorTrackingMapScreen(
           requestId: extra?['requestId'] as String?,
+          matchId: extra?['matchId'],
           patientName: extra?['patientName'] as String? ?? 'Urgent Patient',
           hospitalName: extra?['hospitalName'] as String? ?? 'Dhaka Medical College Hospital',
           bloodGroup: extra?['bloodGroup'] as String? ?? 'O+',
           donorName: extra?['donorName'] as String? ?? 'Verified Donor',
           donorPhone: extra?['donorPhone'] as String? ?? '',
           isDonorView: extra?['isDonorView'] == true,
+          chatRoomId: extra?['chatRoomId'] as String? ?? 'emergency_chat',
+        );
+      },
+    ),
+    GoRoute(
+      path: '/blood-hub/thanks',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final matchId = (extra?['matchId'] as num?)?.toInt() ?? 1;
+        final donorName = extra?['donorName'] as String? ?? 'Valued Donor';
+        return ThankYouLetterScreen(
+          matchId: matchId,
+          donorName: donorName,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/blood-hub/followup',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final followupId = (extra?['followupId'] as num?)?.toInt() ?? 1;
+        final hospitalName = extra?['hospitalName'] as String? ?? 'Medical Center';
+        return FollowUpScreen(
+          followupId: followupId,
+          hospitalName: hospitalName,
         );
       },
     ),

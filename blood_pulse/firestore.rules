@@ -47,26 +47,17 @@ service cloud.firestore {
       }
     }
 
-    // ── 4. CHATS (/chats/{chatId}/messages/{messageId}) ───────────────────────
+    // ── 4. CHATS (DEPRECATED - FULLY LOCKED DOWN) ─────────────────────────────
     match /chats/{chatId} {
-      allow create: if isAuthenticated() && 
-        request.auth.uid in request.resource.data.participants;
-      allow read, update, delete: if isAuthenticated() && 
-        request.auth.uid in resource.data.participants;
+      allow read, write: if false;
       
-      match /messages/{messageId} {
-        allow read, write: if isAuthenticated() && 
-          request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      match /{allChildren=**} {
+        allow read, write: if false;
       }
     }
 
-    // ── 5. TEST / VERIFICATION ────────────────────────────────────────────────
-    match /test_verification/{docId} {
-      allow read, write: if true;
-    }
-
-    // ── 6. LIVE JOURNEY TRACKING (/tracking/{acceptanceId}) ───────────────────
-    match /tracking/{acceptanceId} {
+    // ── 5. LIVE JOURNEY TRACKING (/tracking/{matchId}) ───────────────────────
+    match /tracking/{matchId} {
       // Only authenticated participants (donor or requester) can read the tracking doc
       allow read: if isAuthenticated() && (
         request.auth.uid == resource.data.donorUid || 
@@ -81,17 +72,17 @@ service cloud.firestore {
         isAdmin()
       );
 
-      // Donor can update ONLY donorLocation and cannot alter status, participants, or destination
-      // Requester can update ONLY requesterLocation
+      // Donor can update donorLocation, etaMinutes, distanceKm, status, updatedAt
+      // Requester can update requesterLocation, updatedAt
       allow update: if isAuthenticated() && (
         (request.auth.uid == resource.data.donorUid &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['donorLocation', 'etaMinutes', 'distanceKm'])) ||
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['donorLocation', 'etaMinutes', 'distanceKm', 'status', 'updatedAt'])) ||
         (request.auth.uid == resource.data.requesterUid &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['requesterLocation'])) ||
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['requesterLocation', 'updatedAt'])) ||
         isAdmin()
       );
 
-      // Only Admin or participants can delete upon journey termination
+      // Only participants or Admin can delete upon journey termination
       allow delete: if isAuthenticated() && (
         request.auth.uid == resource.data.donorUid || 
         request.auth.uid == resource.data.requesterUid || 

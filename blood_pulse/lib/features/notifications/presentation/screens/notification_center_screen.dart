@@ -243,8 +243,24 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
                   'recipientId': rId,
                 },
               );
+            } else if (type.contains('STANDBY')) {
+              final offerId = raw['offer_id'] ?? raw['offerId'] ?? 1;
+              context.push('/standby/$offerId');
+            } else if (type.contains('MATCH') || type.contains('JOURNEY') || type.contains('TRACKING')) {
+              final jId = raw['journey_id'] ?? raw['match_id'] ?? raw['matchId'] ?? 1;
+              context.push('/journeys/$jId');
+            } else if (type.contains('THANKS')) {
+              context.push('/blood-hub/thanks', extra: {'matchId': raw['match_id'] ?? 1});
+            } else if (type.contains('FOLLOWUP')) {
+              context.push('/blood-hub/followup', extra: {'followupId': raw['followup_id'] ?? 1});
+            } else if (type.contains('FEED') || type.contains('POST')) {
+              context.go('/feed');
+            } else if (type.contains('PROFILE') || type.contains('COOLDOWN')) {
+              context.go('/profile');
             } else if (type.contains('EMERGENCY')) {
               NotificationWallpaperOverlay.show(context);
+            } else {
+              context.go('/blood-hub');
             }
           },
         ),

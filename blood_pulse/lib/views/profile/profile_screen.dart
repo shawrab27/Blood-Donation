@@ -14,6 +14,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../constants/app_config.dart';
 import '../../features/feed/presentation/providers/feed_provider.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../core/widgets/profile_drawer.dart';
 
 /// Interactive Profile Screen with Edit Profile Modal, Date Picker for Last Donation Date,
 /// 90-Day Countdown Widget, Admin-Locked Blood Group Banner, and Activity Feed.
@@ -642,11 +643,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with SingleTicker
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           IconButton(
                             icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
                             onPressed: _showEditProfileModal,
                             tooltip: 'Edit Profile Details',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.settings_outlined, color: AppColors.secondary),
+                            onPressed: () => ProfileDrawer.show(context),
+                            tooltip: 'Preferences & Settings',
                           ),
                         ],
                       ),

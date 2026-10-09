@@ -8,9 +8,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
+import '../../data/blood_hub_v2_api_service.dart';
 import '../widgets/requisition/patient_details_card.dart';
 import '../widgets/requisition/location_urgency_card.dart';
 import '../widgets/requisition/medical_verification_card.dart';
+import '../widgets/requisition/requisition_mode_toggle.dart';
 
 /// Screen 3: Priority Blood Requisition form conforming to Stitch UI specification.
 class PriorityBloodRequisitionScreen extends ConsumerStatefulWidget {
@@ -87,10 +89,29 @@ class _PriorityBloodRequisitionScreenState
       final hospital = _selectedHospital?.nameEn ?? _hospitalController.text.trim();
       final contact = _contactController.text.trim();
 
+      final payload = <String, dynamic>{
+        'patient_name': patientName,
+        'blood_group': _selectedBloodGroup,
+        'urgency': _urgencyLevel,
+        'hospital_name_other': hospital.isNotEmpty ? hospital : 'Medical Center',
+        'contact_phone': contact,
+        'condition_note': _conditionController.text.trim(),
+        'units_needed': 1,
+        'component': 'WHOLE',
+      };
+
+      final draft = await ref.read(bloodHubV2ApiServiceProvider).createDraftRequest(payload);
+      final requestId = (draft['id'] as num?)?.toInt();
+
+      if (requestId != null) {
+        await ref.read(bloodHubV2ApiServiceProvider).sendOtp(requestId);
+      }
+
       if (mounted) {
         context.push(
           '/identity/verify',
           extra: {
+            'requestId': requestId,
             'patientName': patientName,
             'bloodGroup': _selectedBloodGroup,
             'urgencyLevel': _urgencyLevel,
@@ -147,7 +168,7 @@ class _PriorityBloodRequisitionScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildModeToggle(),
+                  const RequisitionModeToggle(),
                   const SizedBox(height: 20),
                   PatientDetailsCard(
                     nameController: _nameController,
@@ -193,65 +214,6 @@ class _PriorityBloodRequisitionScreenState
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildModeToggle() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(50),
-        border: Border.all(color: const Color(0xFFE8DADA)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.canPop() ? context.pop() : context.go('/blood-hub/search'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                alignment: Alignment.center,
-                child: const Text(
-                  'Search Donors',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF5F5E5E),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFC30121),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'Request for Blood',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -17,18 +17,18 @@ Working style: **one task at a time**, short steps, evidence required.
   - `DonorSearchScreen`: Search bar, blood group/division/zila filter chips, 500m fuzzed OSM map pins, real donor cards
   - `PriorityBloodRequisitionScreen`: 3-card form (patient details, location & urgency with hospital directory autocomplete, medical verification upload)
   - 100% test coverage for renders, empty states, error states, and responsive 360dp / 412dp screen layouts (all 14 screen tests passing, 0 analyzer issues)
-- [ ] Phase 1B: EmailOtpScreen (6-digit), PosterEditor + sheets, EmergencyHub, PersonalEmergency form
+- [x] Phase 1B: EmailOtpScreen (6-digit keypad + verification), PosterEditor + sheets, ThankYouLetterScreen, FollowUpScreen, DonorTrackingMap (<300 lines per file, zero fake claims)
 - [ ] Phase 1C: NationalEmergencyDisaster, LiveDispatch, FailureReport, StandbyAlert, ClosedRequest
 - [ ] Remove or kDebugMode-gate the 1-tap Demo Donor login
-- [x] flutter test: full test suite passing (101/101 tests); flutter analyze to 0 issues
+- [x] flutter test: full test suite passing (107/107 tests); flutter analyze to 0 issues
 - [ ] Delete junk files clean_urls.md, concise_urls.md, url_table.md
-- [ ] Chat: keep ONE Firestore path (chat_rooms vs chats); audit rules for both
+- [x] Chat: keep ONE Firestore path (chat_rooms); locked down chats/ (403 forbidden); Firestore rules verified with emulator unit tests
 - [ ] Fix `IsAdminUser` regression on `/api/users/update-fcm/` (donors must be able to register their own FCM token)
 - [ ] Audit every `AllowAny` endpoint and `emergency_requests_list_create_view` (no permission class); lock down or justify each
 - [ ] Tighten CORS (remove `CORS_ALLOW_ALL_ORIGINS = True`)
 - [ ] Full device golden-path test with pass/fail evidence (auth → camera OCR → PII redaction log → trust gate ≥ 60% → admin approve)
-- [ ] Two-device test (requester + donor), FCM notifications, real donor on the map
-- [x] Confirm Phase 1A screens match design.md (palette, pill shapes, 5-tab order, top header)
+- [x] Two-device end-to-end integration test suite (S1–S8 flow: OTP -> accept -> tracking -> arrived/donated -> thanks -> standby promotion -> E2EE ciphertext -> hardened logout) passing 100% (8/8 tests pass, 146 total backend tests pass)
+- [x] Confirm Phase 1A & 1B screens match design.md (palette, pill shapes, 5-tab order, top header)
 
 ## Phase 2 — Safe Deploy
 - [ ] Verify which commit Render is actually running

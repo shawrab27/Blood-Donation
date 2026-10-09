@@ -8,7 +8,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../services/api_client.dart';
+import '../../../../services/chat_service.dart';
+import '../../../../services/tracking_service.dart';
 
 /// Authentication status for BloodPulse.
 enum AuthStatus { unauthenticated, loading, authenticated, authenticatedIncomplete, error }
@@ -753,11 +756,26 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  void logout() {
-    _apiClient.clearTokens();
+  Future<void> logout() async {
     ref.read(isGuestProvider.notifier).state = false;
     ref.read(pendingRedirectRouteProvider.notifier).state = null;
-    state = const AuthState();
+    state = const AuthState(status: AuthStatus.unauthenticated);
+    try {
+      await _apiClient.clearTokens();
+    } catch (_) {}
+    try {
+      const storage = FlutterSecureStorage();
+      await storage.deleteAll();
+    } catch (_) {}
+    try {
+      ChatService.instance.reset();
+    } catch (_) {}
+    try {
+      await TrackingService.instance.stopTracking();
+    } catch (_) {}
+    try {
+      ref.invalidate(profileProvider);
+    } catch (_) {}
   }
 
   /// Activates guest access mode and sets unauthenticated state.

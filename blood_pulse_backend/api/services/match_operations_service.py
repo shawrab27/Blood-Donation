@@ -46,6 +46,13 @@ def update_match_status(match_id: int, actor, new_status: str, note: str = "") -
             transition(match.request, 'ARRIVED', actor)
 
     elif norm_status == 'DONATED':
+        is_participant = (
+            actor.id == match.request.requester_id or
+            actor.id == match.donor.user_id or
+            getattr(actor, 'is_staff', False)
+        )
+        if not is_participant:
+            raise ValidationError({"detail": "Only matched participants can confirm donation completion."})
         now = timezone.now()
         match.status = 'DONATED'
         match.donated_at = now
@@ -155,8 +162,45 @@ def answer_follow_up(followup_id: int, donor_user, response_val: str, notes: str
     return fu
 
 
+def sweep_expired_standby_matches() -> int:
+    """Expires pending standby offers past their 5-min timer and triggers standby failover."""
+    from api.services.blood_hub_lifecycle_service import transition
+
+    now = timezone.now()
+    expired_matches = DonationMatch.objects.filter(
+        status='PENDING',
+        expires_at__lte=now,
+    ).select_related('request')
+
+    count = 0
+    for match in expired_matches:
+        match.status = 'EXPIRED'
+        match.save(update_fields=['status'])
+        count += 1
+
+        req = match.request
+        exclude_ids = list(req.donation_matches.values_list('donor_id', flat=True))
+        candidate = find_nearest_standby_donor(req, exclude_donor_ids=exclude_ids)
+        if candidate:
+            DonationMatch.objects.create(
+                request=req,
+                donor=candidate,
+                status='PENDING',
+                role='PRIMARY',
+                expires_at=now + timedelta(minutes=5),
+                chat_room_id=f"chat_{req.id}_{candidate.id}_{uuid4().hex[:8]}",
+                tracking_room_id=f"track_{req.id}_{candidate.id}_{uuid4().hex[:8]}",
+            )
+        elif not req.donation_matches.filter(status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']).exists():
+            if req.status != 'OPEN':
+                transition(req, 'OPEN', req.requester)
+    return count
+
+
 def run_due_followups() -> int:
-    """Dispatches due 24h follow-ups and marks them SENT."""
+    """Dispatches due 24h follow-ups, sweeps expired standby offers, and marks them SENT."""
+    sweep_expired_standby_matches()
+
     due_items = FollowUp.objects.filter(
         due_at__lte=timezone.now(),
         status='PENDING',

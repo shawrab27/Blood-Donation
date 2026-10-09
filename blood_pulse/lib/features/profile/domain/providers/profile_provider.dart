@@ -23,14 +23,17 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
   /// Verifies access token first to avoid premature 401 Unauthorized errors for guests.
   Future<void> fetchProfile() async {
     try {
+      if (!mounted) return;
       state = const AsyncValue.loading();
       final token = await ApiClient().getAccessToken();
+      if (!mounted) return;
       if (token == null || token.isEmpty) {
         state = const AsyncValue.data(null);
         return;
       }
 
       final response = await ApiClient().get('donors/me/');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final profile = ProfileModel.fromJson(data);
@@ -41,6 +44,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
         throw Exception('Failed to load profile');
       }
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
