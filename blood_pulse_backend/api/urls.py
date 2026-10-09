@@ -75,8 +75,49 @@ from .views_bloodhub import (
 
 from .views_auth_reset import request_otp, confirm_reset
 from .views_search import institution_search, upazila_search
+from .views_blood_hub_v2 import (
+    BloodRequestCreateV2APIView,
+    BloodRequestDetailV2APIView,
+    BloodRequestSendOtpAPIView,
+    BloodRequestVerifyOtpAPIView,
+    BloodRequestReachAPIView,
+    BloodRequestAcceptAPIView,
+    DonationMatchStatusAPIView,
+    DonationMatchReportAPIView,
+    DonationMatchThanksAPIView,
+    FollowUpAnswerAPIView,
+    InternalFollowUpRunAPIView,
+    BloodRequestPosterDataAPIView,
+    BloodRequestQRLandingAPIView,
+)
+from .views_national_emergency import (
+    NationalEmergencyApproveAPIView,
+    NationalEmergencyActiveAPIView,
+    NationalEmergencyPledgeAPIView,
+)
 
 urlpatterns = [
+    # Blood Hub v2 Permanent Lifecycle Endpoints
+    path('requests/', BloodRequestCreateV2APIView.as_view(), name='blood-requests-create-v2'),
+    path('requests/reach/', BloodRequestReachAPIView.as_view(), name='blood-requests-reach'),
+    path('requests/<int:pk>/', BloodRequestDetailV2APIView.as_view(), name='blood-requests-detail-v2'),
+    path('requests/<int:pk>/send-otp/', BloodRequestSendOtpAPIView.as_view(), name='blood-requests-send-otp'),
+    path('requests/<int:pk>/verify-otp/', BloodRequestVerifyOtpAPIView.as_view(), name='blood-requests-verify-otp'),
+    path('requests/<int:pk>/accept/', BloodRequestAcceptAPIView.as_view(), name='blood-requests-accept-v2'),
+    path('requests/<int:pk>/poster-data/', BloodRequestPosterDataAPIView.as_view(), name='blood-requests-poster-data'),
+    path('requests/<int:pk>/qr-landing/', BloodRequestQRLandingAPIView.as_view(), name='blood-requests-qr-landing'),
+
+    path('matches/<int:pk>/status/', DonationMatchStatusAPIView.as_view(), name='matches-status'),
+    path('matches/<int:pk>/report/', DonationMatchReportAPIView.as_view(), name='matches-report'),
+    path('matches/<int:pk>/thanks/', DonationMatchThanksAPIView.as_view(), name='matches-thanks'),
+
+    path('followups/<int:pk>/answer/', FollowUpAnswerAPIView.as_view(), name='followups-answer'),
+    path('internal/followups/run/', InternalFollowUpRunAPIView.as_view(), name='internal-followups-run'),
+
+    path('admin/national-emergency/approve/', NationalEmergencyApproveAPIView.as_view(), name='admin-national-emergency-approve'),
+    path('national-emergency/active/', NationalEmergencyActiveAPIView.as_view(), name='national-emergency-active'),
+    path('national-emergency/pledge/', NationalEmergencyPledgeAPIView.as_view(), name='national-emergency-pledge'),
+
     # Search endpoints
     path('institutions/search/', institution_search, name='institution-search'),
     path('locations/upazila-search/', upazila_search, name='upazila-search'),

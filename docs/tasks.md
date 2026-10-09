@@ -57,12 +57,20 @@ Working style: **one task at a time**, short steps, evidence required.
 - [ ] Donor Management with GDPR-style Full Erase + Export
 - [ ] Tests for wave engine admin views (currently none)
 - [ ] Tests for PII scrub / soft-delete / erase flows
+- [x] Blood Hub Backend Request Lifecycle v2 (`feature/blood-hub-backend`):
+  - 10-state machine (`DRAFT` -> `PENDING_EMAIL_OTP` -> `OPEN` -> `MATCHED` -> `IN_TRANSIT` -> `ARRIVED` -> `DONATED` -> `CLOSED` | `FAILED` | `EXPIRED`) with HTTP 409 conflict protection.
+  - Service layer architecture (`blood_hub_lifecycle_service.py`, `targeting_service.py`, `match_operations_service.py`, `emergency_activation_service.py`).
+  - Atomic acceptance (`select_for_update`) & dynamic donor/requester phone unmasking post-acceptance.
+  - Standby donor promotion on failure report (Haversine nearest, 5-minute timer).
+  - Thank you letter generation & 24h follow-up wellness scheduler (management command + secret token internal endpoint).
+  - 2-admin dual authorization for National Emergency activation & capacity-deducted disaster pledges.
+  - 100% test coverage (10 new lifecycle/emergency tests passing, 139 total backend tests passing, `manage.py check` 0 issues).
 - [ ] Donor deferral (auto-exclude + auto re-match) using the 90-day rule
 - [ ] Blood Hub restructure (merge search + request into one flow)
 - [ ] Live donor tracking map: position is SIMULATED by a timer (donor_tracking_map.dart). Needs real GPS -> Firestore (500 m fuzz) -> requester listener
 - [~] Google user incomplete-profile gate (Feed/Health/Communities open; Blood Hub and Profile locked with 'complete your registration')
 - [~] Passive-donor XP + tier badge (no leaderboard)
-- [ ] National Emergency Mode (admin mass broadcast + hospital inventory)
+- [x] National Emergency Mode Backend (2-admin authorization, active status gate, disaster pledge tracking)
 - [ ] Cloudinary image migration
 
 ## Phase 5 — Smaller Features

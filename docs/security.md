@@ -34,6 +34,12 @@ Blood Pulse handles sensitive data: phone numbers, location, blood group, medica
   - `emergency_requests_list_create_view` had no explicit permission class.
   - Viewsets in `api/views.py` were not covered by the permission table — complete the audit.
 - Object-level checks: users can only read/modify their own profile, requests, chats and tokens.
+- **Blood Hub v2 Lifecycle Object-Level Enforcement:**
+  - Strict state machine transitions via service layer (`transition()`), raising HTTP 409 on invalid jumps or unauthorized actors.
+  - Phone Unmasking Rule: Donor's phone is revealed to requester and requester's phone to donor ONLY after match acceptance (`status in [ACCEPTED, ON_THE_WAY, ARRIVED, DONATED]`). Masked prior to acceptance.
+  - Public QR Landing & Poster Data: Strictly strips patient PII (masks patient name, fuzzed coordinates, hides private contacts, removes unverified claims).
+  - Dual-Admin National Emergency Activation: Requires two distinct admin signatures (`approved_by_admin_1 != approved_by_admin_2`) before disaster mode can be activated or public broadcasts triggered.
+  - Internal Schedulers: Hourly follow-up cron endpoint (`/api/internal/followups/run/`) protected by `X-Internal-Token` header.
 - Write a permission test for every endpoint (anonymous, normal user, other user, admin).
 
 ## 5. API and Transport Security

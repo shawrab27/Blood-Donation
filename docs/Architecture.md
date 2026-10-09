@@ -51,9 +51,22 @@ auth/onboarding · feed · blood_hub (search, emergency, campaigns, tracking) ·
 
 ## 4. Backend Architecture
 ### Core Models (from `api/models.py`)
-Hospital · DonorProfile (unique `nid_hash`, unique phone, rank/badge properties) · BloodRequest · DonationHistory · RecentLog · SocialPost · FakeAccountFlag · AdminAction · Division · District · Upazila · NationalCommunity · MedicalPartner · LocalClub · ExecutiveMember · BloodScienceArticle · CompatibilityRule · DonationGuideSection · EmergencyContact · RecoveryTimelineStep
+Hospital · DonorProfile (unique `nid_hash`, unique phone, rank/badge properties) · BloodRequest · DonationMatch · DonationReport · ThankYouLetter · FollowUp · EmailOTP · DonationHistory · RecentLog · SocialPost · FakeAccountFlag · AdminAction · Division · District · Upazila · NationalCommunity · MedicalPartner · LocalClub · ExecutiveMember · BloodScienceArticle · CompatibilityRule · DonationGuideSection · EmergencyContact · RecoveryTimelineStep · NationalEmergencyEvent (2-admin approval)
+
+### Blood Hub v2 Request Lifecycle & Service Layer
+- **State Machine**: Single entry point `transition(request, new_state, actor)` enforcing:
+  `DRAFT -> PENDING_EMAIL_OTP -> OPEN -> MATCHED -> IN_TRANSIT -> ARRIVED -> DONATED -> CLOSED | FAILED | EXPIRED`
+  Illegal state transitions strictly raise `IllegalStateTransitionError` yielding HTTP 409 Conflict.
+- **Service Layer Architecture**:
+  - `api/services/blood_hub_lifecycle_service.py`: state machine, draft creation, 6-digit SMTP email OTP (HMAC-SHA256, 60s cooldown, max 5 attempts), and atomic acceptance (`select_for_update`).
+  - `api/services/targeting_service.py`: real targeting reach calculation respecting `CompatibilityRule`, dispatch scope, and locked 90-day cooldown (`DONOR_COOLDOWN_DAYS`).
+  - `api/services/match_operations_service.py`: status transitions (`ON_THE_WAY`, `ARRIVED`, `DONATED`), failure reporting, nearest standby auto-promotion with 5-minute timer, thank you letters, and 24-hour donor wellness checks.
+  - `api/services/emergency_activation_service.py`: National emergency activation strictly requiring two different admin approvals, and capacity-tracked donation pledges.
+- **Follow-Up Automation**: Management command `python manage.py send_due_followups` and hourly cron endpoint `GET /api/internal/followups/run/` protected by `X-Internal-Secret` header.
 
 ### Notable Modules
+- `views_blood_hub_v2.py` — lifecycle endpoints (requests, reach, otp, accept, status, report, thanks, followups, poster-data, qr-landing)
+- `views_national_emergency.py` — 2-admin approval, active event query, and donor pledging
 - `views_bloodhub.py` — emergency requests, waves
 - `views_wave_engine.py` — WaveMetrics, LivePipeline, ForceEscalate (admin only)
 - Admin trust views — QuarantineQueue, TrustWeights, ApproveRequest, RejectRequest, BanUser

@@ -264,6 +264,22 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
     def get_active_acceptances_count(self, obj):
         return obj.acceptances.filter(status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']).count()
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if not self._is_authorized_viewer(instance):
+            if instance.patient_name:
+                parts = instance.patient_name.strip().split()
+                data['patient_name'] = f"{parts[0][0]}. {' '.join(p[0] + '.' for p in parts[1:])}" if parts else "Protected Patient"
+            else:
+                data['patient_name'] = "Protected Patient"
+            data['patient_photo'] = None
+            data['requisition_slip'] = None
+            if instance.lat is not None and instance.lng is not None:
+                f_lat, f_lng = fuzz_coordinates(instance.lat, instance.lng, seed_id=instance.id)
+                data['lat'] = f_lat
+                data['lng'] = f_lng
+        return data
+
 
 class RequestAcceptanceSerializer(serializers.ModelSerializer):
     donor_name = serializers.CharField(source='donor.user.username', read_only=True)

@@ -194,7 +194,8 @@ class DonorProfile(models.Model):
         if not bg or bg not in valid_bgs:
             missing.append("blood_group")
 
-        dist = (self.district or "").strip()
+        dist_val = getattr(self.district, 'name', self.district)
+        dist = str(dist_val or "").strip()
         if not dist:
             missing.append("district")
 
@@ -339,7 +340,26 @@ class BloodRequest(models.Model):
 
     trust_band = models.CharField(max_length=20, default='MEDIUM') # LOW, MEDIUM, HIGH
 
-    status = models.CharField(max_length=20, default='ACTIVE') # PENDING_ADMIN, ACTIVE, COVERED, FULFILLED, EXPIRED, CANCELLED, REJECTED
+    STATUS_CHOICES = (
+        ('DRAFT', 'Draft'),
+        ('PENDING_EMAIL_OTP', 'Pending Email OTP'),
+        ('OPEN', 'Open'),
+        ('MATCHED', 'Matched'),
+        ('IN_TRANSIT', 'In Transit'),
+        ('ARRIVED', 'Arrived'),
+        ('DONATED', 'Donated'),
+        ('CLOSED', 'Closed'),
+        ('FAILED', 'Failed'),
+        ('EXPIRED', 'Expired'),
+        ('ACTIVE', 'Active (Legacy)'),
+        ('PENDING_ADMIN', 'Pending Admin (Legacy)'),
+        ('COVERED', 'Covered (Legacy)'),
+        ('FULFILLED', 'Fulfilled (Legacy)'),
+        ('CANCELLED', 'Cancelled (Legacy)'),
+        ('REJECTED', 'Rejected (Legacy)'),
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT') # DRAFT -> PENDING_EMAIL_OTP -> OPEN -> MATCHED -> IN_TRANSIT -> ARRIVED -> DONATED -> CLOSED | FAILED | EXPIRED
 
     current_wave = models.PositiveIntegerField(default=1)
 
@@ -607,6 +627,12 @@ class EmailOTP(models.Model):
 
     is_used = models.BooleanField(default=False)
 
+    purpose = models.CharField(max_length=50, default='request_submit')
+
+    last_sent_at = models.DateTimeField(auto_now_add=True, null=True)
+
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, null=True, blank=True, related_name='email_otps')
+
 
 
     class Meta:
@@ -621,9 +647,190 @@ class EmailOTP(models.Model):
 
 
 
+    def resend_cooldown_passed(self, cooldown_seconds=60):
+
+        if not self.last_sent_at:
+
+            return True
+
+        from django.utils import timezone
+
+        from datetime import timedelta
+
+        return timezone.now() >= self.last_sent_at + timedelta(seconds=cooldown_seconds)
+
+
+
     def __str__(self):
 
-        return f"OTP for {self.email} (Used: {self.is_used}, Locked: {self.is_locked()})"
+        return f"OTP for {self.email} ({self.purpose}, Used: {self.is_used}, Locked: {self.is_locked()})"
+
+
+
+class DonationMatch(models.Model):
+
+    ROLE_CHOICES = (
+
+        ('PRIMARY', 'Primary Donor'),
+
+        ('STANDBY_1', 'Standby Donor 1'),
+
+        ('STANDBY_2', 'Standby Donor 2'),
+
+    )
+
+    STATUS_CHOICES = (
+
+        ('PENDING', 'Pending Offer'),
+
+        ('ACCEPTED', 'Accepted'),
+
+        ('ON_THE_WAY', 'On The Way'),
+
+        ('ARRIVED', 'Arrived at Hospital'),
+
+        ('DONATED', 'Donated'),
+
+        ('FAILED', 'Failed'),
+
+        ('CANCELLED', 'Cancelled'),
+
+        ('EXPIRED', 'Expired'),
+
+    )
+
+
+
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='donation_matches')
+
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='donor_matches')
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACCEPTED')
+
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='PRIMARY')
+
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    donated_at = models.DateTimeField(null=True, blank=True)
+
+    expires_at = models.DateTimeField(null=True, blank=True) # 5-minute standby promo response timer
+
+    chat_room_id = models.CharField(max_length=100, blank=True, default='')
+
+    tracking_room_id = models.CharField(max_length=100, blank=True, default='')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+
+    class Meta:
+
+        unique_together = ('request', 'donor')
+
+        ordering = ['-created_at']
+
+
+
+    def __str__(self):
+
+        return f"Match #{self.id} (Req #{self.request_id} -> {self.donor.user.username}) [{self.role}: {self.status}]"
+
+
+
+class DonationReport(models.Model):
+
+    REASON_CHOICES = (
+
+        ('MEDICAL', 'Medical Ineligibility / Screening Failure'),
+
+        ('NO_SHOW', 'Donor / Recipient No Show'),
+
+        ('LOGISTICS', 'Logistics / Transport / Hospital Issue'),
+
+    )
+
+
+
+    match = models.ForeignKey(DonationMatch, on_delete=models.CASCADE, related_name='reports')
+
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+
+    note = models.TextField(blank=True, default='')
+
+    reported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='donation_reports')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+
+    def __str__(self):
+
+        return f"Report on Match #{self.match_id}: {self.reason}"
+
+
+
+class ThankYouLetter(models.Model):
+
+    match = models.OneToOneField(DonationMatch, on_delete=models.CASCADE, related_name='thank_you_letter')
+
+    template_key = models.CharField(max_length=50, default='warm_gratitude')
+
+    body = models.TextField()
+
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+
+
+    def __str__(self):
+
+        return f"Thank You for Match #{self.match_id}"
+
+
+
+class FollowUp(models.Model):
+
+    STATUS_CHOICES = (
+
+        ('PENDING', 'Pending'),
+
+        ('SENT', 'Sent'),
+
+        ('ANSWERED', 'Answered'),
+
+    )
+
+    RESPONSE_CHOICES = (
+
+        ('OK', 'Feeling OK'),
+
+        ('NOT_OK', 'Experiencing Discomfort / Issues'),
+
+    )
+
+
+
+    match = models.OneToOneField(DonationMatch, on_delete=models.CASCADE, related_name='follow_up')
+
+    due_at = models.DateTimeField()
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+
+    response = models.CharField(max_length=20, choices=RESPONSE_CHOICES, null=True, blank=True)
+
+    notes = models.TextField(blank=True, default='')
+
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    answered_at = models.DateTimeField(null=True, blank=True)
+
+
+
+    def __str__(self):
+
+        return f"FollowUp for Match #{self.match_id} [{self.status}]"
+
 
 
 
@@ -1185,9 +1392,11 @@ class EmailVerificationCode(models.Model):
 
 class NationalEmergencyEvent(models.Model):
 
-    title_en = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True, default='')
 
-    title_bn = models.CharField(max_length=200)
+    title_en = models.CharField(max_length=200, blank=True, default='')
+
+    title_bn = models.CharField(max_length=200, blank=True, default='')
 
     description_en = models.TextField(blank=True)
 
@@ -1195,9 +1404,17 @@ class NationalEmergencyEvent(models.Model):
 
     poster_image = models.ImageField(upload_to='emergency_posters/', null=True, blank=True)
 
+    active = models.BooleanField(default=False)
+
     is_active = models.BooleanField(default=True)
 
     is_verified = models.BooleanField(default=True)
+
+    approved_by_admin_1 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='emergency_approvals_1')
+
+    approved_by_admin_2 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='emergency_approvals_2')
+
+    activated_at = models.DateTimeField(null=True, blank=True)
 
     started_at = models.DateTimeField(auto_now_add=True)
 
@@ -1213,7 +1430,7 @@ class NationalEmergencyEvent(models.Model):
 
     def __str__(self):
 
-        return self.title_en
+        return self.title or self.title_en or "National Emergency Event"
 
 
 
@@ -1937,6 +2154,7 @@ class ChatMessage(models.Model):
 
 
 
+class SupportTicket(models.Model):
     id = models.BigAutoField(primary_key=True)
 
 
@@ -1957,7 +2175,7 @@ class ChatMessage(models.Model):
 
 
 
-    user = models.ForeignKey(User, models.CASCADE)
+    user = models.ForeignKey(User, models.CASCADE, related_name='api_support_tickets')
 
 
 
