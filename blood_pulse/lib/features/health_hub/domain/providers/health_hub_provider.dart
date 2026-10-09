@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:flutter/foundation.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../../../blood_hub/data/blood_hub_api_service.dart';
 import '../models/health_accessory_model.dart';
 import 'dart:convert';
@@ -18,7 +20,6 @@ String get _baseUrl {
   final clean = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
   return clean.endsWith('/health-hub') ? clean : '$clean/health-hub';
 }
-
 
 final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) async {
   final response = await http.get(Uri.parse('$_baseUrl/science-articles/'));
@@ -66,145 +67,102 @@ final recoveryTimelineProvider = FutureProvider<List<RecoveryTimelineStep>>((ref
 });
 
 class AiAnalysisService {
+  static const List<String> medicalKeywords = [
+    'hemoglobin', 'hb', 'cbc', 'complete blood count', 'platelet', 'wbc', 'rbc',
+    'white blood', 'red blood', 'blood group', 'neutrophil', 'lymphocyte',
+    'eosinophil', 'monocyte', 'basophil', 'esr', 'hematocrit', 'hct',
+    'mcv', 'mch', 'mchc', 'serum', 'pathology', 'lab', 'reference range',
+    'result', 'glucose', 'cholesterol', 'urea', 'creatinine', 'bilirubin',
+    'donor', 'blood', 'g/dl', 'mg/dl', 'fl', 'pg', 'cells/mcL', 'clotting'
+  ];
+
   static Future<AiReportResult> analyzeReport(XFile imageFile) async {
-    final bytes = await imageFile.readAsBytes();
-    final base64String = base64Encode(bytes);
+    // 1. Run on-device OCR using Google ML Kit Text Recognition
+    String extractedText = '';
+    try {
+      final inputImage = InputImage.fromFilePath(imageFile.path);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      try {
+        final recognizedText = await textRecognizer.processImage(inputImage);
+        extractedText = recognizedText.text.trim();
+      } finally {
+        await textRecognizer.close();
+      }
+    } catch (e) {
+      debugPrint('[AiAnalysisService] ML Kit OCR error: $e');
+    }
+
+    final textLower = extractedText.toLowerCase();
+    final hasMedicalMarker = medicalKeywords.any((kw) => textLower.contains(kw));
+
+    // Mandatory image report validation guard
+    if (extractedText.isEmpty || extractedText.length < 15 || !hasMedicalMarker) {
+      throw Exception('incorrect image or not a blood report');
+    }
+
+    // 2. Transmit extracted OCR text to Django AI Analysis backend
     final jsonPayload = jsonEncode({
-      'report_base64': base64String,
+      'report_text': extractedText,
       'filename': imageFile.name.isNotEmpty ? imageFile.name : 'report.jpg',
     });
 
     final primaryUrl = '$_baseUrl/analyze-report/';
 
-    final candidateUrls = <String>[primaryUrl];
+    try {
+      final response = await http.post(
+        Uri.parse(primaryUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonPayload,
+      ).timeout(const Duration(seconds: 45));
 
-    Object? lastError;
-
-    for (final url in candidateUrls) {
-      try {
-        final uri = Uri.parse(url);
-        final response = await http.post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonPayload,
-        ).timeout(const Duration(seconds: 45));
-
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          return AiReportResult.fromJson(data);
-        } else if (response.statusCode == 400) {
-          try {
-            final body = json.decode(response.body);
-            final error = body['error'] ?? body['detail'] ?? body['message'];
-            if (error != null) {
-              throw Exception(error.toString());
-            }
-          } catch (e) {
-            if (e is Exception && !e.toString().contains('FormatException')) {
-              rethrow;
-            }
-          }
-          throw Exception("This doesn't appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.");
-        } else {
-          try {
-            final body = json.decode(response.body);
-            final error = body['error'] ?? body['detail'];
-            if (error != null) {
-              throw Exception(error.toString());
-            }
-          } catch (decodeErr) {
-            if (decodeErr is Exception && !decodeErr.toString().contains('FormatException')) {
-              rethrow;
-            }
-          }
-          lastError = Exception('Server responded with status ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data['not_a_report'] == true) {
+          throw Exception('incorrect image or not a blood report');
         }
-      } catch (e) {
-        lastError = e;
-        final errStr = e.toString();
-        if (errStr.contains("doesn't appear to be a valid") ||
-            errStr.contains('not a valid blood') ||
-            errStr.contains('not appear to be a valid') ||
-            errStr.contains('not a medical') ||
-            errStr.contains('Wrong image') ||
-            errStr.contains('invalid report')) {
-          rethrow;
-        }
+        return AiReportResult.fromJson(data);
+      } else if (response.statusCode == 400) {
+        throw Exception('incorrect image or not a blood report');
+      } else {
+        throw Exception('Server returned error ${response.statusCode}');
       }
-    }
-
-    // Fallback: Attempt multipart streaming if JSON attempts failed
-    for (final url in candidateUrls) {
-      try {
-        final multipartUri = Uri.parse(url);
-        final request = http.MultipartRequest('POST', multipartUri);
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'report',
-            bytes,
-            filename: imageFile.name.isNotEmpty ? imageFile.name : 'report.jpg',
-          ),
-        );
-        final streamedResponse = await request.send().timeout(const Duration(seconds: 45));
-        final response = await http.Response.fromStream(streamedResponse);
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          return AiReportResult.fromJson(data);
-        } else if (response.statusCode == 400) {
-          try {
-            final body = json.decode(response.body);
-            final error = body['error'] ?? body['detail'] ?? body['message'];
-            if (error != null) {
-              throw Exception(error.toString());
-            }
-          } catch (e) {
-            if (e is Exception && !e.toString().contains('FormatException')) {
-              rethrow;
-            }
-          }
-          throw Exception("This doesn't appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.");
-        }
-      } catch (e) {
-        lastError = e;
-        final errStr = e.toString();
-        if (errStr.contains("doesn't appear to be a valid") ||
-            errStr.contains('not a valid blood') ||
-            errStr.contains('not appear to be a valid') ||
-            errStr.contains('not a medical') ||
-            errStr.contains('Wrong image') ||
-            errStr.contains('invalid report')) {
-          rethrow;
-        }
+    } catch (e) {
+      final errStr = e.toString();
+      if (errStr.contains('incorrect image or not a blood report')) {
+        rethrow;
       }
-    }
-
-    if (lastError != null) {
-      final msg = lastError.toString();
-      if (msg.contains('ClientException') ||
-          msg.contains('Failed to fetch') ||
-          msg.contains('XMLHttpRequest') ||
-          msg.contains('TimeoutException') ||
-          msg.contains('SocketException')) {
+      if (errStr.contains('ClientException') ||
+          errStr.contains('Failed to fetch') ||
+          errStr.contains('XMLHttpRequest') ||
+          errStr.contains('TimeoutException') ||
+          errStr.contains('SocketException')) {
         throw Exception('Unable to reach AI analysis server. Please check your connection and try again.');
       }
-      throw Exception(msg.replaceAll('Exception: ', ''));
+      throw Exception('incorrect image or not a blood report');
     }
-    throw Exception('Unable to complete AI analysis. Please try again.');
   }
 }
 
 final healthAccessoriesProvider = FutureProvider<List<HealthAccessory>>((ref) async {
-  final response = await http.get(Uri.parse('/health-accessories/'));
-  if (response.statusCode == 200) {
-    final Map<String, dynamic> decoded = json.decode(response.body);
-    final List<dynamic> data = decoded.containsKey('results') ? decoded['results'] : decoded;
-    return data.map((e) => HealthAccessory.fromJson(e)).toList();
+  final cleanBase = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
+  try {
+    final response = await http.get(Uri.parse('$cleanBase/health-accessories/'));
+    if (response.statusCode == 200) {
+      final decoded = json.decode(utf8.decode(response.bodyBytes));
+      final List<dynamic> data = decoded is List ? decoded : (decoded['results'] ?? []);
+      if (data.isNotEmpty) {
+        return data.map((e) => HealthAccessory.fromJson(e)).toList();
+      }
+    }
+  } catch (e) {
+    debugPrint('[healthAccessoriesProvider] Backend fetch error: $e');
   }
-  throw Exception('Failed to load health accessories');
+  return HealthAccessory.curatedAccessories;
 });
+
 
 
 

@@ -4,118 +4,159 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../../core/widgets/shimmer_loading_widget.dart';
 import '../../../../core/constants/constants.dart';
+import '../widgets/common/health_accessory_contextual_card.dart';
+import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../../blood_hub/data/blood_hub_api_service.dart';
 
 class ResourcesHubScreen extends ConsumerWidget {
   const ResourcesHubScreen({super.key});
 
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri.parse('tel:$cleanNumber');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cannot launch dialer for $phoneNumber', style: const TextStyle(fontFamily: 'Inter')),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Call error: $e', style: const TextStyle(fontFamily: 'Inter')),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hospitalsAsync = ref.watch(hospitalsDirectoryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF271816),
-      
+      backgroundColor: AppColors.surface,
       appBar: BloodPulseAppBar(
-        backgroundColor: const Color(0xFF271816),
         subtitle: 'Resources Hub',
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
-          const SizedBox(height: 8),
+      body: ResponsiveCenterWrapper(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          children: [
+            // Top Subnav
+            const HealthHubSubnavBar(activeRoute: '/health-hub/resources'),
 
-          const Text(
-            'Verified Resources & Hotlines',
-            style: TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Direct access to national emergency blood hotlines, blood banks, and partnered hospital networks.',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.white70),
-          ),
-          const SizedBox(height: 20),
-
-          // --- Section 1: Emergency Hotlines (Static) ---
-          _sectionHeader('Emergency Hotlines'),
-          const SizedBox(height: 12),
-          Column(
-            children: Constants.verifiedHotlines.map((contact) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _hotlineCard(
-                  contact['title'],
-                  contact['number'],
-                  contact['subtitle'],
-                  contact['icon'],
-                  AppColors.primary,
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 28),
-
-          // --- Section 2: Hospital Network (Dynamic) ---
-          _sectionHeader('Hospital Directory'),
-          const SizedBox(height: 12),
-          hospitalsAsync.when(
-            loading: () => Column(
-              children: List.generate(4, (index) => const Padding(
-                padding: EdgeInsets.only(bottom: 10),
-                child: ShimmerLoadingWidget(height: 80, borderRadius: 20),
-              )),
+            // ── 1. Header ──────────────────────────────────────────────
+            const Text(
+              'Verified Resources & Hotlines',
+              style: TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
             ),
-            error: (err, stack) => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Text('Error loading hospitals. Please try again.', style: TextStyle(fontFamily: 'Inter', color: AppColors.error)),
-              ),
+            const SizedBox(height: 4),
+            const Text(
+              'Direct access to national emergency blood hotlines, blood banks, and partnered hospital networks.',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
             ),
-            data: (List<HospitalModel> hospitals) {
-              if (hospitals.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.local_hospital_outlined, size: 48, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text(
-                          'No hospitals available at the moment.',
-                          style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: Colors.white70),
-                        ),
-                      ],
-                    ),
+            const SizedBox(height: 14),
+
+            // ── 2. Mandatory 2nd Position: Health Accessories Feature ───
+            const HealthAccessoryContextualCard(
+              title: 'Recommended: Emergency First Aid & Clinical Supplies',
+              subtitle: 'Sterile surgical pads, tourniquets, alcohol wipes, and diagnostic kits for clinical blood response.',
+              customButtonText: 'Explore Emergency Supplies',
+            ),
+            const SizedBox(height: 18),
+
+            // ── 3. Emergency Hotlines ────────────────────────────────────
+            _sectionHeader('Emergency Hotlines'),
+            const SizedBox(height: 10),
+            Column(
+              children: Constants.verifiedHotlines.map((contact) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _hotlineCard(
+                    context,
+                    contact['title'],
+                    contact['number'],
+                    contact['subtitle'],
+                    contact['icon'],
+                    AppColors.primary,
                   ),
                 );
-              }
-              return Column(
-                children: hospitals.map((hospital) {
-                  final displayName = hospital.name.isNotEmpty ? hospital.name : hospital.nameEn;
-                  final displayLocation = hospital.address.isNotEmpty ? hospital.address : hospital.district;
-                  
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _hospitalItem(
-                      displayName.isNotEmpty ? displayName : 'Unknown Hospital',
-                      displayLocation.isNotEmpty ? displayLocation : 'No location provided',
-                      hospital.phone?.isNotEmpty == true ? hospital.phone! : 'No contact available',
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+
+            // ── 4. Hospital Network Directory ───────────────────────────
+            _sectionHeader('Hospital Directory'),
+            const SizedBox(height: 10),
+            hospitalsAsync.when(
+              loading: () => Column(
+                children: List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: ShimmerLoadingWidget(height: 76, borderRadius: 20),
+                  ),
+                ),
+              ),
+              error: (err, stack) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text('Unable to load hospitals directory.', style: const TextStyle(fontFamily: 'Inter', color: AppColors.error)),
+                ),
+              ),
+              data: (List<HospitalModel> hospitals) {
+                if (hospitals.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text('No hospitals currently listed.', style: TextStyle(fontFamily: 'Inter', color: AppColors.neutral)),
                     ),
                   );
-                }).toList(),
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-        ],
+                }
+                return Column(
+                  children: hospitals.map((hospital) {
+                    final displayName = hospital.name.isNotEmpty ? hospital.name : hospital.nameEn;
+                    final displayLocation = hospital.address.isNotEmpty ? hospital.address : hospital.district;
+                    final phone = hospital.phone?.isNotEmpty == true ? hospital.phone! : '';
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _hospitalItem(
+                        context,
+                        displayName.isNotEmpty ? displayName : 'Unknown Hospital',
+                        displayLocation.isNotEmpty ? displayLocation : 'Location not specified',
+                        phone,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+            const SizedBox(height: 36),
+          ],
+        ),
       ),
     );
   }
@@ -125,26 +166,26 @@ class ResourcesHubScreen extends ConsumerWidget {
       title,
       style: const TextStyle(
         fontFamily: 'Georgia',
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: AppColors.secondary,
       ),
     );
   }
 
-  Widget _hotlineCard(String title, String number, String subtitle, IconData icon, Color color) {
+  Widget _hotlineCard(BuildContext context, String title, String number, String subtitle, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 14),
@@ -154,40 +195,24 @@ class ResourcesHubScreen extends ConsumerWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: Colors.white70,
-                  ),
-                ),
+                Text(subtitle, style: const TextStyle(fontFamily: 'Inter', fontSize: 11.5, color: AppColors.neutral)),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Text(
-              number,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+          ElevatedButton.icon(
+            onPressed: () => _makePhoneCall(context, number),
+            icon: const Icon(Icons.call, size: 14),
+            label: Text(number),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -195,24 +220,20 @@ class ResourcesHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _hospitalItem(String name, String location, String features) {
+  Widget _hospitalItem(BuildContext context, String name, String location, String phone) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.local_hospital_rounded, color: Color(0xFF0D68AA), size: 24),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppColors.tertiary.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.local_hospital_outlined, color: AppColors.tertiary, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -221,45 +242,18 @@ class ResourcesHubScreen extends ConsumerWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
                 ),
                 const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 14, color: Colors.white70),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  features,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: Color(0xFF0D68AA),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(location, style: const TextStyle(fontFamily: 'Inter', fontSize: 11.5, color: AppColors.neutral)),
               ],
             ),
           ),
+          if (phone.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary),
+              onPressed: () => _makePhoneCall(context, phone),
+            ),
         ],
       ),
     );

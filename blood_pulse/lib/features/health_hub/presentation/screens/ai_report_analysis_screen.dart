@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../domain/models/health_hub_models.dart';
 import '../../domain/providers/health_hub_provider.dart';
+import '../widgets/ai_report/ai_report_error_banner.dart';
+import '../widgets/ai_report/ai_report_results_view.dart';
+import '../widgets/ai_report/ai_report_upload_card.dart';
+import '../widgets/common/health_accessory_contextual_card.dart';
+import '../widgets/common/health_hub_subnav_bar.dart';
 
 class AiReportAnalysisScreen extends StatefulWidget {
   const AiReportAnalysisScreen({super.key});
@@ -27,7 +32,10 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
 
   Future<void> _pickReport() async {
     try {
-      final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 88,
+      );
       if (picked != null && mounted) {
         setState(() {
           _reportFile = picked;
@@ -70,14 +78,11 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
     } catch (e) {
       debugPrint('[AiReportAnalysis] Analysis error: $e');
       if (mounted) {
-        String displayError = e.toString().replaceAll('Exception: ', '');
-        if (displayError.contains('ClientException') ||
-            displayError.contains('Failed to fetch') ||
-            displayError.contains('XMLHttpRequest') ||
-            displayError.contains('SocketException') ||
-            displayError.contains('TimeoutException')) {
-          displayError = 'Unable to complete AI analysis. Please check your connection and try again.';
-        }
+        final errText = e.toString().replaceAll('Exception: ', '').trim();
+        final displayError = errText.contains('incorrect image or not a blood report')
+            ? 'incorrect image or not a blood report'
+            : errText;
+
         setState(() {
           _isAnalyzing = false;
           _errorMessage = displayError;
@@ -91,15 +96,19 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: BloodPulseAppBar(
+        subtitle: 'AI Report Scanner',
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
-            const SizedBox(height: 8),
+      body: ResponsiveCenterWrapper(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          children: [
+            // Top Navigation Bar
+            const HealthHubSubnavBar(activeRoute: '/health-hub/ai-report'),
 
-            // Intro Card
+            // ── Section 1: Intro Card ──────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -117,11 +126,16 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
                       children: [
                         Text(
                           'AI Blood Report Scanner',
-                          style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.secondary,
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Upload CBC or lab reports for an AI-powered summary and dietary recommendations.',
+                          'Upload CBC or lab reports for on-device OCR extraction and intelligent clinical dietary recommendations.',
                           style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4),
                         ),
                       ],
@@ -130,244 +144,40 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
 
-            // Upload Box
-            GestureDetector(
-              onTap: _pickReport,
-              child: Container(
-                height: 140,
-                decoration: BoxDecoration(
-                  color: _reportFile != null ? Colors.white : const Color(0xFFFFF0F1),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: _reportFile != null ? AppColors.primary : const Color(0xFFE6BDBA), width: 1.5),
-                ),
-                child: _reportFile == null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 36),
-                          SizedBox(height: 8),
-                          Text('Upload Your Blood Report', style: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                          SizedBox(height: 4),
-                          Text('Supports JPG, PNG lab reports', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral)),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.check_circle_rounded, color: AppColors.success, size: 36),
-                          SizedBox(height: 8),
-                          Text('Report File Attached', style: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.success)),
-                          SizedBox(height: 4),
-                          Text('Tap to replace document', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral)),
-                        ],
-                      ),
-              ),
+            // ── Section 2: Mandatory 2nd Position Health Accessories Card ──
+            const HealthAccessoryContextualCard(
+              title: 'Recommended: Iron Restoration & Diagnostic Supplies',
+              subtitle: 'Order clinical iron capsules, sterile lancets, and rapid test kits to support optimal donor recovery.',
+              customButtonText: 'View Clinical Accessories',
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            if (!_hasAnalyzed && !_isAnalyzing)
-              CapsuleButton(
-                label: 'Analyse with Ai',
-                onPressed: _runAnalysis,
-              ),
+            // ── Section 3: Document Upload Card & Analyze CTA ───────────────
+            AiReportUploadCard(
+              reportFile: _reportFile,
+              isAnalyzing: _isAnalyzing,
+              onPickImage: _pickReport,
+              onAnalyze: _runAnalysis,
+            ),
 
-            if (_isAnalyzing)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  children: const [
-                    CircularProgressIndicator(color: AppColors.primary),
-                    SizedBox(height: 16),
-                    Text(
-                      'AI is processing your report...',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.neutral),
-                    )
-                  ],
-                ),
-              ),
-
+            // ── Section 4: Image Validation Error Banner ────────────────────
             if (_errorMessage != null)
-              Container(
-                margin: const EdgeInsets.only(top: 24),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F0),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: AppColors.error),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(_errorMessage!, style: const TextStyle(color: AppColors.error))),
-                  ],
-                ),
+              AiReportErrorBanner(
+                errorMessage: _errorMessage!,
+                onRetry: _pickReport,
               ),
 
+            // ── Section 5: AI Structured Analysis Results ───────────────────
             if (_hasAnalyzed && _analysisResult != null) ...[
-              const Divider(height: 48, thickness: 1, color: Color(0xFFEEEEEE)),
-              _buildAnalysisResult(_analysisResult!),
+              const Divider(height: 44, thickness: 1, color: Color(0xFFEEEEEE)),
+              AiReportResultsView(result: _analysisResult!),
             ],
-            
+
             const SizedBox(height: 40),
           ],
         ),
-    );
-  }
-
-  Widget _buildAnalysisResult(AiReportResult result) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Summary
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'AI Health Summary',
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                result.summary,
-                style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.secondary, height: 1.5),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        const Text('Test Results', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-        const SizedBox(height: 12),
-        ...result.results.map((param) => _buildParameterCard(param)),
-        
-        if (result.dietaryActionPlan.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          const Text('Dietary Action Plan', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-          const SizedBox(height: 12),
-          ...result.dietaryActionPlan.map((item) => _buildDietaryPill(item)),
-        ],
-        const SizedBox(height: 32),
-      ],
-    );
-  }
-
-  Widget _buildParameterCard(TestResultItem item) {
-    final isNormal = item.status.toLowerCase() == 'normal';
-    final isLow = item.status.toLowerCase() == 'low';
-    final statusColor = isNormal ? AppColors.success : (isLow ? const Color(0xFFD68800) : AppColors.error);
-    final statusBg = isNormal ? const Color(0xFFE8F8F0) : (isLow ? const Color(0xFFFFF4E0) : const Color(0xFFFFF0F0));
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  item.testName,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.secondary),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  item.status,
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(item.value, style: TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.bold, color: statusColor)),
-              const SizedBox(width: 4),
-              Text(item.unit, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Range: ${item.referenceRange}',
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDietaryPill(String text) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E9F2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(Icons.restaurant_menu, size: 15, color: AppColors.tertiary),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.secondary,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

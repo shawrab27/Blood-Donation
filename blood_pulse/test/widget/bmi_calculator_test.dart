@@ -71,7 +71,8 @@ void main() {
         reason: 'Negative weight must result in Invalid Input');
 
     // Extreme weight
-    await tester.enterText(weightField, '900');
+    final updatedWeightField = find.widgetWithText(TextField, '-70');
+    await tester.enterText(updatedWeightField, '900');
     await tester.pumpAndSettle();
     
     expect(find.text('Invalid Input'), findsWidgets,

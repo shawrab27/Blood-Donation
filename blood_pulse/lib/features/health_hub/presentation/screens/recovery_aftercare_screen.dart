@@ -6,7 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/responsive_center_wrapper.dart';
+import '../widgets/common/health_accessory_contextual_card.dart';
+import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
+import '../../domain/models/health_hub_models.dart';
 
 class RecoveryAftercareScreen extends ConsumerStatefulWidget {
   const RecoveryAftercareScreen({super.key});
@@ -18,33 +22,73 @@ class RecoveryAftercareScreen extends ConsumerStatefulWidget {
 class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScreen> {
   int _waterGlasses = 6;
 
+  static final List<RecoveryTimelineStep> _fallbackTimeline = [
+    RecoveryTimelineStep(
+      id: 1,
+      hourMark: 24,
+      title: 'Plasma Volume Replenishment',
+      description: 'Your body restores 95% of lost fluid volume within 24 hours. Drink plenty of water and oral rehydration salts.',
+      activityGuideline: 'Rest and drink fluids.',
+      avoidList: 'Strenuous lifting.',
+    ),
+    RecoveryTimelineStep(
+      id: 2,
+      hourMark: 48,
+      title: 'Red Blood Cell Synthesis',
+      description: 'Bone marrow accelerates erythropoiesis. Maintain iron-rich foods such as spinach, lentils, and citrus.',
+      activityGuideline: 'Eat iron-rich meals.',
+      avoidList: 'Skipping meals.',
+    ),
+    RecoveryTimelineStep(
+      id: 3,
+      hourMark: 72,
+      title: 'Iron Reserves Full Restoration',
+      description: 'Ferritin reserves return to peak baseline levels. Complete your recovery cycle before the next voluntary donation.',
+      activityGuideline: 'Normal routine.',
+      avoidList: 'Donating before 120 days.',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final timelineAsync = ref.watch(recoveryTimelineProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.surface,
       appBar: BloodPulseAppBar(
         subtitle: 'Recovery & Aftercare',
         showBackButton: true,
         onBack: () => context.pop(),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
-            const SizedBox(height: 8),
+      body: ResponsiveCenterWrapper(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          children: [
+            // Top Subnav
+            const HealthHubSubnavBar(activeRoute: '/health-hub/recovery'),
 
+            // ── 1. Header ──────────────────────────────────────────────
             const Text(
               'Post-Donation Recovery Tracker',
               style: TextStyle(fontFamily: 'Georgia', fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.secondary),
             ),
             const SizedBox(height: 4),
             const Text(
-              'Track your body\'s plasma restoration and iron recovery timeline after donating.',
+              'Track your body\'s plasma restoration and iron recovery timeline after donating blood.',
               style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
 
-            // ── 24-Hour Progress Dial Card ─────────────────────────────────
+            // ── 2. Mandatory 2nd Position: Health Accessories Feature ───
+            const HealthAccessoryContextualCard(
+              title: 'Recommended: Iron Restoration & Oral Electrolytes',
+              subtitle: 'Elemental iron tablets, folic acid capsules, and WHO-formula oral rehydration salts for rapid recovery.',
+              customButtonText: 'View Recovery Supplements',
+            ),
+            const SizedBox(height: 18),
+
+            // ── 3. 24-Hour Progress Dial Card ───────────────────────────
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -58,11 +102,11 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
-                        width: 110,
-                        height: 110,
+                        width: 108,
+                        height: 108,
                         child: CircularProgressIndicator(
-                          value: 0.80, // 80% recovered
-                          strokeWidth: 10,
+                          value: 0.85,
+                          strokeWidth: 9,
                           backgroundColor: Colors.grey.shade200,
                           color: AppColors.primary,
                         ),
@@ -70,13 +114,13 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                       const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('80%', style: TextStyle(fontFamily: 'Georgia', fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          Text('85%', style: TextStyle(fontFamily: 'Georgia', fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.primary)),
                           Text('Recovered', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral)),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   const Text(
                     'You are doing great!',
                     style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
@@ -90,9 +134,9 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // ── Hydration Progress Tracker ─────────────────────────────────
+            // ── 4. Interactive Hydration Tracker ────────────────────────
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -103,29 +147,54 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.water_drop_rounded, color: AppColors.tertiary, size: 24),
-                      SizedBox(width: 10),
-                      Text('Hydration Tracker Today', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('$_waterGlasses / 8 Glasses Water', style: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.tertiary)),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: AppColors.tertiary),
-                            onPressed: () => setState(() => _waterGlasses = (_waterGlasses - 1).clamp(0, 15)),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: AppColors.tertiary),
-                            onPressed: () => setState(() => _waterGlasses = (_waterGlasses + 1).clamp(0, 15)),
-                          ),
-                        ],
+                      const Text(
+                        'Daily Hydration Intake',
+                        style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                      ),
+                      Text(
+                        '$_waterGlasses / 8 Glasses',
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: (_waterGlasses / 8.0).clamp(0.0, 1.0),
+                      minHeight: 8,
+                      backgroundColor: Colors.white,
+                      color: AppColors.tertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _waterGlasses > 0 ? () => setState(() => _waterGlasses--) : null,
+                        icon: const Icon(Icons.remove, size: 16),
+                        label: const Text('Remove', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFB0CDEE)),
+                          foregroundColor: AppColors.tertiary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        ),
+                      ),
+                      const Spacer(),
+                      ElevatedButton.icon(
+                        onPressed: () => setState(() => _waterGlasses++),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('+ Add 250ml Glass'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.tertiary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
@@ -134,112 +203,84 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
             ),
             const SizedBox(height: 24),
 
-            // ── Recovery Timeline Milestones ────────────────────────────────
-            _sectionHeader('Recovery Timeline'),
+            // ── 5. Recovery Milestones Timeline ─────────────────────────
+            const Text(
+              'Biological Recovery Timeline',
+              style: TextStyle(fontFamily: 'Georgia', fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.secondary),
+            ),
             const SizedBox(height: 12),
             timelineAsync.when(
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-              error: (err, stack) => Center(child: Text('Error: $err')),
-              data: (timelineSteps) {
-                if (timelineSteps.isEmpty) {
-                  return const Text('No timeline data available.');
-                }
-                return Column(
-                  children: timelineSteps.map((step) {
-                    final isCompleted = step.hourMark <= 24; // Dummy condition for UI based on "24 hours since donation" text above
-                    return _timelineTile(
-                      '${step.hourMark} Hours',
-                      step.title,
-                      '${step.description}\n\nDo: ${step.activityGuideline}\nAvoid: ${step.avoidList}',
-                      isCompleted,
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-
-            // ── Nutrition & Diet Guide ──────────────────────────────────────
-            _sectionHeader('Post-Donation Diet Guide'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const Column(
-                children: [
-                  ListTile(
-                    leading: Icon(Icons.restaurant_menu_rounded, color: AppColors.primary),
-                    title: Text('Iron-Rich Foods', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-                    subtitle: Text('Spinach, red meat, lentils, beans, and dark poultry to boost iron levels.'),
-                  ),
-                  Divider(),
-                  ListTile(
-                    leading: Icon(Icons.eco_rounded, color: AppColors.warning),
-                    title: Text('Vitamin C Boosters', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-                    subtitle: Text('Oranges, lemons, and guavas enhance intestinal iron absorption.'),
-                  ),
-                ],
-              ),
+              error: (_, __) => _buildTimelineSteps(_fallbackTimeline),
+              data: (steps) => _buildTimelineSteps(steps.isNotEmpty ? steps : _fallbackTimeline),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
           ],
         ),
-    );
-  }
-
-  Widget _sectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontFamily: 'Georgia',
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.secondary,
       ),
     );
   }
 
-  Widget _timelineTile(String time, String title, String desc, bool isCompleted) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isCompleted ? const Color(0xFFE8F5E9) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isCompleted ? const Color(0xFFA5D6A7) : Colors.grey.shade200),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-            color: isCompleted ? AppColors.success : AppColors.neutral,
-            size: 24,
+  Widget _buildTimelineSteps(List<RecoveryTimelineStep> steps) {
+    return Column(
+      children: steps.map((step) {
+        final isCompleted = step.hourMark <= 24;
+        final timeframe = step.hourMark > 0 ? '${step.hourMark} Hours' : 'Immediate';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey.shade200),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isCompleted ? const Color(0xFFE8F8F0) : const Color(0xFFF3E5F5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isCompleted ? Icons.check_circle_rounded : Icons.timelapse_rounded,
+                  color: isCompleted ? AppColors.success : const Color(0xFF6A1B9A),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontFamily: 'Georgia', fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    Text(time, style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: isCompleted ? AppColors.success : AppColors.neutral)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          step.title,
+                          style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                        ),
+                        Text(
+                          timeframe,
+                          style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.neutral),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      step.description,
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 12.5, color: Color(0xFF555555), height: 1.4),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(desc, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4)),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 }
