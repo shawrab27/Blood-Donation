@@ -226,7 +226,7 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
               final roomId = raw['chat_room_id']?.toString() ??
                   raw['chatRoomId']?.toString() ??
                   raw['room_id']?.toString() ??
-                  'sarah_jenkins_o_minus';
+                  'emergency_chat';
               final bGroup = raw['blood_group']?.toString() ??
                   raw['bloodGroup']?.toString() ??
                   'O-';

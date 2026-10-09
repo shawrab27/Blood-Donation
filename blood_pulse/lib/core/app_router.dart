@@ -35,6 +35,9 @@ import '../features/admin/admin_screen.dart';
 import '../features/admin/admin_dashboard_screen.dart';
 
 // Blood Hub v2 Screens
+import '../features/blood_hub/presentation/screens/blood_hub_landing_screen.dart';
+import '../features/blood_hub/presentation/screens/donor_search_screen.dart';
+import '../features/blood_hub/presentation/screens/priority_requisition_screen.dart';
 import '../features/blood_hub/presentation/screens/blood_hub_search_screen.dart';
 import '../features/blood_hub/presentation/screens/direct_request_screen.dart';
 import '../features/blood_hub/presentation/screens/personal_emergency_screen.dart';
@@ -170,66 +173,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // /blood-hub/search — Donor Search Results + fuzzed OSM map
     GoRoute(
       path: '/blood-hub/search',
-      builder: (context, state) => Scaffold(
-        backgroundColor: const Color(0xFFFFF8F7),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: Color(0xFF2B2B2B)),
-            onPressed: () => context.canPop()
-                ? context.pop()
-                : context.go('/blood-hub'),
-          ),
-          title: const Text(
-            'Search Donors',
-            style: TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2B2B2B),
-            ),
-          ),
-          centerTitle: false,
-        ),
-        body: const BloodHubSearchScreen(),
-      ),
+      builder: (context, state) => const DonorSearchScreen(),
     ),
     // /blood-hub/request/direct — Priority Requisition form
     GoRoute(
       path: '/blood-hub/request/direct',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        return Scaffold(
-          backgroundColor: const Color(0xFFFFF8F7),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded,
-                  color: Color(0xFF2B2B2B)),
-              onPressed: () => context.canPop()
-                  ? context.pop()
-                  : context.go('/blood-hub'),
-            ),
-            title: const Text(
-              'Blood Request',
-              style: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2B2B2B),
-              ),
-            ),
-            centerTitle: false,
-          ),
-          body: DirectRequestScreen(
-            prefillBloodGroup: extra?['prefill_blood_group'] as String?,
-            prefillComponent: extra?['prefill_component'] as String?,
-            prefillDistrict: extra?['prefill_district'] as String?,
-            mode: extra?['mode'] as String?,
-          ),
+        return PriorityBloodRequisitionScreen(
+          prefillBloodGroup: extra?['prefill_blood_group'] as String?,
+          prefillComponent: extra?['prefill_component'] as String?,
+          prefillDistrict: extra?['prefill_district'] as String?,
+          mode: extra?['mode'] as String?,
         );
       },
     ),
@@ -454,7 +409,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           hospitalName: extra?['hospitalName'] as String? ?? 'Dhaka Medical College Hospital',
           bloodGroup: extra?['bloodGroup'] as String? ?? 'O+',
           donorName: extra?['donorName'] as String? ?? 'Verified Donor',
-          donorPhone: extra?['donorPhone'] as String? ?? '+8801700000000',
+          donorPhone: extra?['donorPhone'] as String? ?? '',
           isDonorView: extra?['isDonorView'] == true,
         );
       },

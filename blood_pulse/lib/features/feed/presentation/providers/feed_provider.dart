@@ -687,7 +687,7 @@ final liveUrgentNeedsProvider = Provider<List<UrgentNeedItem>>((ref) {
       unitsNeeded: 4,
       distance: '2km away',
       bloodGroup: 'O-',
-      contactPhone: '+8801700000000',
+      contactPhone: '',
     ),
     UrgentNeedItem(
       id: 'urgent_2',

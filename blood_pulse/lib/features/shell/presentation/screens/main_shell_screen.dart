@@ -16,6 +16,7 @@ import '../../../feed/presentation/providers/feed_provider.dart';
 
 import '../../../feed/presentation/widgets/feed_view.dart';
 import '../../../blood_hub/presentation/widgets/blood_hub_view.dart';
+import '../../../blood_hub/presentation/screens/blood_hub_landing_screen.dart';
 import '../../../communities/presentation/widgets/communities_view.dart';
 import '../../../health_hub/presentation/screens/health_hub_dashboard_screen.dart';
 import '../../../profile/presentation/widgets/profile_view.dart';
@@ -153,7 +154,7 @@ class _BloodHubTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return const ProfileCompletionGate(
       featureName: 'Blood Hub & Emergency Requests',
-      child: BloodHubView(),
+      child: BloodHubLandingScreen(),
     );
   }
 }

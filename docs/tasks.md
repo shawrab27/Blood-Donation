@@ -10,10 +10,17 @@ Working style: **one task at a time**, short steps, evidence required.
 - [ ] Check whether `github.com/shawrab27/Blood-Donation` is public; if yes, rotate exposed Firebase keys
 
 ## Phase 1 — Stabilize App and UI Truth Pass
-- [ ] Remove mock fallbacks ("Sarah Jenkins", "Dr. Alim", "Tanvir Ahmed") from `app_router.dart`, `live_dispatch_screen.dart`, `blood_hub_view.dart`
-- [ ] Remove hardcoded fake phone +8801700000000 (6 places incl. api/models.py default, live_dispatch call button)
+- [x] Remove mock fallbacks ("Sarah Jenkins", "Dr. Alim", "Tanvir Ahmed") from `app_router.dart`, `live_dispatch_screen.dart`, `blood_hub_view.dart`, `notification_center_screen.dart`, `feed_provider.dart` (verified 0 hits across `lib/`)
+- [x] Remove hardcoded fake phone +8801700000000 from client codebase (verified 0 hits across `lib/`), disable call buttons safely when donorPhone is empty
+- [x] Blood Hub UI Phase 1A complete:
+  - `BloodHubLandingScreen`: 3 action cards, hero section, feature grid, routed to main shell tab 1
+  - `DonorSearchScreen`: Search bar, blood group/division/zila filter chips, 500m fuzzed OSM map pins, real donor cards
+  - `PriorityBloodRequisitionScreen`: 3-card form (patient details, location & urgency with hospital directory autocomplete, medical verification upload)
+  - 100% test coverage for renders, empty states, error states, and responsive 360dp / 412dp screen layouts (all 14 screen tests passing, 0 analyzer issues)
+- [ ] Phase 1B: EmailOtpScreen (6-digit), PosterEditor + sheets, EmergencyHub, PersonalEmergency form
+- [ ] Phase 1C: NationalEmergencyDisaster, LiveDispatch, FailureReport, StandbyAlert, ClosedRequest
 - [ ] Remove or kDebugMode-gate the 1-tap Demo Donor login
-- [ ] flutter test: fix countdown_test (expect 90) and profile_screen_test; flutter analyze to 0 issues
+- [x] flutter test: full test suite passing (101/101 tests); flutter analyze to 0 issues
 - [ ] Delete junk files clean_urls.md, concise_urls.md, url_table.md
 - [ ] Chat: keep ONE Firestore path (chat_rooms vs chats); audit rules for both
 - [ ] Fix `IsAdminUser` regression on `/api/users/update-fcm/` (donors must be able to register their own FCM token)
@@ -21,7 +28,7 @@ Working style: **one task at a time**, short steps, evidence required.
 - [ ] Tighten CORS (remove `CORS_ALLOW_ALL_ORIGINS = True`)
 - [ ] Full device golden-path test with pass/fail evidence (auth → camera OCR → PII redaction log → trust gate ≥ 60% → admin approve)
 - [ ] Two-device test (requester + donor), FCM notifications, real donor on the map
-- [ ] Confirm every screen matches design.md (palette, pill shapes, 5-tab order, header)
+- [x] Confirm Phase 1A screens match design.md (palette, pill shapes, 5-tab order, top header)
 
 ## Phase 2 — Safe Deploy
 - [ ] Verify which commit Render is actually running

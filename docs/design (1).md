@@ -52,12 +52,23 @@ Optional avatar (camera/library) · email · primary phone (mandatory) · second
 ### Feed
 Story/post creator at top (Image / Text / Feeling / Check-in). Posts: React (count), Comment, Repost (loop/recycle arrow icon).
 
-### Blood Hub
-Three entry cards: Search for Donor · Emergency Blood · Blood Campaigns.
-- Search: filters (blood group, campus, division, district, upazila) + list + OSM map.
-- Emergency: National (poster, hospitals/camps, needs, pledges; frozen state "no emergency right now") and Personal (emergency form).
-- Tracking: private two-sided live map (requester view / donor view).
-- Poster Generator: Canva-like editor, urgent creative look, logo watermark, footer with website + Facebook links, editable fields; 3 templates.
+### Blood Hub (Phase 1A Implemented)
+Three primary cards layout wired strictly to live Riverpod services:
+1. **Search for Donor**:
+   - Routed via `/blood-hub/search` with top mode toggle (`Search as Donor` vs `Request for Blood`).
+   - Filter chips: Blood Group bottom sheet, Division & Zila selectors, Advanced map toggle.
+   - OSM map (`flutter_map`) with fuzzed geohashes (500m precision).
+   - Real donor result cards (`DonorCard`) with verified badge, relative donation cooldown, and direct request CTA.
+   - Group dispatch: "Request to All" floating button for filtered group broadcast.
+2. **Emergency Blood**:
+   - Entry point to Priority Blood Requisition form (`/blood-hub/request/direct`).
+   - 3-card structure: Patient Details, Location & Urgency (with live hospital autocomplete & Normal/Urgent/Custom time pickers), Medical Verification (camera/file upload).
+   - Validation & zero hardcoded fallbacks.
+3. **Blood Campaigns**:
+   - Real active campaign counter and live snippet; tap routes to Feed tab pre-filtered by `#BloodCampaign`.
+- **Top Header**: Logo asset + "BloodPulse" title (Georgia `#C30121`), notification bell with unread badge, profile avatar.
+- **Responsive Layout**: Validated against 360dp and 412dp form factors with 0 overflow errors.
+- **Phases 1B & 1C**: Poster Editor (4:5 Clean Alert, 4:5 Full Story, 9:16 Story Alert), Emergency Hub (National/Personal), Live Dispatch, Failure Report, and QR landing.
 
 ### Communities
 Three segments, each with its own search bar: Blood Donation Communities · Hospital Partners & Blood Banks · Personal Contacts & Local Guides (call + chat buttons).

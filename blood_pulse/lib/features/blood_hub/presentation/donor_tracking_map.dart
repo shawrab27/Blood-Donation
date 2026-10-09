@@ -26,7 +26,7 @@ class DonorTrackingMapScreen extends StatefulWidget {
     this.hospitalName = 'Dhaka Medical College Hospital',
     this.bloodGroup = 'O+',
     this.donorName = 'Verified Donor',
-    this.donorPhone = '+8801700000000',
+    this.donorPhone = '',
     this.hospitalLat = 23.7259,
     this.hospitalLng = 90.3976,
     this.initialDonorLat = 23.7380,
@@ -534,7 +534,9 @@ class _DonorTrackingMapScreenState extends State<DonorTrackingMapScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => launchUrl(Uri.parse('tel:${widget.donorPhone}')),
+                  onPressed: widget.donorPhone.trim().isNotEmpty
+                      ? () => launchUrl(Uri.parse('tel:${widget.donorPhone}'))
+                      : null,
                   icon: const Icon(Icons.phone_rounded, size: 16),
                   label: const Text('Call Donor', style: TextStyle(fontFamily: 'Inter')),
                   style: ElevatedButton.styleFrom(

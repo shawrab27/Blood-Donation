@@ -568,7 +568,7 @@ class AuthNotifier extends Notifier<AuthState> {
         user: UserProfile(
           fullName: 'Guest Altruist',
           email: 'guest@bloodpulse.org',
-          primaryPhone: '+8801700000000',
+          primaryPhone: '',
           age: 20,
           gender: 'Male',
           bloodGroup: 'O+',

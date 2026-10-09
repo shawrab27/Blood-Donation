@@ -494,7 +494,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                       'patientName': activeRequest.patientName,
                       'hospitalName': activeRequest.hospitalLocation,
                       'bloodGroup': activeRequest.bloodGroup,
-                      'donorName': 'Matched Volunteer Donor',
+                      'donorName': '',
                       'donorPhone': activeRequest.contactNumber,
                     },
                   ),
@@ -1461,7 +1461,7 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
             'patientName': patientName,
             'hospitalName': hospital.isNotEmpty ? hospital : 'Medical Center',
             'bloodGroup': bloodGroup,
-            'donorName': 'Matched Volunteer Donor',
+            'donorName': '',
             'donorPhone': contact,
           },
         );

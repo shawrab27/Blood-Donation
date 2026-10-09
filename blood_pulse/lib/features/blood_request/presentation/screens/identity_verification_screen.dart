@@ -63,7 +63,7 @@ class _IdentityVerificationScreenState
     final initialEmail = authUser?.email.isNotEmpty == true
         ? authUser!.email
         : 'user@example.com';
-    final initialPhone = authUser?.primaryPhone ?? '+8801700000000';
+    final initialPhone = authUser?.primaryPhone ?? '';
 
     _emailCtrl = TextEditingController(text: initialEmail);
     _whatsappCtrl = TextEditingController(text: initialPhone);
@@ -183,7 +183,9 @@ class _IdentityVerificationScreenState
               bloodGroup: widget.bloodGroup!,
               urgencyLevel: widget.urgencyLevel ?? 'Critical',
               hospitalLocation: widget.hospitalLocation ?? 'City General Hospital',
-              contactNumber: widget.contactNumber ?? '+8801700000000',
+              contactNumber: widget.contactNumber ??
+                  ref.read(authProvider).user?.primaryPhone ??
+                  '',
             );
         if (!mounted) return;
       }
@@ -206,7 +208,7 @@ class _IdentityVerificationScreenState
             'patientName': widget.patientName ?? 'Emergency Requester',
             'hospitalName': widget.hospitalLocation ?? 'Medical Center',
             'bloodGroup': widget.bloodGroup ?? '',
-            'donorName': 'Matched Volunteer Donor',
+            'donorName': '',
             'donorPhone': '',
           },
         );

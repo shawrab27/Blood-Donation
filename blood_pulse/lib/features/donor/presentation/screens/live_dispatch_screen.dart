@@ -850,7 +850,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _makeCall('+8801700000000'),
+                  onPressed: null,
                   icon: const Icon(Icons.emergency_rounded, size: 14, color: Color(0xFFC30121)),
                   label: const Text(
                     'Hospital Liaison',
@@ -1244,7 +1244,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
   Widget _buildCounterpartyCard() {
     final isRequester = _activeRole == DispatchRole.requester;
     final name = isRequester ? widget.donorName : widget.patientName;
-    final phone = isRequester ? widget.donorPhone : '+8801700000000';
+    final phone = isRequester ? widget.donorPhone : '';
     final roleTag = isRequester ? 'Universal Donor' : 'Patient / Ward 04';
     final subtitle = isRequester
         ? '★ 4.9 • 14 Lifesaving Units'
@@ -1367,7 +1367,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => _makeCall(phone),
+                  onPressed: phone.trim().isNotEmpty ? () => _makeCall(phone) : null,
                   icon: const Icon(Icons.call, size: 15),
                   label: Text(
                     isRequester ? 'Call Donor' : 'Call Ward Desk',
