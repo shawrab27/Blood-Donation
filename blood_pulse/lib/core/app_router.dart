@@ -83,20 +83,7 @@ class _StandaloneProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F7),
-      appBar: BloodPulseAppBar(
-        showBackButton: true,
-        onBack: () {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/dashboard');
-          }
-        },
-      ),
-      body: const ProfileView(),
-    );
+    return const UserProfileScreen();
   }
 }
 
