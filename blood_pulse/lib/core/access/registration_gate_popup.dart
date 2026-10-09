@@ -10,41 +10,46 @@ import 'profile_completion_modal.dart';
 /// Displays a soft-wall barrier for guests and incomplete logged-in users.
 class RegistrationGatePopup extends StatelessWidget {
   final bool isGuest;
+  final String? targetRoute;
 
   const RegistrationGatePopup({
     super.key,
     required this.isGuest,
+    this.targetRoute,
   });
 
   /// Displays the modal dialog. Dismissing via X stays on the current screen.
-  static Future<void> show(BuildContext context, {required bool isGuest}) {
+  static Future<void> show(BuildContext context, {required bool isGuest, String? targetRoute}) {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (ctx) => RegistrationGatePopup(isGuest: isGuest),
+      builder: (ctx) => RegistrationGatePopup(isGuest: isGuest, targetRoute: targetRoute),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 380),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
+      insetPadding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 380),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-          ],
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: Column(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -123,7 +128,7 @@ class RegistrationGatePopup extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pop();
                   if (isGuest) {
-                    context.push('/register');
+                    context.push('/register', extra: targetRoute != null ? {'targetRoute': targetRoute} : null);
                   } else {
                     ProfileCompletionModal.show(context);
                   }
@@ -190,6 +195,8 @@ class RegistrationGatePopup extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

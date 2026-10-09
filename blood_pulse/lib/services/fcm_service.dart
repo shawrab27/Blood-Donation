@@ -258,7 +258,9 @@ class FcmService {
             'fcm_token': newToken,
           });
           debugPrint('[DEBUG] FCM token posted: ${response.statusCode}');
-        } catch (apiErr) {}
+        } catch (apiErr) {
+          debugPrint('[DEBUG] FCM token sync skipped: $apiErr');
+        }
       });
   }
 

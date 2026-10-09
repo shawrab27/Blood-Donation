@@ -2,7 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:async';
-import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,9 +13,8 @@ import '../../domain/models/assistant_message_model.dart';
 import '../../../../widgets/pulse_loading_indicator.dart';
 import '../../../../core/widgets/avatar_helper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
-import '../../../../core/access/access_guard.dart';
-import '../../../../core/access/registration_gate_popup.dart';
 import '../../../../core/access/profile_completion_modal.dart';
+import '../widgets/ecg_3d_background.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
   final String? screenContext;
@@ -34,10 +33,6 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ref.read(isGuestProvider)) {
-        RegistrationGatePopup.show(context, isGuest: true);
-        return;
-      }
       _checkFirstRun();
     });
   }
@@ -64,9 +59,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       isDismissible: false,
       enableDrag: false,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => const ConsentSheetWidget(),
     );
   }
@@ -75,10 +73,6 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
-    if (ref.read(isGuestProvider)) {
-      RegistrationGatePopup.show(context, isGuest: true);
-      return;
-    }
     final userQuery = text.trim();
     _lastQuery = userQuery;
     _textController.clear();
@@ -86,84 +80,11 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
 
     final currentLocale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
 
-    try {
-      await ref.read(assistantProvider.notifier).sendMessage(
-            userQuery,
-            currentLocale,
-            screenContext: widget.screenContext,
-          );
-    } catch (e) {
-      // Log silently (no stack trace to user)
-      debugPrint('[DEBUG] Gemini error: ${e.toString()}');
-
-      if (!mounted) return;
-
-      // Show localized friendly message
-      if (e is SocketException || e is TimeoutException) {
-        _showError(
-          context,
-          title: 'কানেকশন সমস্যা', // Bangla
-          message:
-              'আমি এখন সাহায্য করতে পারছি না। অনুগ্রহ করে আমাদের হটলাইন ফোন করুন: +880-17-XXXX-XXXX',
-          englishTitle: 'Connection Issue', // English
-          englishMessage:
-              'I\'m unable to help right now. Please call our hotline: +880-17-XXXX-XXXX',
+    await ref.read(assistantProvider.notifier).sendMessage(
+          userQuery,
+          currentLocale,
+          screenContext: widget.screenContext,
         );
-      } else if (e is AssistantApiException &&
-          (e.code == 'NO_INTERNET' || e.code == 'BUSY')) {
-        _showError(
-          context,
-          title: 'কানেকশন সমস্যা',
-          message:
-              'আমি এখন সাহায্য করতে পারছি না। অনুগ্রহ করে আমাদের হটলাইন ফোন করুন: +880-17-XXXX-XXXX',
-          englishTitle: 'Connection Issue',
-          englishMessage:
-              'I\'m unable to help right now. Please call our hotline: +880-17-XXXX-XXXX',
-        );
-      } else {
-        _showError(
-          context,
-          title: 'একটি সমস্যা হয়েছে',
-          message: 'আবার চেষ্টা করুন',
-          englishTitle: 'Something went wrong',
-          englishMessage: 'Please try again',
-        );
-      }
-    }
-  }
-
-  Future<void> _showError(
-    BuildContext context, {
-    required String title,
-    required String message,
-    required String englishTitle,
-    required String englishMessage,
-  }) async {
-    final isBangla = (Localizations.maybeLocaleOf(context)?.languageCode == 'bn') ||
-        (GetLocale.locale?.languageCode == 'bn');
-
-    return showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          isBangla ? title : englishTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC30121)),
-        ),
-        content: Text(
-          isBangla ? message : englishMessage,
-          style: const TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK',
-                style: TextStyle(
-                    color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -190,9 +111,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              'assets/images/pulse_ai_icon.png',
+              'assets/images/pulseai_icon.png',
               width: 32,
               height: 32,
+              cacheWidth: 64,
+              cacheHeight: 64,
+              fit: BoxFit.contain,
               errorBuilder: (_, _, _) => const Icon(
                 Icons.smart_toy_outlined,
                 size: 28,
@@ -219,131 +143,154 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Pinned Banner
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.verified_user_outlined, size: 14, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    const Flexible(child: Text("AI-assisted guidance — not a medical diagnosis. Always consult a doctor.", overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: Colors.grey))),
-                  ],
-                ),
+      body: Column(
+        children: [
+          // Pinned Banner
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified_user_outlined, size: 14, color: Colors.grey),
+                  SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      "AI-assisted guidance — not a medical diagnosis. Always consult a doctor.",
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontFamily: 'Inter', fontSize: 10.5, color: Colors.grey),
+                    ),
+                  ),
+                ],
               ),
             ),
-            
-            // Messages Area
-            Expanded(
+          ),
+
+          // Messages Area with isolated 3D ECG heartbeat background
+          Expanded(
+            child: Ecg3DBackground(
+              isThinking: state.isSending,
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 560),
                   child: state.isLoading && state.messages.isEmpty
-                    ? const Center(child: CircularProgressIndicator(color: Color(0xFFC30121)))
-                    : ListView.builder(
-                        controller: _scrollController,
-                        reverse: true,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: state.messages.length + (state.isSending ? 1 : 0) + (state.errorCode != null ? 1 : 0) + 1,
-                        itemBuilder: (context, index) {
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFFC30121)))
+                      : ListView.builder(
+                          controller: _scrollController,
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: state.messages.length +
+                              (state.isSending ? 1 : 0) +
+                              (state.errorCode != null ? 1 : 0) +
+                              1,
+                          itemBuilder: (context, index) {
                             if (index == 0 && state.errorCode != null) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  child: _PulseAiErrorBanner(
-                                    errorCode: state.errorCode!,
-                                    onRetry: () {
-                                      if (_lastQuery.isNotEmpty) {
-                                        _sendMessage(_lastQuery);
-                                      } else {
-                                        final lastUserMsg = state.messages.reversed
-                                            .firstWhere(
-                                              (m) => m.isUser,
-                                              orElse: () => AssistantMessage(isUser: true, text: ''),
-                                            )
-                                            .text;
-                                        if (lastUserMsg.isNotEmpty) {
-                                          _sendMessage(lastUserMsg);
-                                        }
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: _PulseAiErrorBanner(
+                                  errorCode: state.errorCode!,
+                                  onRetry: () {
+                                    if (_lastQuery.isNotEmpty) {
+                                      _sendMessage(_lastQuery);
+                                    } else {
+                                      final lastUserMsg = state.messages.reversed
+                                          .firstWhere(
+                                            (m) => m.isUser,
+                                            orElse: () => AssistantMessage(isUser: true, text: ''),
+                                          )
+                                          .text;
+                                      if (lastUserMsg.isNotEmpty) {
+                                        _sendMessage(lastUserMsg);
                                       }
-                                    },
-                                  ),
-                                );
+                                    }
+                                  },
+                                ),
+                              );
                             }
-                            if (index == (state.errorCode != null ? 1 : 0) && state.isSending) return const TypingIndicator();
-                            
-                            final messageIndex = state.messages.length - 1 - (index - (state.isSending ? 1 : 0) - (state.errorCode != null ? 1 : 0));
-                          
-                          if (messageIndex < 0) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 24, top: 16),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: Colors.white,
-                                    backgroundImage: const AssetImage('assets/images/pulse_ai_icon.png'),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: _AssistantBubble(
-                                      text: "Hello! I'm **PulseAI**, your clinical companion for transfusion medicine, donation deferrals, lab diagnostics, and emergency donor mobilization.\n\nHow can I assist you with your donation or clinical inquiries today?",
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          
-                          final message = state.messages[messageIndex];
-                          return MessageWidget(message: message);
-                        },
-                      ),
+                            if (index == (state.errorCode != null ? 1 : 0) && state.isSending) {
+                              return const TypingIndicator();
+                            }
+
+                            final messageIndex = state.messages.length -
+                                1 -
+                                (index -
+                                    (state.isSending ? 1 : 0) -
+                                    (state.errorCode != null ? 1 : 0));
+
+                            if (messageIndex < 0) {
+                              return _buildEmptyState(context);
+                            }
+
+                            final message = state.messages[messageIndex];
+                            return MessageWidget(message: message);
+                          },
+                        ),
                 ),
               ),
             ),
-            
-            // Quick Actions & Input Bar
-            Container(
+          ),
+
+          // Quick Actions & Input Bar - anchored safely above keyboard & navigation bar
+          SafeArea(
+            top: false,
+            bottom: true,
+            child: Container(
               decoration: const BoxDecoration(
                 color: Color(0xFFFDF3F3),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Quick Actions above input bar
                   if (state.quickActions.isNotEmpty)
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        children: state.quickActions.map((q) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ActionChip(
-                            label: Text(q.textEn, style: const TextStyle(fontSize: 12, color: Color(0xFF2B2B2B))),
-                            onPressed: () => _sendMessage(q.textEn),
-                            backgroundColor: const Color(0xFFF3DDE0),
-                            side: BorderSide.none,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        )).toList(),
+                        children: state.quickActions
+                            .map((q) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: ActionChip(
+                                    label: Text(
+                                      q.textEn,
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF2B2B2B)),
+                                    ),
+                                    onPressed: () => _sendMessage(q.textEn),
+                                    backgroundColor: const Color(0xFFF3DDE0),
+                                    side: BorderSide.none,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  // Input Field
+                  const SizedBox(height: 6),
+                  // Input Field capsule
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(50),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Row(
@@ -417,15 +364,92 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                     children: [
                       Icon(Icons.lock_outline, size: 10, color: Colors.grey),
                       SizedBox(width: 4),
-                      Flexible(child: Text("End-to-end encrypted clinical triage session", overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: Colors.grey))),
+                      Flexible(
+                        child: Text(
+                          "End-to-end encrypted clinical triage session",
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final isBangla = (Localizations.maybeLocaleOf(context)?.languageCode == 'bn') ||
+        (GetLocale.locale?.languageCode == 'bn');
+
+    final suggestions = isBangla
+        ? [
+            'আমি কি রক্ত দিতে পারব?',
+            'কত ঘন ঘন রক্ত দেওয়া যায়?',
+            'রক্তদানের আগে কী খাওয়া উচিত?',
+          ]
+        : [
+            'Am I eligible to donate?',
+            'How often can I donate?',
+            'What should I eat before donating?',
+          ];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24, top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white,
+                backgroundImage: AssetImage('assets/images/pulseai_icon.png'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _AssistantBubble(
+                  text: isBangla
+                      ? "স্বাগতম! আমি **PulseAI**, আপনার রক্তদান ও ক্লিনিক্যাল সহকারী। রক্তদানের যোগ্যতা, নিয়ম বা স্বাস্থ্য বিষয়ক যেকোনো প্রশ্ন করতে পারেন।"
+                      : "Hello! I'm **PulseAI**, your clinical companion for transfusion medicine, donation deferrals, lab diagnostics, and emergency donor mobilization.\n\nHow can I assist you with your donation or clinical inquiries today?",
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: suggestions.map((s) {
+                return ActionChip(
+                  label: Text(
+                    s,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFC30121),
+                    ),
+                  ),
+                  backgroundColor: Colors.white,
+                  elevation: 1,
+                  shadowColor: Colors.black12,
+                  side: const BorderSide(color: Color(0xFFF3DDE0)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                  onPressed: () => _sendMessage(s),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -480,10 +504,10 @@ class MessageWidget extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 16,
             backgroundColor: Colors.white,
-            backgroundImage: const AssetImage('assets/images/pulse_ai_icon.png'),
+            backgroundImage: AssetImage('assets/images/pulseai_icon.png'),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -587,21 +611,139 @@ class _AssistantBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lines = text.split('\n');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(4),
           topRight: Radius.circular(16),
           bottomLeft: Radius.circular(16),
           bottomRight: Radius.circular(16),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: SelectableText(
-        text.replaceAll('**', ''), // A poor man's markdown stripper just to make it clean if needed, ideally use flutter_markdown. 
-        style: const TextStyle(color: Color(0xFF2B2B2B), fontSize: 14, height: 1.4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: _buildMarkdownContent(lines),
       ),
+    );
+  }
+
+  List<Widget> _buildMarkdownContent(List<String> lines) {
+    final widgets = <Widget>[];
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) {
+        if (i < lines.length - 1 && lines[i + 1].trim().isNotEmpty) {
+          widgets.add(const SizedBox(height: 8));
+        }
+        continue;
+      }
+
+      final isBullet = line.startsWith('* ') || line.startsWith('- ') || line.startsWith('• ');
+      final isNumbered = RegExp(r'^\d+\.\s+').hasMatch(line);
+
+      if (isBullet || isNumbered) {
+        final content = isBullet
+            ? line.substring(2).trim()
+            : line.replaceFirst(RegExp(r'^\d+\.\s+'), '').trim();
+        final prefix = isNumbered ? RegExp(r'^\d+\.').firstMatch(line)!.group(0)! : '•';
+
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: isNumbered ? 24 : 16,
+                  child: Text(
+                    prefix,
+                    style: TextStyle(
+                      color: const Color(0xFFC30121),
+                      fontWeight: FontWeight.bold,
+                      fontSize: isNumbered ? 13 : 16,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: _buildRichText(content),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: _buildRichText(line),
+          ),
+        );
+      }
+    }
+
+    return widgets;
+  }
+
+  Widget _buildRichText(String text) {
+    final spans = <TextSpan>[];
+    final regex = RegExp(r'\*\*(.*?)\*\*');
+    int lastMatchEnd = 0;
+
+    for (final match in regex.allMatches(text)) {
+      if (match.start > lastMatchEnd) {
+        spans.add(
+          TextSpan(
+            text: text.substring(lastMatchEnd, match.start),
+            style: const TextStyle(
+              color: Color(0xFF2B2B2B),
+              fontSize: 14,
+              height: 1.45,
+            ),
+          ),
+        );
+      }
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: const TextStyle(
+            color: Color(0xFF2B2B2B),
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            height: 1.45,
+          ),
+        ),
+      );
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(lastMatchEnd),
+          style: const TextStyle(
+            color: Color(0xFF2B2B2B),
+            fontSize: 14,
+            height: 1.45,
+          ),
+        ),
+      );
+    }
+
+    return SelectableText.rich(
+      TextSpan(children: spans),
     );
   }
 }
@@ -655,31 +797,70 @@ class EmergencyCard extends StatelessWidget {
 
 // Dialogs and indicators are same
 class ConsentSheetWidget extends ConsumerWidget {
-  const ConsentSheetWidget({Key? key}) : super(key: key);
+  const ConsentSheetWidget({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("BloodPulse Assistant Privacy", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          const Text("The assistant uses AI to help answer your questions. Please do not share any personal health information or phone numbers."),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                ref.read(assistantProvider.notifier).saveConsent(true);
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC30121), foregroundColor: Colors.white),
-              child: const Text("Accept & Continue"),
-            ),
-          )
-        ],
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottomPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "BloodPulse Assistant Privacy",
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2B2B2B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "The assistant uses AI to help answer your questions. Please do not share any personal health information or phone numbers.",
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12.5,
+                  height: 1.35,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(assistantProvider.notifier).saveConsent(true);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC30121),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text(
+                    "Accept & Continue",
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -724,6 +905,7 @@ class _HandoffDialogState extends ConsumerState<HandoffDialog> {
 
 class TypingIndicator extends StatelessWidget {
   const TypingIndicator({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return const Row(
@@ -732,7 +914,7 @@ class TypingIndicator extends StatelessWidget {
         CircleAvatar(
           radius: 16,
           backgroundColor: Colors.white,
-          backgroundImage: AssetImage('assets/images/pulse_ai_icon.png'),
+          backgroundImage: AssetImage('assets/images/pulseai_icon.png'),
         ),
         SizedBox(width: 8),
         PulseLoadingIndicator(
@@ -745,8 +927,7 @@ class TypingIndicator extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// ERROR BANNER — distinct friendly messages per errorCode
+// ERROR BANNER — single inline card with Retry button and mapped EN/BN messages
 // ─────────────────────────────────────────────────────────────────────────────
 
 class GetLocale {
@@ -762,41 +943,67 @@ class _PulseAiErrorBanner extends StatelessWidget {
   static _ErrorInfo _infoFor(String code, bool isBangla) {
     switch (code) {
       case 'NO_INTERNET':
+      case 'OFFLINE':
         return _ErrorInfo(
           Icons.wifi_off_rounded,
-          isBangla ? 'ইন্টারনেট সংযোগ নেই' : 'No internet connection',
+          isBangla ? 'ইন্টারনেট সংযোগ নেই' : 'You are offline',
           isBangla
               ? 'আপনার ইন্টারনেট সংযোগ পরীক্ষা করে পুনরায় চেষ্টা করুন।'
               : 'Check your connection and try again.',
         );
-      case 'NOT_AVAILABLE':
+      case 'TIMEOUT':
+      case 'BUSY':
         return _ErrorInfo(
-          Icons.smart_toy_outlined,
-          isBangla ? 'PulseAI এখনও উপলব্ধ নয়' : 'PulseAI is not available yet',
+          Icons.timer_outlined,
+          isBangla ? 'সময় শেষ হয়ে গেছে' : 'Request timed out',
           isBangla
-              ? 'এই সুবিধাটি সার্ভারে এখনও চালু করা হয়নি।'
-              : 'This feature is not yet enabled on the server.',
+              ? 'সার্ভার সাড়া দিতে বিলম্ব হচ্ছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
+              : 'PulseAI is taking longer than usual. Please try again.',
         );
       case 'LOGIN_REQUIRED':
+      case 'AUTH_EXPIRED':
         return _ErrorInfo(
           Icons.lock_outline_rounded,
-          isBangla ? 'অনুগ্রহ করে আবার লগইন করুন' : 'Please log in again',
+          isBangla ? 'সেশনের মেয়াদ শেষ' : 'Session expired',
           isBangla
-              ? 'আপনার সেশন শেষ হয়ে গেছে। পুনরায় অ্যাপে লগইন করুন।'
-              : 'Your session may have expired. Re-open the app and sign in.',
+              ? 'আপনার সেশনের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে আবার সাইন ইন করুন।'
+              : 'Your session may have expired. Please sign in again.',
         );
       case 'RATE_LIMITED':
         return _ErrorInfo(
           Icons.hourglass_top_rounded,
-          isBangla ? 'অতিরিক্ত বার্তা' : 'Too many messages',
+          isBangla ? 'বার্তা সীমা অতিক্রম' : 'Too many messages',
           isBangla
-              ? 'আপনি অনেক বার্তা পাঠিয়েছেন। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।'
+              ? 'আপনি অতিরিক্ত বার্তা পাঠিয়েছেন। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।'
               : 'You\'ve sent too many messages. Please wait a moment before trying again.',
         );
-      default:
-        // Covers GENERIC_ERROR, network timeouts, 5xx
+      case 'SERVER_ERROR':
         return _ErrorInfo(
           Icons.cloud_off_rounded,
+          isBangla ? 'সার্ভারে সমস্যা হয়েছে' : 'Server error',
+          isBangla
+              ? 'সার্ভারে একটি সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।'
+              : 'PulseAI encountered an issue on our server. Please try again in a moment.',
+        );
+      case 'PROVIDER_ERROR':
+        return _ErrorInfo(
+          Icons.smart_toy_outlined,
+          isBangla ? 'এআই সেবা অনুপলব্ধ' : 'AI service unavailable',
+          isBangla
+              ? 'এআই সেবা সাময়িকভাবে অনুপলব্ধ। অনুগ্রহ করে কিছুক্ষণ পর চেষ্টা করুন।'
+              : 'The AI provider is temporarily unavailable. Please try again.',
+        );
+      case 'EMPTY_RESPONSE':
+        return _ErrorInfo(
+          Icons.chat_bubble_outline_rounded,
+          isBangla ? 'কোনো উত্তর পাওয়া যায়নি' : 'No response received',
+          isBangla
+              ? 'কোনো উত্তর পাওয়া যায়নি। অনুগ্রহ করে আবার জিজ্ঞাসা করুন।'
+              : 'PulseAI returned an empty response. Please try asking again.',
+        );
+      default:
+        return _ErrorInfo(
+          Icons.error_outline_rounded,
           isBangla ? 'একটি সমস্যা হয়েছে' : 'PulseAI is busy',
           isBangla
               ? 'কিছুক্ষণ পর আবার চেষ্টা করুন।'
@@ -815,8 +1022,8 @@ class _PulseAiErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF2F4),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFC30121).withAlpha(40)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFC30121).withValues(alpha: 0.25)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -827,16 +1034,22 @@ class _PulseAiErrorBanner extends StatelessWidget {
             info.title,
             textAlign: TextAlign.center,
             style: const TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFC30121)),
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              color: Color(0xFFC30121),
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             info.body,
             textAlign: TextAlign.center,
             style: const TextStyle(
-                fontFamily: 'Inter', fontSize: 13, color: Colors.black87),
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: Colors.black87,
+              height: 1.35,
+            ),
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
@@ -847,6 +1060,7 @@ class _PulseAiErrorBanner extends StatelessWidget {
               backgroundColor: const Color(0xFFC30121),
               foregroundColor: Colors.white,
               shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
           ),
         ],

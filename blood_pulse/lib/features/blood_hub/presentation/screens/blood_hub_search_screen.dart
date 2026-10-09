@@ -411,32 +411,78 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
   }
 
   Widget _buildError(String message) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          const Icon(Icons.wifi_off_rounded,
-              size: 48, color: Color(0xFF8E7D7F)),
-          const SizedBox(height: 12),
-          Text(
-            'Could not load donors.\n$message',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 13,
-              color: Color(0xFF8E7D7F),
+    final cleanMessage = message.contains('ApiException:')
+        ? message.replaceAll('ApiException:', '').trim()
+        : message;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFEBEB),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                size: 36,
+                color: _kPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () =>
-                ref.read(donorSearchNotifierProvider.notifier).refresh(),
-            child: const Text(
-              'Retry',
-              style: TextStyle(color: _kPrimary, fontFamily: 'Inter'),
+            const SizedBox(height: 16),
+            const Text(
+              'Could not connect to donors',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2B2B2B),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              cleanMessage.isEmpty
+                  ? 'Unable to reach the donor directory. Please check your internet connection or tap retry.'
+                  : cleanMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                color: Color(0xFF8E7D7F),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () =>
+                  ref.read(donorSearchNotifierProvider.notifier).refresh(),
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
+              label: const Text(
+                'Retry Search',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

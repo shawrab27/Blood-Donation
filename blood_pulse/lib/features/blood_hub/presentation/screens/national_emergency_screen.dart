@@ -55,7 +55,86 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
             return _NationalBody(event: event);
           },
           loading: () => const _Skeleton(),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => _EmergencyErrorState(error: e),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencyErrorState extends ConsumerWidget {
+  final Object error;
+  const _EmergencyErrorState({required this.error});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFEBEB),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                size: 40,
+                color: _kPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'National Network Offline',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: _kSecondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Unable to connect to the National Emergency Network.\nPlease check your network connection or tap below to reconnect.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: _kNeutral,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                ref.invalidate(activeNationalEmergencyProvider);
+                ref.invalidate(myDisasterPledgeProvider);
+              },
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+              label: const Text(
+                'Retry Connection',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -221,7 +300,7 @@ class _NationalBody extends ConsumerWidget {
               );
             },
             loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
           const SliverToBoxAdapter(
             child: Padding(

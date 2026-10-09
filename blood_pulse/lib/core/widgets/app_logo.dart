@@ -4,15 +4,16 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Path to the official transparent PNG logo.
-const String kBloodPulseIconAsset = 'assets/images/blood_pulse_icon.png';
+/// Path to the official logo assets.
+const String kBloodPulseJpgAsset = 'assets/images/Blood Pulse logo.jpg';
+const String kBloodPulseIconAsset = 'assets/images/Blood Pulse logo.jpg';
+const String kBloodPulsePngIconAsset = 'assets/images/blood_pulse_icon.png';
 const String kBloodPulseLogoAsset = 'assets/images/blood_pulse_logo.png';
 
 /// The official BloodPulse mark widget.
 ///
-/// Loads the official transparent PNG logo icon asset [kBloodPulseIconAsset]
-/// featuring Deep Burgundy (#641C2D) and Primary Red (#C30121) branding.
-/// Maintains a 100% transparent background with zero background box artifacts.
+/// Loads the official circular clipped logo asset [kBloodPulseJpgAsset]
+/// featuring Deep Red (#C30121) branding.
 class BloodPulseMark extends StatelessWidget {
   final double size;
   final Color? backgroundColor;
@@ -28,34 +29,38 @@ class BloodPulseMark extends StatelessWidget {
     this.primaryColor = AppColors.primary,
     this.secondaryColor = AppColors.burgundy,
     this.showShadow = false,
-    this.assetPath = kBloodPulseIconAsset,
+    this.assetPath = kBloodPulseJpgAsset,
   });
 
   @override
   Widget build(BuildContext context) {
-    final image = Image.asset(
-      assetPath,
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.medium,
-      errorBuilder: (context, error, stackTrace) => Image.asset(
-        kBloodPulseLogoAsset,
+    final image = ClipOval(
+      child: Image.asset(
+        assetPath,
         width: size,
         height: size,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: backgroundColor ?? secondaryColor.withValues(alpha: 0.08),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Icon(
-              Icons.favorite_rounded,
-              color: primaryColor,
-              size: size * 0.62,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (context, error, stackTrace) => ClipOval(
+          child: Image.asset(
+            kBloodPulsePngIconAsset,
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: backgroundColor ?? secondaryColor.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.favorite_rounded,
+                  color: primaryColor,
+                  size: size * 0.62,
+                ),
+              ),
             ),
           ),
         ),
@@ -201,38 +206,33 @@ class BloodPulseLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveIconSize = height ?? iconSize;
 
-    final iconWidget = Image.asset(
-      assetPath,
-      height: effectiveIconSize,
-      width: width ?? effectiveIconSize,
-      fit: fit,
-      filterQuality: FilterQuality.medium,
-      errorBuilder: (context, error, stackTrace) => Image.asset(
-        kBloodPulseLogoAsset,
+    final iconWidget = ClipOval(
+      child: Image.asset(
+        assetPath,
         height: effectiveIconSize,
-        fit: fit,
-        errorBuilder: (_, _, _) => _buildFallbackIcon(effectiveIconSize),
+        width: width ?? effectiveIconSize,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (context, error, stackTrace) => ClipOval(
+          child: Image.asset(
+            kBloodPulsePngIconAsset,
+            height: effectiveIconSize,
+            width: width ?? effectiveIconSize,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => _buildFallbackIcon(effectiveIconSize),
+          ),
+        ),
       ),
     );
 
-    final textWidget = RichText(
-      text: TextSpan(
-        style: TextStyle(
-          fontFamily: 'Georgia',
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.3,
-        ),
-        children: [
-          TextSpan(
-            text: 'Blood',
-            style: TextStyle(color: secondaryColor),
-          ),
-          TextSpan(
-            text: 'Pulse',
-            style: TextStyle(color: primaryColor),
-          ),
-        ],
+    final textWidget = Text(
+      'BloodPulse',
+      style: TextStyle(
+        fontFamily: 'Georgia',
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold,
+        letterSpacing: -0.3,
+        color: primaryColor,
       ),
     );
 

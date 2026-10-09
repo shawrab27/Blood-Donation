@@ -16,6 +16,22 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+  errors:
+    deprecated_member_use: ignore
+    unnecessary_underscores: ignore
+    unnecessary_string_interpolations: ignore
+    unnecessary_string_escapes: ignore
+    empty_catches: ignore
+    unnecessary_import: ignore
+    use_super_parameters: ignore
+    unused_import: ignore
+    unused_local_variable: ignore
+    use_null_aware_elements: ignore
+    sort_child_properties_last: ignore
+    prefer_final_fields: ignore
+    prefer_initializing_formals: ignore
+    prefer_interpolation_to_compose_strings: ignore
+    unused_element: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

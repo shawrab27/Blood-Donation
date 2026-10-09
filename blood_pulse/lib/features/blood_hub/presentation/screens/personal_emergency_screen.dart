@@ -13,6 +13,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../../core/access/registration_gate_popup.dart';
+import '../../../../services/api_client.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -185,8 +188,9 @@ class _PersonalEmergencyScreenState
     final picker = ImagePicker();
     final xfile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1080,
-      imageQuality: 85,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 70,
     );
     if (xfile == null || !mounted) return;
     final bytes = await xfile.readAsBytes();
@@ -197,8 +201,9 @@ class _PersonalEmergencyScreenState
     final picker = ImagePicker();
     final xfile = await picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1200,
-      imageQuality: 90,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 70,
     );
     if (xfile == null || !mounted) return;
     final bytes = await xfile.readAsBytes();
@@ -216,6 +221,25 @@ class _PersonalEmergencyScreenState
     }
     if (_contactController.text.trim().isEmpty) {
       _showError('Attendant contact phone is required.');
+      return;
+    }
+
+    // Enforce authentication gate
+    final authState = ref.read(authProvider);
+    if (!authState.isAuthenticated) {
+      RegistrationGatePopup.show(
+        context,
+        isGuest: true,
+        targetRoute: '/emergency/personal',
+      );
+      return;
+    }
+    if (authState.user?.isProfileComplete == false) {
+      RegistrationGatePopup.show(
+        context,
+        isGuest: false,
+        targetRoute: '/emergency/personal',
+      );
       return;
     }
 
@@ -259,6 +283,17 @@ class _PersonalEmergencyScreenState
         context.go('/journeys/$requestId');
       } else {
         context.go('/emergency/personal');
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.statusCode == 401) {
+        RegistrationGatePopup.show(
+          context,
+          isGuest: true,
+          targetRoute: '/emergency/personal',
+        );
+      } else {
+        _showError(e.message);
       }
     } catch (e) {
       if (!mounted) return;
@@ -538,7 +573,7 @@ class _PersonalEmergencyScreenState
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(50), borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
-            value: _division,
+            initialValue: _division,
             items: [
               const DropdownMenuItem<String>(value: null, child: Text('Select')),
               ...divisions.map((d) => DropdownMenuItem(value: d, child: Text(d))),
@@ -562,7 +597,7 @@ class _PersonalEmergencyScreenState
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(50), borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
-            value: _district,
+            initialValue: _district,
             items: [
               const DropdownMenuItem<String>(value: null, child: Text('Select')),
               ...districts.map((d) => DropdownMenuItem(value: d, child: Text(d))),
@@ -633,7 +668,7 @@ class _PersonalEmergencyScreenState
                     ),
                   ),
                   subtitle: Text(
-                    '${h.district}',
+                    h.district,
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 11,

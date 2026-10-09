@@ -21,6 +21,9 @@ enum AccessFeature {
 /// Local guest flag provider (never depends on an auth token).
 final isGuestProvider = StateProvider<bool>((ref) => false);
 
+/// Route to navigate to after the user completes registration or login.
+final pendingRedirectRouteProvider = StateProvider<String?>((ref) => null);
+
 /// Single source of truth for soft-wall access rules across BloodPulse.
 class AccessGuard {
   const AccessGuard._();
@@ -99,6 +102,7 @@ class AccessGuard {
     required WidgetRef ref,
     required AccessFeature feature,
     required VoidCallback onAllowed,
+    String? targetRoute,
   }) {
     final guest = ref.read(isGuestProvider);
     final authState = ref.read(authProvider);
@@ -117,8 +121,12 @@ class AccessGuard {
       return true;
     }
 
+    if (targetRoute != null) {
+      ref.read(pendingRedirectRouteProvider.notifier).state = targetRoute;
+    }
+
     if (guest) {
-      RegistrationGatePopup.show(context, isGuest: true);
+      RegistrationGatePopup.show(context, isGuest: true, targetRoute: targetRoute);
       return false;
     }
 
@@ -126,7 +134,7 @@ class AccessGuard {
       if (feature == AccessFeature.profile) {
         ProfileCompletionModal.show(context);
       } else {
-        RegistrationGatePopup.show(context, isGuest: false);
+        RegistrationGatePopup.show(context, isGuest: false, targetRoute: targetRoute);
       }
       return false;
     }

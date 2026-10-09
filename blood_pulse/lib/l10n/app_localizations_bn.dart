@@ -279,6 +279,22 @@ class AppLocalizationsBn extends AppLocalizations {
   String get signIn => 'সাইন ইন করুন';
 
   @override
+  String get continueWithGoogle => 'গুগল দিয়ে এগিয়ে যান';
+
+  @override
+  String get continueAsGuest => 'গেস্ট হিসেবে চালিয়ে যান';
+
+  @override
+  String get googleSignInCancelled => 'গুগল সাইন-ইন বাতিল করা হয়েছে।';
+
+  @override
+  String get networkError =>
+      'নেটওয়ার্ক সংযোগ ব্যর্থ হয়েছে। আপনার ইন্টারনেট পরীক্ষা করুন।';
+
+  @override
+  String get googleEmailNotVerified => 'গুগল অ্যাকাউন্ট ইমেইলটি যাচাইকৃত নয়।';
+
+  @override
   String get logoutConfirm =>
       'আপনি কি নিশ্চিতভাবে আপনার ব্লাডপালস অ্যাকাউন্ট থেকে লগ আউট করতে চান?';
 
@@ -513,4 +529,43 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get notifNoItems => 'এই ক্যাটাগরিতে কোনো নোটিফিকেশন নেই।';
+
+  @override
+  String get chooseFromGallery => 'গ্যালারি থেকে বেছে নিন';
+
+  @override
+  String get chooseFromFile => 'ফাইল থেকে বেছে নিন';
+
+  @override
+  String get openCamera => 'ক্যামেরা খুলুন';
+
+  @override
+  String get removePhoto => 'ছবি মুছুন';
+
+  @override
+  String get optionalBadge => 'ঐচ্ছিক';
+
+  @override
+  String get invalidImageFormat =>
+      'শুধুমাত্র JPG, JPEG, PNG এবং WEBP ফরম্যাট সমর্থিত।';
+
+  @override
+  String get imageSizeTooLarge => 'ছবির আকার সর্বোচ্চ ৫ মেগাবাইট হতে হবে।';
+
+  @override
+  String get cameraPermissionDenied => 'ক্যামেরার অনুমতি প্রত্যাখ্যাত হয়েছে।';
+
+  @override
+  String get cameraPermissionPermanentlyDenied =>
+      'ক্যামেরার অনুমতি স্থায়ীভাবে বাতিল করা হয়েছে। অনুগ্রহ করে সেটিংস থেকে চালু করুন।';
+
+  @override
+  String get openSettings => 'সেটিংস';
+
+  @override
+  String get photoHelperText =>
+      'শনাক্তকরণে সহায়তার জন্য একটি পরিষ্কার ছবি আপলোড করুন।';
+
+  @override
+  String get failedToReadFile => 'নির্বাচিত ফাইলটি পড়া সম্ভব হয়নি।';
 }

@@ -7,12 +7,15 @@ class OtpInputRow extends StatelessWidget {
   final ValueChanged<String>? onPaste;
   final void Function(String value, int index) onChanged;
   
+  final Color? fillColor;
+  
   const OtpInputRow({
     super.key,
     required this.controllers,
     required this.nodes,
     required this.onChanged,
     this.onPaste,
+    this.fillColor,
   });
 
   @override
@@ -42,7 +45,7 @@ class OtpInputRow extends StatelessWidget {
               decoration: InputDecoration(
                 counterText: '',
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: fillColor ?? const Color(0xFFFDEAEB),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,

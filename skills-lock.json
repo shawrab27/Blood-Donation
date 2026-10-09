@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "autofix": {
+      "source": "coderabbitai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/autofix/SKILL.md",
+      "computedHash": "c0f57fe308d32aeb186a8bddc8cf0dcea04ca87132e2d4b3fcfdc9117db8ca76"
+    },
+    "code-review": {
+      "source": "coderabbitai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/code-review/SKILL.md",
+      "computedHash": "041aa4d6a0f530738f175e45e9edec15d5895860698d5b30a3ecac367882d6e3"
+    },
+    "get-shit-done": {
+      "source": "shoootyou/get-shit-done-multi",
+      "sourceType": "github",
+      "skillPath": "templates/skills/get-shit-done/claude/SKILL.md",
+      "computedHash": "4fc6688598e0fc8dfa104da6d7ca61b3a7fc2e078fa6140d7f0f1d2ae5f52d42"
+    },
+    "gsd": {
+      "source": "ctsstc/get-shit-done-skills",
+      "sourceType": "github",
+      "skillPath": ".kilocode/skills/gsd/SKILL.md",
+      "computedHash": "680208c668bd9ce5135c2b6b21c200406ef04a45450b3246adb3a573f11ab40c"
+    }
+  }
+}

@@ -229,8 +229,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  /// Sets user state directly for testing
-  @visibleForTesting
+  /// Sets user state directly
   void setUserForTesting(UserProfile user) {
     state = state.copyWith(
       status: AuthStatus.authenticated,
@@ -282,13 +281,6 @@ class AuthNotifier extends Notifier<AuthState> {
   }) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
 
-    // Instant demo credentials support
-    final idLower = identifier.trim().toLowerCase();
-    if (idLower == 'demo' || idLower == 'guest' || idLower == 'testuser') {
-      loginAsDemo();
-      return true;
-    }
-
     try {
       await _apiClient.login(identifier, password).timeout(const Duration(seconds: 15));
       final profile = await _apiClient.get('/api/donors/me/').timeout(const Duration(seconds: 15));
@@ -324,6 +316,7 @@ class AuthNotifier extends Notifier<AuthState> {
       );
       try { ref.invalidate(profileProvider); } catch (_) {}
 
+      ref.read(isGuestProvider.notifier).state = false;
       state = state.copyWith(
         status: statusEnum,
         user: user,
@@ -348,12 +341,16 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       debugPrint('[GoogleSignIn] ▶ Starting Google Sign-In flow...');
 
+      const String defaultGoogleClientId =
+          '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com';
+      final String googleClientId = const String.fromEnvironment(
+        'GOOGLE_CLIENT_ID',
+        defaultValue: defaultGoogleClientId,
+      );
+
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: kIsWeb
-            ? '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com'
-            : null,
-        serverClientId:
-            '404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com',
+        clientId: kIsWeb ? googleClientId : null,
+        serverClientId: googleClientId,
         scopes: ['email', 'profile'],
       );
 
@@ -362,7 +359,10 @@ class AuthNotifier extends Notifier<AuthState> {
       if (account == null) {
         // User aborted the sign in dialog
         debugPrint('[GoogleSignIn] ✗ User cancelled sign-in dialog.');
-        state = state.copyWith(status: AuthStatus.unauthenticated);
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          errorMessage: 'Google sign-in was cancelled.',
+        );
         return false;
       }
       debugPrint('[GoogleSignIn] ✓ Got account: ${account.email}');
@@ -443,6 +443,7 @@ class AuthNotifier extends Notifier<AuthState> {
         photoUrl: photoUrl,
       );
 
+      ref.read(isGuestProvider.notifier).state = false;
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: user,
@@ -454,12 +455,18 @@ class AuthNotifier extends Notifier<AuthState> {
       debugPrint('[GoogleSignIn] ✗ ERROR: $e');
       debugPrint('[GoogleSignIn] Error type: ${e.runtimeType}');
       String msg = e.toString().replaceAll('Exception: ', '');
-      if (kIsWeb && msg.contains('Null check operator')) {
+      if (msg.contains('Google account email is not verified')) {
+        msg = 'Google account email is not verified.';
+      } else if (kIsWeb && msg.contains('Null check operator')) {
         msg = 'Google Sign-In on Web requires a Google Cloud Web Client ID. Please test Google Sign-In on your mobile device (flutter run), or log in with Username/Password.';
       } else if (msg.contains('ApiException: 10') || msg.contains('Api10')) {
         msg = 'Google Sign-In configuration mismatch (ApiException 10). The app signing certificate must be registered in Firebase Console.';
-      } else if (msg.contains('network_error') || msg.contains('7:')) {
-        msg = 'Network error while connecting to Google. Please check your internet connection.';
+      } else if (msg.contains('network_error') ||
+          msg.contains('7:') ||
+          msg.contains('SocketException') ||
+          msg.contains('HandshakeException') ||
+          msg.contains('ClientException')) {
+        msg = 'Network connection failed. Please check your internet connection.';
       }
       state = state.copyWith(
         status: AuthStatus.error,
@@ -508,6 +515,7 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final response = await _apiClient.post('donors/', body: payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
+        ref.read(isGuestProvider.notifier).state = false;
         state = state.copyWith(
           status: AuthStatus.authenticated,
           user: completeProfile.copyWith(isProfileComplete: true),
@@ -517,6 +525,7 @@ class AuthNotifier extends Notifier<AuthState> {
       } else if (response.statusCode >= 500) {
         // Server side module/hasher error on live host: fallback gracefully to local account
         debugPrint('[registerUser] Backend returned ${response.statusCode}, falling back to local registration.');
+        ref.read(isGuestProvider.notifier).state = false;
         state = state.copyWith(
           status: AuthStatus.authenticated,
           user: completeProfile.copyWith(isProfileComplete: true),
@@ -533,6 +542,7 @@ class AuthNotifier extends Notifier<AuthState> {
       }
     } catch (e) {
       debugPrint('[registerUser] Network exception $e, falling back to local registration.');
+      ref.read(isGuestProvider.notifier).state = false;
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: completeProfile.copyWith(isProfileComplete: true),
@@ -745,7 +755,15 @@ class AuthNotifier extends Notifier<AuthState> {
 
   void logout() {
     _apiClient.clearTokens();
+    ref.read(isGuestProvider.notifier).state = false;
+    ref.read(pendingRedirectRouteProvider.notifier).state = null;
     state = const AuthState();
+  }
+
+  /// Activates guest access mode and sets unauthenticated state.
+  void continueAsGuest() {
+    ref.read(isGuestProvider.notifier).state = true;
+    state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   Future<bool> deleteAccount({void Function(String error)? onError}) async {

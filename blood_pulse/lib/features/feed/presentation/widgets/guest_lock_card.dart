@@ -157,83 +157,82 @@ class GuestPulseAICard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF0E5E5), width: 1.2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF0F1),
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.water_drop_rounded,
-                color: AppColors.primary,
-                size: 20,
+    return InkWell(
+      onTap: () => context.push('/assistant'),
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFF0E5E5), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            ClipOval(
+              child: Image.asset(
+                'assets/images/pulseai_icon.png',
+                width: 38,
+                height: 38,
+                fit: BoxFit.cover,
+                cacheWidth: 76,
+                cacheHeight: 76,
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'PulseAI',
-                      style: TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2B2B2B),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'PulseAI',
+                        style: TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2B2B2B),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(Icons.auto_awesome, color: AppColors.primary, size: 14),
-                  ],
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Ask about donation, eligibility and health',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11.5,
-                    color: Color(0xFF777777),
+                      SizedBox(width: 4),
+                      Icon(Icons.auto_awesome, color: AppColors.primary, size: 14),
+                    ],
                   ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Ask about donation, eligibility and health',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11.5,
+                      color: Color(0xFF777777),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () => context.push('/assistant'),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFD6D6D6)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
                 ),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () => RegistrationGatePopup.show(context, isGuest: true),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFD6D6D6)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            ),
-            child: const Text(
-              'Try PulseAI',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2B2B2B),
+              child: const Text(
+                'Try PulseAI',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2B2B2B),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

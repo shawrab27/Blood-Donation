@@ -22,6 +22,7 @@ class EmailVerificationModal extends ConsumerStatefulWidget {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => EmailVerificationModal(initialEmail: initialEmail),
     );
@@ -162,14 +163,17 @@ class _EmailVerificationModalState
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, bottomInset + 24),
-      child: SingleChildScrollView(
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.fromLTRB(24, 16, 24, bottomInset + bottomPadding + 24),
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,6 +444,7 @@ class _EmailVerificationModalState
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

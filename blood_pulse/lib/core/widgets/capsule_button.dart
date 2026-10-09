@@ -123,14 +123,18 @@ class _CapsuleButtonState extends State<CapsuleButton>
             Icon(widget.icon, size: 20, color: fg),
             const SizedBox(width: 8),
           ],
-          Text(
-            widget.label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-              color: fg,
+          Flexible(
+            child: Text(
+              widget.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+                color: fg,
+              ),
             ),
           ),
         ],

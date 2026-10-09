@@ -26,6 +26,12 @@ class BloodHubIntegrationTests(TestCase):
 
     def test_emergency_form_missing_hospital(self):
         # personal emergency form submission missing required hospital/bed field (expect 400 with field errors)
+        from django.contrib.auth import get_user_model
+        from api.models import DonorProfile
+        User = get_user_model()
+        test_user = User.objects.create_user(username='missing_hosp_user', email='hosp@test.com', password='password123', first_name="Test")
+        DonorProfile.objects.create(user=test_user, blood_group='O+', district='Dhaka', phone_number='+8801711223344', is_profile_complete=True)
+        self.client.force_authenticate(user=test_user)
         res = self.client.post('/api/emergency/requests/', {
             'patient_name': 'Test',
             'blood_group': 'O+',

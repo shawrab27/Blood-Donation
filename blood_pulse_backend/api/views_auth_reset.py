@@ -97,16 +97,26 @@ def request_otp(request):
     cooldown_seconds = int(os.environ.get('OTP_RESEND_SECONDS', 45))
     cooldown_time = now - timedelta(seconds=cooldown_seconds)
 
+    # Enforce max 3 resends per 15 minutes per email (silently return generic success for anti-enumeration)
+    fifteen_min_ago = now - timedelta(minutes=15)
+    recent_resends_count = (
+        PasswordResetOTP.objects
+        .filter(user=user, created_at__gte=fifteen_min_ago)
+        .count()
+    )
+    if recent_resends_count >= 3:
+        return _generic_success()
+
     recent_otp = (
         PasswordResetOTP.objects
         .filter(user=user)
         .order_by('-last_sent_at')
         .first()
     )
-    if recent_otp and recent_otp.last_sent_at > cooldown_time:
+    if recent_otp and recent_otp.last_sent_at and recent_otp.last_sent_at > cooldown_time:
         wait_time = (recent_otp.last_sent_at - cooldown_time).total_seconds()
         # Return the SAME 200 body — do NOT leak that the account exists via
-        # a 429.  The Flutter UI can show a generic "check your inbox" message.
+        # a 429. The Flutter UI can show a generic "check your inbox" message.
         # The cooldown is enforced silently server-side.
         return _generic_success()
 

@@ -97,6 +97,11 @@
   "dontHaveAccount": "Don't have an account? ",
   "createAccount": "Create an Account",
   "signIn": "Sign In",
+  "continueWithGoogle": "Continue with Google",
+  "continueAsGuest": "Continue as Guest",
+  "googleSignInCancelled": "Google sign-in was cancelled.",
+  "networkError": "Network connection failed. Please check your internet connection.",
+  "googleEmailNotVerified": "Google account email is not verified.",
   "logoutConfirm": "Are you sure you want to log out of your BloodPulse account?",
 
   "regTitle": "Create an Account",
@@ -179,5 +184,17 @@
   "notifTabRequest": "Request",
   "notifTabMessages": "Messages",
   "notifTabProfile": "Profile",
-  "notifNoItems": "No notifications in this category yet."
+  "notifNoItems": "No notifications in this category yet.",
+  "chooseFromGallery": "Choose from Gallery",
+  "chooseFromFile": "Choose from File",
+  "openCamera": "Open Camera",
+  "removePhoto": "Remove photo",
+  "optionalBadge": "Optional",
+  "invalidImageFormat": "Only JPG, JPEG, PNG, and WEBP formats are supported.",
+  "imageSizeTooLarge": "Image size must not exceed 5 MB.",
+  "cameraPermissionDenied": "Camera permission denied.",
+  "cameraPermissionPermanentlyDenied": "Camera permission is permanently denied. Please enable it in Settings.",
+  "openSettings": "Settings",
+  "photoHelperText": "Upload a clear photo to help identification.",
+  "failedToReadFile": "Unable to read selected file."
 }

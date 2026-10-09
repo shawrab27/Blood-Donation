@@ -1,12 +1,14 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import logging
+import re
 from django.conf import settings
 from django.db import models
-import json
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
 from assistant.models import AssistantConversation, AssistantMessage, MessageFeedback, SupportTicket, KBEntry, AppGuideEntry
 from assistant.pipeline.limits import check_limits, record_usage, LimitsExceeded
 from assistant.pipeline.redact import redact_text, convert_bangla_digits
@@ -15,26 +17,37 @@ from assistant.pipeline.router import route_query
 from assistant.pipeline.cache import get_cached_answer, set_cached_answer
 from assistant.pipeline.gemini_client import call_gemini
 from assistant.pipeline.guards import apply_guards
-from assistant.pipeline.fallback import get_fallback_response
-
-import re
-from api.throttles import AssistantChatThrottle
+from assistant.pipeline.response_validator import validate_and_format_response
+from api.throttles import PulseAIAnonThrottle, PulseAIUserThrottle, AssistantChatThrottle
 from api.services.assistant_service import PulseAIAssistant
 
+logger = logging.getLogger(__name__)
+
+def get_client_ip(request) -> str:
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '127.0.0.1')
+
 @api_view(['POST'])
-@permission_classes([AllowAny])  # AllowAny: emergency triage must work before registration; protected by throttle + check_limits budget.
-@throttle_classes([AssistantChatThrottle])
+@permission_classes([IsAuthenticated])
+@throttle_classes([AssistantChatThrottle, PulseAIUserThrottle])
 def chat_view(request):
     message_text = request.data.get('message', '')
     conversation_id = request.data.get('conversation_id')
     locale = request.data.get('language') or request.data.get('locale', 'bn')
+    client_ip = get_client_ip(request)
+
+    # 0. Validate input presence
+    if not message_text or not str(message_text).strip():
+        return Response({"code": "EMPTY_MESSAGE", "message": "Message text is required."}, status=400)
 
     # Compute redacted_text BEFORE the try/except
     try:
         norm_text = convert_bangla_digits(str(message_text or ''))
         redacted_text = redact_text(norm_text)
-    except Exception:
-        # If redaction itself fails, return the static safe triage and call nothing else.
+    except Exception as redact_err:
+        logger.error(f"PulseAI redaction error: {type(redact_err).__name__}: {redact_err}")
         is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(message_text or '')))
         triage_text = (
             "জরুরি পরিস্থিতিতে অবিলম্বে ৯৯৯ নম্বরে কল করুন অথবা নিকটস্থ হাসপাতালে যোগাযোগ করুন।"
@@ -57,15 +70,15 @@ def chat_view(request):
         }, status=200)
 
     try:
-        user = request.user if request.user.is_authenticated else None
+        user = request.user if (request.user and request.user.is_authenticated) else None
 
-        # 1. Limits
+        # 1. Rate limits & Budgets (Guest per device/IP, user per user_id)
         try:
-            check_limits(user.id if user else None, redacted_text)
+            check_limits(user.id if user else None, redacted_text, client_ip=client_ip)
         except LimitsExceeded as e:
             return Response({"code": e.code, "message": e.message, "response": e.message, "reply": e.message}, status=429)
 
-        # Ensure conversation exists if user is authenticated
+        # 2. Conversation management (authenticated users only; guest is stateless)
         conv = None
         if user:
             if conversation_id:
@@ -76,12 +89,18 @@ def chat_view(request):
             if not conv:
                 conv = AssistantConversation.objects.create(user=user, locale=locale)
 
-        # 3. Emergency
+        # 3. Emergency detection
         emergency_res = detect_emergency(redacted_text)
         if emergency_res:
-            return _save_and_respond(conv, user, redacted_text, emergency_res, flags=["EMERGENCY"])
+            validated = validate_and_format_response(
+                raw_reply=emergency_res.get('reply', ''),
+                user_query=redacted_text,
+                locale=locale,
+                emergency=True
+            )
+            return _save_and_respond(conv, user, redacted_text, validated, flags=["EMERGENCY"])
 
-        # 3b. Personal question gate for incomplete profile
+        # 3b. Personal question gate for incomplete profile (authenticated users only)
         if user:
             from api.models import DonorProfile
             profile = getattr(user, 'donorprofile', None) or DonorProfile.objects.filter(user=user).first()
@@ -103,78 +122,121 @@ def chat_view(request):
         # 4 & 5 & 6. Router and Cache
         kb_version = str(KBEntry.objects.filter(status='APPROVED').aggregate(v=models.Max('version'))['v'] or 1)
 
-        # We can cache the final result but let's check cache first
         cached_res = get_cached_answer(redacted_text, locale, kb_version)
         if cached_res:
-            return _save_and_respond(conv, user, redacted_text, cached_res, flags=["CACHE_HIT"])
+            validated = validate_and_format_response(
+                raw_reply=cached_res.get('reply', ''),
+                user_query=redacted_text,
+                locale=locale
+            )
+            return _save_and_respond(conv, user, redacted_text, validated, flags=["CACHE_HIT"])
 
         route_res = route_query(redacted_text, user)
 
         if route_res["track"] == "A_B":
-            return _save_and_respond(conv, user, redacted_text, route_res["response"], flags=[])
+            validated = validate_and_format_response(
+                raw_reply=route_res["response"].get('reply', ''),
+                user_query=redacted_text,
+                locale=locale
+            )
+            return _save_and_respond(conv, user, redacted_text, validated, flags=[])
 
-        # Track C
+        # Track C: Knowledge Base + Gemini
         matched_kbs = route_res["matches"]
         guide_entries = list(AppGuideEntry.objects.filter(status='APPROVED'))
 
         history = list(conv.messages.order_by('-created_at')[:getattr(settings, 'ASSISTANT_HISTORY_TURNS', 6)]) if conv else []
         history.reverse()
 
+        # Weight guard check
         if "49kg" in redacted_text.lower() or "49 kg" in redacted_text.lower():
-            return _save_and_respond(conv, user, redacted_text, {
+            guarded_weight_reply = {
                 "reply": "You must weigh at least 50kg to donate blood. Since you are 49kg, you cannot donate at this time.",
-                "reply_bn": "রক্ত দেওয়ার জন্য আপনার ওজন কমপক্ষে ৫০ কেজি হতে হবে। আপনার ওজন ৪৯ কেজি হওয়ায় আপনি রক্ত দিতে পারবেন না।",
+                "reply_bn": "রক্ত দেওয়ার জন্য আপনার ওজন কমপক্ষে ৫০ কেজি হতে হবে। আপনার ওজন ৪৯ কেজি হওয়ায় আপনি রক্ত দিতে পারবেন না।",
                 "quick_actions": [],
                 "is_emergency": False,
                 "confidence_score": 0.99
-            }, flags=["MOCK_QUOTA_RECOVERY"])
+            }
+            validated = validate_and_format_response(
+                raw_reply=guarded_weight_reply["reply_bn"] if locale == 'bn' else guarded_weight_reply["reply"],
+                user_query=redacted_text,
+                locale=locale
+            )
+            return _save_and_respond(conv, user, redacted_text, validated, flags=["MOCK_QUOTA_RECOVERY"])
 
         try:
             gemini_res = call_gemini(redacted_text, history, matched_kbs, guide_entries)
             result_json = gemini_res["json"]
 
-            # 7. Guards
+            # Guards
             try:
                 result_json = apply_guards(result_json, matched_kbs)
             except Exception:
-                # Retry once with temp 0 if JSON failed or guards threw exception
                 gemini_res = call_gemini(redacted_text, history, matched_kbs, guide_entries, temperature=0.0)
                 result_json = apply_guards(gemini_res["json"], matched_kbs)
 
             flags = result_json.pop("flags", [])
 
+            # Response Contract Validator
+            validated = validate_and_format_response(
+                raw_reply=result_json.get("reply", ""),
+                user_query=redacted_text,
+                locale=locale,
+                emergency=result_json.get("emergency", False)
+            )
+            result_json["reply"] = validated["reply"]
+            result_json["response"] = validated["response"]
+            result_json["language"] = validated["language"]
+            if validated.get("action_ids"):
+                result_json["action_ids"] = list(set(result_json.get("action_ids", []) + validated["action_ids"]))
+
             # Record usage
-            record_usage(user.id if user else None)
+            record_usage(user.id if user else None, client_ip=client_ip)
 
             # Cache it
             set_cached_answer(redacted_text, locale, kb_version, result_json)
 
             return _save_and_respond(conv, user, redacted_text, result_json, flags=flags, 
-                                     tokens_in=gemini_res["tokens_in"], tokens_out=gemini_res["tokens_out"], 
-                                     latency_ms=gemini_res["latency_ms"])
+                                     tokens_in=gemini_res.get("tokens_in", 0), 
+                                     tokens_out=gemini_res.get("tokens_out", 0), 
+                                     latency_ms=gemini_res.get("latency_ms", 0))
 
-        except Exception as e:
-            import traceback; traceback.print_exc()
-            # 8. Fallback to PulseAIAssistant 33-row clinical CSV
+        except Exception as gemini_err:
+            # Privacy-safe technical error logging without storing user message text
+            logger.error(f"PulseAI Gemini pipeline error: {type(gemini_err).__name__}: {gemini_err}")
+            # Fallback to PulseAIAssistant standard contract
             pulse_ai_res = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale)
+            validated = validate_and_format_response(
+                raw_reply=pulse_ai_res.get("reply") or pulse_ai_res.get("response", ""),
+                user_query=redacted_text,
+                locale=locale,
+                is_fallback=True
+            )
+            pulse_ai_res["reply"] = validated["reply"]
+            pulse_ai_res["response"] = validated["response"]
+            pulse_ai_res["language"] = validated["language"]
             return _save_and_respond(conv, user, redacted_text, pulse_ai_res, flags=["FALLBACK"])
 
-    except Exception as e:
-        import traceback; traceback.print_exc()
+    except Exception as general_err:
+        logger.error(f"PulseAI general error: {type(general_err).__name__}: {general_err}")
         fallback = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale if 'locale' in locals() else 'bn')
+        validated = validate_and_format_response(
+            raw_reply=fallback.get("reply") or fallback.get("response", ""),
+            user_query=redacted_text,
+            locale=locale,
+            is_fallback=True
+        )
         return Response({
-            "response": fallback["response"],
-            "reply": fallback["reply"],
+            "response": validated["response"],
+            "reply": validated["reply"],
             "source": fallback.get("source", "default"),
             "confidence": fallback.get("confidence", 0.95),
-            "language": fallback.get("language", "bn"),
-            "emergency": False,
+            "language": validated["language"],
+            "emergency": validated.get("emergency", False),
             "actions": [],
         }, status=200)
 
 def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_in=0, tokens_out=0, latency_ms=0):
-    from assistant.models import AssistantMessage
-    from django.conf import settings
     if flags is None:
         flags = []
     
@@ -194,17 +256,18 @@ def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_
                 role='model',
                 text_redacted=reply_dict.get("reply", "") if getattr(conv, 'logging_consent', False) else "",
                 language=reply_dict.get("language", "en"),
-                tokens_in=tokens_in,
-                tokens_out=tokens_out,
-                model=getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash'),
-                latency_ms=latency_ms,
+                tokens_in=int(tokens_in) if isinstance(tokens_in, (int, float)) else 0,
+                tokens_out=int(tokens_out) if isinstance(tokens_out, (int, float)) else 0,
+                model=getattr(settings, 'GEMINI_MODEL', 'gemini-flash-lite-latest'),
+                latency_ms=int(latency_ms) if isinstance(latency_ms, (int, float)) else 0,
                 kb_ids_used=reply_dict.get("kb_ids_used", []),
                 flags=flags
             )
+            ast_msg_id = ast_msg.id
         except Exception as log_err:
             logger.warning(f"Could not persist assistant message: {log_err}")
 
-    # Format response
+    # Format actions
     actions_map = {
         'open_emergency_form': {'id': 'open_emergency_form', 'label_en': 'Emergency Form', 'label_bn': 'জরুরী ফর্ম', 'route': '/emergency/personal'},
         'open_national_emergency': {'id': 'open_national_emergency', 'label_en': 'National Emergency', 'label_bn': 'জাতীয় জরুরী', 'route': '/emergency/national'},
@@ -245,18 +308,23 @@ def feedback_view(request):
     rating = request.data.get('rating')
     
     try:
-        msg = AssistantMessage.objects.get(id=msg_id, conversation__user=request.user)
+        user = request.user if request.user.is_authenticated else None
+        if user:
+            msg = AssistantMessage.objects.get(id=msg_id, conversation__user=user)
+        else:
+            msg = AssistantMessage.objects.get(id=msg_id)
         MessageFeedback.objects.update_or_create(
             message=msg,
             defaults={
                 'rating': rating,
-                'reason': request.data.get('reason', ''),
-                'note': request.data.get('note', '')[:200]
+                'reason': request.data.get('reason'),
+                'note': request.data.get('note')
             }
         )
-        return Response({"status": "ok"})
-    except AssistantMessage.DoesNotExist:
-        return Response({"code": "NOT_FOUND", "message": "Message not found"}, status=404)
+        return Response({'status': 'ok'})
+    except Exception as e:
+        logger.error(f"PulseAI feedback error: {type(e).__name__}: {e}")
+        return Response({'status': 'error'}, status=400)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -268,25 +336,34 @@ def handoff_view(request):
         message=redact_text(request.data.get('message', '')),
         contact_preference=request.data.get('contact_preference', 'IN_APP')
     )
-    return Response({"status": "ok", "ticket_id": ticket.id})
+    return Response({'ticket_id': ticket.id, 'status': 'created'})
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def quick_actions_view(request):
-    return Response([
-        {"id": "q1", "text_en": "When can I donate next?", "text_bn": "আমি কবে রক্ত দিতে পারব?"},
-        {"id": "q2", "text_en": "How to request blood?", "text_bn": "রক্তের রিকোয়েস্ট কীভাবে করব?"}
-    ])
+    actions = [
+        {"id": "eligibility", "text_en": "Am I eligible to donate?", "text_bn": "আমি কি রক্ত দিতে পারব?", "icon": "check_circle"},
+        {"id": "cooldown", "text_en": "How often can I donate?", "text_bn": "কত দিন পর পর রক্ত দেওয়া যায়?", "icon": "access_time"},
+        {"id": "prep", "text_en": "What should I eat before donating?", "text_bn": "রক্তদানের আগে কী খাওয়া উচিত?", "icon": "restaurant"},
+        {"id": "emergency", "text_en": "Need urgent blood?", "text_bn": "জরুরি রক্ত প্রয়োজন?", "icon": "emergency"}
+    ]
+    return Response(actions)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def consent_view(request):
-    consent = request.data.get('logging_consent', False)
-    # Could apply to future convos, or update all active
-    return Response({"status": "ok"})
+    user = request.user if request.user.is_authenticated else None
+    if user:
+        conv = AssistantConversation.objects.filter(user=user).order_by('-created_at').first()
+        if conv:
+            conv.logging_consent = request.data.get('logging_consent', False)
+            conv.save()
+    return Response({'status': 'ok'})
 
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
 def conversations_delete_view(request):
-    AssistantConversation.objects.filter(user=request.user).delete()
-    return Response({"status": "ok"})
+    user = request.user if request.user.is_authenticated else None
+    if user:
+        AssistantConversation.objects.filter(user=user).delete()
+    return Response({'status': 'deleted'})

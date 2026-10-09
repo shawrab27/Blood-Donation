@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import unittest
 import threading
 from django.test import TransactionTestCase
 from django.contrib.auth.models import User
@@ -25,6 +26,7 @@ class AcceptanceConcurrencyTest(TransactionTestCase):
             status='ACTIVE'
         )
         
+    @unittest.skipIf(connection.vendor == 'sqlite', "Concurrency test requires PostgreSQL (row-level locking)")
     def test_concurrent_accepts(self):
         # We need to simulate two transactions. Since Django test clients don't do real concurrency by default easily without threads in TransactionTestCase
         

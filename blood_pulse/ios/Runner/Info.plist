@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>BloodPulse requires camera access to scan medical prescriptions and lab reports.</string>
+	<string>BloodPulse requires camera access to take profile photos and scan medical prescriptions.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>BloodPulse requires location access to find nearby blood donors and emergency hospitals.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>BloodPulse requires gallery access to upload medical verification documents.</string>
+	<string>BloodPulse requires photo library access to select profile photos and upload medical documents.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

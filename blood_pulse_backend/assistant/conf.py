@@ -4,7 +4,7 @@
 import os
 from django.conf import settings
 
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', getattr(settings, 'GEMINI_MODEL', 'gemini-3.8-flash'))
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', getattr(settings, 'GEMINI_MODEL', 'gemini-flash-lite-latest'))
 MAX_MESSAGE_CHARS = int(os.environ.get('ASSISTANT_MAX_MESSAGE_CHARS', 500))
 HISTORY_TURNS = int(os.environ.get('ASSISTANT_HISTORY_TURNS', 6))
 USER_LIMIT_PER_HOUR = int(os.environ.get('ASSISTANT_USER_LIMIT_PER_HOUR', 20))

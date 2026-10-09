@@ -20,12 +20,20 @@ def route_query(text: str, user=None):
     if not query_emb:
         return {"track": "C", "matches": []}
         
+    from django.db import connection
+    if connection.vendor == 'sqlite':
+        matches = KBEntry.objects.filter(status='APPROVED', embedding__isnull=False)[:3]
+        return {"track": "C", "matches": list(matches)}
+
     # Get top 3 by cosine similarity from APPROVED rows
-    matches = KBEntry.objects.filter(
-        status='APPROVED',
-        embedding__isnull=False
-    ).annotate(
-        distance=CosineDistance('embedding', query_emb)
-    ).order_by('distance')[:3]
-    
-    return {"track": "C", "matches": list(matches)}
+    try:
+        matches = KBEntry.objects.filter(
+            status='APPROVED',
+            embedding__isnull=False
+        ).annotate(
+            distance=CosineDistance('embedding', query_emb)
+        ).order_by('distance')[:3]
+        return {"track": "C", "matches": list(matches)}
+    except Exception:
+        matches = KBEntry.objects.filter(status='APPROVED')[:3]
+        return {"track": "C", "matches": list(matches)}

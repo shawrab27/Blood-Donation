@@ -594,50 +594,76 @@ class ApiClient {
   }
 
   Future<http.Response> _sendWithRetry(
-    Future<http.Response> Function(Map<String, String> authHeaders) requestFn,
-  ) async {
-    try {
-      final authHeaders = await _getAuthHeaders();
-      http.Response response = await requestFn(authHeaders).timeout(receiveTimeout);
+    Future<http.Response> Function(Map<String, String> authHeaders) requestFn, {
+    int maxAttempts = 2,
+  }) async {
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final authHeaders = await _getAuthHeaders();
+        http.Response response = await requestFn(authHeaders).timeout(receiveTimeout);
 
-      if (response.statusCode == 401) {
-        final newToken = await refreshToken();
-        if (newToken != null) {
-          final newAuthHeaders = await _getAuthHeaders();
-          response = await requestFn(newAuthHeaders).timeout(receiveTimeout);
+        // Cold-start / gateway retry for Render / Vercel proxy
+        if ((response.statusCode == 502 || response.statusCode == 503 || response.statusCode == 504) && attempt < maxAttempts) {
+          debugPrint('[ApiClient] Server gateway status ${response.statusCode}. Retrying in 2.5s (attempt $attempt)...');
+          await Future.delayed(const Duration(milliseconds: 2500));
+          continue;
         }
-      }
 
-      if (response.statusCode == 401) {
-        throw ApiException(
-          'Unauthorized request (401). Please log in again.',
-          statusCode: 401,
-          rawError: response.body,
-        );
-      }
+        if (response.statusCode == 401) {
+          final newToken = await refreshToken();
+          if (newToken != null) {
+            final newAuthHeaders = await _getAuthHeaders();
+            response = await requestFn(newAuthHeaders).timeout(receiveTimeout);
+          }
+        }
 
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          'Request failed with status ${response.statusCode}: ${_extractErrorMessage(response.body)}',
-          statusCode: response.statusCode,
-          rawError: response.body,
-        );
-      }
+        if (response.statusCode == 401) {
+          throw ApiException(
+            'Unauthorized request (401). Please log in again.',
+            statusCode: 401,
+            rawError: response.body,
+          );
+        }
 
-      return response;
-    } on ApiException {
-      rethrow;
-    } on SocketException catch (e) {
-      throw ApiException('Network connection failed. Please check your network.', rawError: e);
-    } on TimeoutException catch (e) {
-      throw ApiException('Request timed out. Server did not respond in time.', rawError: e);
-    } on FormatException catch (e) {
-      throw ApiException('Malformed response format received.', rawError: e);
-    } on http.ClientException catch (e) {
-      throw ApiException('HTTP client error: ${e.message}', rawError: e);
-    } catch (e) {
-      throw ApiException('Network request error: $e', rawError: e);
+        if (response.statusCode >= 400) {
+          throw ApiException(
+            'Request failed with status ${response.statusCode}: ${_extractErrorMessage(response.body)}',
+            statusCode: response.statusCode,
+            rawError: response.body,
+          );
+        }
+
+        return response;
+      } on ApiException {
+        rethrow;
+      } on SocketException catch (e) {
+        if (attempt < maxAttempts) {
+          debugPrint('[ApiClient] SocketException on attempt $attempt. Retrying in 2.5s...');
+          await Future.delayed(const Duration(milliseconds: 2500));
+          continue;
+        }
+        throw ApiException('Network connection failed. Please check your network.', rawError: e);
+      } on TimeoutException catch (e) {
+        if (attempt < maxAttempts) {
+          debugPrint('[ApiClient] TimeoutException on attempt $attempt. Retrying in 2.5s...');
+          await Future.delayed(const Duration(milliseconds: 2500));
+          continue;
+        }
+        throw ApiException('Request timed out. Server did not respond in time.', rawError: e);
+      } on FormatException catch (e) {
+        throw ApiException('Malformed response format received.', rawError: e);
+      } on http.ClientException catch (e) {
+        if (attempt < maxAttempts) {
+          debugPrint('[ApiClient] ClientException on attempt $attempt. Retrying in 2.5s...');
+          await Future.delayed(const Duration(milliseconds: 2500));
+          continue;
+        }
+        throw ApiException('HTTP client error: ${e.message}', rawError: e);
+      } catch (e) {
+        throw ApiException('Network request error: $e', rawError: e);
+      }
     }
+    throw const ApiException('Network connection failed. Please check your network.');
   }
 
   static String _extractErrorMessage(String responseBody) {

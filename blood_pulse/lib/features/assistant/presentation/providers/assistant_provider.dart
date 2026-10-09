@@ -151,16 +151,12 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
       _saveToLocal();
     } on AssistantApiException catch (e) {
       state = state.copyWith(isSending: false, errorCode: e.code);
-      rethrow;
     } on SocketException {
       state = state.copyWith(isSending: false, errorCode: 'NO_INTERNET');
-      rethrow;
     } on TimeoutException {
-      state = state.copyWith(isSending: false, errorCode: 'BUSY');
-      rethrow;
-    } catch (e) {
+      state = state.copyWith(isSending: false, errorCode: 'TIMEOUT');
+    } catch (_) {
       state = state.copyWith(isSending: false, errorCode: 'GENERIC_ERROR');
-      rethrow;
     }
   }
 

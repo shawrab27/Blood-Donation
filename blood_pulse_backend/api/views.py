@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from django.http import HttpResponse
 import random
+import secrets
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -1238,8 +1239,8 @@ class SendVerificationEmailView(APIView):
         # Invalidate previous unused codes for this user
         EmailVerificationCode.objects.filter(user=request.user, is_used=False).update(is_used=True)
 
-        # Generate 6-digit OTP
-        code = f"{random.randint(100000, 999999)}"
+        # Generate cryptographically secure 6-digit OTP
+        code = "".join(secrets.choice("0123456789") for _ in range(6))
         EmailVerificationCode.objects.create(
             user=request.user,
             email=email,
@@ -1266,12 +1267,11 @@ class SendVerificationEmailView(APIView):
                 fail_silently=False
             )
         except Exception as e:
-            print(f"[EmailVerification] Mail send error: {e}")
+            logger.error(f"[EmailVerification] Mail send error: {e}")
 
         return Response({
             "message": f"Verification code sent to {email}.",
             "email": email,
-            "code": code if settings.DEBUG else None
         }, status=status.HTTP_200_OK)
 
 
@@ -1298,13 +1298,10 @@ class VerifyEmailCodeView(APIView):
         ).order_by('-created_at').first()
 
         if not verification or not verification.is_valid():
-            if settings.DEBUG and code in ['421234', '1234']:
-                pass
-            else:
-                return Response(
-                    {"error": "Invalid or expired verification code. Please request a new code."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            return Response(
+                {"error": "Invalid or expired verification code. Please request a new code."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if verification:
             verification.is_used = True

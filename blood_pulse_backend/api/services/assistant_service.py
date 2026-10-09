@@ -11,13 +11,18 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+STOPWORDS = {
+    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'can', 'i', 'you', 'he', 'she', 'it',
+    'we', 'they', 'to', 'for', 'in', 'on', 'at', 'by', 'with', 'about', 'of', 'how',
+    'what', 'when', 'where', 'which', 'who', 'why', 'do', 'does', 'did', 'my', 'your',
+    'ami', 'ki', 'kivabe', 'kobe', 'amar', 'apni', 'amake', 'কি', 'কী', 'কে', 'কীভাবে',
+    'কবে', 'আমি', 'আমার', 'আপনি', 'আপনার', 'এবং', 'ও', 'বা', 'না', 'হবে', 'করতে', 'পারি'
+}
+
 class PulseAIAssistant:
     """
     PulseAI Assistant Service for medical triage and blood donation Q&A.
-    Priority:
-      1. Gemini Generative AI (timeout 30s)
-      2. 33-row verified clinical CSV knowledge base matching
-      3. Generic medical triage fallback
+    Standardized response contract fallback generator with clinical accuracy.
     """
     _instance = None
     _kb_entries = []
@@ -85,46 +90,36 @@ class PulseAIAssistant:
                     "answer_bn": "ব্লাড হাব -> ইমার্জেন্সি -> পার্সোনাল ইমার্জেন্সিতে গিয়ে রোগীর তথ্য ও হাসপাতালের বিবরণ পূরণ করে সাবমিট করুন।",
                     "category": "process",
                     "confidence_score": "0.99"
-                },
-                {
-                    "question_en": "Passive donor XP?",
-                    "question_bn": "রক্ত না দিয়ে কীভাবে এক্সপি অর্জন করা যায়?",
-                    "answer_en": "Earn non-competitive XP: Share app (50 XP), Read guide (25 XP), Update profile (10 XP), Send message (5 XP).",
-                    "answer_bn": "নৈতিক উপায়ে এক্সপি পান: অ্যাপ শেয়ার (৫০ XP), গাইড পাঠ (২৫ XP), প্রোফাইল আপডেট (১০ XP), মেসেজ প্রেরণ (৫ XP)।",
-                    "category": "gamification",
-                    "confidence_score": "0.95"
                 }
             ]
 
     def _is_bangla(self, text: str) -> bool:
-        # Check presence of Bengali unicode range (\u0980-\u09FF)
         return bool(re.search(r'[\u0980-\u09FF]', text))
 
     def _match_csv(self, query: str, is_bn: bool) -> dict | None:
         if not self._kb_entries:
             return None
 
-        # Clean query tokens
-        tokens = set(re.findall(r'\w+', query.lower()))
+        # Filter meaningful tokens (ignoring stopwords)
+        tokens = {t for t in re.findall(r'\w+', query.lower()) if t not in STOPWORDS}
         if not tokens:
-            return None
+            tokens = set(re.findall(r'\w+', query.lower()))
+            if not tokens:
+                return None
 
         best_score = 0
         best_match = None
 
         for row in self._kb_entries:
-            q_target = row.get('question_bn', '') if is_bn else row.get('question_en', '')
-            a_target = row.get('answer_bn', '') if is_bn else row.get('answer_en', '')
             both_q = (row.get('question_en', '') + " " + row.get('question_bn', '')).lower()
-
-            target_tokens = set(re.findall(r'\w+', both_q))
+            target_tokens = {t for t in re.findall(r'\w+', both_q) if t not in STOPWORDS}
             overlap = len(tokens.intersection(target_tokens))
 
             if overlap > best_score:
                 best_score = overlap
                 best_match = row
 
-        if best_match and best_score >= 1:
+        if best_match and best_score >= 2:
             ans = best_match.get('answer_bn') if is_bn else best_match.get('answer_en')
             if not ans:
                 ans = best_match.get('answer_en') or best_match.get('answer_bn')
@@ -143,82 +138,87 @@ class PulseAIAssistant:
 
         return None
 
-    def _call_gemini(self, message: str, is_bn: bool) -> dict | None:
-        api_key = getattr(settings, 'GEMINI_API_KEY', None) or os.environ.get('GEMINI_API_KEY')
-        if not api_key:
-            return None
-
-        try:
-            from google import genai
-            from google.genai import types
-
-            client = genai.Client(api_key=api_key)
-            lang_prompt = "Bengali (Bangla)" if is_bn else "English"
-            system_instruction = (
-                f"You are PulseAI, the trusted clinical and humanitarian assistant for BloodPulse, "
-                f"a blood donation network in Bangladesh. Always answer with clinical accuracy, empathy, "
-                f"and brevity (<80 words). The mandatory blood donation cooldown is strictly 90 DAYS (13 weeks). "
-                f"Respond naturally in {lang_prompt}."
-            )
-
-            response = client.models.generate_content(
-                model=getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-flash'),
-                contents=message,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.2,
-                    max_output_tokens=250,
-                ),
-            )
-            if response and response.text:
-                text = response.text.strip()
-                return {
-                    "response": text,
-                    "reply": text,
-                    "source": "gemini",
-                    "confidence": 0.95,
-                }
-        except Exception as e:
-            logger.warning(f"Gemini API call failed or timed out: {e}")
-            return None
-
     def get_response(self, message: str, language: str = 'bn') -> dict:
         """
-        Fallback response generator (CSV matching or static triage only).
-        Ungrounded Gemini call removed: bypasses RAG and numeric guard.
+        Fallback response generator complying with the standard response contract:
+        1-2 sentence direct answer first, max 6 bullets, blood bank / doctor note, <= 180 words.
         """
-        start_time = time.time()
         is_bn = (language == 'bn') or self._is_bangla(message)
+        norm = message.lower().strip()
 
-        # 1. Fallback: CSV Matching
+        # Handle common general query: "how can I donate blood" / "কীভাবে রক্ত দেব"
+        donation_kws = ['how can i donate', 'how to donate', 'donate blood', 'রক্ত দান', 'কীভাবে রক্ত', 'রক্ত দিতে চাই', 'রক্ত দেব']
+        if any(kw in norm for kw in donation_kws):
+            if is_bn:
+                reply = (
+                    "ব্লাডপালসের মাধ্যমে রক্তদান করার জন্য প্রাথমিক যোগ্যতা নিশ্চিত করে নিচের ধাপগুলো অনুসরণ করুন:\n\n"
+                    "• বয়স ১৮ থেকে ৬০ বছর এবং শারীরিক ওজন কমপক্ষে ৫০ কেজি হতে হবে।\n"
+                    "• সুস্থ ও নীরোগ থাকতে হবে; বিগত ১৪ দিনের মধ্যে জ্বর, ঠান্ডা বা সংক্রামক রোগ থাকা যাবে না।\n"
+                    "• হিমোগ্লোবিনের মাত্রা স্বাভাবিক (কমপক্ষে ১২.৫ গ্রাম/ডিএল) থাকতে হবে।\n"
+                    "• রক্তদানের ২-৩ ঘণ্টা পূর্বে পুষ্টিকর খাবার গ্রহণ এবং পর্যাপ্ত পানি পান করুন।\n"
+                    "• পূর্ববর্তী রক্তদানের পর থেকে ন্যূনতম ৯০ দিন (১৩ সপ্তাহ) বিরতি থাকতে হবে।\n\n"
+                    "রক্তদানের পূর্বে ব্লাড ব্যাংকের দায়িত্বরত চিকিৎসকের কাছে স্বাস্থ্য পরীক্ষা করিয়ে নিন।"
+                )
+            else:
+                reply = (
+                    "To donate blood through BloodPulse, make sure you meet the general donor eligibility criteria and follow these steps:\n\n"
+                    "• Be between 18 and 60 years of age and weigh at least 50 kg.\n"
+                    "• Feel healthy and symptom-free, with no fever or flu in the last 14 days.\n"
+                    "• Maintain a hemoglobin level of at least 12.5 g/dL.\n"
+                    "• Drink plenty of water and have a light meal 2 to 3 hours before donating.\n"
+                    "• Ensure at least 90 days (13 weeks) have passed since your last whole blood donation.\n\n"
+                    "Please confirm final medical clearance at your local blood bank prior to donation."
+                )
+            self._log_event("fallback_direct_donation_match")
+            return {
+                "response": reply,
+                "reply": reply,
+                "source": "standard_contract",
+                "confidence": 0.99,
+                "language": 'bn' if is_bn else 'en',
+                "emergency": False,
+                "needs_human": False,
+            }
+
+        # 1. Fallback: CSV Matching (with filtered stopwords)
         csv_result = self._match_csv(message, is_bn)
         if csv_result:
             csv_result['language'] = 'bn' if is_bn else 'en'
-            self._log_conversation(message, csv_result['response'], csv_result['source'])
+            self._log_event("csv_match")
             return csv_result
 
-        # 2. Last Resort: Generic Medical Triage
-        default_reply = (
-            "রক্তদান ও স্বাস্থ্য সংক্রান্ত যেকোনো জরুরি তথ্যের জন্য ব্লাডপালস ২৪/৭ প্রস্তুত। "
-            "সাধারণ রক্তদানের ন্যূনতম বিরতি ৯০ দিন। জরুরি প্রয়োজনে ১৬১৬৩ বা ৯৯৯ এ যোগাযোগ করুন।"
-            if is_bn else
-            "BloodPulse is here 24/7 for safe blood donation support. "
-            "The mandatory whole blood donation interval is strictly 90 days. "
-            "For urgent emergencies, please contact your nearest hospital blood bank or call 999 / 16163."
-        )
+        # 2. Last Resort: Structured Clinical Guidance
+        if is_bn:
+            default_reply = (
+                "ব্লাডপালস নিরাপদ রক্তদান ও জরুরি ডোনার সংযোগে ২৪/৭ আপনার পাশে রয়েছে:\n\n"
+                "• রক্তদানের ন্যূনতম বিরতি কঠোরভাবে ৯০ দিন (১৩ সপ্তাহ)।\n"
+                "• রক্তদাতার বয়স ১৮-৬০ বছর এবং ওজন কমপক্ষে ৫০ কেজি হতে হবে।\n"
+                "• অ্যাপের ব্লাড হাব থেকে জরুরি প্রয়োজনে রক্তের রিকুয়েস্ট পোস্ট করতে পারেন।\n"
+                "• যেকোনো জটিল বা জরুরি অসুস্থতায় অবিলম্বে ৯৯৯ নম্বরে যোগাযোগ করুন।\n\n"
+                "রক্তদানের পূর্বে সবসময় সংশ্লিষ্ট ব্লাড ব্যাংকে ব্যক্তিগত যোগ্যতা যাচাই করুন।"
+            )
+        else:
+            default_reply = (
+                "BloodPulse provides 24/7 clinical guidance and emergency donor mobilization:\n\n"
+                "• The mandatory interval between whole blood donations is strictly 90 days.\n"
+                "• Donors must be 18–60 years old and weigh at least 50 kg.\n"
+                "• You can post or search emergency requests anytime via Blood Hub.\n"
+                "• For life-threatening emergencies, dial 999 or go to the nearest ER immediately.\n\n"
+                "Please confirm all individual eligibility criteria at your nearest blood bank."
+            )
 
         res = {
             "response": default_reply,
             "reply": default_reply,
-            "source": "default",
-            "confidence": 0.85,
+            "source": "default_structured",
+            "confidence": 0.90,
             "language": 'bn' if is_bn else 'en',
             "emergency": False,
             "needs_human": False,
         }
-        self._log_conversation(message, default_reply, "default")
+        self._log_event("default_structured_fallback")
         return res
 
-    def _log_conversation(self, query: str, reply: str, source: str):
-        timestamp = datetime.utcnow().isoformat()
-        logger.info(f"[{timestamp}] PulseAI [{source}] User: {query[:50]}... -> Bot: {reply[:50]}...")
+    def _log_event(self, source: str):
+        # Technical log ONLY without storing user message text or PII
+        logger.info(f"[{datetime.utcnow().isoformat()}] PulseAI fallback event: source={source}")

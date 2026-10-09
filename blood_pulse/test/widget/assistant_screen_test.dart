@@ -2,7 +2,6 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 // ignore_for_file: avoid_print
-import 'dart:async';
 import 'dart:io';
 import 'package:blood_pulse/features/assistant/domain/models/assistant_message_model.dart';
 import 'package:blood_pulse/features/assistant/presentation/providers/assistant_provider.dart';
@@ -17,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAssistantNotifier extends StateNotifier<AssistantState>
     implements AssistantNotifier {
-  _FakeAssistantNotifier(AssistantState initial) : super(initial);
+  _FakeAssistantNotifier(super.initial);
 
   String? lastSentMessage;
   String? thumbsDownCalledFor;
@@ -52,8 +51,7 @@ class _FakeAssistantNotifier extends StateNotifier<AssistantState>
 
 class _ErrorThrowingNotifier extends _FakeAssistantNotifier {
   final Object errorToThrow;
-  _ErrorThrowingNotifier(AssistantState initial, this.errorToThrow)
-      : super(initial);
+  _ErrorThrowingNotifier(super.initial, this.errorToThrow);
 
   @override
   Future<void> sendMessage(String text, String locale,
@@ -190,25 +188,26 @@ void main() {
       addTearDown(tester.view.reset);
 
       const chipLabel = 'Find blood bank';
-      final notifier = _FakeAssistantNotifier(
-        _state(quickActions: [
-          QuickAction(id: 'q1', textEn: chipLabel, textBn: 'রক্তব্যাংক খুঁজুন'),
-        ]),
-      );
+      final testState = _state(quickActions: [
+        QuickAction(id: 'q1', textEn: chipLabel, textBn: 'রক্তব্যাংক খুঁজুন'),
+      ]);
+      final notifier = _FakeAssistantNotifier(testState);
 
-      await tester.pumpWidget(_buildScreen(
-        state: _state(),
-        notifier: notifier,
+      await tester.pumpWidget(MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: _buildScreen(
+          state: testState,
+          notifier: notifier,
+        ),
       ));
       await tester.pump();
 
       final chip = find.text(chipLabel);
       if (chip.evaluate().isNotEmpty) {
         await tester.tap(chip.first);
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 150));
         expect(notifier.lastSentMessage, equals(chipLabel));
       }
-      // If no chips rendered (e.g. empty state), test passes without error.
     });
   });
 
@@ -335,7 +334,7 @@ void main() {
       final moreVert = find.byIcon(Icons.more_vert);
       if (moreVert.evaluate().isNotEmpty) {
         await tester.tap(moreVert.first);
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 200));
 
         final talkBtn = find.textContaining('Talk to a human');
         if (talkBtn.evaluate().isNotEmpty) {
@@ -442,67 +441,179 @@ void main() {
     });
   });
 
-  // ── 11. FRIENDLY ERROR DIALOG ON GEMINI API ERROR (NO RED SCREEN) ───────────
-  group('PulseAI Error Handling & Dialog', () {
-    testWidgets('SocketException shows Connection Issue dialog', (tester) async {
-      final fake = _ErrorThrowingNotifier(
-        _state(),
-        const SocketException('Failed host lookup'),
+  // ── 11. PRIVACY SHEET VISIBILITY AT 1.5X TEXT SCALE & BOTTOM INSETS ──────
+  group('Privacy Sheet Visibility', () {
+    testWidgets(
+      'Accept & Continue is fully on screen with simulated 48px bottom inset and 1.5x text scale',
+      (tester) async {
+        const testSize = Size(360, 640);
+        tester.view.physicalSize = testSize;
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(
+              size: testSize,
+              viewPadding: EdgeInsets.only(bottom: 48),
+              textScaler: TextScaler.linear(1.5),
+              disableAnimations: true,
+            ),
+            child: ProviderScope(
+              overrides: [
+                assistantProvider.overrideWith(
+                  (_) => _FakeAssistantNotifier(_state()),
+                ),
+              ],
+              child: const MaterialApp(
+                home: Scaffold(
+                  body: ConsentSheetWidget(),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final buttonFinder = find.text('Accept & Continue');
+        expect(buttonFinder, findsOneWidget);
+
+        final buttonRect = tester.getRect(buttonFinder);
+        // Ensure the button is fully inside the screen and above the simulated 48px navigation bar
+        expect(buttonRect.bottom, lessThanOrEqualTo(640 - 48));
+        expect(buttonRect.top, greaterThanOrEqualTo(0));
+      },
+    );
+  });
+
+  // ── 12. SINGLE ERROR SURFACE (INLINE BANNER ONLY, NO MODAL DIALOG) ─────────
+  group('Single Error Surface Contract', () {
+    testWidgets('shows inline error banner and NO modal dialog on failure',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final stateWithError = _state(errorCode: 'SERVER_ERROR');
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: _buildScreen(state: stateWithError),
+        ),
       );
-
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          assistantProvider.overrideWith((ref) => fake),
-        ],
-        child: const MaterialApp(home: AssistantScreen()),
-      ));
       await tester.pump();
 
-      // Enter text and submit
-      final input = find.byType(TextField);
-      await tester.enterText(input, 'Hello PulseAI');
-      await tester.pump();
+      // Inline card is rendered
+      expect(find.text('Server error'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
 
-      final sendBtn = find.byIcon(Icons.arrow_upward_rounded);
-      await tester.tap(sendBtn);
-      await tester.pumpAndSettle();
-
-      // Expect AlertDialog with Connection Issue title
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Connection Issue'), findsOneWidget);
-      expect(find.textContaining('Please call our hotline'), findsOneWidget);
-
-      // Tap OK
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
+      // Modal dialogs must NOT appear
       expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(Dialog), findsNothing);
     });
+  });
 
-    testWidgets('Generic exception shows Something went wrong dialog', (tester) async {
-      final fake = _ErrorThrowingNotifier(
-        _state(),
-        Exception('500 Internal Server Error'),
+  // ── 13. RETRY RESENDS THE SAME MESSAGE ────────────────────────────────────
+  group('Retry mechanism', () {
+    testWidgets('tapping Retry on inline error card resends the exact same user query',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final notifier = _FakeAssistantNotifier(_state());
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: _buildScreen(
+            state: _state(),
+            notifier: notifier,
+          ),
+        ),
       );
-
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          assistantProvider.overrideWith((ref) => fake),
-        ],
-        child: const MaterialApp(home: AssistantScreen()),
-      ));
       await tester.pump();
 
+      // Enter user query and send
+      const userQuery = 'how can I donate blood';
       final input = find.byType(TextField);
-      await tester.enterText(input, 'Hello PulseAI');
+      await tester.enterText(input, userQuery);
       await tester.pump();
 
       final sendBtn = find.byIcon(Icons.arrow_upward_rounded);
       await tester.tap(sendBtn);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 150));
 
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Something went wrong'), findsOneWidget);
-      expect(find.text('Please try again'), findsOneWidget);
+      expect(notifier.lastSentMessage, equals(userQuery));
+
+      // Trigger error state on the same screen
+      notifier.state = _state(errorCode: 'RATE_LIMITED');
+      await tester.pump();
+
+      // Verify inline error banner with Retry is on screen
+      final retryBtn = find.text('Retry');
+      expect(retryBtn, findsOneWidget);
+
+      // Reset lastSentMessage to check that Retry resends the SAME query
+      notifier.lastSentMessage = null;
+      await tester.tap(retryBtn);
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(notifier.lastSentMessage, equals(userQuery));
+    });
+  });
+
+  // ── 14. ACCURATE PULSEAI ICON ASSET USAGE ─────────────────────────────────
+  group('PulseAI icon asset usage', () {
+    testWidgets('uses assets/images/pulseai_icon.png in header and bot avatar',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final botMessage = AssistantMessage(
+        isUser: false,
+        text: 'Hello from PulseAI',
+      );
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: _buildScreen(state: _state(messages: [botMessage])),
+        ),
+      );
+      await tester.pump();
+
+      // 1. Check header Image.asset with pulseai_icon.png
+      bool foundHeaderAsset = false;
+      for (final img in tester.widgetList<Image>(find.byType(Image))) {
+        final provider = img.image;
+        if (provider is AssetImage && provider.assetName == 'assets/images/pulseai_icon.png') {
+          foundHeaderAsset = true;
+        } else if (provider is ResizeImage &&
+            provider.imageProvider is AssetImage &&
+            (provider.imageProvider as AssetImage).assetName == 'assets/images/pulseai_icon.png') {
+          foundHeaderAsset = true;
+        }
+      }
+      expect(foundHeaderAsset, isTrue,
+          reason: 'Header must use assets/images/pulseai_icon.png');
+
+      // 2. Check bot avatar CircleAvatar with pulseai_icon.png
+      bool foundAvatarAsset = false;
+      for (final avatar in tester.widgetList<CircleAvatar>(find.byType(CircleAvatar))) {
+        final provider = avatar.backgroundImage;
+        if (provider is AssetImage && provider.assetName == 'assets/images/pulseai_icon.png') {
+          foundAvatarAsset = true;
+        } else if (provider is ResizeImage &&
+            provider.imageProvider is AssetImage &&
+            (provider.imageProvider as AssetImage).assetName == 'assets/images/pulseai_icon.png') {
+          foundAvatarAsset = true;
+        }
+      }
+      expect(foundAvatarAsset, isTrue,
+          reason: 'Bot avatar must use assets/images/pulseai_icon.png');
     });
   });
 }

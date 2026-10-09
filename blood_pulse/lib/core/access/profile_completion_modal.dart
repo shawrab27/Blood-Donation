@@ -18,6 +18,7 @@ class ProfileCompletionModal extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context) => showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
+        useSafeArea: true,
         backgroundColor: Colors.transparent,
         enableDrag: true,
         builder: (ctx) => const ProfileCompletionModal(),
@@ -156,6 +157,7 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(50),
       borderSide: const BorderSide(color: Color(0xFFE2E2E2)),
@@ -163,14 +165,16 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-        child: SingleChildScrollView(
-          child: Form(
+      child: SafeArea(
+        top: false,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.fromLTRB(24, 16, 24, 28 + bottomPadding),
+          child: SingleChildScrollView(
+            child: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -290,7 +294,8 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _label(String text) => Text(text,

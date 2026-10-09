@@ -15,6 +15,13 @@ class BloodHubEndpointsIntegrationTests(TestCase):
 
         # Requester
         self.requester_user = User.objects.create_user(username='requester_user', password='password123', first_name="Test")
+        self.requester_profile = DonorProfile.objects.create(
+            user=self.requester_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801712349999',
+            is_profile_complete=True,
+        )
         
         # Donor
         self.donor_user = User.objects.create_user(username='donor_user', password='password123', first_name="Test")
@@ -72,6 +79,7 @@ class BloodHubEndpointsIntegrationTests(TestCase):
         self.assertNotEqual((donor_pin['lat'], donor_pin['lng']), (23.8103, 90.4125))
 
     def test_create_emergency_request_idempotent(self):
+        self.client.force_authenticate(user=self.requester_user)
         req_id = str(uuid.uuid4())
         payload = {
             'patient_name': 'Abdur Rahman',

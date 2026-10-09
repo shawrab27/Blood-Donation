@@ -232,8 +232,11 @@ def emergency_requests_list_create_view(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # POST: Create request
-    if request.user and request.user.is_authenticated:
-        IsProfileComplete().has_permission(request, None)
+    if not request.user or not request.user.is_authenticated:
+        return Response({'detail': 'Authentication required to create an emergency blood request.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    if not IsProfileComplete().has_permission(request, None):
+        return Response({'detail': 'Profile completion required before creating blood requests.', 'code': 'profile_incomplete'}, status=status.HTTP_403_FORBIDDEN)
 
     client_request_id = request.data.get('client_request_id')
     if client_request_id:

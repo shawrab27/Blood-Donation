@@ -212,7 +212,7 @@ class _FeedViewState extends ConsumerState<FeedView> {
               label: Text(seg['label'] as String),
               selected: isSelected,
               onSelected: (selected) {
-                ref.read(feedFilterProvider.notifier).state = seg['id'] as String?;
+                ref.read(feedFilterProvider.notifier).state = seg['id'];
               },
               selectedColor: const Color(0xFFC30121),
               backgroundColor: Colors.white,

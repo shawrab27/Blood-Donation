@@ -17,14 +17,7 @@ class ConsoleEmailService(EmailService):
     """Dev-only adapter. Prints OTP to the terminal/log. Must NOT be used in production."""
 
     def send_otp(self, to_email: str, otp: str) -> bool:
-        logger.info(
-            "\n========== OTP EMAIL ==========\nTo: %s\nOTP: %s\n===============================\n",
-            to_email,
-            otp,
-        )
-        print(
-            f"\n========== OTP EMAIL ==========\nTo: {to_email}\nOTP: {otp}\n===============================\n"
-        )
+        logger.info("[ConsoleEmailService] Dispatched password reset OTP to %s", to_email)
         return True
 
 

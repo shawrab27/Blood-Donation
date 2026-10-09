@@ -45,43 +45,47 @@ class AssistantApiService {
       ).timeout(const Duration(seconds: 45));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.body.trim().isEmpty) {
+          throw AssistantApiException('EMPTY_RESPONSE', 'Empty response from server', statusCode: response.statusCode);
+        }
         final json = jsonDecode(response.body);
+        if (json is Map<String, dynamic>) {
+          final replyText = json['reply'] ?? json['response'] ?? '';
+          if (replyText.toString().trim().isEmpty) {
+            throw AssistantApiException('EMPTY_RESPONSE', 'Empty reply from assistant', statusCode: response.statusCode);
+          }
+        }
         return AssistantMessage.fromJson(json);
       }
 
-      if (response.statusCode == 429 && attempt < 3) {
-        await Future.delayed(Duration(seconds: pow(2, attempt).toInt()));
-        return await sendMessage(
-          message,
-          locale,
-          conversationId: conversationId,
-          screenContext: screenContext,
-          attempt: attempt + 1,
-        );
-      }
-
-      String code;
-      if (response.statusCode == 401) {
-        code = 'LOGIN_REQUIRED';
-      } else if (response.statusCode == 404) {
-        code = 'NOT_AVAILABLE';
-      } else if (response.statusCode == 429) {
-        code = 'RATE_LIMITED';
-      } else if (response.statusCode == 413) {
-        code = 'MESSAGE_TOO_LONG';
-      } else if (response.statusCode == 402) {
-        code = 'BUDGET_REACHED';
-      } else if (response.statusCode >= 500) {
-        code = 'SERVER_ERROR';
-      } else {
-        code = 'GENERIC_ERROR';
-      }
+      final code = _mapStatusCode(response.statusCode, response.body);
       throw AssistantApiException(code, response.body, statusCode: response.statusCode);
-    } on SocketException {
-      rethrow;
-    } on TimeoutException {
-      rethrow;
+    } on ApiException catch (e) {
+      final code = _mapStatusCode(e.statusCode, e.message);
+      throw AssistantApiException(code, e.message, statusCode: e.statusCode);
+    } on SocketException catch (e) {
+      throw AssistantApiException('NO_INTERNET', e.message, statusCode: 0);
+    } on TimeoutException catch (e) {
+      throw AssistantApiException('TIMEOUT', e.message ?? 'timeout', statusCode: 408);
+    } on FormatException catch (e) {
+      throw AssistantApiException('EMPTY_RESPONSE', e.message, statusCode: 500);
     }
+  }
+
+  String _mapStatusCode(int? status, String? body) {
+    if (status == 401) return 'LOGIN_REQUIRED';
+    if (status == 429) return 'RATE_LIMITED';
+    if (status == 408 || status == 504) return 'TIMEOUT';
+    if (status == 503 || status == 502) {
+      if (body != null && (body.toLowerCase().contains('provider') || body.toLowerCase().contains('gemini'))) {
+        return 'PROVIDER_ERROR';
+      }
+      return 'SERVER_ERROR';
+    }
+    if (status != null && status >= 500) return 'SERVER_ERROR';
+    if (body != null && body.toLowerCase().contains('provider')) return 'PROVIDER_ERROR';
+    if (body != null && body.toLowerCase().contains('timeout')) return 'TIMEOUT';
+    return 'GENERIC_ERROR';
   }
 
   Future<List<QuickAction>> getQuickActions() async {

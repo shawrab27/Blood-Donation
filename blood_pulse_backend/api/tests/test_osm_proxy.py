@@ -7,6 +7,8 @@ from rest_framework.test import APIClient
 
 class OSMProxyTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(username='osmtester', first_name="Test")
         self.client.force_authenticate(user=self.user)
@@ -63,15 +65,13 @@ class OSMProxyTests(TestCase):
         self.assertEqual(data['distance_km'], 15.0)
         self.assertEqual(data['duration_min'], 30.0)
 
-    def test_throttle(self):
+    @patch('api.osm_proxy.requests.get')
+    def test_throttle(self, mock_get):
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = []
         url = reverse('osm-geocode')
-        # We need a different query each time so it doesn't just hit the cache? 
-        # Actually throttling happens before the view code, so it doesn't matter if it's cached or not.
         for i in range(10):
-            res = self.client.get(url, {'q': f'q{i}'})
-            # Since requests.get is not mocked, wait, it will fail if it's not mocked!
-            # Let's mock it for the throttle test as well just in case.
-        pass
+            self.client.get(url, {'q': f'q{i}'})
 
     @patch('api.osm_proxy.requests.get')
     def test_throttle_enforced(self, mock_get):

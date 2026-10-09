@@ -10,7 +10,7 @@ class LimitsExceeded(Exception):
         self.code = code
         self.message = message
 
-def check_limits(user_id, message_text: str):
+def check_limits(user_id, message_text: str, client_ip: str = None):
     if len(message_text) > MAX_MESSAGE_CHARS:
         raise LimitsExceeded('MESSAGE_TOO_LONG', f'Message exceeds {MAX_MESSAGE_CHARS} characters.')
 
@@ -21,7 +21,7 @@ def check_limits(user_id, message_text: str):
     if global_count >= GLOBAL_DAILY_BUDGET:
         raise LimitsExceeded('BUDGET_REACHED', 'System daily budget reached.')
 
-    # User limits
+    # Authenticated user limits
     if user_id:
         hour = datetime.datetime.now().strftime('%Y-%m-%d-%H')
         user_hourly_key = f'assistant_user_hourly_{user_id}_{hour}'
@@ -36,7 +36,15 @@ def check_limits(user_id, message_text: str):
         if user_daily_count >= USER_LIMIT_PER_DAY:
             raise LimitsExceeded('RATE_LIMITED', 'Daily limit exceeded.')
 
-def record_usage(user_id):
+    # Guest limits per device/IP
+    elif client_ip:
+        hour = datetime.datetime.now().strftime('%Y-%m-%d-%H')
+        guest_hourly_key = f'assistant_guest_hourly_{client_ip}_{hour}'
+        guest_hourly_count = cache.get(guest_hourly_key, 0)
+        if guest_hourly_count >= 15:
+            raise LimitsExceeded('RATE_LIMITED', 'Guest hourly limit exceeded.')
+
+def record_usage(user_id, client_ip: str = None):
     today = datetime.date.today().isoformat()
     global_key = f'assistant_global_budget_{today}'
     
@@ -59,3 +67,11 @@ def record_usage(user_id):
             cache.incr(user_daily_key)
         except ValueError:
             cache.set(user_daily_key, 1, timeout=86400 * 2)
+
+    elif client_ip:
+        hour = datetime.datetime.now().strftime('%Y-%m-%d-%H')
+        guest_hourly_key = f'assistant_guest_hourly_{client_ip}_{hour}'
+        try:
+            cache.incr(guest_hourly_key)
+        except ValueError:
+            cache.set(guest_hourly_key, 1, timeout=3600 * 2)

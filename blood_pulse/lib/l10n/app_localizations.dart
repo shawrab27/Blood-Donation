@@ -626,6 +626,36 @@ abstract class AppLocalizations {
   /// **'Sign In'**
   String get signIn;
 
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
+  /// No description provided for @continueAsGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as Guest'**
+  String get continueAsGuest;
+
+  /// No description provided for @googleSignInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was cancelled.'**
+  String get googleSignInCancelled;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection failed. Please check your internet connection.'**
+  String get networkError;
+
+  /// No description provided for @googleEmailNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account email is not verified.'**
+  String get googleEmailNotVerified;
+
   /// No description provided for @logoutConfirm.
   ///
   /// In en, this message translates to:
@@ -1081,6 +1111,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notifications in this category yet.'**
   String get notifNoItems;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @chooseFromFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from File'**
+  String get chooseFromFile;
+
+  /// No description provided for @openCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Camera'**
+  String get openCamera;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get removePhoto;
+
+  /// No description provided for @optionalBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get optionalBadge;
+
+  /// No description provided for @invalidImageFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Only JPG, JPEG, PNG, and WEBP formats are supported.'**
+  String get invalidImageFormat;
+
+  /// No description provided for @imageSizeTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Image size must not exceed 5 MB.'**
+  String get imageSizeTooLarge;
+
+  /// No description provided for @cameraPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission denied.'**
+  String get cameraPermissionDenied;
+
+  /// No description provided for @cameraPermissionPermanentlyDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission is permanently denied. Please enable it in Settings.'**
+  String get cameraPermissionPermanentlyDenied;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get openSettings;
+
+  /// No description provided for @photoHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a clear photo to help identification.'**
+  String get photoHelperText;
+
+  /// No description provided for @failedToReadFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read selected file.'**
+  String get failedToReadFile;
 }
 
 class _AppLocalizationsDelegate

@@ -228,7 +228,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
                 GestureDetector(
                   onTap: _toggle,
                   child: const HeartbeatIcon(
-                    asset: 'assets/images/pulse_ai_icon.png',
+                    asset: 'assets/images/pulseai_icon.png',
                     size: 56,
                   ),
                 ),

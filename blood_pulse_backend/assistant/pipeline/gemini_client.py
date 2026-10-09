@@ -4,19 +4,22 @@
 import os
 import json
 import time
+import logging
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 from assistant.conf import GEMINI_MODEL, TEMPERATURE, MAX_OUTPUT_TOKENS, GEMINI_TIMEOUT_SECONDS
 
+logger = logging.getLogger(__name__)
+
 class AssistantReplySchema(BaseModel):
     reply: str
     language: str = Field(description="'bn' or 'en'")
-    action_ids: list[str]
-    emergency: bool
-    out_of_scope: bool
-    needs_human: bool
-    kb_ids_used: list[int]
+    action_ids: list[str] = Field(default_factory=list)
+    emergency: bool = False
+    out_of_scope: bool = False
+    needs_human: bool = False
+    kb_ids_used: list[int] = Field(default_factory=list)
 
 def get_system_instruction() -> str:
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'prompts', 'system.md')
@@ -65,22 +68,28 @@ def call_gemini(user_message: str, history, kb_entries, guide_entries, temperatu
         response_schema=AssistantReplySchema,
     )
     
-    # Attempt generation with exponential backoff retry on 503/429
-    max_attempts = 4
-    for attempt in range(max_attempts):
+    # Model fallback candidates in order of speed and stability
+    candidate_models = []
+    primary_model = os.environ.get('GEMINI_MODEL') or GEMINI_MODEL or 'gemini-flash-lite-latest'
+    candidate_models.append(primary_model)
+    for fallback in ['gemini-flash-lite-latest', 'gemini-3.5-flash', 'gemini-3.8-flash']:
+        if fallback not in candidate_models:
+            candidate_models.append(fallback)
+
+    last_error = None
+    for model_name in candidate_models:
         try:
             start_time = time.time()
             response = client.models.generate_content(
-                model=GEMINI_MODEL,
+                model=model_name,
                 contents=contents,
                 config=config,
             )
             latency_ms = int((time.time() - start_time) * 1000)
             
-            # Use response.text because it will be JSON mapped to the schema
+            # Parse JSON schema response
             result_json = json.loads(response.text)
             
-            # Approximate tokens from usage_metadata if available
             tokens_in = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
             tokens_out = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
             
@@ -88,15 +97,16 @@ def call_gemini(user_message: str, history, kb_entries, guide_entries, temperatu
                 "json": result_json,
                 "latency_ms": latency_ms,
                 "tokens_in": tokens_in,
-                "tokens_out": tokens_out
+                "tokens_out": tokens_out,
+                "model_used": model_name
             }
-            
         except Exception as e:
-            # Catch rate limit or temporary server capacity spikes (429/503)
+            last_error = e
             err_str = str(e)
-            if attempt < max_attempts - 1 and ("429" in err_str or "503" in err_str or "Too Many Requests" in err_str or "UNAVAILABLE" in err_str):
-                backoff = (attempt + 1) * 2.0
-                time.sleep(backoff)
-                continue
-            raise e
+            logger.warning(f"Gemini call with model '{model_name}' failed: {err_str}")
+            # Try next candidate model immediately without hanging
+            continue
 
+    if last_error:
+        raise last_error
+    raise RuntimeError("All Gemini model candidates failed to respond.")

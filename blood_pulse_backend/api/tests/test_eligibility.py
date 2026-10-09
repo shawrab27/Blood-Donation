@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from api.models import DonorProfile, DeferralRecord
 from api.services.eligibility import evaluate_donor_eligibility
+from api.conf import WHOLE_BLOOD_COOLDOWN_DAYS
 
 
 class EligibilityServiceTests(TestCase):
@@ -31,7 +32,7 @@ class EligibilityServiceTests(TestCase):
         self.donor.save()
         res = evaluate_donor_eligibility(self.donor)
         self.assertFalse(res['is_eligible'])
-        self.assertEqual(res['days_remaining'], 75)
+        self.assertEqual(res['days_remaining'], WHOLE_BLOOD_COOLDOWN_DAYS - 45)
 
     def test_donor_after_120_days_is_eligible(self):
         self.donor.last_donation_date = timezone.now().date() - timedelta(days=125)

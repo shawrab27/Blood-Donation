@@ -2,11 +2,15 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:blood_pulse/services/api_client.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,8 +18,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_notifier.dart';
 import '../widgets/institution_autocomplete.dart';
+import '../../../../core/access/access_guard.dart';
 
 
 enum _Gender { male, female }
@@ -43,7 +49,18 @@ const Map<String, List<String>> _divisionDistricts = {
 /// strict double blood group verification, dynamic category toggles,
 /// and direct Django REST API registration integration.
 class RegistrationScreen extends ConsumerStatefulWidget {
-  const RegistrationScreen({super.key});
+  const RegistrationScreen({
+    super.key,
+    this.imagePicker,
+    this.pickImageFunction,
+    this.pickFileFunction,
+    this.openAppSettingsFunction,
+  });
+
+  final ImagePicker? imagePicker;
+  final Future<XFile?> Function(ImageSource source)? pickImageFunction;
+  final Future<PlatformFile?> Function()? pickFileFunction;
+  final Future<bool> Function()? openAppSettingsFunction;
 
   @override
   ConsumerState<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -51,7 +68,7 @@ class RegistrationScreen extends ConsumerStatefulWidget {
 
 class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _picker = ImagePicker();
+  late final ImagePicker _picker;
 
   // ── Controllers ──
   final _nameCtrl = TextEditingController();
@@ -93,12 +110,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   DateTime? _lastDonationDate;
   int _totalBags = 0;
 
-  bool get _isPasswordValid =>
-      _pwCtrl.text.length >= 8 && _pwCtrl.text == _confirmPwCtrl.text;
-
   @override
   void initState() {
     super.initState();
+    _picker = widget.imagePicker ?? ImagePicker();
     _pwCtrl.addListener(_onPasswordChanged);
     _confirmPwCtrl.addListener(_onPasswordChanged);
   }
@@ -127,21 +142,187 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     super.dispose();
   }
 
-  Future<void> _pickAvatar(ImageSource source) async {
+  static const int _maxImageBytes = 5 * 1024 * 1024; // 5 MB
+  static const Set<String> _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+  bool _cameraPermanentlyDenied = false;
+
+  Future<void> _processAndSetAvatar(XFile picked) async {
+    final name = picked.name.toLowerCase();
+    String ext = name.contains('.') ? name.split('.').last : '';
+    if (ext.isEmpty && picked.path.contains('.')) {
+      ext = picked.path.split('.').last.toLowerCase();
+    }
+
+    if (ext.isNotEmpty && !_allowedExtensions.contains(ext)) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        _showError(l10n?.invalidImageFormat ?? 'Only JPG, JPEG, PNG, and WEBP formats are supported.');
+      }
+      return;
+    }
+
+    final length = await picked.length();
+    if (length > _maxImageBytes) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        _showError(l10n?.imageSizeTooLarge ?? 'Image size must not exceed 5 MB.');
+      }
+      return;
+    }
+
+    final bytes = await picked.readAsBytes();
+    if (bytes.lengthInBytes > _maxImageBytes) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        _showError(l10n?.imageSizeTooLarge ?? 'Image size must not exceed 5 MB.');
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _avatarBytes = bytes;
+      });
+    }
+  }
+
+  Future<void> _pickAvatarFromGallery() async {
     try {
-      final picked = await _picker.pickImage(source: source, imageQuality: 85);
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
+      final picked = widget.pickImageFunction != null
+          ? await widget.pickImageFunction!(ImageSource.gallery)
+          : await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (picked == null) return;
+      await _processAndSetAvatar(picked);
+    } catch (e) {
+      if (mounted) {
+        _showError('Could not access gallery: $e');
+      }
+    }
+  }
+
+  Future<void> _pickAvatarFromFile() async {
+    try {
+      final file = widget.pickFileFunction != null
+          ? await widget.pickFileFunction!()
+          : await FilePicker.pickFile(
+              type: FileType.custom,
+              allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+            );
+      if (file == null) return;
+
+      final name = file.name.toLowerCase();
+      final ext = (file.extension ?? (name.contains('.') ? name.split('.').last : '')).toLowerCase();
+
+      if (!_allowedExtensions.contains(ext)) {
         if (mounted) {
-          setState(() {
-            _avatarBytes = bytes;
-          });
+          final l10n = AppLocalizations.of(context);
+          _showError(l10n?.invalidImageFormat ?? 'Only JPG, JPEG, PNG, and WEBP formats are supported.');
         }
+        return;
+      }
+
+      final fileSize = (await file.length()) ?? file.lengthSync();
+      if (fileSize != null && fileSize > _maxImageBytes) {
+        if (mounted) {
+          final l10n = AppLocalizations.of(context);
+          _showError(l10n?.imageSizeTooLarge ?? 'Image size must not exceed 5 MB.');
+        }
+        return;
+      }
+
+      final bytes = await file.readAsBytes();
+      if (bytes.lengthInBytes > _maxImageBytes) {
+        if (mounted) {
+          final l10n = AppLocalizations.of(context);
+          _showError(l10n?.imageSizeTooLarge ?? 'Image size must not exceed 5 MB.');
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _avatarBytes = bytes;
+        });
       }
     } catch (e) {
       if (mounted) {
-        _showError('Could not access ${source == ImageSource.camera ? "camera" : "gallery"}: $e');
+        _showError('Could not access file picker: $e');
       }
+    }
+  }
+
+  Future<void> _pickAvatarFromCamera() async {
+    try {
+      final picked = widget.pickImageFunction != null
+          ? await widget.pickImageFunction!(ImageSource.camera)
+          : await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      if (picked == null) return;
+      await _processAndSetAvatar(picked);
+    } on PlatformException catch (e) {
+      _handleCameraPermissionError(e);
+    } catch (e) {
+      if (mounted) {
+        _showError('Could not access camera: $e');
+      }
+    }
+  }
+
+  void _handleCameraPermissionError(PlatformException e) {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final code = e.code.toLowerCase();
+    final message = (e.message ?? '').toLowerCase();
+
+    final isPermissionIssue = code.contains('camera_access_denied') ||
+        code.contains('permission') ||
+        message.contains('denied') ||
+        message.contains('permission');
+
+    if (isPermissionIssue) {
+      final isPermanent = _cameraPermanentlyDenied ||
+          code.contains('permanent') ||
+          message.contains('permanent') ||
+          message.contains('settings');
+
+      _cameraPermanentlyDenied = true;
+
+      if (isPermanent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n?.cameraPermissionPermanentlyDenied ??
+                  'Camera permission is permanently denied. Please enable it in Settings.',
+              style: const TextStyle(fontFamily: 'Inter'),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: const StadiumBorder(),
+            action: SnackBarAction(
+              label: l10n?.openSettings ?? 'Settings',
+              textColor: Colors.white,
+              onPressed: () async {
+                if (widget.openAppSettingsFunction != null) {
+                  await widget.openAppSettingsFunction!();
+                } else {
+                  await Geolocator.openAppSettings();
+                }
+              },
+            ),
+          ),
+        );
+      } else {
+        _showError(l10n?.cameraPermissionDenied ?? 'Camera permission denied.');
+      }
+    } else {
+      _showError('Could not access camera: ${e.message ?? e.code}');
+    }
+  }
+
+  void _removeAvatarPhoto() {
+    if (mounted) {
+      setState(() {
+        _avatarBytes = null;
+      });
     }
   }
 
@@ -261,7 +442,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       return;
     }
 
-    // Immediately authenticate and navigate to dashboard
+    // Clear guest mode upon registration
+    ref.read(isGuestProvider.notifier).state = false;
+
+    // Immediately authenticate and navigate to target feature or dashboard
     ref.read(authProvider.notifier).setUserForTesting(profile.copyWith(
       isProfileComplete: true,
       isOtpVerified: true,
@@ -276,7 +460,19 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     );
 
     if (mounted) {
-      context.go('/dashboard');
+      final extra = GoRouterState.of(context).extra;
+      String? targetRoute;
+      if (extra is Map<String, dynamic>) {
+        targetRoute = extra['targetRoute'] as String?;
+      }
+      targetRoute ??= ref.read(pendingRedirectRouteProvider);
+      ref.read(pendingRedirectRouteProvider.notifier).state = null;
+
+      if (targetRoute != null && targetRoute.isNotEmpty) {
+        context.go(targetRoute);
+      } else {
+        context.go('/dashboard');
+      }
     }
   }
 
@@ -384,7 +580,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24 + MediaQuery.viewPaddingOf(context).bottom),
               ],
             ),
           ),
@@ -437,77 +633,287 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildAvatarPickerSection() {
-    return Column(
-      children: [
-        Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFFFEE9EB),
-            border: Border.all(color: const Color(0xFFF9D2D7), width: 2),
-          ),
-          child: _avatarBytes != null
-              ? ClipOval(
-                  child: Image.memory(_avatarBytes!, width: 96, height: 96, fit: BoxFit.cover),
-                )
-              : const Icon(Icons.camera_alt_outlined, size: 36, color: Color(0xFFC30121)),
-        ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                side: const BorderSide(color: Color(0xFFC30121)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              icon: const Icon(Icons.photo_library_outlined, size: 16, color: Color(0xFFC30121)),
-              label: const Text(
-                'Attach Library',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFC30121),
+    final l10n = AppLocalizations.of(context);
+    final hasPhoto = _avatarBytes != null;
+
+    return Center(
+      child: Column(
+        children: [
+          Semantics(
+            button: true,
+            label: hasPhoto ? 'Change profile photo' : 'Select profile photo',
+            child: Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.none,
+              child: InkWell(
+                key: const ValueKey('registration_avatar_tap_target'),
+                customBorder: const CircleBorder(),
+                onTap: _showAvatarPickerModal,
+                child: SizedBox(
+                  width: 104,
+                  height: 104,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFFFDEAEB),
+                        ),
+                        child: hasPhoto
+                            ? ClipOval(
+                                child: Image.memory(
+                                  _avatarBytes!,
+                                  key: const ValueKey('avatar_user_image'),
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 36,
+                                  color: Color(0xFFC30121),
+                                ),
+                              ),
+                      ),
+                      IgnorePointer(
+                        child: CustomPaint(
+                          size: const Size(96, 96),
+                          painter: const _DashedCirclePainter(
+                            color: Color(0xFFC30121),
+                            strokeWidth: 2.0,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        child: hasPhoto
+                            ? Container(
+                                key: const ValueKey('avatar_edit_badge'),
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFC30121),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Container(
+                                key: const ValueKey('avatar_optional_badge'),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFC30121),
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.12),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  l10n?.optionalBadge ?? 'Optional',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              onPressed: () => _pickAvatar(ImageSource.gallery),
             ),
-            const SizedBox(width: 12),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC30121),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
-              label: const Text(
-                'Open Camera',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              onPressed: () => _pickAvatar(ImageSource.camera),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Upload a clear photo to help identification.',
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 12,
-            color: Color(0xFF888888),
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          Text(
+            l10n?.photoHelperText ?? 'Upload a clear photo to help identification.',
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              color: Color(0xFF888888),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
+  }
+
+  void _showAvatarPickerModal() {
+    final l10n = AppLocalizations.of(context);
+    final hasPhoto = _avatarBytes != null;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: const Color(0xFFFDEAEB),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (modalContext) {
+        final bottomPadding = MediaQuery.viewPaddingOf(modalContext).bottom;
+        return SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottomPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC30121).withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: Color(0xFFC30121),
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    l10n?.chooseFromGallery ?? 'Choose from Gallery',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    _pickAvatarFromGallery();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: const Icon(
+                      Icons.folder_open_rounded,
+                      color: Color(0xFFC30121),
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    l10n?.chooseFromFile ?? 'Choose from File',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    _pickAvatarFromFile();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: Color(0xFFC30121),
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    l10n?.openCamera ?? 'Open Camera',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(modalContext);
+                    _pickAvatarFromCamera();
+                  },
+                ),
+                if (hasPhoto)
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Color(0xFFC30121),
+                        size: 22,
+                      ),
+                    ),
+                    title: Text(
+                      l10n?.removePhoto ?? 'Remove photo',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFC30121),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(modalContext);
+                      _removeAvatarPhoto();
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -1096,25 +1502,28 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           const SizedBox(height: 12),
 
           // Never donated checkbox
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-            title: const Text(
-              'I have never donated blood before',
-              style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF2B2B2B), fontWeight: FontWeight.w500),
+          Material(
+            color: Colors.transparent,
+            child: CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: const Text(
+                'I have never donated blood before',
+                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF2B2B2B), fontWeight: FontWeight.w500),
+              ),
+              value: _neverDonated,
+              activeColor: const Color(0xFFC30121),
+              controlAffinity: ListTileControlAffinity.leading,
+              onChanged: (val) {
+                setState(() {
+                  _neverDonated = val ?? false;
+                  if (_neverDonated) {
+                    _totalBags = 0;
+                    _lastDonationDate = null;
+                  }
+                });
+              },
             ),
-            value: _neverDonated,
-            activeColor: const Color(0xFFC30121),
-            controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (val) {
-              setState(() {
-                _neverDonated = val ?? false;
-                if (_neverDonated) {
-                  _totalBags = 0;
-                  _lastDonationDate = null;
-                }
-              });
-            },
           ),
 
           if (!_neverDonated) ...[
@@ -1197,3 +1606,51 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     );
   }
 }
+
+class _DashedCirclePainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  const _DashedCirclePainter({
+    this.color = const Color(0xFFC30121),
+    this.strokeWidth = 2.0,
+  });
+
+  static const double dashLength = 6.0;
+  static const double gapLength = 4.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+    final circumference = 2 * math.pi * radius;
+    final totalDash = dashLength + gapLength;
+    final count = (circumference / totalDash).floor();
+    final sweepPerDash = (2 * math.pi) / count;
+    final dashSweep = sweepPerDash * (dashLength / totalDash);
+
+    for (int i = 0; i < count; i++) {
+      final startAngle = i * sweepPerDash;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle,
+        dashSweep,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedCirclePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
+

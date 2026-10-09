@@ -6,7 +6,7 @@ import 'package:blood_pulse/models/user_model.dart';
 import 'package:blood_pulse/providers/profile_countdown_provider.dart';
 
 void main() {
-  group('120-Day Donation Countdown Unit Tests', () {
+  group('90-Day Donation Countdown Unit Tests', () {
     test('User with null lastDonationDate is immediately eligible', () {
       const user = UserModel(
         uid: 'usr_1',
@@ -24,7 +24,7 @@ void main() {
       expect(user.cooldownDaysRemaining, equals(0));
     });
 
-    test('User with donation 46 days ago has 74 days remaining', () {
+    test('User with donation 46 days ago has 44 days remaining', () {
       final donationDate = DateTime.now().subtract(const Duration(days: 46));
       final user = UserModel(
         uid: 'usr_2',
@@ -40,11 +40,11 @@ void main() {
       );
 
       expect(user.isEligibleToDonate, isFalse);
-      expect(user.cooldownDaysRemaining, closeTo(74, 1));
+      expect(user.cooldownDaysRemaining, closeTo(44, 1));
     });
 
     test('ProfileCountdownState daysRemaining getter', () {
-      final donationDate = DateTime.now().subtract(const Duration(days: 120));
+      final donationDate = DateTime.now().subtract(const Duration(days: 90));
       final user = UserModel(
         uid: 'usr_3',
         name: 'Eligible Donor',

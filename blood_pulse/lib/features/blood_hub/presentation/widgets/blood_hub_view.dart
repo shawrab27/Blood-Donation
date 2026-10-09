@@ -262,6 +262,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
     }
   }
 
+  // ignore: unused_element
   Widget _buildLiveDonorTrackingCard(bool isBangla) {
     final bloodRequestState = ref.watch(bloodRequestProvider);
     final activeRequest = bloodRequestState.requests.where((r) => r.isActive).firstOrNull;
@@ -796,7 +797,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           error: (err, st) => Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: const Color(0xFFFFDAD6), borderRadius: BorderRadius.circular(12)),
-            child: Text('Error loading donors: ', style: const TextStyle(color: Colors.red)),
+            child: Text('Error loading donors: $err', style: const TextStyle(color: Colors.red)),
           ),
           data: (donors) {
             if (donors.isEmpty) {
@@ -811,7 +812,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Available Donors (\ found)',
+                  'Available Donors (${donors.length} found)',
                   style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
                 ),
                 const SizedBox(height: 12),
@@ -1315,6 +1316,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildBloodGroupPill(String bg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

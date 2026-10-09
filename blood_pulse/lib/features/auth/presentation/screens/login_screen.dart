@@ -10,7 +10,6 @@ import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../providers/auth_notifier.dart';
-import '../../../../core/access/access_guard.dart';
 
 /// Login Screen — Phone/Username + Password.
 ///
@@ -33,6 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _pwCtrl = TextEditingController();
   final _idFocus = FocusNode();
   final _pwFocus = FocusNode();
+  bool _isGoogleSigningIn = false;
 
   // Subtle slide-up entry animation
   late final AnimationController _entryCtrl = AnimationController(
@@ -87,25 +87,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _onGoogleSignIn() async {
+    if (_isGoogleSigningIn || ref.read(authProvider).isLoading) return;
+    setState(() => _isGoogleSigningIn = true);
     _idFocus.unfocus();
     _pwFocus.unfocus();
 
-    final success = await ref.read(authProvider.notifier).signInWithGoogle();
+    try {
+      final success = await ref.read(authProvider.notifier).signInWithGoogle();
 
-    if (!mounted) return;
-    if (success) {
-      context.go('/feed');
-    } else {
-      final err = ref.read(authProvider).errorMessage;
-      if (err != null && err.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(err, style: const TextStyle(fontFamily: 'Inter')),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: const StadiumBorder(),
-          ),
-        );
+      if (!mounted) return;
+      if (success) {
+        context.go('/feed');
+      } else {
+        final err = ref.read(authProvider).errorMessage;
+        if (err != null && err.isNotEmpty) {
+          final l10n = AppLocalizations.of(context);
+          String displayErr = err;
+          if (err.contains('cancelled') || err.contains('canceled')) {
+            displayErr = l10n?.googleSignInCancelled ?? err;
+          } else if (err.contains('Network') || err.contains('network_error') || err.contains('SocketException')) {
+            displayErr = l10n?.networkError ?? err;
+          } else if (err.contains('email is not verified')) {
+            displayErr = l10n?.googleEmailNotVerified ?? err;
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(displayErr, style: const TextStyle(fontFamily: 'Inter')),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: const StadiumBorder(),
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGoogleSigningIn = false);
       }
     }
   }
@@ -224,67 +241,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     style: const TextStyle(
                                       fontFamily: 'Inter',
                                       fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                       color: AppColors.tertiary,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
+                              // ── Divider with "or" ────────────────────────
+                              const Row(
+                                children: [
+                                  Expanded(child: Divider(color: Color(0xFFE2E2E2), thickness: 1)),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 14),
+                                    child: Text(
+                                      'or',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 13,
+                                        color: Color(0xFF888888),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(child: Divider(color: Color(0xFFE2E2E2), thickness: 1)),
+                                ],
+                              ),
+                              const SizedBox(height: 18),
+                              // ── Continue with Google ─────────────────────
+                              CapsuleButton(
+                                label: l10n?.continueWithGoogle ?? 'Continue with Google',
+                                leading: Image.asset(
+                                  'assets/images/google_logo.png',
+                                  width: 20,
+                                  height: 20,
+                                ),
+                                backgroundColor: const Color(0xFFFDEAEB),
+                                foregroundColor: AppColors.secondary,
+                                isLoading: _isGoogleSigningIn,
+                                height: 50,
+                                onPressed: (_isGoogleSigningIn || auth.isLoading) ? null : _onGoogleSignIn,
+                              ),
+                              const SizedBox(height: 12),
+                              // ── Continue as Guest ────────────────────────
+                              CapsuleButton(
+                                label: l10n?.continueAsGuest ?? 'Continue as Guest',
+                                icon: Icons.person_outline_rounded,
+                                backgroundColor: const Color(0xFFFDEAEB),
+                                foregroundColor: AppColors.secondary,
+                                height: 50,
+                                onPressed: () {
+                                  ref.read(authProvider.notifier).continueAsGuest();
+                                  context.go('/feed');
+                                },
+                              ),
+                              const SizedBox(height: 16),
                               // ── Sign In Button ──────────────────────────
                               CapsuleButton(
                                 label: l10n?.signIn ?? 'Sign In',
                                 icon: Icons.arrow_forward_rounded,
                                 isLoading: auth.isLoading,
                                 showGlow: true,
+                                height: 50,
                                 onPressed: auth.isLoading ? null : _onSignIn,
-                              ),
-                              const SizedBox(height: 20),
-                              // ── Social Login Row (Mobile) ──
-                              const Row(
-                                children: [
-                                  Expanded(child: Divider(color: Color(0xFFE2E2E2))),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 12),
-                                    child: Text(
-                                      'Or continue with',
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 12,
-                                        color: Color(0xFF888888),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(child: Divider(color: Color(0xFFE2E2E2))),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              CapsuleButton(
-                                label: 'Continue with Google',
-                                isOutlined: true,
-                                leading: Image.asset(
-                                  'assets/images/google_logo.png',
-                                  width: 20,
-                                  height: 20,
-                                ),
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.secondary,
-                                isLoading: auth.isLoading,
-                                height: 50,
-                                onPressed: auth.isLoading ? null : _onGoogleSignIn,
-                              ),
-                              const SizedBox(height: 12),
-                              CapsuleButton(
-                                label: 'Continue as Guest',
-                                isOutlined: true,
-                                icon: Icons.person_outline,
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.secondary,
-                                height: 50,
-                                onPressed: () {
-                                  ref.read(isGuestProvider.notifier).state = true;
-                                  context.go('/feed');
-                                },
                               ),
                             ],
                           ),
@@ -318,7 +336,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32 + MediaQuery.viewPaddingOf(context).bottom),
                       ],
                     ),
                   ),

@@ -22,6 +22,8 @@ class DonorProfileGeohashTest(TestCase):
 
 class NearbyDonorsViewTest(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.client = APIClient()
         self.user1 = User.objects.create_user(username='d1', first_name="Test")
         self.user2 = User.objects.create_user(username='d2', first_name="Test")

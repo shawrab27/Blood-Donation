@@ -279,6 +279,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign In';
 
   @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
+  String get continueAsGuest => 'Continue as Guest';
+
+  @override
+  String get googleSignInCancelled => 'Google sign-in was cancelled.';
+
+  @override
+  String get networkError =>
+      'Network connection failed. Please check your internet connection.';
+
+  @override
+  String get googleEmailNotVerified => 'Google account email is not verified.';
+
+  @override
   String get logoutConfirm =>
       'Are you sure you want to log out of your BloodPulse account?';
 
@@ -510,4 +526,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifNoItems => 'No notifications in this category yet.';
+
+  @override
+  String get chooseFromGallery => 'Choose from Gallery';
+
+  @override
+  String get chooseFromFile => 'Choose from File';
+
+  @override
+  String get openCamera => 'Open Camera';
+
+  @override
+  String get removePhoto => 'Remove photo';
+
+  @override
+  String get optionalBadge => 'Optional';
+
+  @override
+  String get invalidImageFormat =>
+      'Only JPG, JPEG, PNG, and WEBP formats are supported.';
+
+  @override
+  String get imageSizeTooLarge => 'Image size must not exceed 5 MB.';
+
+  @override
+  String get cameraPermissionDenied => 'Camera permission denied.';
+
+  @override
+  String get cameraPermissionPermanentlyDenied =>
+      'Camera permission is permanently denied. Please enable it in Settings.';
+
+  @override
+  String get openSettings => 'Settings';
+
+  @override
+  String get photoHelperText => 'Upload a clear photo to help identification.';
+
+  @override
+  String get failedToReadFile => 'Unable to read selected file.';
 }
