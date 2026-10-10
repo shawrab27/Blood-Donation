@@ -403,8 +403,8 @@ void main() {
       expect(find.text('Blood Profile'), findsOneWidget);
 
       // Tap Only Request Blood
-      await tester.scrollUntilVisible(find.text('Only Request Blood'), 500);
-      await tester.tap(find.text('Only Request Blood'), warnIfMissed: false);
+      await tester.ensureVisible(find.text('Only Request Blood'));
+      await tester.tap(find.text('Only Request Blood'));
       await tester.pumpAndSettle();
 
       // Blood Profile and Donation History should now be collapsed/hidden

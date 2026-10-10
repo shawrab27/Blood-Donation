@@ -32,8 +32,8 @@ void main() {
     // Initially disabled
     expect(find.textContaining('Resend OTP in'), findsOneWidget);
     
-    // Advance time by 46 seconds
-    await tester.pump(const Duration(seconds: 46));
+    // Advance time by 61 seconds
+    await tester.pump(const Duration(seconds: 61));
     
     // Now enabled
     expect(find.text('Resend OTP'), findsOneWidget);
