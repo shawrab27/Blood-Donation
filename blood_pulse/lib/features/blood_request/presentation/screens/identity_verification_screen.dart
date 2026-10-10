@@ -649,25 +649,29 @@ class _IdentityVerificationScreenState
             borderRadius: BorderRadius.circular(50),
           ),
           alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: isActive ? Colors.white : const Color(0xFF5C3F3D),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 15,
                   color: isActive ? Colors.white : const Color(0xFF5C3F3D),
                 ),
-              ),
-            ],
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isActive ? Colors.white : const Color(0xFF5C3F3D),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
