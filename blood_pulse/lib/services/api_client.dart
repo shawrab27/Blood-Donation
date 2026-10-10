@@ -30,6 +30,20 @@ class OtpWrongException extends ApiException {
   const OtpWrongException(super.message) : super(statusCode: 400);
 }
 
+/// Thrown when requesting or verifying request submit OTP fails.
+class RequestOtpException extends ApiException {
+  final int? cooldownSeconds;
+  final int? remainingAttempts;
+
+  const RequestOtpException(
+    super.message, {
+    super.statusCode,
+    super.rawError,
+    this.cooldownSeconds,
+    this.remainingAttempts,
+  });
+}
+
 /// BloodPulse REST API Client with automatic crash-hardening, token management, and retry logic.
 class ApiClient {
   /// Production via Vercel Reverse Proxy: `https://blood-donation-liard.vercel.app/api/`
@@ -531,11 +545,14 @@ class ApiClient {
         .timeout(connectTimeout);
     
     if (response.statusCode >= 400) {
-      if (response.statusCode == 429) {
+      try {
         final body = jsonDecode(response.body);
-        throw ApiException(body['detail'] ?? 'Too many requests', statusCode: 429);
+        final msg = body['detail'] ?? body['error'] ?? 'Failed to request OTP';
+        throw ApiException(msg, statusCode: response.statusCode);
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException('Failed to request OTP', statusCode: response.statusCode);
       }
-      throw ApiException('Failed to request OTP', statusCode: response.statusCode);
     }
   }
 
@@ -566,6 +583,78 @@ class ApiClient {
            errMsg.toLowerCase().contains('otp'));
       if (isOtpRejection) throw OtpWrongException(errMsg);
       throw ApiException(errMsg, statusCode: response.statusCode);
+    }
+  }
+
+  // ─── Blood Request Submit Email OTP (Phase 3) ───
+
+  Future<Map<String, dynamic>> sendRequestOtp({String? email}) async {
+    try {
+      final response = await post(
+        'requests/otp/send/',
+        body: {
+          if (email != null && email.isNotEmpty) 'email': email,
+        },
+      );
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } on ApiException catch (e) {
+      String msg = e.message;
+      int cooldown = 60;
+      if (e.rawError is String) {
+        try {
+          final decoded = jsonDecode(e.rawError as String);
+          if (decoded is Map) {
+            msg = decoded['error']?.toString() ?? decoded['detail']?.toString() ?? msg;
+            if (decoded['cooldown_seconds'] != null) {
+              cooldown = (decoded['cooldown_seconds'] as num).toInt();
+            }
+          }
+        } catch (_) {}
+      }
+      throw RequestOtpException(
+        msg,
+        statusCode: e.statusCode,
+        rawError: e.rawError,
+        cooldownSeconds: cooldown,
+      );
+    }
+  }
+
+  Future<String> verifyRequestOtp({required String code, String? email}) async {
+    try {
+      final response = await post(
+        'requests/otp/verify/',
+        body: {
+          'code': code.trim(),
+          if (email != null && email.isNotEmpty) 'email': email.trim(),
+        },
+      );
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final token = data['submit_token'] as String?;
+      if (token == null || token.isEmpty) {
+        throw const ApiException('No submit token received from server verification.');
+      }
+      return token;
+    } on ApiException catch (e) {
+      String msg = e.message;
+      int remainingAttempts = 5;
+      if (e.rawError is String) {
+        try {
+          final decoded = jsonDecode(e.rawError as String);
+          if (decoded is Map) {
+            msg = decoded['error']?.toString() ?? decoded['detail']?.toString() ?? msg;
+            if (decoded['remaining_attempts'] != null) {
+              remainingAttempts = (decoded['remaining_attempts'] as num).toInt();
+            }
+          }
+        } catch (_) {}
+      }
+      throw RequestOtpException(
+        msg,
+        statusCode: e.statusCode,
+        rawError: e.rawError,
+        remainingAttempts: remainingAttempts,
+      );
     }
   }
 

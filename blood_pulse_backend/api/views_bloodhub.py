@@ -308,6 +308,14 @@ def emergency_requests_list_create_view(request):
             detail_serializer = BloodRequestDetailSerializer(existing, context={'request': request})
             return Response(detail_serializer.data, status=status.HTTP_200_OK)
 
+    submit_token = request.data.get('submit_token') or request.headers.get('X-Submit-Token')
+    from api.views_request_otp import validate_and_consume_submit_token
+    if not validate_and_consume_submit_token(request.user, submit_token):
+        return Response(
+            {'detail': 'A valid unused submit_token is required to submit a blood request.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     patient_name = request.data.get('patient_name', '').strip()
     blood_group = request.data.get('blood_group', '').strip()
     component = request.data.get('component', 'WHOLE').strip()

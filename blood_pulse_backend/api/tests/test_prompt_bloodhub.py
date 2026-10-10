@@ -32,11 +32,14 @@ class BloodHubIntegrationTests(TestCase):
         test_user = User.objects.create_user(username='missing_hosp_user', email='hosp@test.com', password='password123', first_name="Test")
         DonorProfile.objects.create(user=test_user, blood_group='O+', district='Dhaka', phone_number='+8801711223344', is_profile_complete=True)
         self.client.force_authenticate(user=test_user)
+        from api.tests.helpers import obtain_submit_token_via_flow
+        token = obtain_submit_token_via_flow(self.client, test_user)
         res = self.client.post('/api/emergency/requests/', {
             'patient_name': 'Test',
             'blood_group': 'O+',
             'units_needed': 1,
-            'contact_phone': '12345'
+            'contact_phone': '12345',
+            'submit_token': token,
             # Missing hospital/ward_bed
         })
         self.assertEqual(res.status_code, 400)

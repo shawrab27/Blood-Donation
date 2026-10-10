@@ -140,92 +140,24 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       return;
     }
 
-    // Enforce email verification
-    final authUser = ref.read(authProvider).user;
-    if (authUser == null || !authUser.isEmailVerified) {
-      final verified = await EmailVerificationModal.show(
-        context,
-        initialEmail: authUser?.email,
-      );
-      if (verified != true) {
-        _showSnackBar(
-          'Email verification is required before submitting an emergency blood request.',
-          isError: true,
-        );
-        return;
-      }
-    }
-
     final hospitalLoc = _districtCtrl.text.isNotEmpty
         ? '${_hospitalNameCtrl.text.trim()}, ${_districtCtrl.text.trim()}'
         : _hospitalNameCtrl.text.trim();
 
     final urgencyStr = _urgency == UrgencyLevel.critical ? 'Critical' : 'Moderate';
 
-    final success = await ref.read(bloodRequestProvider.notifier).createRequest(
-          patientName: _patientNameCtrl.text.trim(),
-          bloodGroup: _selectedBloodGroup!,
-          urgencyLevel: urgencyStr,
-          hospitalLocation: hospitalLoc,
-          contactNumber: _contactPhoneCtrl.text.trim(),
-        );
-
-    if (!mounted) return;
-
-    if (!success) {
-      final err = ref.read(bloodRequestProvider).errorMessage ?? 'Failed to submit request.';
-      _showSnackBar(err, isError: true);
-      return;
-    }
-
-    // Success dialog
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
-            SizedBox(width: 10),
-            Text('Request Broadcasted', style: TextStyle(fontFamily: 'Georgia', fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Text(
-          'Emergency request for ${_patientNameCtrl.text} ($_selectedBloodGroup) has been broadcasted with an AI Trust Score of ${_aiResult!.trustScorePercentage.toInt()}%.',
-          style: const TextStyle(fontFamily: 'Inter'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.go('/dashboard');
-            },
-            child: const Text('Return to Feed', style: TextStyle(fontFamily: 'Inter', color: Color(0xFF666666))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-              elevation: 0,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.go(
-                '/live-dispatch',
-                extra: {
-                  'patientName': _patientNameCtrl.text.trim(),
-                  'hospitalName': hospitalLoc.isNotEmpty ? hospitalLoc : 'City General Trauma Wing',
-                  'bloodGroup': _selectedBloodGroup!,
-                  'donorName': 'Awaiting Donor Match',
-                  'donorPhone': '',
-                },
-              );
-            },
-            child: const Text('Track Live Dispatch ➔', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+    // Navigate to OTP page with request details (Phase 3 Requirement 5 & 6)
+    context.push(
+      '/identity-verification',
+      extra: {
+        'patientName': _patientNameCtrl.text.trim(),
+        'bloodGroup': _selectedBloodGroup!,
+        'urgencyLevel': urgencyStr,
+        'hospitalLocation': hospitalLoc,
+        'contactNumber': _contactPhoneCtrl.text.trim(),
+        'condition': _conditionReasonCtrl.text.trim(),
+        'returnRoute': '/live-dispatch',
+      },
     );
   }
 
@@ -354,7 +286,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                     const SizedBox(width: 12),
                     Expanded(
                       child: CapsuleButton(
-                        label: 'Broadcast Request',
+                        label: 'Confirm Submit',
                         icon: Icons.send_rounded,
                         showGlow: true,
                         onPressed: _onSubmitRequest,

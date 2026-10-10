@@ -71,7 +71,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
   }
 
   void _startTimer() {
-    setState(() => _countdown = 45);
+    setState(() => _countdown = 60);
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdown > 0) {

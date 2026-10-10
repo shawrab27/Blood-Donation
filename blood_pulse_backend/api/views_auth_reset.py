@@ -93,8 +93,14 @@ def request_otp(request):
         _constant_time_sleep()
         return _generic_success()
 
+    if not user.has_usable_password():
+        return Response(
+            {'detail': 'Please use Google sign-in.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     now = timezone.now()
-    cooldown_seconds = int(os.environ.get('OTP_RESEND_SECONDS', 45))
+    cooldown_seconds = int(os.environ.get('OTP_RESEND_SECONDS', 60))
     cooldown_time = now - timedelta(seconds=cooldown_seconds)
 
     # Enforce max 3 resends per 15 minutes per email (silently return generic success for anti-enumeration)

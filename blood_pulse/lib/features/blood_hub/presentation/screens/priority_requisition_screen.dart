@@ -100,24 +100,17 @@ class _PriorityBloodRequisitionScreenState
         'component': 'WHOLE',
       };
 
-      final draft = await ref.read(bloodHubV2ApiServiceProvider).createDraftRequest(payload);
-      final requestId = (draft['id'] as num?)?.toInt();
-
-      if (requestId != null) {
-        await ref.read(bloodHubV2ApiServiceProvider).sendOtp(requestId);
-      }
-
       if (mounted) {
         context.push(
-          '/identity/verify',
+          '/identity-verification',
           extra: {
-            'requestId': requestId,
             'patientName': patientName,
             'bloodGroup': _selectedBloodGroup,
             'urgencyLevel': _urgencyLevel,
             'hospitalLocation': hospital.isNotEmpty ? hospital : 'Medical Center',
             'contactNumber': contact,
             'condition': _conditionController.text.trim(),
+            'emergencyPayload': payload,
             'returnRoute': '/blood-hub/poster',
           },
         );

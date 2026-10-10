@@ -49,6 +49,13 @@ class BloodRequestCreateV2APIView(APIView):
         return Response(BloodRequestListSerializer(qs, many=True).data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        submit_token = request.data.get('submit_token') or request.headers.get('X-Submit-Token')
+        from api.views_request_otp import validate_and_consume_submit_token
+        if not validate_and_consume_submit_token(request.user, submit_token):
+            return Response(
+                {"detail": "A valid unused submit_token is required to submit a blood request."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = BloodRequestCreateV2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         req = create_draft_request(request.user, serializer.validated_data)

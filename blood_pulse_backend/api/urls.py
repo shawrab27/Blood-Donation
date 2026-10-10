@@ -74,6 +74,7 @@ from .views_bloodhub import (
 )
 
 from .views_auth_reset import request_otp, confirm_reset
+from .views_request_otp import request_otp_send_view, request_otp_verify_view
 from .views_search import institution_search, upazila_search
 from .views_blood_hub_v2 import (
     BloodRequestCreateV2APIView,
@@ -96,6 +97,8 @@ from .views_national_emergency import (
 
 urlpatterns = [
     # Blood Hub v2 Permanent Lifecycle Endpoints
+    path('requests/otp/send/', request_otp_send_view, name='requests-otp-send'),
+    path('requests/otp/verify/', request_otp_verify_view, name='requests-otp-verify'),
     path('requests/', BloodRequestCreateV2APIView.as_view(), name='blood-requests-create-v2'),
     path('requests/reach/', BloodRequestReachAPIView.as_view(), name='blood-requests-reach'),
     path('requests/<int:pk>/', BloodRequestDetailV2APIView.as_view(), name='blood-requests-detail-v2'),

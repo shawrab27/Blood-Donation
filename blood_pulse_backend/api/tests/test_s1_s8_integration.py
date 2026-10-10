@@ -121,6 +121,8 @@ class TwoDeviceIntegrationS1ToS8Tests(TestCase):
             'urgency_level': 'CRITICAL',
             'condition': 'Emergency Heart Surgery',
         }
+        from api.tests.helpers import obtain_submit_token_via_flow
+        payload['submit_token'] = obtain_submit_token_via_flow(self.client_requester, self.user_requester)
         res_create = self.client_requester.post('/api/requests/', payload, format='json')
         self.assertEqual(res_create.status_code, status.HTTP_201_CREATED)
         req_id = res_create.data['id']

@@ -94,6 +94,8 @@ class BloodHubEndpointsIntegrationTests(TestCase):
             'scope': 'LOCAL',
             'client_request_id': req_id,
         }
+        from api.tests.helpers import obtain_submit_token_via_flow
+        payload['submit_token'] = obtain_submit_token_via_flow(self.client, self.requester_user)
 
         # First POST creates request
         response = self.client.post('/api/emergency/requests/', payload)

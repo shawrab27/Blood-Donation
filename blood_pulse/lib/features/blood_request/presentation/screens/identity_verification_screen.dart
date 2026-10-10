@@ -8,7 +8,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/capsule_button.dart';
+import '../../../../services/api_client.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../blood_hub/data/blood_hub_api_service.dart';
 import '../providers/blood_request_provider.dart';
 
 enum VerificationMethod { email, whatsapp, sms }
@@ -23,7 +25,12 @@ class IdentityVerificationScreen extends ConsumerStatefulWidget {
     this.urgencyLevel,
     this.hospitalLocation,
     this.contactNumber,
+    this.email,
+    this.condition,
+    this.emergencyPayload,
     this.returnRoute = '/live-dispatch',
+    this.apiClient,
+    this.autoSend = true,
   });
 
   final String? patientName;
@@ -31,7 +38,12 @@ class IdentityVerificationScreen extends ConsumerStatefulWidget {
   final String? urgencyLevel;
   final String? hospitalLocation;
   final String? contactNumber;
+  final String? email;
+  final String? condition;
+  final Map<String, dynamic>? emergencyPayload;
   final String returnRoute;
+  final ApiClient? apiClient;
+  final bool autoSend;
 
   @override
   ConsumerState<IdentityVerificationScreen> createState() =>
@@ -50,26 +62,38 @@ class _IdentityVerificationScreenState
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _pinFocusNodes = List.generate(6, (_) => FocusNode());
 
-  int _countdown = 60; // Increased to 60s per RECON spec
+  late final ApiClient _apiClient;
+
+  int _countdown = 60;
   Timer? _timer;
   bool _isSending = false;
   bool _isVerifying = false;
   String? _statusMessage;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    _apiClient = widget.apiClient ?? ApiClient();
     final authUser = ref.read(authProvider).user;
-    final initialEmail = authUser?.email.isNotEmpty == true
-        ? authUser!.email
-        : 'user@example.com';
-    final initialPhone = authUser?.primaryPhone ?? '';
+    final initialEmail = widget.email ??
+        (authUser?.email.isNotEmpty == true ? authUser!.email : '');
+    final initialPhone = widget.contactNumber ?? authUser?.primaryPhone ?? '';
 
     _emailCtrl = TextEditingController(text: initialEmail);
     _whatsappCtrl = TextEditingController(text: initialPhone);
     _smsCtrl = TextEditingController(text: initialPhone);
 
     _startCountdown();
+
+    // Auto-dispatch verification OTP upon arriving at verification gate
+    if (widget.autoSend) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _emailCtrl.text.trim().isNotEmpty) {
+          _sendOtp();
+        }
+      });
+    }
   }
 
   @override
@@ -87,9 +111,9 @@ class _IdentityVerificationScreenState
     super.dispose();
   }
 
-  void _startCountdown() {
+  void _startCountdown([int seconds = 60]) {
     _timer?.cancel();
-    setState(() => _countdown = 60);
+    setState(() => _countdown = seconds);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       if (_countdown > 0) {
@@ -101,6 +125,47 @@ class _IdentityVerificationScreenState
   }
 
   String get _currentPin => _pinControllers.map((c) => c.text).join();
+
+  void _onMethodSelected(VerificationMethod method) {
+    if (method == VerificationMethod.whatsapp) {
+      _showComingSoonDialog('WhatsApp Verification', 'WhatsApp OTP verification is coming soon. Please verify using Email.');
+      return;
+    }
+    if (method == VerificationMethod.sms) {
+      _showComingSoonDialog('Phone Number Verification', 'SMS phone number verification is coming soon. Please verify using Email.');
+      return;
+    }
+    setState(() => _selectedMethod = method);
+  }
+
+  void _showComingSoonDialog(String title, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(title, style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontFamily: 'Inter', fontSize: 14)),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              elevation: 0,
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _onKeypadTap(String value) {
     for (int i = 0; i < 6; i++) {
@@ -131,76 +196,182 @@ class _IdentityVerificationScreenState
     }
   }
 
-  Future<void> _sendOtp() async {
-    setState(() {
-      _isSending = true;
-      _statusMessage = null;
-    });
+  void _handlePinChanged(int index, String value) {
+    if (value.length > 1) {
+      // Paste support: user pasted a 6-digit code or text containing digits
+      final digits = value.replaceAll(RegExp(r'\D'), '');
+      if (digits.isNotEmpty) {
+        for (int i = 0; i < 6 && i < digits.length; i++) {
+          _pinControllers[i].text = digits[i];
+        }
+        final nextIndex = digits.length < 6 ? digits.length : 5;
+        _pinFocusNodes[nextIndex].requestFocus();
+        setState(() {});
+        if (digits.length >= 6) {
+          _verifyAndSubmit();
+        }
+        return;
+      }
+    }
 
-    final email = _emailCtrl.text.trim();
-    final success =
-        await ref.read(authProvider.notifier).sendVerificationEmail(email: email);
+    if (value.isNotEmpty && index < 5) {
+      _pinFocusNodes[index + 1].requestFocus();
+    } else if (value.isEmpty && index > 0) {
+      _pinFocusNodes[index - 1].requestFocus();
+    }
+    setState(() {});
 
-    if (!mounted) return;
-    setState(() {
-      _isSending = false;
-      _statusMessage = success
-          ? 'Verification code dispatched to $email'
-          : 'Failed to send OTP. Please try again.';
-    });
-    _startCountdown();
+    if (_currentPin.length == 6) {
+      _verifyAndSubmit();
+    }
   }
 
-  Future<void> _verifyAndSubmit() async {
-    final code = _currentPin;
-    if (code.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter the full 6-digit OTP.'),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  Future<void> _sendOtp() async {
+    if (_isSending) return;
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _errorMessage = 'Please enter a valid email address.';
+      });
       return;
     }
 
-    setState(() => _isVerifying = true);
+    setState(() {
+      _isSending = true;
+      _errorMessage = null;
+      _statusMessage = null;
+    });
+
+    try {
+      final res = await _apiClient.sendRequestOtp(email: email);
+      final cooldown = (res['cooldown_seconds'] as num?)?.toInt() ?? 60;
+      if (!mounted) return;
+      setState(() {
+        _isSending = false;
+        _statusMessage = 'Verification code dispatched to $email';
+        _errorMessage = null;
+      });
+      _startCountdown(cooldown);
+    } on RequestOtpException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSending = false;
+        _errorMessage = e.message;
+      });
+      if (e.cooldownSeconds != null && e.cooldownSeconds! > 0) {
+        _startCountdown(e.cooldownSeconds!);
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSending = false;
+        _errorMessage = e.message;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSending = false;
+        _errorMessage = 'Network connection failed. Please check your internet connection.';
+      });
+    }
+  }
+
+  Future<void> _verifyAndSubmit() async {
+    if (_isVerifying) return;
+    final code = _currentPin;
+    if (code.length < 6) {
+      setState(() {
+        _errorMessage = 'Please enter the full 6-digit verification code.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isVerifying = true;
+      _errorMessage = null;
+    });
 
     final email = _emailCtrl.text.trim();
-    // Verify against backend
-    final ok = await ref.read(authProvider.notifier).verifyEmailCode(
-          code: code,
-          email: email,
+    String? submitToken;
+
+    try {
+      submitToken = await _apiClient.verifyRequestOtp(
+        code: code,
+        email: email,
+      );
+    } on RequestOtpException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = e.message;
+      });
+      for (final c in _pinControllers) {
+        c.clear();
+      }
+      _pinFocusNodes[0].requestFocus();
+      return;
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = e.message;
+      });
+      for (final c in _pinControllers) {
+        c.clear();
+      }
+      _pinFocusNodes[0].requestFocus();
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Network connection failed. Please check your internet connection.';
+      });
+      return;
+    }
+
+    // After the correct email OTP, the request is sent with the submit_token
+    try {
+      bool submitSuccess = false;
+      if (widget.emergencyPayload != null) {
+        final payload = Map<String, dynamic>.from(widget.emergencyPayload!);
+        payload['submit_token'] = submitToken;
+        final res = await ref.read(bloodHubApiServiceProvider).createEmergencyRequest(payload);
+        submitSuccess = res.containsKey('id');
+      } else if (widget.patientName != null && widget.bloodGroup != null) {
+        submitSuccess = await ref.read(bloodRequestProvider.notifier).createRequest(
+          patientName: widget.patientName!,
+          bloodGroup: widget.bloodGroup!,
+          urgencyLevel: widget.urgencyLevel ?? 'Critical',
+          hospitalLocation: widget.hospitalLocation ?? 'City General Hospital',
+          contactNumber: widget.contactNumber ??
+              ref.read(authProvider).user?.primaryPhone ??
+              '',
+          submitToken: submitToken,
         );
-
-    if (!mounted) return;
-
-    if (ok) {
-      // If we received blood request details, create request
-      if (widget.patientName != null && widget.bloodGroup != null) {
-        await ref.read(bloodRequestProvider.notifier).createRequest(
-              patientName: widget.patientName!,
-              bloodGroup: widget.bloodGroup!,
-              urgencyLevel: widget.urgencyLevel ?? 'Critical',
-              hospitalLocation: widget.hospitalLocation ?? 'City General Hospital',
-              contactNumber: widget.contactNumber ??
-                  ref.read(authProvider).user?.primaryPhone ??
-                  '',
-            );
-        if (!mounted) return;
+      } else {
+        submitSuccess = true;
       }
 
+      if (!mounted) return;
       setState(() => _isVerifying = false);
+
+      if (!submitSuccess) {
+        final err = ref.read(bloodRequestProvider).errorMessage ?? 'Failed to submit blood request.';
+        setState(() {
+          _errorMessage = err;
+        });
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Identity verified successfully!'),
+          content: Text('Identity verified! Request broadcasted successfully.', style: TextStyle(fontFamily: 'Inter')),
           backgroundColor: Color(0xFF1B8A4E),
           behavior: SnackBarBehavior.floating,
         ),
       );
 
-      // Navigate straight into Screen 6 (Live Dispatch & Step Tracking)
       if (mounted) {
         context.go(
           widget.returnRoute,
@@ -213,17 +384,12 @@ class _IdentityVerificationScreenState
           },
         );
       }
-    } else {
-      setState(() => _isVerifying = false);
-      final error = ref.read(authProvider).errorMessage ??
-          'Invalid or expired code. (Tip: Demo code is 421234)';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorMessage = 'Request submission failed: $e';
+      });
     }
   }
 
@@ -255,13 +421,15 @@ class _IdentityVerificationScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Identity Verification',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2B2B2B),
+                      const Expanded(
+                        child: Text(
+                          'Identity Verification',
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2B2B2B),
+                          ),
                         ),
                       ),
                       TextButton.icon(
@@ -273,7 +441,7 @@ class _IdentityVerificationScreenState
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'To ensure patient safety, please verify your identity via OTP. This is required for users without a verified NID/Birth Certificate.',
+                    'To protect patient safety and prevent fake requests, please verify your identity via email OTP before broadcasting.',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 13,
@@ -283,7 +451,7 @@ class _IdentityVerificationScreenState
                   ),
                   const SizedBox(height: 24),
 
-                  // Method Switcher (Email / WhatsApp / SMS)
+                  // Method Switcher (Email / WhatsApp / Phone)
                   const Text(
                     'Select Verification Method',
                     style: TextStyle(
@@ -315,8 +483,8 @@ class _IdentityVerificationScreenState
                         ),
                         _buildMethodTab(
                           method: VerificationMethod.sms,
-                          icon: Icons.sms_outlined,
-                          label: 'SMS',
+                          icon: Icons.phone_android_rounded,
+                          label: 'Phone',
                         ),
                       ],
                     ),
@@ -359,6 +527,39 @@ class _IdentityVerificationScreenState
                     ),
                   ],
 
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFECEE),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                            color: const Color(0xFFC30121).withAlpha(60)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded,
+                              size: 18, color: Color(0xFFC30121)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFC30121),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 24),
 
                   // 6-Digit PIN Boxes
@@ -381,7 +582,7 @@ class _IdentityVerificationScreenState
                   // Resend Timer
                   Center(
                     child: GestureDetector(
-                      onTap: _countdown == 0 ? _sendOtp : null,
+                      onTap: (_countdown == 0 && !_isSending) ? _sendOtp : null,
                       child: Text(
                         _countdown > 0
                             ? 'Resend code in 00:${_countdown.toString().padLeft(2, '0')}'
@@ -440,7 +641,7 @@ class _IdentityVerificationScreenState
     final isActive = _selectedMethod == method;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedMethod = method),
+        onTap: () => _onMethodSelected(method),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
@@ -474,32 +675,12 @@ class _IdentityVerificationScreenState
   }
 
   Widget _buildMethodInputSection() {
-    String label = 'Email Address';
-    String hint = 'Enter your email';
-    IconData icon = Icons.mail_outline_rounded;
-    TextEditingController ctrl = _emailCtrl;
-    TextInputType keyboard = TextInputType.emailAddress;
-
-    if (_selectedMethod == VerificationMethod.whatsapp) {
-      label = 'WhatsApp Number';
-      hint = 'Enter WhatsApp phone number';
-      icon = Icons.chat_bubble_outline_rounded;
-      ctrl = _whatsappCtrl;
-      keyboard = TextInputType.phone;
-    } else if (_selectedMethod == VerificationMethod.sms) {
-      label = 'Phone Number';
-      hint = 'Enter SMS phone number';
-      icon = Icons.phone_android_rounded;
-      ctrl = _smsCtrl;
-      keyboard = TextInputType.phone;
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
+        const Text(
+          'Email Address',
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -517,20 +698,20 @@ class _IdentityVerificationScreenState
           ),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: const Color(0xFF888888)),
+              const Icon(Icons.mail_outline_rounded, size: 20, color: Color(0xFF888888)),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
-                  controller: ctrl,
-                  keyboardType: keyboard,
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     color: Color(0xFF2B2B2B),
                   ),
-                  decoration: InputDecoration(
-                    hintText: hint,
-                    hintStyle: const TextStyle(
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your email address',
+                    hintStyle: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 13,
                       color: Color(0xFF999999),
@@ -542,7 +723,7 @@ class _IdentityVerificationScreenState
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: _isSending ? null : _sendOtp,
+                onPressed: (_isSending || _countdown > 0) ? null : _sendOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF004B7E),
                   foregroundColor: Colors.white,
@@ -562,9 +743,9 @@ class _IdentityVerificationScreenState
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Send OTP',
-                        style: TextStyle(
+                    : Text(
+                        _countdown > 0 ? '${_countdown}s' : 'Send Code',
+                        style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -579,19 +760,21 @@ class _IdentityVerificationScreenState
   }
 
   Widget _buildPinRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(6, (index) {
-        final isFilled = _pinControllers[index].text.isNotEmpty;
-        return SizedBox(
-          width: 46,
-          height: 54,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final boxWidth = ((constraints.maxWidth - 40) / 6).clamp(34.0, 48.0);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(6, (index) {
+            final isFilled = _pinControllers[index].text.isNotEmpty;
+            return SizedBox(
+              width: boxWidth,
+              height: 54,
           child: TextField(
             controller: _pinControllers[index],
             focusNode: _pinFocusNodes[index],
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            maxLength: 1,
             style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 20,
@@ -620,17 +803,12 @@ class _IdentityVerificationScreenState
                 ),
               ),
             ),
-            onChanged: (val) {
-              if (val.isNotEmpty && index < 5) {
-                _pinFocusNodes[index + 1].requestFocus();
-              } else if (val.isEmpty && index > 0) {
-                _pinFocusNodes[index - 1].requestFocus();
-              }
-              setState(() {});
-            },
+            onChanged: (val) => _handlePinChanged(index, val),
           ),
         );
       }),
+    );
+      },
     );
   }
 

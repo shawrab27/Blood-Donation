@@ -113,6 +113,7 @@ class BloodRequestNotifier extends StateNotifier<BloodRequestState> {
     required String urgencyLevel,
     required String hospitalLocation,
     required String contactNumber,
+    String? submitToken,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     final payload = {
@@ -121,6 +122,7 @@ class BloodRequestNotifier extends StateNotifier<BloodRequestState> {
       'urgency_level': urgencyLevel,
       'hospital_location': hospitalLocation,
       'contact_number': contactNumber,
+      if (submitToken != null && submitToken.isNotEmpty) 'submit_token': submitToken,
     };
 
     try {

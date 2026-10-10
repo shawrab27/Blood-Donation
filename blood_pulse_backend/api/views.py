@@ -318,6 +318,16 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), IsProfileComplete()]
         return [IsAuthenticated(), IsProfileComplete()]
 
+    def create(self, request, *args, **kwargs):
+        submit_token = request.data.get('submit_token') or request.headers.get('X-Submit-Token')
+        from api.views_request_otp import validate_and_consume_submit_token
+        if not validate_and_consume_submit_token(request.user, submit_token):
+            return Response(
+                {"detail": "A valid unused submit_token is required to submit a blood request."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         profile = getattr(self.request.user, 'donorprofile', None)
         if not profile:

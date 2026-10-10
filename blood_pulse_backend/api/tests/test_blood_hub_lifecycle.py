@@ -119,6 +119,8 @@ class BloodHubLifecycleTests(TestCase):
             transition(req, 'DONATED', self.requester_user)
 
     def test_request_create_flow(self):
+        from api.tests.helpers import obtain_submit_token_via_flow
+        token = obtain_submit_token_via_flow(self.client, self.requester_user)
         self.client.force_authenticate(user=self.requester_user)
         res = self.client.post('/api/requests/', {
             'blood_group': 'A+',
@@ -127,6 +129,7 @@ class BloodHubLifecycleTests(TestCase):
             'urgency': 'CRITICAL_2H',
             'contact_phone': '+8801711111111',
             'patient_name': 'Rahim Uddin',
+            'submit_token': token,
         }, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         req_id = res.data['id']

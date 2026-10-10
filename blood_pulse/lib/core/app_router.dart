@@ -279,19 +279,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return StandbyOfferScreen(offerId: offerId);
       },
     ),
-    // /identity/verify — Email OTP verification (Prompt 5 scope; strictly 6-digit email OTP)
+    // /identity/verify — Email OTP verification (Phase 3 multi-channel OTP gate)
     GoRoute(
       path: '/identity/verify',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        return EmailOtpScreen(
-          requestId: (extra?['requestId'] as num?)?.toInt(),
+        return IdentityVerificationScreen(
           patientName: extra?['patientName'] as String?,
           bloodGroup: extra?['bloodGroup'] as String?,
           urgencyLevel: extra?['urgencyLevel'] as String?,
           hospitalLocation: extra?['hospitalLocation'] as String?,
           contactNumber: extra?['contactNumber'] as String?,
           email: extra?['email'] as String?,
+          condition: extra?['condition'] as String?,
+          emergencyPayload: extra?['emergencyPayload'] as Map<String, dynamic>?,
           returnRoute: extra?['returnRoute'] as String? ?? '/blood-hub/poster',
         );
       },
@@ -462,6 +463,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           urgencyLevel: extra?['urgencyLevel'] as String?,
           hospitalLocation: extra?['hospitalLocation'] as String?,
           contactNumber: extra?['contactNumber'] as String?,
+          email: extra?['email'] as String?,
+          condition: extra?['condition'] as String?,
+          emergencyPayload: extra?['emergencyPayload'] as Map<String, dynamic>?,
           returnRoute: extra?['returnRoute'] as String? ?? '/live-dispatch',
         );
       },

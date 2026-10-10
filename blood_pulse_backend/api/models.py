@@ -634,56 +634,52 @@ class StandbyOffer(models.Model):
 
 
 class EmailOTP(models.Model):
-
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='email_otps')
     email = models.EmailField()
-
     otp_hash = models.CharField(max_length=64) # HMAC-SHA256 of 6-digit code
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     expires_at = models.DateTimeField()
-
     attempts = models.PositiveIntegerField(default=0)
-
     is_used = models.BooleanField(default=False)
-
     purpose = models.CharField(max_length=50, default='request_submit')
-
     last_sent_at = models.DateTimeField(auto_now_add=True, null=True)
-
     request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, null=True, blank=True, related_name='email_otps')
 
-
-
     class Meta:
-
         ordering = ['-created_at']
 
-
-
     def is_locked(self):
-
         return self.attempts >= 5
 
-
-
     def resend_cooldown_passed(self, cooldown_seconds=60):
-
         if not self.last_sent_at:
-
             return True
-
         from django.utils import timezone
-
         from datetime import timedelta
-
         return timezone.now() >= self.last_sent_at + timedelta(seconds=cooldown_seconds)
 
+    def __str__(self):
+        return f"OTP for {self.email} ({self.purpose}, Used: {self.is_used}, Locked: {self.is_locked()})"
 
+
+class RequestSubmitToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submit_tokens')
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    purpose = models.CharField(max_length=50, default='blood_request_submit')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def is_valid(self):
+        from django.utils import timezone
+        return not self.is_used and timezone.now() <= self.expires_at
 
     def __str__(self):
-
-        return f"OTP for {self.email} ({self.purpose}, Used: {self.is_used}, Locked: {self.is_locked()})"
+        return f"SubmitToken for {self.user.username} ({self.purpose}, used: {self.is_used})"
 
 
 

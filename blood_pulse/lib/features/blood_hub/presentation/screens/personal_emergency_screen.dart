@@ -273,31 +273,22 @@ class _PersonalEmergencyScreenState
           'requisition_slip_b64': base64Encode(_slipBytes!),
       };
 
-      final result = await ref
-          .read(bloodHubApiServiceProvider)
-          .createEmergencyRequest(payload);
-
-      if (!mounted) return;
-      final requestId = result['id']?.toString();
-      if (requestId != null) {
-        context.go('/journeys/$requestId');
-      } else {
-        context.go('/emergency/personal');
-      }
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      if (e.statusCode == 401) {
-        RegistrationGatePopup.show(
-          context,
-          isGuest: true,
-          targetRoute: '/emergency/personal',
-        );
-      } else {
-        _showError(e.message);
-      }
+      final hospitalLoc = _selectedHospital?.name ?? _hospitalController.text.trim();
+      context.push(
+        '/identity-verification',
+        extra: {
+          'patientName': _patientNameController.text.trim(),
+          'bloodGroup': _bloodGroup,
+          'urgencyLevel': _urgency,
+          'hospitalLocation': hospitalLoc,
+          'contactNumber': _contactController.text.trim(),
+          'emergencyPayload': payload,
+          'returnRoute': '/journeys',
+        },
+      );
     } catch (e) {
       if (!mounted) return;
-      _showError('Failed to submit request: $e');
+      _showError('Failed to prepare request: $e');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -1073,7 +1064,7 @@ class _PersonalEmergencyScreenState
                           ),
                         )
                       : const Text(
-                          'Broadcast Alert',
+                          'Confirm Submit',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w700,
