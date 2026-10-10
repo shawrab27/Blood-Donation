@@ -103,18 +103,13 @@ def verify_otp_hash(code: str, expected_hash: str, email: str = "") -> bool:
     return hmac.compare_digest(computed_hash, expected_hash)
 
 
-class EmailSender:
-    def send_email(self, to_email: str, subject: str, text_content: str, html_content: str = None) -> bool:
-        raise NotImplementedError
-
-
-class ConsoleEmailSender(EmailSender):
-    def send_email(self, to_email: str, subject: str, text_content: str, html_content: str = None) -> bool:
-        logger.info(f"[CONSOLE EMAIL] To: {to_email} | Subject: {subject} | Body: {text_content}")
-        return True
-
-
-def get_email_sender() -> EmailSender:
-    return ConsoleEmailSender()
+from api.services.email_sender import (
+    EmailSender,
+    LocMemEmailSender,
+    ConsoleEmailSender,
+    BrevoApiEmailSender,
+    EmailProviderError,
+    get_email_sender,
+)
 
 

@@ -131,12 +131,12 @@ WSGI_APPLICATION = 'blood_pulse_backend.wsgi.application'
 # When DJANGO_ENV != 'dev', uses DATABASE_URL from .env.
 DJANGO_ENV = os.environ.get('DJANGO_ENV', '')
 
-if DJANGO_ENV == 'dev':
+if DJANGO_ENV in ('dev', 'test') or os.environ.get('USE_SQLITE') == '1':
     env_dev_path = BASE_DIR / '.env.dev'
     if env_dev_path.exists():
         load_dotenv(env_dev_path, override=True)
 
-    dev_db_url = os.environ.get('DATABASE_URL_DEV')
+    dev_db_url = os.environ.get('DATABASE_URL_DEV') if DJANGO_ENV != 'test' and os.environ.get('USE_SQLITE') != '1' else None
     if dev_db_url:
         DATABASES = {
             'default': dj_database_url.parse(dev_db_url, conn_max_age=600)
@@ -202,20 +202,44 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email Configuration (Brevo / SendGrid SMTP with console fallback)
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp-relay.brevo.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'BloodPulse <no-reply@bloodpulse.org>')
+# Email Configuration: brevo_api | console | locmem
+# prod = brevo_api; tests = locmem; console allowed in dev only and refused in prod
+EMAIL_PROVIDER = os.getenv('EMAIL_PROVIDER', '').strip().lower()
+DJANGO_ENV = os.getenv('DJANGO_ENV', '').strip().lower()
 
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    USE_SMTP_EMAIL = True
-else:
+# Defaults based on environment if EMAIL_PROVIDER is not explicitly specified
+if not EMAIL_PROVIDER:
+    if DJANGO_ENV == 'test' or 'test' in sys.argv:
+        EMAIL_PROVIDER = 'locmem'
+    elif DJANGO_ENV == 'production':
+        EMAIL_PROVIDER = 'brevo_api'
+    else:
+        EMAIL_PROVIDER = 'console'
+
+if EMAIL_PROVIDER == 'console' and DJANGO_ENV == 'production':
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("EMAIL_PROVIDER=console is not allowed in production.")
+
+if EMAIL_PROVIDER not in ('brevo_api', 'console', 'locmem'):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(f"Unknown EMAIL_PROVIDER '{EMAIL_PROVIDER}'. Must be brevo_api, console, or locmem.")
+
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
+BREVO_SENDER_EMAIL = os.getenv('BREVO_SENDER_EMAIL', os.getenv('EMAIL_FROM', 'no-reply@bloodpulse.org'))
+BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'BloodPulse')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f"{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>")
+
+if EMAIL_PROVIDER == 'locmem':
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    USE_SMTP_EMAIL = False
+elif EMAIL_PROVIDER == 'console':
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     USE_SMTP_EMAIL = False
+else:
+    # brevo_api
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    USE_SMTP_EMAIL = False
+
 
 
 FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc=')

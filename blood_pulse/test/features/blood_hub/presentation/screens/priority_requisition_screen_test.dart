@@ -35,7 +35,8 @@ void main() {
     expect(find.text('Location & Urgency'), findsOneWidget);
     expect(find.text('Hospital Location'), findsOneWidget);
     expect(find.text('Medical Verification'), findsOneWidget);
-    expect(find.text('Submit Request'), findsOneWidget);
+    expect(find.text('Create Poster'), findsOneWidget);
+    expect(find.text('Confirm Submit'), findsOneWidget);
   });
 
   testWidgets('PriorityBloodRequisitionScreen shows validation errors when submitted empty', (tester) async {
@@ -56,11 +57,12 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Scroll to and tap Submit Request
-    final submitFinder = find.text('Submit Request');
+    // Scroll to and tap Confirm Submit
+    final submitFinder = find.text('Confirm Submit');
     await tester.ensureVisible(submitFinder);
     await tester.tap(submitFinder);
     await tester.pumpAndSettle();
+
 
     expect(find.text('Patient name is required'), findsOneWidget);
     expect(find.text('Condition is required'), findsOneWidget);

@@ -9,6 +9,7 @@ Handles search, map, hospital directory, request creation, wave progression, and
 
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -309,8 +310,8 @@ def emergency_requests_list_create_view(request):
             return Response(detail_serializer.data, status=status.HTTP_200_OK)
 
     submit_token = request.data.get('submit_token') or request.headers.get('X-Submit-Token')
-    from api.views_request_otp import validate_and_consume_submit_token
-    if not validate_and_consume_submit_token(request.user, submit_token):
+    from api.views_request_otp import check_submit_token, validate_and_consume_submit_token
+    if not check_submit_token(request.user, submit_token):
         return Response(
             {'detail': 'A valid unused submit_token is required to submit a blood request.'},
             status=status.HTTP_403_FORBIDDEN,
@@ -387,40 +388,47 @@ def emergency_requests_list_create_view(request):
     next_wave_at = now + timedelta(minutes=wave1_mins)
     expires_at = now + timedelta(hours=24) # 24h default expiration
 
-    blood_req = BloodRequest.objects.create(
-        requester=requester,
-        patient_name=patient_name,
-        blood_group=blood_group,
-        mode=request.data.get('mode', 'EMERGENCY'),
-        component=component,
-        units_needed=units_needed,
-        urgency=urgency,
-        urgency_level=urgency,
-        condition_category=condition_category,
-        condition_note=condition_note,
-        scope=requested_scope,
-        effective_scope=effective_scope,
-        district=district or (hospital.district if hospital else ''),
-        hospital=hospital,
-        hospital_location=hospital.name if hospital else (hospital_name_other or 'Hospital'),
-        hospital_name_other=hospital_name_other,
-        ward_bed=ward_bed,
-        attendant_name=attendant_name,
-        contact_phone=contact_phone,
-        contact_number=contact_phone,
-        lat=float(lat) if lat is not None else None,
-        lng=float(lng) if lng is not None else None,
-        requisition_slip=requisition_slip,
-        patient_photo=patient_photo,
-        trust_score=trust_score,
-        trust_band=trust_band,
-        status='ACTIVE',
-        current_wave=1,
-        next_wave_at=next_wave_at,
-        expires_at=expires_at,
-        client_request_id=client_request_id,
-        is_drill=bool(request.data.get('is_drill', False)),
-    )
+    with transaction.atomic():
+        if not validate_and_consume_submit_token(request.user, submit_token):
+            return Response(
+                {'detail': 'A valid unused submit_token is required to submit a blood request.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        blood_req = BloodRequest.objects.create(
+            requester=requester,
+            patient_name=patient_name,
+            blood_group=blood_group,
+            mode=request.data.get('mode', 'EMERGENCY'),
+            component=component,
+            units_needed=units_needed,
+            urgency=urgency,
+            urgency_level=urgency,
+            condition_category=condition_category,
+            condition_note=condition_note,
+            scope=requested_scope,
+            effective_scope=effective_scope,
+            district=district or (hospital.district if hospital else ''),
+            hospital=hospital,
+            hospital_location=hospital.name if hospital else (hospital_name_other or 'Hospital'),
+            hospital_name_other=hospital_name_other,
+            ward_bed=ward_bed,
+            attendant_name=attendant_name,
+            contact_phone=contact_phone,
+            contact_number=contact_phone,
+            lat=float(lat) if lat is not None else None,
+            lng=float(lng) if lng is not None else None,
+            requisition_slip=requisition_slip,
+            patient_photo=patient_photo,
+            trust_score=trust_score,
+            trust_band=trust_band,
+            status='ACTIVE',
+            current_wave=1,
+            next_wave_at=next_wave_at,
+            expires_at=expires_at,
+            client_request_id=client_request_id,
+            is_drill=bool(request.data.get('is_drill', False)),
+        )
 
     # Trigger Wave 1 notification dispatch if mode is EMERGENCY
     if blood_req.mode == 'EMERGENCY':

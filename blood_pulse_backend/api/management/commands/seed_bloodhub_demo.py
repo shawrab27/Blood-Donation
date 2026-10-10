@@ -12,15 +12,41 @@ from django.utils import timezone
 from datetime import timedelta
 import datetime
 
+import os
+import secrets
+
 User = get_user_model()
 
 class Command(BaseCommand):
     help = 'Seeds BloodHub with demo data for end-to-end testing.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--i-understand-this-creates-fake-users',
+            action='store_true',
+            dest='confirm_fake_users',
+            help='Explicit acknowledgment that fake users will be created in the database.',
+        )
+
     def handle(self, *args, **options):
-        if not settings.DEBUG:
-            self.stdout.write(self.style.ERROR("Refusing to seed demo data when DEBUG is False."))
+        django_env = os.environ.get('DJANGO_ENV', '').strip().lower()
+        if django_env not in ('dev', 'test'):
+            self.stdout.write(self.style.ERROR(
+                f"Refusing to seed demo data when DJANGO_ENV is '{django_env}'. Must be 'dev' or 'test'."
+            ))
             return
+
+        if not options.get('confirm_fake_users'):
+            self.stdout.write(self.style.ERROR(
+                "Refusing to seed demo data. You must pass '--i-understand-this-creates-fake-users' flag."
+            ))
+            return
+
+        # Generate a random password printed once
+        generated_password = secrets.token_urlsafe(16)
+        self.stdout.write(self.style.WARNING(
+            f"Generated one-time demo password for seeded users: {generated_password}"
+        ))
 
         self.stdout.write(self.style.WARNING("Starting demo data seed..."))
 
@@ -73,12 +99,13 @@ class Command(BaseCommand):
                 }
             )
             if u_created:
-                user.set_password('demo1234')
+                user.set_password(generated_password)
                 user.save()
             else:
                 user.first_name = first
                 user.last_name = last
                 user.save()
+
             
             profile, p_created = DonorProfile.objects.update_or_create(
                 user=user,

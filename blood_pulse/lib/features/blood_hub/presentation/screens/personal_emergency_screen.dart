@@ -827,16 +827,17 @@ class _PersonalEmergencyScreenState
     );
   }
 
-  // ── Main build ────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ResponsiveCenterWrapper(
-        maxWidth: 560,
-        child: Column(
-          children: [
-            Expanded(
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDF3F3),
+      body: SafeArea(
+        child: ResponsiveCenterWrapper(
+          maxWidth: 560,
+          child: Column(
+            children: [
+              Expanded(
+
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 child: Form(
@@ -1078,8 +1079,10 @@ class _PersonalEmergencyScreenState
         ),
       ),
     ],
-  ),
+          ),
+        ),
       ),
     );
   }
 }
+

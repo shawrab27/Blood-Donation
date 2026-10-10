@@ -58,7 +58,7 @@ class GeoServiceTests(TestCase):
         for _ in range(200):
             lat = random.uniform(20.5, 26.5)
             lon = random.uniform(88.0, 92.5)
-            for prec in [4, 5, 6, 7, 9]:
+            for prec in [4, 5, 6, 7, 9, 12]:
                 self.assertEqual(
                     encode_geohash(lat, lon, precision=prec),
                     geohash2.encode(lat, lon, precision=prec)

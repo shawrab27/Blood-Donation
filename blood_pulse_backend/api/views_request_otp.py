@@ -35,6 +35,24 @@ from api.throttles import OTPAnonThrottle, OTPUserThrottle
 logger = logging.getLogger(__name__)
 
 
+def check_submit_token(user, submit_token: str, purpose: str = 'blood_request_submit') -> bool:
+    """
+    Checks if submit_token is valid, unexpired, and unused without consuming it.
+    """
+    if not submit_token or not user or not user.is_authenticated:
+        return False
+
+    token_hash = hashlib.sha256(submit_token.strip().encode('utf-8')).hexdigest()
+    now = timezone.now()
+    return RequestSubmitToken.objects.filter(
+        token_hash=token_hash,
+        user=user,
+        purpose=purpose,
+        is_used=False,
+        expires_at__gte=now,
+    ).exists()
+
+
 def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'blood_request_submit') -> bool:
     """
     Validates and atomically consumes a single-use submit_token.
@@ -112,6 +130,37 @@ def request_otp_send_view(request):
                 'cooldown_seconds': wait_seconds,
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
+    # Generate 6-digit numeric OTP & HMAC-SHA256 hash
+    code = generate_secure_otp(length=6)
+    code_hash = hash_otp(code, email)
+    expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
+
+    # Dispatch email via configured EmailSender (Brevo REST API in prod, LocMem in tests)
+    from api.services.email import get_email_sender, EmailProviderError
+    email_sender = get_email_sender()
+    subject = f"{code} is your BloodPulse verification code"
+    message = (
+        f"Your BloodPulse verification code is: {code}\n\n"
+        f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.\n"
+        f"If you did not request this code, please ignore this email."
+    )
+
+    try:
+        email_sender.send_email(to_email=email, subject=subject, text_content=message)
+    except EmailProviderError as exc:
+        logger.error("Email provider error dispatching OTP to %s: %s", email, exc)
+        return Response(
+            {'error': 'Email delivery service temporarily unavailable. Please try again shortly.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except Exception as exc:
+        logger.error("Failed to send request OTP email to %s: %s", email, exc)
+        return Response(
+            {'error': 'Failed to send verification code. Please try again shortly.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+
     # Invalidate older unused OTPs for this user and purpose
     EmailOTP.objects.filter(
         user=user,
@@ -119,11 +168,7 @@ def request_otp_send_view(request):
         is_used=False,
     ).update(is_used=True)
 
-    # Generate 6-digit numeric OTP & HMAC-SHA256 hash
-    code = generate_secure_otp(length=6)
-    code_hash = hash_otp(code, email)
-    expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
-
+    # Save OTP record with last_sent_at now that sending succeeded
     EmailOTP.objects.create(
         user=user,
         email=email,
@@ -133,28 +178,13 @@ def request_otp_send_view(request):
         last_sent_at=now,
     )
 
-    # Dispatch email via Django email system (in tests: outbox; in prod: Brevo/SMTP)
-    try:
-        send_mail(
-            subject=f"{code} is your BloodPulse verification code",
-            message=(
-                f"Your BloodPulse verification code is: {code}\n\n"
-                f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.\n"
-                f"If you did not request this code, please ignore this email."
-            ),
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@bloodpulse.org'),
-            recipient_list=[email],
-            fail_silently=False,
-        )
-    except Exception as exc:
-        logger.error("Failed to send request OTP email to %s: %s", email, exc)
-
     return Response({
         'status': 'otp_sent',
         'email': email,
         'cooldown_seconds': OTP_RESEND_COOLDOWN_SECONDS,
         'expires_in_minutes': OTP_EXPIRY_MINUTES,
     }, status=status.HTTP_200_OK)
+
 
 
 @api_view(['POST'])

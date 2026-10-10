@@ -13,6 +13,8 @@ import '../widgets/requisition/patient_details_card.dart';
 import '../widgets/requisition/location_urgency_card.dart';
 import '../widgets/requisition/medical_verification_card.dart';
 import '../widgets/requisition/requisition_mode_toggle.dart';
+import '../../domain/entities/poster_template.dart';
+
 
 /// Screen 3: Priority Blood Requisition form conforming to Stitch UI specification.
 class PriorityBloodRequisitionScreen extends ConsumerStatefulWidget {
@@ -212,28 +214,81 @@ class _PriorityBloodRequisitionScreenState
   }
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isSubmitting ? null : _submitRequisition,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFC30121),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          elevation: 0,
-        ),
-        child: _isSubmitting
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : const Text(
-                'Submit Request',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold),
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
+                shape: const StadiumBorder(),
               ),
-      ),
+              onPressed: () {
+                final hospital = _selectedHospital?.name ?? _hospitalController.text.trim();
+                final posterData = PosterData(
+                  patientName: _nameController.text.trim().isNotEmpty
+                      ? _nameController.text.trim()
+                      : 'Emergency Patient',
+                  bloodGroup: _selectedBloodGroup ?? 'B+',
+                  location: hospital.isNotEmpty ? hospital : 'Dhaka',
+                  unitsNeeded: 1,
+                  urgencyLevel: _urgencyLevel,
+                  condition: _conditionController.text.trim().isNotEmpty
+                      ? _conditionController.text.trim()
+                      : 'Medical Emergency',
+                  hospitalName: hospital.isNotEmpty ? hospital : null,
+                  contactNumber: _contactController.text.trim().isNotEmpty
+                      ? _contactController.text.trim()
+                      : null,
+                  photoBytes: _patientPhotoBytes,
+                );
+                context.push('/blood-hub/poster', extra: posterData);
+              },
+              icon: const Icon(Icons.palette_outlined, color: Color(0xFFC30121), size: 18),
+              label: const Text(
+                'Create Poster',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: Color(0xFFC30121),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitRequisition,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC30121),
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(),
+                elevation: 0,
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text(
+                      'Confirm Submit',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
+
 }

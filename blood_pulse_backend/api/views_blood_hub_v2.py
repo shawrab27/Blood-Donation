@@ -8,6 +8,7 @@ Enforces object-level permissions, throttles, and delegates business logic to se
 
 import os
 from django.conf import settings
+from django.db import transaction
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -50,15 +51,21 @@ class BloodRequestCreateV2APIView(APIView):
 
     def post(self, request):
         submit_token = request.data.get('submit_token') or request.headers.get('X-Submit-Token')
-        from api.views_request_otp import validate_and_consume_submit_token
-        if not validate_and_consume_submit_token(request.user, submit_token):
+        from api.views_request_otp import check_submit_token, validate_and_consume_submit_token
+        if not check_submit_token(request.user, submit_token):
             return Response(
                 {"detail": "A valid unused submit_token is required to submit a blood request."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         serializer = BloodRequestCreateV2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        req = create_draft_request(request.user, serializer.validated_data)
+        with transaction.atomic():
+            if not validate_and_consume_submit_token(request.user, submit_token):
+                return Response(
+                    {"detail": "A valid unused submit_token is required to submit a blood request."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            req = create_draft_request(request.user, serializer.validated_data)
         return Response(BloodRequestCreateV2Serializer(req).data, status=status.HTTP_201_CREATED)
 
 

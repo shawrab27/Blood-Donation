@@ -137,6 +137,62 @@ class RequestOTPAndSubmitTokenTests(TestCase):
         res_reuse = self.client.post('/api/requests/', payload_with_token, format='json')
         self.assertEqual(res_reuse.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_submit_token_not_burned_on_validation_error(self):
+        """Invalid payload does not consume submit_token; token remains usable until success."""
+        self.client.force_authenticate(user=self.user)
+
+        # Issue a real submit_token
+        self.client.post('/api/requests/otp/send/', {'email': 'requester@example.com'}, format='json')
+        otp_rec = EmailOTP.objects.filter(user=self.user, purpose='blood_request_submit', is_used=False).first()
+        test_code = '112233'
+        otp_rec.otp_hash = hash_otp(test_code, otp_rec.email)
+        otp_rec.save()
+
+        res_v = self.client.post('/api/requests/otp/verify/', {'code': test_code}, format='json')
+        token = res_v.data['submit_token']
+
+        # 1. Submit with invalid payload (missing required fields e.g. blood_group)
+        bad_payload = {
+            'patient_name': 'Patient Error',
+            # missing blood_group or invalid blood_group
+            'blood_group': '',
+            'units_needed': 1,
+            'hospital': self.hospital.id,
+            'urgency': 'CRITICAL_2H',
+            'contact_phone': '+8801711111111',
+            'ward_bed': 'Ward 1',
+            'submit_token': token,
+        }
+        res_fail = self.client.post('/api/requests/', bad_payload, format='json')
+        self.assertEqual(res_fail.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Check token is still NOT used in database
+        token_hash = RequestSubmitToken.objects.filter(user=self.user, is_used=False).first()
+        self.assertIsNotNone(token_hash)
+        self.assertFalse(token_hash.is_used)
+
+        # 2. Re-submit valid payload using the SAME token -> Succeeds 201 Created
+        good_payload = {
+            'patient_name': 'Patient Success',
+            'blood_group': 'O+',
+            'units_needed': 1,
+            'hospital': self.hospital.id,
+            'urgency': 'CRITICAL_2H',
+            'contact_phone': '+8801711111111',
+            'ward_bed': 'Ward 1',
+            'submit_token': token,
+        }
+        res_ok = self.client.post('/api/requests/', good_payload, format='json')
+        self.assertEqual(res_ok.status_code, status.HTTP_201_CREATED)
+
+        # Check token IS consumed now
+        token_hash.refresh_from_db()
+        self.assertTrue(token_hash.is_used)
+
+        # 3. Third attempt with same token -> 403 Forbidden
+        res_reuse = self.client.post('/api/requests/', good_payload, format='json')
+        self.assertEqual(res_reuse.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_forgot_password_google_only_account(self):
         """Google user without usable password receives 'Please use Google sign-in.'."""
         google_user = User.objects.create_user(

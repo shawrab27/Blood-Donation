@@ -49,7 +49,7 @@ import 'package:blood_pulse/features/blood_hub/presentation/screens/poster_gener
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import '../features/blood_hub/presentation/screens/thank_you_letter_screen.dart';
 import '../features/blood_hub/presentation/screens/follow_up_screen.dart';
-import '../features/blood_hub/presentation/screens/email_otp_screen.dart';
+
 
 // Health Hub 7 Sub-Screens
 import '../features/health_hub/presentation/screens/ai_report_analysis_screen.dart';

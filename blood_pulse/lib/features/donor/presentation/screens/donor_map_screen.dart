@@ -963,9 +963,10 @@ class _DonorMapScreenState extends State<DonorMapScreen>
 
   // ── 2. Requester View Bottom Panel (Tracking Incoming Donor) ──────────────
   Widget _buildRequesterTrackingPanel(double distanceKm, int etaMinutes) {
-    final donorName = widget.donorName ?? 'Rahim Chowdhury';
-    final donorPhone = widget.donorPhone ?? '01712345678';
+    final donorName = widget.donorName ?? 'Hero Donor';
+    final donorPhone = widget.donorPhone?.trim() ?? '';
     final bg = widget.bloodGroup ?? 'O+';
+
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1124,33 +1125,36 @@ class _DonorMapScreenState extends State<DonorMapScreen>
           // Direct Actions: Call Donor & Chat with Donor
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _makePhoneCall(donorPhone),
-                  icon: const Icon(Icons.phone_rounded,
-                      size: 18, color: AppColors.success),
-                  label: const Text(
-                    'Call Donor',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: AppColors.success,
+              if (donorPhone.isNotEmpty) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _makePhoneCall(donorPhone),
+                    icon: const Icon(Icons.phone_rounded,
+                        size: 18, color: AppColors.success),
+                    label: const Text(
+                      'Call Donor',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.success,
+                      ),
                     ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.success, width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(50),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.success, width: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: CapsuleButton(
                   label: 'Chat with Donor',
+
                   icon: Icons.chat_bubble_rounded,
                   onPressed: () {
                     context.push(

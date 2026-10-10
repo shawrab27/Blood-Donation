@@ -320,8 +320,8 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         submit_token = request.data.get('submit_token') or request.headers.get('X-Submit-Token')
-        from api.views_request_otp import validate_and_consume_submit_token
-        if not validate_and_consume_submit_token(request.user, submit_token):
+        from api.views_request_otp import check_submit_token
+        if not check_submit_token(request.user, submit_token):
             return Response(
                 {"detail": "A valid unused submit_token is required to submit a blood request."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -339,7 +339,14 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
                 "detail": "Email verification is required before submitting an emergency blood request. Please verify your email first."
             })
 
-        instance = serializer.save()
+        submit_token = self.request.data.get('submit_token') or self.request.headers.get('X-Submit-Token')
+        from api.views_request_otp import validate_and_consume_submit_token
+        from rest_framework.exceptions import PermissionDenied
+        with transaction.atomic():
+            if not validate_and_consume_submit_token(self.request.user, submit_token):
+                raise PermissionDenied("A valid unused submit_token is required to submit a blood request.")
+            instance = serializer.save()
+
         send_blood_request_notification(instance)
 
 class SocialPostViewSet(viewsets.ModelViewSet):
