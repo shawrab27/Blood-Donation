@@ -27,15 +27,15 @@ class EligibilityServiceTests(TestCase):
         self.assertTrue(res['is_eligible'])
         self.assertEqual(res['days_remaining'], 0)
 
-    def test_donor_within_120_days_is_ineligible(self):
+    def test_donor_within_90_days_is_ineligible(self):
         self.donor.last_donation_date = timezone.now().date() - timedelta(days=45)
         self.donor.save()
         res = evaluate_donor_eligibility(self.donor)
         self.assertFalse(res['is_eligible'])
         self.assertEqual(res['days_remaining'], WHOLE_BLOOD_COOLDOWN_DAYS - 45)
 
-    def test_donor_after_120_days_is_eligible(self):
-        self.donor.last_donation_date = timezone.now().date() - timedelta(days=125)
+    def test_donor_after_90_days_is_eligible(self):
+        self.donor.last_donation_date = timezone.now().date() - timedelta(days=95)
         self.donor.save()
         res = evaluate_donor_eligibility(self.donor)
         self.assertTrue(res['is_eligible'])
@@ -59,3 +59,10 @@ class EligibilityServiceTests(TestCase):
         res = evaluate_donor_eligibility(self.donor)
         self.assertFalse(res['is_eligible'])
         self.assertIn('alerts are currently paused', res['reason'])
+
+    def test_single_source_cooldown_constant_is_90(self):
+        from api.conf import DONOR_COOLDOWN_DAYS as CONF_COOLDOWN
+        from django.conf import settings
+        self.assertEqual(CONF_COOLDOWN, 90)
+        self.assertEqual(settings.DONOR_COOLDOWN_DAYS, 90)
+        self.assertEqual(CONF_COOLDOWN, settings.DONOR_COOLDOWN_DAYS)

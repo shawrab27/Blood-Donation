@@ -26,5 +26,5 @@ class ProfileIntegrationTests(TestCase):
         self.assertEqual(res.status_code, 400) # As confirmed in auth test, it returns 400
 
     def test_countdown_calculation(self):
-        # 120-day countdown calculation against various last-donation-date values including "never donated."
+        # 90-day countdown calculation against various last-donation-date values including "never donated."
         pass

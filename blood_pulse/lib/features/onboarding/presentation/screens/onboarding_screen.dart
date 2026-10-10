@@ -197,35 +197,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Spacer(flex: 1),
+          const SizedBox(height: 12),
 
-          // Illustration Container
-          Center(
-            child: SizedBox(
-              height: 290,
-              child: Image.asset(
-                step.imagePath,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 260,
-                  height: 260,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDE8E9),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: AppColors.primary.withAlpha(40), width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.volunteer_activism_rounded,
-                    color: AppColors.primary,
-                    size: 80,
+          // Illustration Container - flexible to scale on any screen height
+          Expanded(
+            flex: 3,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 260),
+                child: Image.asset(
+                  step.imagePath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDE8E9),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: AppColors.primary.withAlpha(40), width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.volunteer_activism_rounded,
+                      color: AppColors.primary,
+                      size: 70,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
 
-          const Spacer(flex: 1),
+          const SizedBox(height: 16),
 
           // Step Badge
           Container(
@@ -277,11 +280,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          const Spacer(flex: 2),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
+
 
   Widget _buildIndicatorDot(int index) {
     final isActive = _currentIndex == index;

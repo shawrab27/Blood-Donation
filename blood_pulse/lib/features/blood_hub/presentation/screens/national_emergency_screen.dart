@@ -513,7 +513,7 @@ class _PledgeSheetState extends ConsumerState<_PledgeSheet> {
           CheckboxListTile(
             value: _agreed,
             onChanged: (val) => setState(() => _agreed = val ?? false),
-            title: const Text('I am 18-60 years old, weigh > 50kg, feel well, have no fever/cough, and have not donated in the last 120 days.', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
+            title: const Text('I am 18-60 years old, weigh > 50kg, feel well, have no fever/cough, and have not donated in the last 90 days.', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
             activeColor: _kPrimary,
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,

@@ -162,7 +162,7 @@
   "healthToolReadiness": "Donation Readiness",
   "healthToolReadinessDesc": "WHO biological eligibility check",
   "healthToolCountdown": "Donation Countdown",
-  "healthToolCountdownDesc": "120-day safe recovery interval",
+  "healthToolCountdownDesc": "90-day safe recovery interval",
   "healthToolCompatibility": "Blood Compatibility",
   "healthToolCompatibilityDesc": "Universal donor & recipient matrix",
   "healthToolHydration": "Hydration Tracker",
@@ -196,5 +196,30 @@
   "cameraPermissionPermanentlyDenied": "Camera permission is permanently denied. Please enable it in Settings.",
   "openSettings": "Settings",
   "photoHelperText": "Upload a clear photo to help identification.",
-  "failedToReadFile": "Unable to read selected file."
+  "failedToReadFile": "Unable to read selected file.",
+  "lastDonatedDaysAgo": "Last donated: {days} days ago",
+  "@lastDonatedDaysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noDonationRecorded": "No donations recorded yet",
+  "standardCooldownDays": "Standard {days} Days Cooldown",
+  "@standardCooldownDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "lastDonatedDate": "Last Donated: {date}",
+  "@lastDonatedDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

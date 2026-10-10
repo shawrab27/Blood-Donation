@@ -90,29 +90,32 @@ class PosterTextTemplate extends StatelessWidget {
               border: Border.all(color: Colors.white, width: 4),
             ),
             alignment: Alignment.center,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  data.bloodGroup,
-                  style: const TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                    height: 1.0,
-                    color: Colors.white,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    data.bloodGroup,
+                    style: const TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      height: 1.0,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                Text(
-                  '${data.unitsNeeded} ${isBangla ? "ব্যাগ" : "Bag(s)"}',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFFFD1CD),
+                  Text(
+                    '${data.unitsNeeded} ${isBangla ? "ব্যাগ" : "Bag(s)"}',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFFD1CD),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

@@ -81,3 +81,10 @@ blood_pulse/android/.kotlin/errors/
 stitch_bloodpulse_ui..zip
 .firebase/
 blood_pulse/.firebase/
+
+# ── Golden test failures & diff artifacts ──
+test/**/failures/
+failures/
+*.isolatedDiff.png
+*.maskedDiff.png
+*.testImage.png

@@ -1,12 +1,13 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/constants/app_config.dart';
 import '../enums/domain_enums.dart';
 
 /// Research Feature 5 — Donation Eligibility Engine
 ///
 /// Pure business logic that determines whether a donor is currently eligible
-/// to donate, calculates the exact days remaining in their 120-day cooldown
+/// to donate, calculates the exact days remaining in their 90-day cooldown
 /// window, and produces a locked/available availability state.
 ///
 /// Academic relevance:
@@ -17,8 +18,8 @@ import '../enums/domain_enums.dart';
 ///   • WHO Blood Donor Selection Guidelines (2012), Section 4.3
 ///   • DGDA Bangladesh Blood Transfusion Regulation (2002), Rule 6(2)
 
-/// The 120-day (≈4-month) mandatory inter-donation interval.
-const Duration kDonationCooldown = Duration(days: 120);
+/// The 90-day (≈3-month) mandatory inter-donation interval.
+const Duration kDonationCooldown = Duration(days: AppConfig.donorCooldownDays);
 
 /// Minimum haemoglobin levels in g/dL per WHO guidelines.
 const double kMinHemoglobinFemale = 12.5;

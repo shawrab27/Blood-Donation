@@ -107,7 +107,7 @@
 - [ ] **3. Fix Geohash Generation in `DonorProfile.save()`:**
   - Ensure `DonorProfile.save()` automatically computes `self.geohash = pygeohash.encode(self.latitude, self.longitude, precision=12)` when `latitude` and `longitude` are provided.
 - [ ] **4. Configure Background Wave Engine & Cooldown Cron Trigger:**
-  - The wave engine (`/api/emergency/tick/`) and 120-day cooldown maintenance (`/api/emergency/maintenance-tick/`) need periodic triggers.
+  - The wave engine (`/api/emergency/tick/`) and 90-day cooldown maintenance (`/api/emergency/maintenance-tick/`) need periodic triggers.
   - Set up a Render Cron Job, GitHub Action, or external cron webhook (e.g. cron-job.org) pinging every 2 minutes:
     - `POST https://bloodpulse-backend.onrender.com/api/emergency/tick/`
     - `POST https://bloodpulse-backend.onrender.com/api/emergency/maintenance-tick/`

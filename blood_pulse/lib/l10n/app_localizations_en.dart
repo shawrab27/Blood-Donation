@@ -464,7 +464,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get healthToolCountdown => 'Donation Countdown';
 
   @override
-  String get healthToolCountdownDesc => '120-day safe recovery interval';
+  String get healthToolCountdownDesc => '90-day safe recovery interval';
 
   @override
   String get healthToolCompatibility => 'Blood Compatibility';
@@ -564,4 +564,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToReadFile => 'Unable to read selected file.';
+
+  @override
+  String lastDonatedDaysAgo(int days) {
+    return 'Last donated: $days days ago';
+  }
+
+  @override
+  String get noDonationRecorded => 'No donations recorded yet';
+
+  @override
+  String standardCooldownDays(int days) {
+    return 'Standard $days Days Cooldown';
+  }
+
+  @override
+  String lastDonatedDate(String date) {
+    return 'Last Donated: $date';
+  }
 }

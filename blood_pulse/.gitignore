@@ -1,4 +1,4 @@
-﻿# Miscellaneous
+# Miscellaneous
 *.class
 *.log
 *.pyc
@@ -58,3 +58,10 @@ lib/firebase_options.dart
 # Keystore files
 key.properties
 *.jks
+
+# Golden test failures & diff artifacts
+test/**/failures/
+failures/
+*.isolatedDiff.png
+*.maskedDiff.png
+*.testImage.png

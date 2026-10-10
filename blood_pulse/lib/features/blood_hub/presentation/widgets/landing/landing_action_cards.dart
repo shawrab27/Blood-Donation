@@ -86,8 +86,11 @@ class LandingActionCards extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Bottom Row: Blood group badges on left + Find Now button on right
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -162,8 +165,11 @@ class LandingActionCards extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Row: Emergency Icon Circle + IMMEDIATE DISPATCH Pill Badge
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   Container(
                     width: 44,
@@ -251,13 +257,16 @@ class LandingActionCards extends StatelessWidget {
                         color: Color(0xFF960017),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        isBangla ? 'জরুরি ব্রডকাস্ট করুন' : 'Broadcast Emergency',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF960017),
+                      Flexible(
+                        child: Text(
+                          isBangla ? 'জরুরি ব্রডকাস্ট করুন' : 'Broadcast Emergency',
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF960017),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),

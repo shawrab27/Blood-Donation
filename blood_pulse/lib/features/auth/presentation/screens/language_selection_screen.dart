@@ -272,6 +272,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                           // ── Trust Footer ─────────────────────────────────
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(
                                 Icons.verified_user_outlined,
@@ -279,15 +280,18 @@ class LanguageSelectionScreen extends ConsumerWidget {
                                 color: Color(0xFF888888),
                               ),
                               const SizedBox(width: 6),
-                              Text(
-                                isBangla
-                                    ? 'বিশ্বজুড়ে ২০ লাখেরও বেশি রক্তদাতার বিশ্বস্ত প্ল্যাটফর্ম'
-                                    : 'Trusted by 2M+ Donors Worldwide',
-                                style: const TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 12,
-                                  color: Color(0xFF888888),
-                                  fontWeight: FontWeight.w500,
+                              Flexible(
+                                child: Text(
+                                  isBangla
+                                      ? 'রক্তদাতাদের বিশ্বস্ত প্ল্যাটফর্ম'
+                                      : 'Trusted Voluntary Blood Network',
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    color: Color(0xFF888888),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],

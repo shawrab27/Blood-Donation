@@ -2,7 +2,9 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import '../../../../../constants/app_config.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../providers/health_calculators_provider.dart';
 
 class CooldownCountdownCard extends StatelessWidget {
@@ -17,9 +19,13 @@ class CooldownCountdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final daysRemaining = state.cooldownDaysRemaining;
     final isReady = daysRemaining <= 0;
-    final progress = isReady ? 1.0 : (120 - daysRemaining) / 120.0;
+    final progress = isReady
+        ? 1.0
+        : (AppConfig.donorCooldownDays - daysRemaining) /
+            AppConfig.donorCooldownDays.toDouble();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -84,12 +90,14 @@ class CooldownCountdownCard extends StatelessWidget {
             children: [
               Text(
                 state.lastDonationDate != null
-                    ? 'Last Donated: ${state.lastDonationDate!.toLocal().toString().split(' ')[0]}'
-                    : 'Last Donated: None recorded',
+                    ? (l10n?.lastDonatedDate(state.lastDonationDate!.toLocal().toString().split(' ')[0]) ??
+                        'Last Donated: ${state.lastDonationDate!.toLocal().toString().split(' ')[0]}')
+                    : (l10n?.noDonationRecorded ?? 'Last Donated: None recorded'),
                 style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral),
               ),
               Text(
-                'Standard 120 Days Cooldown',
+                l10n?.standardCooldownDays(AppConfig.donorCooldownDays) ??
+                    'Standard ${AppConfig.donorCooldownDays} Days Cooldown',
                 style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
               ),
             ],
@@ -99,3 +107,4 @@ class CooldownCountdownCard extends StatelessWidget {
     );
   }
 }
+

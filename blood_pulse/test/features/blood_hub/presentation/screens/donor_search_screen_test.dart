@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/screens/donor_search_screen.dart';
+import 'package:blood_pulse/features/blood_hub/presentation/widgets/donor_search/donor_search_bar.dart';
 import 'package:blood_pulse/features/blood_hub/data/blood_hub_api_service.dart';
 
 void main() {
@@ -46,10 +47,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Search Donors'), findsOneWidget);
+    expect(find.byType(DonorSearchBar), findsOneWidget);
     expect(find.text('Request to All'), findsOneWidget);
-    expect(find.text('Search as Donor'), findsOneWidget);
-    expect(find.text('Request for Blood'), findsOneWidget);
     expect(find.text('Available Donors'), findsOneWidget);
     expect(find.text('1 found near you'), findsOneWidget);
     expect(find.text('Test Altruist'), findsOneWidget);
@@ -81,7 +80,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No donors found matching criteria'), findsOneWidget);
-    expect(find.text('Clear Filters'), findsOneWidget);
+    expect(find.text('Clear All Filters'), findsOneWidget);
   });
 
   testWidgets('DonorSearchScreen renders error state on failure', (tester) async {

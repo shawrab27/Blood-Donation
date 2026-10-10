@@ -26,8 +26,10 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 - Admin panel = web dashboard (not Django admin theme, not Flutter Web).
 - Deployment of any web build, if ever: Cloudflare Pages (supersedes earlier Vercel idea).
 - Architecture rules: Service Adapter Pattern, feature-first Clean Architecture, 200–300 line limit, no API calls in UI files.
+- Scope: Product scope is nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
 
 ## 4. Current Status (as of early Oct 2026)
+
 - Backend live on Render; `/api/health/` 200; UptimeRobot monitor created.
 - Flutter app ran end-to-end on a real Android device; some slowness attributed to Render cold starts.
 - FCM verified on a real phone; Firestore verified.

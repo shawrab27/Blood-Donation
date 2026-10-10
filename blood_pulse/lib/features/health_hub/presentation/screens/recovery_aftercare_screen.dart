@@ -45,7 +45,7 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
       title: 'Iron Reserves Full Restoration',
       description: 'Ferritin reserves return to peak baseline levels. Complete your recovery cycle before the next voluntary donation.',
       activityGuideline: 'Normal routine.',
-      avoidList: 'Donating before 120 days.',
+      avoidList: 'Donating before 90 days.',
     ),
   ];
 

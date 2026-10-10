@@ -22,7 +22,7 @@ All endpoints require authentication (Bearer token).
 {
   "conversation_id": 1,
   "message_id": 10,
-  "reply": "You can donate blood every 120 days. According to your profile, you are eligible to donate today!",
+  "reply": "You can donate blood every 90 days. According to your profile, you are eligible to donate today!",
   "language": "en",
   "actions": [
     {

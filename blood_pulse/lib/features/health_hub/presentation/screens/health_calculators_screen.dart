@@ -140,8 +140,8 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
             ),
             const SizedBox(height: 22),
 
-            // ── 3. 120-Day Donation Cooldown Bridge ────────────────────────
-            _sectionHeader('3. 120-Day Donation Cooldown Engine'),
+            // ── 3. 90-Day Donation Cooldown Bridge ────────────────────────
+            _sectionHeader('3. 90-Day Donation Cooldown Engine'),
             const SizedBox(height: 10),
             CooldownCountdownCard(
               state: healthState,

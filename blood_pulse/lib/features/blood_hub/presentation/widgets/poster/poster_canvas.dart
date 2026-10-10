@@ -32,11 +32,14 @@ class PosterCanvas extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: aspectRatio.ratio,
         child: Center(
-          child: PosterGeneratorWidget(
-            key: generatorKey,
-            data: data,
-            templateType: templateType,
-            isBangla: isBangla,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: PosterGeneratorWidget(
+              key: generatorKey,
+              data: data,
+              templateType: templateType,
+              isBangla: isBangla,
+            ),
           ),
         ),
       ),

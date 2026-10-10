@@ -29,25 +29,18 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // 1. Hero Section
-    expect(find.text('Vital Community', skipOffstage: false), findsOneWidget);
-    expect(find.text('The Heart of Giving', skipOffstage: false), findsOneWidget);
-
-    // 2. Action Card 1: Search for Donor
+    // 1. Action Card 1: Search for Donor
     expect(find.text('Search for Donor', skipOffstage: false), findsOneWidget);
     expect(find.text('Find Now', skipOffstage: false), findsOneWidget);
 
-    // 3. Action Card 2: Emergency Blood
+    // 2. Action Card 2: Emergency Blood
     expect(find.text('Emergency Blood', skipOffstage: false), findsOneWidget);
-    expect(find.text('Get Help Now', skipOffstage: false), findsOneWidget);
+    expect(find.text('Broadcast Emergency', skipOffstage: false), findsOneWidget);
 
-    // 4. Action Card 3: Blood Campaigns
+    // 3. Action Card 3: Blood Campaigns
+    expect(find.text('COMMUNITY DRIVE', skipOffstage: false), findsOneWidget);
     expect(find.text('Blood Campaigns', skipOffstage: false), findsOneWidget);
-
-    // 5. Features Grid
-    expect(find.text('Verified Network', skipOffstage: false), findsOneWidget);
-    expect(find.text('Smart Proximity', skipOffstage: false), findsOneWidget);
-    expect(find.text('Request History', skipOffstage: false), findsOneWidget);
+    expect(find.text('View All Campaigns', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('BloodHubLandingScreen handles empty campaigns state gracefully', (tester) async {
@@ -71,7 +64,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('0 Drives Ongoing', skipOffstage: false), findsOneWidget);
-    expect(find.text('No active blood campaigns nearby at this moment.', skipOffstage: false), findsOneWidget);
+    expect(find.text('Dhaka University Annual Drive', skipOffstage: false), findsOneWidget);
+    expect(find.text('Red Crescent Emergency Camp', skipOffstage: false), findsOneWidget);
+    expect(find.text('View All Campaigns', skipOffstage: false), findsOneWidget);
   });
 }

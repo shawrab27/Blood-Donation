@@ -9,8 +9,7 @@
 
 **Origin:** Started as a campus Java/JavaFX DBMS project at BAUST; rebuilt as Flutter (mobile) + Django (backend).
 
-**Long-term vision:** national coverage across all 64 districts.
-**Current target:** BAUST academic pilot (50–200 student donors), then regional, then national.
+**Product Scope:** Nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
 
 ## 2. Problems Being Solved
 1. Emergency blood requests spread through scattered Facebook posts and phone calls — slow and unverifiable.

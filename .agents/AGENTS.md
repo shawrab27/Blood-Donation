@@ -30,5 +30,6 @@ Before executing any prompt or command, strictly enforce these mandatory BloodPu
 - Wrap all screens in `ResponsiveLayout`.
 
 ### 5. TARGET SCOPE & INSTITUTION
-- Do NOT build for or reference BAUST (Bangladesh Army University of Science and Technology). All pilots, research documentation, consent forms, and data collection designs must remain general / campus-agnostic unless specifically instructed otherwise by the user.
+- Product scope is nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
+
 

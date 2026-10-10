@@ -55,14 +55,17 @@ class LandingCampaignCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                isBangla ? 'কমিউনিটি ড্রাইভ' : 'COMMUNITY DRIVE',
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: Color(0xFF960017),
+              Flexible(
+                child: Text(
+                  isBangla ? 'কমিউনিটি ড্রাইভ' : 'COMMUNITY DRIVE',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: Color(0xFF960017),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -101,13 +104,16 @@ class LandingCampaignCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  isBangla ? '#রক্তদানক্যাম্পেইন • লাইভ ফিড' : '#BloodCampaigns • Live on Feed',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF960017),
+                Flexible(
+                  child: Text(
+                    isBangla ? '#রক্তদানক্যাম্পেইন • লাইভ ফিড' : '#BloodCampaigns • Live on Feed',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF960017),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -183,12 +189,15 @@ class LandingCampaignCard extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    isBangla ? 'সমস্ত ক্যাম্পেইন দেখুন' : 'View All Campaigns',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Text(
+                      isBangla ? 'সমস্ত ক্যাম্পেইন দেখুন' : 'View All Campaigns',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 8),

@@ -55,12 +55,12 @@ def test_postgres_total_count():
     assert embedded_count == 43, f"Expected 43 embedded rows, got {embedded_count}"
 
 def test_numeric_guard_q1_donation_interval():
-    """Numeric guard Question 1: 120 days interval."""
+    """Numeric guard Question 1: 90 days interval."""
     kb_34 = KBEntry.objects.get(id=34)
     
-    # Grounded response (120 days)
+    # Grounded response (90 days)
     grounded = {
-        "reply": "আপনি প্রতি ১২০ দিনের ব্যবধানে একবার রক্ত দান করতে পারেন। এটি আপনার শরীরকে রক্তকোষ তৈরিতে সাহায্য করে।",
+        "reply": "আপনি প্রতি ৯০ দিনের ব্যবধানে একবার রক্ত দান করতে পারেন। এটি আপনার শরীরকে রক্তকোষ তৈরিতে সাহায্য করে।",
         "language": "bn",
         "action_ids": [],
         "emergency": False,
@@ -71,9 +71,9 @@ def test_numeric_guard_q1_donation_interval():
     res_grounded = apply_guards(grounded, [kb_34])
     assert "BLOCKED_NUMBER" not in res_grounded.get("flags", [])
     
-    # Hallucinated response (90 days)
+    # Hallucinated response (60 days)
     hallucinated = {
-        "reply": "আপনি প্রতি ৯০ দিন পরপর রক্ত দান করতে পারেন।",
+        "reply": "আপনি প্রতি ৬০ দিন পরপর রক্ত দান করতে পারেন।",
         "language": "bn",
         "action_ids": [],
         "emergency": False,

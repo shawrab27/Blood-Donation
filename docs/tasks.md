@@ -10,6 +10,11 @@ Working style: **one task at a time**, short steps, evidence required.
 - [ ] Check whether `github.com/shawrab27/Blood-Donation` is public; if yes, rotate exposed Firebase keys
 
 ## Phase 1 — Stabilize App and UI Truth Pass
+- [x] Step 0: Stabilize working tree & lock 90-day cooldown:
+  - Fixed test failures in `test/features/blood_hub/` (resolved layout bugs, updated obsolete finders, preserved all assertions).
+  - Multi-viewport & text scale 1.3 responsive overflow test suite passing (zero `RenderFlex` overflows across 320x568, 360x800, 412x915).
+  - Locked 90-day donation cooldown as single source of truth across client (`AppConfig.donorCooldownDays`), backend (`DONOR_COOLDOWN_DAYS = 90`), RAG pipeline, Knowledge Base CSVs, and localized strings (`app_en.arb`, `app_bn.arb`).
+  - Verification: `flutter analyze` 0 issues, `flutter test` 150/150 passing, `manage.py check` 0 issues, `manage.py test` 173/173 passing.
 - [x] Remove mock fallbacks ("Sarah Jenkins", "Dr. Alim", "Tanvir Ahmed") from `app_router.dart`, `live_dispatch_screen.dart`, `blood_hub_view.dart`, `notification_center_screen.dart`, `feed_provider.dart` (verified 0 hits across `lib/`)
 - [x] Remove hardcoded fake phone +8801700000000 from client codebase (verified 0 hits across `lib/`), disable call buttons safely when donorPhone is empty
 - [x] Blood Hub UI Phase 1A complete:

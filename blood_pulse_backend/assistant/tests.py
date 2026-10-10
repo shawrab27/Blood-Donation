@@ -60,8 +60,8 @@ class LimitsTests(TestCase):
 
 class GuardsTests(TestCase):
     def test_numeric_claim_blocked(self):
-        kb_texts = ["You can donate blood every 120 days."]
-        reply = {"reply": "You can donate after 90 days.", "kb_ids_used": []}
+        kb_texts = ["You can donate blood every 90 days."]
+        reply = {"reply": "You can donate after 60 days.", "kb_ids_used": []}
         res = apply_guards(reply, [])
         self.assertIn("not sure", res["reply"])
         self.assertIn("BLOCKED_NUMBER", res.get("flags", []))
@@ -72,9 +72,9 @@ class GuardsTests(TestCase):
                 self.id = 1
                 self.title_en = "Donation interval"
                 self.title_bn = ""
-                self.body_en = "You can donate blood every 120 days."
+                self.body_en = "You can donate blood every 90 days."
                 self.body_bn = ""
-        reply = {"reply": "You can donate after 120 days.", "kb_ids_used": [1]}
+        reply = {"reply": "You can donate after 90 days.", "kb_ids_used": [1]}
         res = apply_guards(reply, [MockKB()])
         self.assertNotIn("not sure", res["reply"])
 

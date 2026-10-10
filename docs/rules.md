@@ -16,8 +16,10 @@ Read this file before every task. These rules override convenience.
 9. Do not create unrequested files (docs, plans, READMEs, notes). If you think one is needed, ask.
 10. Do not refactor unrelated code. Touch only what the task needs.
 11. Minimal unnecessary explanation. Report: what changed, evidence, what is still unverified.
+12. **Product scope is nationwide Bangladesh (64 districts).** Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
 
 ## C. Code Standards
+
 12. Feature-first Clean Architecture (`presentation/domain/data`).
 13. **No direct API calls in UI files.**
 14. Files stay within **200–300 lines**; split when larger.

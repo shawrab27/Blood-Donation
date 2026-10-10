@@ -12,12 +12,17 @@ import dj_database_url
 from blood_pulse_backend.settings import *
 
 test_db_url = os.environ.get('DATABASE_URL_TEST')
-if not test_db_url:
-    raise RuntimeError(
-        "DATABASE_URL_TEST environment variable is not set. "
-        "Provide a dedicated test/branch PostgreSQL URL to run the Postgres test suite."
-    )
+if os.environ.get('DJANGO_SETTINGS_MODULE') == 'blood_pulse_backend.test_settings_pg':
+    if not test_db_url:
+        raise RuntimeError(
+            "DATABASE_URL_TEST environment variable is not set. "
+            "Provide a dedicated test/branch PostgreSQL URL to run the Postgres test suite."
+        )
+    DATABASES = {
+        'default': dj_database_url.parse(test_db_url, conn_max_age=0)
+    }
+elif test_db_url:
+    DATABASES = {
+        'default': dj_database_url.parse(test_db_url, conn_max_age=0)
+    }
 
-DATABASES = {
-    'default': dj_database_url.parse(test_db_url, conn_max_age=0)
-}

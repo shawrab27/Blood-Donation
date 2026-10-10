@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../constants/app_config.dart';
 import '../../domain/entities/health_log_entity.dart';
 
 class HealthCalculatorState {
@@ -60,7 +61,7 @@ class HealthCalculatorState {
 
   int get cooldownDaysRemaining {
     if (lastDonationDate == null) return 0;
-    final nextEligible = lastDonationDate!.add(const Duration(days: 120));
+    final nextEligible = lastDonationDate!.add(const Duration(days: AppConfig.donorCooldownDays));
     final diff = nextEligible.difference(DateTime.now()).inDays;
     return diff < 0 ? 0 : diff;
   }
@@ -120,7 +121,7 @@ class HealthCalculatorsNotifier extends StateNotifier<HealthCalculatorState> {
             pulseRateBpm: 72,
             hemoglobinLevel: 14.2,
             hydrationMl: 1500,
-            lastDonationDate: DateTime.now().subtract(const Duration(days: 78)), // 78 days ago => 42 remaining
+            lastDonationDate: null,
             historyLogs: _sampleLogs,
           ),
         );

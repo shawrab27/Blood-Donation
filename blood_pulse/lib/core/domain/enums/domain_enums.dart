@@ -80,7 +80,7 @@ enum EmrValidationStatus {
 ///
 /// Modelled from WHO and DGDA (Bangladesh) blood-donation guidelines.
 enum EligibilityLockReason {
-  /// Donor is within the mandatory 120-day (≈4-month) inter-donation gap.
+  /// Donor is within the mandatory 90-day (≈3-month) inter-donation gap.
   cooldownPeriod,
 
   /// Haemoglobin level is below WHO minimum (12.5 g/dL female / 13.0 g/dL male).

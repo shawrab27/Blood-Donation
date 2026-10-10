@@ -466,7 +466,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get healthToolCountdown => 'পরবর্তী রক্তদান কাউন্টডাউন';
 
   @override
-  String get healthToolCountdownDesc => '১২০ দিনের নিরাপদ বিরতি ট্র্যাকার';
+  String get healthToolCountdownDesc => '৯০ দিনের নিরাপদ বিরতি ট্র্যাকার';
 
   @override
   String get healthToolCompatibility => 'রক্তের গ্রুপ সামঞ্জস্য';
@@ -568,4 +568,22 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get failedToReadFile => 'নির্বাচিত ফাইলটি পড়া সম্ভব হয়নি।';
+
+  @override
+  String lastDonatedDaysAgo(int days) {
+    return 'সর্বশেষ রক্তদান: $days দিন আগে';
+  }
+
+  @override
+  String get noDonationRecorded => 'এখনও রক্তদানের তথ্য নথিভুক্ত হয়নি';
+
+  @override
+  String standardCooldownDays(int days) {
+    return 'নির্দিষ্ট $days দিনের বিরতি';
+  }
+
+  @override
+  String lastDonatedDate(String date) {
+    return 'সর্বশেষ রক্তদান: $date';
+  }
 }

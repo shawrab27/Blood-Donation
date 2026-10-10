@@ -100,8 +100,11 @@ class _PosterEditorControlsState extends State<PosterEditorControls> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Text(
                 widget.isBangla ? 'পোস্টার এডিটর' : 'Poster Content Editor',

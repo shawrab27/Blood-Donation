@@ -18,7 +18,7 @@ The Assistant relies on an admin-curated Knowledge Base (KB) and App Guide to sa
    
 3. **Content Constraints:**
    - Both English and Bangla text bodies should be concise, ideally under 120 words.
-   - Avoid numerical guesswork. The Assistant uses a strict Guard: if it attempts to quote a number or duration (like 120 days) that doesn't exist explicitly in your KB text, the output is blocked.
+   - Avoid numerical guesswork. The Assistant uses a strict Guard: if it attempts to quote a number or duration (like 90 days) that doesn't exist explicitly in your KB text, the output is blocked.
 
 ## Managing the App Guide
 Similar to the KB, App Guide entries provide instructions for using the BloodPulse app (e.g., "How to verify identity"). They also require Admin approval before the AI can serve them.

@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:blood_pulse/constants/app_config.dart';
 import 'package:blood_pulse/models/user_model.dart';
 import 'package:blood_pulse/providers/profile_countdown_provider.dart';
 
@@ -62,5 +63,12 @@ void main() {
       expect(state.daysRemaining, equals(0));
       expect(state.isReadyToDonate, isTrue);
     });
+
+    test('AppConfig.donorCooldownDays is exactly 90 matching backend single source of truth', () {
+      // Must exactly mirror the backend canonical single-source-of-truth constant:
+      // DONOR_COOLDOWN_DAYS = 90 (defined in blood_pulse_backend/api/conf.py and imported into settings.py)
+      expect(AppConfig.donorCooldownDays, equals(90));
+    });
   });
 }
+

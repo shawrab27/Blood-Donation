@@ -141,13 +141,16 @@ class PosterUnitsStepper extends StatelessWidget {
             child: const Icon(Icons.remove_circle_outline,
                 size: 20, color: AppColors.primary),
           ),
-          Text(
-            '$units ${isBangla ? 'ব্যাগ' : 'Bags'}',
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.secondary,
+          Flexible(
+            child: Text(
+              '$units ${isBangla ? 'ব্যাগ' : 'Bags'}',
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.secondary,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           InkWell(

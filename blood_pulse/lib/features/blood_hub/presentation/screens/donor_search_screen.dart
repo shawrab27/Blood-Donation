@@ -143,9 +143,11 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                 const SizedBox(height: 20),
 
                 // 3. Available Donors Header + "Request to All" Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  spacing: 12,
+                  runSpacing: 10,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,8 +314,11 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                 const SizedBox(height: 24),
 
                 // 5. Nearby Donor Network Section Header + Full Screen Map Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     const Text(
                       'Nearby Donor Network',

@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../constants/app_config.dart';
 
 class HealthCalculatorState {
   const HealthCalculatorState({
@@ -43,10 +44,10 @@ class HealthCalculatorState {
     return progress > 1.0 ? 1.0 : progress;
   }
 
-  /// 120-Day Donation Countdown Days Remaining
+  /// 90-Day Donation Countdown Days Remaining
   int get cooldownDaysRemaining {
     if (lastDonationDate == null) return 0;
-    final nextEligible = lastDonationDate!.add(const Duration(days: 120));
+    final nextEligible = lastDonationDate!.add(const Duration(days: AppConfig.donorCooldownDays));
     final diff = nextEligible.difference(DateTime.now()).inDays;
     return diff < 0 ? 0 : diff;
   }

@@ -43,7 +43,7 @@ class HealthLogEntity {
   final bool isHemoglobinEligible; // ≥ 13.0 g/dL (M) / ≥ 12.5 g/dL (F)
   final bool isBpEligible; // 90/60 - 140/90
   final bool isPulseEligible; // 60 - 100 bpm
-  final bool isCooldownEligible; // 120-day rule
+  final bool isCooldownEligible; // 90-day rule
   final int cooldownDaysRemaining;
   final bool overallEligibilityStatus;
   final int wellnessScore; // 0 - 100

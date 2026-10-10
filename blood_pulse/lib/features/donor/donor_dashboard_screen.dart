@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../core/widgets/custom_app_bar.dart';
+import '../../l10n/app_localizations.dart';
+import '../profile/domain/providers/profile_provider.dart';
 
 class DonorDashboardScreen extends ConsumerStatefulWidget {
   const DonorDashboardScreen({super.key});
@@ -19,6 +21,19 @@ class _DonorDashboardScreenState extends ConsumerState<DonorDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final profileAsync = ref.watch(profileProvider);
+    final profile = profileAsync.value;
+
+    String lastDonationText = l10n?.noDonationRecorded ?? 'No donations recorded yet';
+    if (profile?.lastDonationDate != null && profile!.lastDonationDate!.isNotEmpty) {
+      try {
+        final parsed = DateTime.parse(profile.lastDonationDate!);
+        final days = DateTime.now().difference(parsed).inDays;
+        lastDonationText = l10n?.lastDonatedDaysAgo(days) ?? 'Last donated: $days days ago';
+      } catch (_) {}
+    }
+
     return Scaffold(
       appBar: const CustomAppBar(
         subtitle: 'Donor Dashboard',
@@ -51,7 +66,7 @@ class _DonorDashboardScreenState extends ConsumerState<DonorDashboardScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Last donated: 120 days ago',
+                      lastDonationText,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                     ),
                     const SizedBox(height: 24),

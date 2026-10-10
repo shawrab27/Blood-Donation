@@ -112,7 +112,7 @@ class CP2Tests(APITestCase):
         })
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data.get('action'), 'complete_profile')
-        self.assertEqual(res.data.get('response'), "Your profile is not complete yet. Please complete your registration to get a personal answer.")
+        self.assertEqual(res.data.get('response'), "Your blood group is not set in your profile. Please complete registration.")
         self.assertIn('blood_group', res.data.get('missing_fields', []))
         mock_gemini.assert_not_called()
 

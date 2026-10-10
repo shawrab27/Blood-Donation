@@ -19,7 +19,8 @@ def evaluate_shortcuts(text: str, user=None) -> dict:
             last_date = profile.last_donation_date
             if last_date:
                 from django.conf import settings
-                interval = getattr(settings, 'DONATION_INTERVAL_DAYS', 120)
+                from api.conf import DONOR_COOLDOWN_DAYS
+                interval = getattr(settings, 'DONATION_INTERVAL_DAYS', DONOR_COOLDOWN_DAYS)
                 next_date = last_date + datetime.timedelta(days=interval)
                 if date.today() >= next_date:
                     reply = "You are eligible to donate blood now!"

@@ -18,7 +18,7 @@ For full terms, see the [LICENSE](blood_pulse/LICENSE) file.
 ## 🌟 Key Features
 
 - **🚨 Emergency Request Broadcast**: Real-time geolocation-based urgent donor callouts.
-- **🩸 120-Day Eligibility Engine**: Automatic cooldown counter adhering to WHO biological replenishment guidelines.
+- **🩸 90-Day Eligibility Engine**: Automatic cooldown counter adhering to WHO biological replenishment guidelines.
 - **🔒 Admin & Trust Verification**: AI-powered prescription & medical document verification with PII redaction.
 - **👥 Multi-Segment Communities**: Deep integration with national and campus volunteer organizations (*Badhan*, *Sandhani*, *Red Crescent*).
 - **🏥 Health Hub Suite**: 7 dedicated modules including AI Report Analysis, Health Calculators (BMI/Blood Volume), Blood Compatibility Matrix, and Recovery Trackers.

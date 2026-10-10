@@ -76,12 +76,12 @@ def run_tests():
     # TEST 3: Numeric Guard (Architecture.md § 5.3)
     # ---------------------------------------------------------
     print("\n[TEST 3] Numeric Claim Guard Verification:")
-    kb_34 = KBEntry.objects.get(id=34) # "You can donate blood once every 120 days."
+    kb_34 = KBEntry.objects.get(id=34) # "You can donate blood once every 90 days."
     kb_entries = [kb_34]
     
-    # 3a. Hallucinated number "90 days" instead of 120
+    # 3a. Hallucinated number "60 days" instead of 90
     hallucinated_json = {
-        "reply": "You can donate blood once every 90 days. It takes 90 days to recover.",
+        "reply": "You can donate blood once every 60 days. It takes 60 days to recover.",
         "language": "en",
         "action_ids": [],
         "emergency": False,
@@ -90,15 +90,15 @@ def run_tests():
         "kb_ids_used": [34]
     }
     guarded_hallucinated = apply_guards(hallucinated_json, kb_entries)
-    print("  3a. Model claims '90 days' (Source has 120 days):")
+    print("  3a. Model claims '60 days' (Source has 90 days):")
     print(f"      Result reply: '{guarded_hallucinated['reply']}'")
     print(f"      Flags: {guarded_hallucinated.get('flags')}")
-    assert "BLOCKED_NUMBER" in guarded_hallucinated.get("flags", []), "Numeric guard failed to catch 90 days!"
+    assert "BLOCKED_NUMBER" in guarded_hallucinated.get("flags", []), "Numeric guard failed to catch 60 days!"
     assert "not sure" in guarded_hallucinated["reply"].lower(), "Fallback message not returned"
 
-    # 3b. Grounded number "120 days" (matches source)
+    # 3b. Grounded number "90 days" (matches source)
     grounded_json = {
-        "reply": "You can donate blood once every 120 days. This allows your body to regenerate new blood cells.",
+        "reply": "You can donate blood once every 90 days. This allows your body to regenerate new blood cells.",
         "language": "en",
         "action_ids": [],
         "emergency": False,
@@ -107,14 +107,14 @@ def run_tests():
         "kb_ids_used": [34]
     }
     guarded_grounded = apply_guards(grounded_json, kb_entries)
-    print("  3b. Model claims '120 days' (Source has 120 days):")
+    print("  3b. Model claims '90 days' (Source has 90 days):")
     print(f"      Result reply: '{guarded_grounded['reply'][:60]}...'")
     print(f"      Flags: {guarded_grounded.get('flags')}")
-    assert "BLOCKED_NUMBER" not in guarded_grounded.get("flags", []), "Numeric guard falsely blocked 120 days!"
+    assert "BLOCKED_NUMBER" not in guarded_grounded.get("flags", []), "Numeric guard falsely blocked 90 days!"
 
-    # 3c. Bangla hallucinated "৯০ দিন"
+    # 3c. Bangla hallucinated "৬০ দিন"
     bn_hallucinated = {
-        "reply": "আপনি প্রতি ৯০ দিন পরপর রক্ত দান করতে পারেন।",
+        "reply": "আপনি প্রতি ৬০ দিন পরপর রক্ত দান করতে পারেন।",
         "language": "bn",
         "action_ids": [],
         "emergency": False,
@@ -123,13 +123,13 @@ def run_tests():
         "kb_ids_used": [34]
     }
     guarded_bn_hallucinated = apply_guards(bn_hallucinated, kb_entries)
-    print("  3c. Bangla Model claims '৯০ দিন' (Source has ১২০ দিন):")
+    print("  3c. Bangla Model claims '৬০ দিন' (Source has ৯০ দিন):")
     print(f"      Flags: {guarded_bn_hallucinated.get('flags')}")
-    assert "BLOCKED_NUMBER" in guarded_bn_hallucinated.get("flags", []), "Numeric guard failed on Bangla 90 days!"
+    assert "BLOCKED_NUMBER" in guarded_bn_hallucinated.get("flags", []), "Numeric guard failed on Bangla 60 days!"
 
-    # 3d. Bangla grounded "১২০ দিন"
+    # 3d. Bangla grounded "৯০ দিন"
     bn_grounded = {
-        "reply": "আপনি প্রতি ১২০ দিনের ব্যবধানে একবার রক্ত দান করতে পারেন।",
+        "reply": "আপনি প্রতি ৯০ দিনের ব্যবধানে একবার রক্ত দান করতে পারেন।",
         "language": "bn",
         "action_ids": [],
         "emergency": False,
@@ -138,9 +138,9 @@ def run_tests():
         "kb_ids_used": [34]
     }
     guarded_bn_grounded = apply_guards(bn_grounded, kb_entries)
-    print("  3d. Bangla Model claims '১২০ দিন' (Source has ১২০ দিন):")
+    print("  3d. Bangla Model claims '৯০ দিন' (Source has ৯০ দিন):")
     print(f"      Flags: {guarded_bn_grounded.get('flags')}")
-    assert "BLOCKED_NUMBER" not in guarded_bn_grounded.get("flags", []), "Numeric guard falsely blocked Bangla 120 days!"
+    assert "BLOCKED_NUMBER" not in guarded_bn_grounded.get("flags", []), "Numeric guard falsely blocked Bangla 90 days!"
     print("  --> PASS: Numeric guard rejects hallucinated numbers and preserves grounded numbers!")
 
     # ---------------------------------------------------------
@@ -182,7 +182,7 @@ def run_tests():
     final_result = apply_guards(result_data, [top1])
     print("  Final Guarded reply:", final_result.get("reply"))
     print("  Final Flags:", final_result.get("flags"))
-    assert "120" in final_result["reply"] or "BLOCKED_NUMBER" not in final_result.get("flags", [])
+    assert "90" in final_result["reply"] or "BLOCKED_NUMBER" not in final_result.get("flags", [])
     print("  --> PASS: Live Gemini grounded answer successfully generated and passed guard!")
 
     print("\n" + "=" * 70)

@@ -4,7 +4,7 @@
 # To be reviewed by qualified medical staff before real-world use.
 """
 Donor Eligibility Evaluation Service.
-Calculates donation cooldowns (120 days for whole blood), enforces active medical deferrals,
+Calculates donation cooldowns (90 days for whole blood), enforces active medical deferrals,
 and evaluates pause periods and availability.
 """
 

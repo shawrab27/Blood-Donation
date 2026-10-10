@@ -162,7 +162,7 @@
   "healthToolReadiness": "রক্তদান যোগ্যতা",
   "healthToolReadinessDesc": "ডব্লিউএইচও মানদণ্ড অনুযায়ী যোগ্যতা পরীক্ষা",
   "healthToolCountdown": "পরবর্তী রক্তদান কাউন্টডাউন",
-  "healthToolCountdownDesc": "১২০ দিনের নিরাপদ বিরতি ট্র্যাকার",
+  "healthToolCountdownDesc": "৯০ দিনের নিরাপদ বিরতি ট্র্যাকার",
   "healthToolCompatibility": "রক্তের গ্রুপ সামঞ্জস্য",
   "healthToolCompatibilityDesc": "গ্রুপভিত্তিক গ্রহণ ও দান নির্দেশিকা",
   "healthToolHydration": "হাইড্রেশন ট্র্যাকার",
@@ -196,5 +196,30 @@
   "cameraPermissionPermanentlyDenied": "ক্যামেরার অনুমতি স্থায়ীভাবে বাতিল করা হয়েছে। অনুগ্রহ করে সেটিংস থেকে চালু করুন।",
   "openSettings": "সেটিংস",
   "photoHelperText": "শনাক্তকরণে সহায়তার জন্য একটি পরিষ্কার ছবি আপলোড করুন।",
-  "failedToReadFile": "নির্বাচিত ফাইলটি পড়া সম্ভব হয়নি।"
+  "failedToReadFile": "নির্বাচিত ফাইলটি পড়া সম্ভব হয়নি।",
+  "lastDonatedDaysAgo": "সর্বশেষ রক্তদান: {days} দিন আগে",
+  "@lastDonatedDaysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "noDonationRecorded": "এখনও রক্তদানের তথ্য নথিভুক্ত হয়নি",
+  "standardCooldownDays": "নির্দিষ্ট {days} দিনের বিরতি",
+  "@standardCooldownDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "lastDonatedDate": "সর্বশেষ রক্তদান: {date}",
+  "@lastDonatedDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

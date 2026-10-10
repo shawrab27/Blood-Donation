@@ -70,7 +70,7 @@ class DrawerLearnMoreSheet extends StatelessWidget {
                   ),
                   SizedBox(height: 6),
                   Text(
-                    '• Age: 18 to 60 years old\n• Weight: At least 45 kg (or 50 kg for platelets)\n• Hemoglobin: ≥ 12.5 g/dL\n• Donation Interval: 90–120 days since last donation\n• Healthy with no active fever or antibiotic medications',
+                    '• Age: 18 to 60 years old\n• Weight: At least 45 kg (or 50 kg for platelets)\n• Hemoglobin: ≥ 12.5 g/dL\n• Donation Interval: 90 days since last donation\n• Healthy with no active fever or antibiotic medications',
                     style: TextStyle(fontFamily: 'Inter', fontSize: 13, height: 1.6, color: Color(0xFF555555)),
                   ),
                   SizedBox(height: 16),

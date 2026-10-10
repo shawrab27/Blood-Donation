@@ -127,7 +127,7 @@ void main() {
       );
 
       // Verify header and template selector tabs
-      expect(find.text('Poster Generator'), findsOneWidget);
+      expect(find.text('Poster Studio'), findsOneWidget);
       expect(find.text('1. Photo'), findsOneWidget);
       expect(find.text('2. Text'), findsOneWidget);
       expect(find.text('3. Custom'), findsOneWidget);

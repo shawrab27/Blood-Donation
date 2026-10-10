@@ -29,7 +29,7 @@ Persistent bottom navigation bar present across the main app shell with EXACTLY 
 2. 🩸 **Tab 2: Blood Hub** (`Icons.water_drop_rounded`) — Emergency blood requests, donor search, JIT verification gate.
 3. 👥 **Tab 3: Communities** (`Icons.groups_rounded`) — 3-Segment community discovery (Badhan, Sandhani, Red Crescent, campus units).
 4. 🏥 **Tab 4: Health Hub** (`Icons.health_and_safety_rounded`) — 7 Feature segments (AI Report Analysis, Calculators, Science of Blood, Compatibility Matrix, Donation Guide, Resources Hub, Recovery Tracker).
-5. 👤 **Tab 5: Profile** (`Icons.person_rounded`) — User profile, donation history, 120-day auto check engine, request logs.
+5. 👤 **Tab 5: Profile** (`Icons.person_rounded`) — User profile, donation history, 90-day auto check engine, request logs.
 
 ---
 
@@ -55,3 +55,8 @@ When the user clicks on the **Notification Bell Icon** in the top header:
 - **Global Shape**: Full Capsule / Pill (`BorderRadius.circular(50)` / `9999px`) for all buttons, chips, and input fields.
 - **Card Shape**: `BorderRadius.circular(16)` to `BorderRadius.circular(24)`.
 - **Responsive Layout**: All views wrapped in `ResponsiveLayout` with max-width `500.0` on Web/Desktop to preserve mobile edge-to-edge aesthetics without overflow.
+
+---
+
+### 5. TARGET SCOPE & INSTITUTION
+- Product scope is nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.

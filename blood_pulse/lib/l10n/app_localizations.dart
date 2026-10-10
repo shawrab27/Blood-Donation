@@ -989,7 +989,7 @@ abstract class AppLocalizations {
   /// No description provided for @healthToolCountdownDesc.
   ///
   /// In en, this message translates to:
-  /// **'120-day safe recovery interval'**
+  /// **'90-day safe recovery interval'**
   String get healthToolCountdownDesc;
 
   /// No description provided for @healthToolCompatibility.
@@ -1183,6 +1183,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to read selected file.'**
   String get failedToReadFile;
+
+  /// No description provided for @lastDonatedDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Last donated: {days} days ago'**
+  String lastDonatedDaysAgo(int days);
+
+  /// No description provided for @noDonationRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'No donations recorded yet'**
+  String get noDonationRecorded;
+
+  /// No description provided for @standardCooldownDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard {days} Days Cooldown'**
+  String standardCooldownDays(int days);
+
+  /// No description provided for @lastDonatedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Donated: {date}'**
+  String lastDonatedDate(String date);
 }
 
 class _AppLocalizationsDelegate

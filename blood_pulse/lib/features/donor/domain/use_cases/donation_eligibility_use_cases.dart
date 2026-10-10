@@ -19,7 +19,7 @@ import '../../../../../../providers/profile_countdown_provider.dart';
 /// Computes a full eligibility snapshot for a donor using the
 /// [DonationEligibilityEngine] business rules.
 ///
-/// Applies the WHO-mandated 120-day inter-donation cooldown, haemoglobin
+/// Applies the WHO-mandated 90-day inter-donation cooldown, haemoglobin
 /// thresholds, medical deferral flags, and voluntary-pause state.
 ///
 /// This is a pure domain use case — it delegates evaluation to the
@@ -64,7 +64,7 @@ final class EvaluateEligibilityUseCase {
 /// reset in the local profile state.
 ///
 /// This use case writes to the [ProfileCountdownNotifier] (Riverpod provider)
-/// so the 120-day countdown widget updates immediately without a full reload.
+/// so the 90-day countdown widget updates immediately without a full reload.
 final class UpdateLastDonationDateUseCase {
   const UpdateLastDonationDateUseCase(this._notifier);
 
