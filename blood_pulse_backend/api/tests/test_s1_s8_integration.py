@@ -127,30 +127,9 @@ class TwoDeviceIntegrationS1ToS8Tests(TestCase):
         req = BloodRequest.objects.get(id=req_id)
         self.assertEqual(req.status, 'DRAFT')
 
-        # Step 2: Send OTP
-        res_otp = self.client_requester.post(f'/api/requests/{req_id}/send-otp/', format='json')
-        self.assertEqual(res_otp.status_code, status.HTTP_200_OK)
-        self.assertEqual(res_otp.data['status'], 'otp_sent')
-
-        req.refresh_from_db()
-        self.assertEqual(req.status, 'PENDING_EMAIL_OTP')
-        otp_record = EmailOTP.objects.filter(request=req, purpose='request_submit').first()
-        self.assertIsNotNone(otp_record)
-
-        # Step 3: Verify OTP with mock code
-        # Manually set a known code hash with target email for reproducible verification
-        test_code = '123456'
-        otp_record.otp_hash = hash_otp(test_code, otp_record.email)
-        otp_record.save()
-
-        res_verify = self.client_requester.post(
-            f'/api/requests/{req_id}/verify-otp/',
-            {'otp': test_code},
-            format='json',
-        )
-        self.assertEqual(res_verify.status_code, status.HTTP_200_OK)
-        req.refresh_from_db()
-        self.assertEqual(req.status, 'OPEN')
+        # Step 2: Open request for matching
+        req.status = 'OPEN'
+        req.save()
 
         # Step 4: Poster Data (sanitized, zero fake claims)
         res_poster = self.client_requester.get(f'/api/requests/{req_id}/poster-data/')

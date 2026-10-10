@@ -933,81 +933,15 @@ def standby_offer_respond_view(request, pk):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-@throttle_classes([OTPAnonThrottle, OTPUserThrottle])
 def email_otp_send_view(request):
     """
     POST /api/auth/otp/send/
-    Dispatches 6-digit OTP code strictly via Brevo HTTPS REST API (Rule 8).
-    Enforces 60s cooldown and max 3 requests per hour.
+    DEPRECATED: Returns HTTP 410 Gone. Use /api/requests/otp/send/.
     """
-    from api.models import EmailOTP
-    from api.services.email import (
-        get_email_sender,
-        generate_secure_otp,
-        hash_otp,
-        OTP_EXPIRY_MINUTES,
-        OTP_RESEND_COOLDOWN_SECONDS,
-        OTP_MAX_HOURLY_REQUESTS,
+    return Response(
+        {"detail": "Endpoint deprecated. Use /api/requests/otp/send/."},
+        status=status.HTTP_410_GONE,
     )
-
-    email = request.data.get('email', '').strip().lower()
-    if not email or '@' not in email:
-        return Response({'error': 'Valid email address is required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    now = timezone.now()
-
-    # Rate limiting: 60s cooldown
-    recent_otp = EmailOTP.objects.filter(email=email).order_by('-created_at').first()
-    if recent_otp and (now - recent_otp.created_at).total_seconds() < OTP_RESEND_COOLDOWN_SECONDS:
-        seconds_left = int(OTP_RESEND_COOLDOWN_SECONDS - (now - recent_otp.created_at).total_seconds())
-        return Response({
-            'error': f'Please wait {seconds_left} seconds before requesting a new verification code.',
-            'cooldown_seconds': seconds_left,
-        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-    # Rate limiting: max 3 per hour
-    one_hour_ago = now - timedelta(hours=1)
-    hourly_count = EmailOTP.objects.filter(email=email, created_at__gte=one_hour_ago).count()
-    if hourly_count >= OTP_MAX_HOURLY_REQUESTS:
-        return Response({
-            'error': 'Too many OTP requests for this email address. Please try again in 1 hour.',
-        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-    # Generate & hash OTP
-    code = generate_secure_otp(length=6)
-    code_hash = hash_otp(code, email)
-    expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
-
-    EmailOTP.objects.create(
-        email=email,
-        otp_hash=code_hash,
-        expires_at=expires_at,
-    )
-
-    # Send via HTTPS Email API
-    sender = get_email_sender()
-    subject = f"{code} is your BloodPulse verification code"
-    text_content = (
-        f"Your BloodPulse verification code is: {code}\n\n"
-        f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.\n"
-        f"If you did not request this code, please ignore this email."
-    )
-    html_content = (
-        f"<div style='font-family: sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #f0e6e6; border-radius: 12px; background: #fff8f7;'>"
-        f"<h2 style='color: #C30121; margin-top: 0;'>BloodPulse Verification</h2>"
-        f"<p style='color: #2B2B2B;'>Please use the following 6-digit code to verify your email address:</p>"
-        f"<div style='font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #C30121; padding: 16px; background: #fdf3f3; border-radius: 8px; text-align: center; margin: 20px 0;'>{code}</div>"
-        f"<p style='color: #8E7D7F; font-size: 13px;'>This code expires in {OTP_EXPIRY_MINUTES} minutes. Never share this code with anyone.</p>"
-        f"</div>"
-    )
-
-    sender.send_email(to_email=email, subject=subject, text_content=text_content, html_content=html_content)
-
-    return Response({
-        'message': f'Verification code dispatched to {email}.',
-        'email': email,
-        'expires_in_minutes': OTP_EXPIRY_MINUTES,
-    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -1015,66 +949,12 @@ def email_otp_send_view(request):
 def email_otp_verify_view(request):
     """
     POST /api/auth/otp/verify/
-    Verifies 6-digit code using HMAC-SHA256 constant-time comparison.
-    Locks after 5 wrong attempts.
+    DEPRECATED: Returns HTTP 410 Gone. Use /api/requests/otp/verify/.
     """
-    from api.models import EmailOTP, DonorProfile
-    from api.services.email import verify_otp_hash
-
-    email = request.data.get('email', '').strip().lower()
-    code = request.data.get('code', '').strip()
-
-    if not email or not code:
-        return Response({'error': 'Email and 6-digit code are required.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    now = timezone.now()
-    otp_record = EmailOTP.objects.filter(
-        email=email,
-        is_used=False,
-        expires_at__gt=now,
-    ).order_by('-created_at').first()
-
-    if not otp_record:
-        return Response({'error': 'Invalid or expired verification code. Please request a new one.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if otp_record.is_locked():
-        return Response({'error': 'This code has been locked due to too many failed attempts. Please request a new code.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-    # Verify constant-time
-    if not verify_otp_hash(code, otp_record.otp_hash, email):
-        otp_record.attempts += 1
-        otp_record.save(update_fields=['attempts'])
-        remaining_attempts = max(0, 5 - otp_record.attempts)
-        return Response({
-            'error': f'Incorrect code. {remaining_attempts} attempt(s) remaining.',
-            'remaining_attempts': remaining_attempts,
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    # Verification successful
-    otp_record.is_used = True
-    otp_record.save(update_fields=['is_used'])
-
-    # If user is authenticated, link email & update donor profile
-    if request.user.is_authenticated:
-        if request.user.email != email:
-            request.user.email = email
-            request.user.save(update_fields=['email'])
-
-        profile, _ = DonorProfile.objects.get_or_create(user=request.user)
-        profile.email_verified = True
-        profile.save(update_fields=['email_verified'])
-
-    # Also update any donor profile matching this email
-    matched_donors = DonorProfile.objects.filter(user__email=email)
-    for d in matched_donors:
-        d.email_verified = True
-        d.save(update_fields=['email_verified'])
-
-    return Response({
-        'message': 'Email address verified successfully.',
-        'email': email,
-        'email_verified': True,
-    }, status=status.HTTP_200_OK)
+    return Response(
+        {"detail": "Endpoint deprecated. Use /api/requests/otp/verify/."},
+        status=status.HTTP_410_GONE,
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -233,12 +233,6 @@ class AppLocalizationsBn extends AppLocalizations {
   String get authBloodGroup => 'রক্তের গ্রুপ';
 
   @override
-  String get authOtpTitle => 'ওটিপি যাচাইকরণ';
-
-  @override
-  String get authOtpDesc => 'আপনার ফোনে পাঠানো ৬-সংখ্যার ওটিপি কোডটি লিখুন';
-
-  @override
   String get authVerifyBtn => 'যাচাই করে এগিয়ে যান';
 
   @override
@@ -320,7 +314,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get regEmail => 'ইমেইল অ্যাড্রেস';
 
   @override
-  String get regPhonePrimary => 'প্রাথমিক ফোন নম্বর (এসএমএস ওটিপি)';
+  String get regPhonePrimary => 'প্রাথমিক ফোন নম্বর';
 
   @override
   String get regAltPhone => 'বিকল্প ফোন নম্বর (ঐচ্ছিক)';

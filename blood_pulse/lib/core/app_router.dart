@@ -14,7 +14,6 @@ import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../features/auth/presentation/screens/verify_otp_reset_screen.dart';
 import '../features/auth/presentation/screens/registration_screen.dart';
-import '../features/auth/presentation/screens/otp_verification_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 
 // Main Shell & Emergency Request
@@ -150,10 +149,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return const RegistrationScreen();
       },
     ),
-    GoRoute(
-      path: '/otp-verify',
-      builder: (context, state) => const OtpVerificationScreen(),
-    ),
+
 
     // ── Main Shell (5-Tabs) ───────────────────────────────────────────────────
     GoRoute(

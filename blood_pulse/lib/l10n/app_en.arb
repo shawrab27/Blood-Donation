@@ -81,8 +81,6 @@
   "authAge": "Age",
   "authGender": "Gender",
   "authBloodGroup": "Blood Group",
-  "authOtpTitle": "OTP Verification",
-  "authOtpDesc": "Enter the 6-digit code sent to your phone number",
   "authVerifyBtn": "Verify & Continue",
 
   "close": "Close",
@@ -111,7 +109,7 @@
   "regCategory": "User Category",
   "regFullName": "Full Name (English)",
   "regEmail": "Email Address",
-  "regPhonePrimary": "Primary Phone (SMS OTP)",
+  "regPhonePrimary": "Primary Phone Number",
   "regAltPhone": "Alternative Phone (Optional)",
   "regPassword": "Password (min. 6 characters)",
   "regConfirmPassword": "Confirm Password",

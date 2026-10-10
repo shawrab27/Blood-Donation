@@ -78,8 +78,6 @@ from .views_search import institution_search, upazila_search
 from .views_blood_hub_v2 import (
     BloodRequestCreateV2APIView,
     BloodRequestDetailV2APIView,
-    BloodRequestSendOtpAPIView,
-    BloodRequestVerifyOtpAPIView,
     BloodRequestReachAPIView,
     BloodRequestAcceptAPIView,
     DonationMatchStatusAPIView,
@@ -101,8 +99,6 @@ urlpatterns = [
     path('requests/', BloodRequestCreateV2APIView.as_view(), name='blood-requests-create-v2'),
     path('requests/reach/', BloodRequestReachAPIView.as_view(), name='blood-requests-reach'),
     path('requests/<int:pk>/', BloodRequestDetailV2APIView.as_view(), name='blood-requests-detail-v2'),
-    path('requests/<int:pk>/send-otp/', BloodRequestSendOtpAPIView.as_view(), name='blood-requests-send-otp'),
-    path('requests/<int:pk>/verify-otp/', BloodRequestVerifyOtpAPIView.as_view(), name='blood-requests-verify-otp'),
     path('requests/<int:pk>/accept/', BloodRequestAcceptAPIView.as_view(), name='blood-requests-accept-v2'),
     path('requests/<int:pk>/poster-data/', BloodRequestPosterDataAPIView.as_view(), name='blood-requests-poster-data'),
     path('requests/<int:pk>/qr-landing/', BloodRequestQRLandingAPIView.as_view(), name='blood-requests-qr-landing'),

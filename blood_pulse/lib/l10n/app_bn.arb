@@ -81,8 +81,6 @@
   "authAge": "বয়স",
   "authGender": "লিঙ্গ",
   "authBloodGroup": "রক্তের গ্রুপ",
-  "authOtpTitle": "ওটিপি যাচাইকরণ",
-  "authOtpDesc": "আপনার ফোনে পাঠানো ৬-সংখ্যার ওটিপি কোডটি লিখুন",
   "authVerifyBtn": "যাচাই করে এগিয়ে যান",
 
   "close": "বন্ধ করুন",
@@ -111,7 +109,7 @@
   "regCategory": "ব্যবহারকারীর ধরন",
   "regFullName": "পুরো নাম (ইংরেজিতে)",
   "regEmail": "ইমেইল অ্যাড্রেস",
-  "regPhonePrimary": "প্রাথমিক ফোন নম্বর (এসএমএস ওটিপি)",
+  "regPhonePrimary": "প্রাথমিক ফোন নম্বর",
   "regAltPhone": "বিকল্প ফোন নম্বর (ঐচ্ছিক)",
   "regPassword": "পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)",
   "regConfirmPassword": "পাসওয়ার্ড নিশ্চিত করুন",

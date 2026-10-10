@@ -97,7 +97,6 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
       '/onboarding',
       '/forgot-password',
       '/verify-otp',
-      '/otp-verify',
       '/privacy-policy',
       '/assistant',
     ];

@@ -118,7 +118,7 @@ class BloodHubLifecycleTests(TestCase):
         with self.assertRaises(IllegalStateTransitionError):
             transition(req, 'DONATED', self.requester_user)
 
-    def test_request_create_and_otp_flow(self):
+    def test_request_create_flow(self):
         self.client.force_authenticate(user=self.requester_user)
         res = self.client.post('/api/requests/', {
             'blood_group': 'A+',
@@ -131,30 +131,6 @@ class BloodHubLifecycleTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         req_id = res.data['id']
         self.assertEqual(res.data['status'], 'DRAFT')
-
-        # Send OTP
-        res_otp = self.client.post(f'/api/requests/{req_id}/send-otp/', {}, format='json')
-        self.assertEqual(res_otp.status_code, status.HTTP_200_OK)
-        self.assertEqual(res_otp.data['status'], 'otp_sent')
-
-        # Verify request status moved to PENDING_EMAIL_OTP
-        req = BloodRequest.objects.get(id=req_id)
-        self.assertEqual(req.status, 'PENDING_EMAIL_OTP')
-
-        # Test invalid OTP
-        res_bad = self.client.post(f'/api/requests/{req_id}/verify-otp/', {'otp': '000000'}, format='json')
-        self.assertEqual(res_bad.status_code, status.HTTP_400_BAD_REQUEST)
-
-        # Force a known OTP
-        otp_rec = EmailOTP.objects.filter(request=req).latest('created_at')
-        otp_rec.otp_hash = hash_otp('123456', otp_rec.email)
-        otp_rec.save()
-
-        # Verify correct OTP
-        res_verify = self.client.post(f'/api/requests/{req_id}/verify-otp/', {'otp': '123456'}, format='json')
-        self.assertEqual(res_verify.status_code, status.HTTP_200_OK)
-        req.refresh_from_db()
-        self.assertEqual(req.status, 'OPEN')
 
     def test_targeting_reach_endpoint(self):
         self.client.force_authenticate(user=self.requester_user)

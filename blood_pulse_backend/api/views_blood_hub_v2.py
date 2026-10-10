@@ -17,8 +17,6 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from api.models import BloodRequest, DonationMatch, FollowUp
 from api.serializers_blood_hub_v2 import (
     BloodRequestCreateV2Serializer,
-    EmailOTPSendV2Serializer,
-    EmailOTPVerifyV2Serializer,
     DonationMatchDetailSerializer,
     DonationMatchStatusUpdateSerializer,
     DonationReportSerializer,
@@ -31,8 +29,6 @@ from api.services.blood_hub_lifecycle_service import (
     IllegalStateTransitionError,
     ConflictError,
     create_draft_request,
-    send_request_otp,
-    verify_request_otp,
     accept_request,
     update_match_status,
     report_match_failure,
@@ -69,60 +65,6 @@ class BloodRequestDetailV2APIView(APIView):
             return Response(BloodRequestDetailSerializer(req, context={'request': request}).data, status=status.HTTP_200_OK)
         except BloodRequest.DoesNotExist:
             return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
-class BloodRequestSendOtpAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            req = BloodRequest.objects.get(pk=pk)
-        except BloodRequest.DoesNotExist:
-            return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if req.requester != request.user and not request.user.is_staff:
-            raise PermissionDenied("You can only request OTP for your own requisition.")
-
-        serializer = EmailOTPSendV2Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get('email')
-
-        try:
-            otp_record = send_request_otp(req, email=email)
-            return Response({
-                "status": "otp_sent",
-                "email": otp_record.email,
-                "cooldown_seconds": 60,
-            }, status=status.HTTP_200_OK)
-        except (IllegalStateTransitionError, ConflictError) as err:
-            return Response({"error": str(err)}, status=status.HTTP_409_CONFLICT)
-
-
-class BloodRequestVerifyOtpAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, pk):
-        try:
-            req = BloodRequest.objects.get(pk=pk)
-        except BloodRequest.DoesNotExist:
-            return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if req.requester != request.user and not request.user.is_staff:
-            raise PermissionDenied("You can only verify OTP for your own requisition.")
-
-        serializer = EmailOTPVerifyV2Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        otp = serializer.validated_data['otp']
-
-        try:
-            verify_request_otp(req, otp)
-            return Response({
-                "status": "verified",
-                "request_status": "OPEN",
-                "request_id": req.id,
-            }, status=status.HTTP_200_OK)
-        except (IllegalStateTransitionError, ConflictError) as err:
-            return Response({"error": str(err)}, status=status.HTTP_409_CONFLICT)
 
 
 class BloodRequestReachAPIView(APIView):

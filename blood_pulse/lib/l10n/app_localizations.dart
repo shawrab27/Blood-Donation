@@ -536,18 +536,6 @@ abstract class AppLocalizations {
   /// **'Blood Group'**
   String get authBloodGroup;
 
-  /// No description provided for @authOtpTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'OTP Verification'**
-  String get authOtpTitle;
-
-  /// No description provided for @authOtpDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter the 6-digit code sent to your phone number'**
-  String get authOtpDesc;
-
   /// No description provided for @authVerifyBtn.
   ///
   /// In en, this message translates to:
@@ -707,7 +695,7 @@ abstract class AppLocalizations {
   /// No description provided for @regPhonePrimary.
   ///
   /// In en, this message translates to:
-  /// **'Primary Phone (SMS OTP)'**
+  /// **'Primary Phone Number'**
   String get regPhonePrimary;
 
   /// No description provided for @regAltPhone.

@@ -233,12 +233,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authBloodGroup => 'Blood Group';
 
   @override
-  String get authOtpTitle => 'OTP Verification';
-
-  @override
-  String get authOtpDesc => 'Enter the 6-digit code sent to your phone number';
-
-  @override
   String get authVerifyBtn => 'Verify & Continue';
 
   @override
@@ -320,7 +314,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get regEmail => 'Email Address';
 
   @override
-  String get regPhonePrimary => 'Primary Phone (SMS OTP)';
+  String get regPhonePrimary => 'Primary Phone Number';
 
   @override
   String get regAltPhone => 'Alternative Phone (Optional)';

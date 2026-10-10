@@ -21,7 +21,6 @@ class RouterNotifier extends ChangeNotifier {
     final path = state.uri.path;
     final isPreAuthRoute = path == '/login' || 
                            path == '/register' || 
-                           path == '/otp-verify' ||
                            path == '/forgot-password' ||
                            path == '/verify-otp' ||
                            path == '/language' ||
@@ -44,7 +43,6 @@ class RouterNotifier extends ChangeNotifier {
     if (authState.status == AuthStatus.authenticated || authState.status == AuthStatus.authenticatedIncomplete) {
       final isAuthFlow = path == '/login' || 
                          path == '/register' || 
-                         path == '/otp-verify' ||
                          path == '/forgot-password' ||
                          path == '/verify-otp' ||
                          path == '/' || 
