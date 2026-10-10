@@ -146,6 +146,65 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('CRITICAL BLOOD NEEDED'), findsOneWidget);
     });
+
+    testWidgets(
+        'Exported poster renders at fixed production size and pixel ratio without text downscaling',
+        (WidgetTester tester) async {
+      final globalKey = GlobalKey<PosterGeneratorWidgetState>();
+      tester.view.physicalSize = const Size(1200, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: PosterGeneratorWidget(
+                key: globalKey,
+                data: samplePosterData,
+                templateType: PosterTemplateType.textOnly,
+                isBangla: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify the rendered widget width matches fixed design canvas width (380.0)
+      final widgetFinder = find.byType(PosterGeneratorWidget);
+      final posterSize = tester.getSize(widgetFinder);
+      expect(posterSize.width, equals(380.0));
+
+      // Verify the blood group text height is unscaled (fontSize 34)
+      final textFinder = find.text('B+');
+      final textSize = tester.getSize(textFinder);
+      expect(textSize.height, equals(34.0));
+
+      // Export PNG at production pixelRatio = 3.0 inside runAsync
+      await tester.runAsync(() async {
+        final file = await globalKey.currentState!.exportPNG(
+          pixelRatio: 3.0,
+          targetDirectory: Directory.systemTemp,
+        );
+        expect(file.existsSync(), isTrue);
+
+        // Verify exported PNG image width is exactly 380 * 3.0 = 1140 pixels
+        final bytes = await file.readAsBytes();
+        final decodedImage = await decodeImageFromList(bytes);
+        expect(decodedImage.width, equals(1140));
+        expect(decodedImage.height, equals((posterSize.height * 3.0).round()));
+      });
+
+      // Golden comparison for the exported poster itself
+      await expectLater(
+        widgetFinder,
+        matchesGoldenFile('goldens/exported_poster_text_template.png'),
+      );
+    });
   });
 }
 

@@ -283,8 +283,8 @@ class LanguageSelectionScreen extends ConsumerWidget {
                               Flexible(
                                 child: Text(
                                   isBangla
-                                      ? 'রক্তদাতাদের বিশ্বস্ত প্ল্যাটফর্ম'
-                                      : 'Trusted Voluntary Blood Network',
+                                      ? 'বিশ্বজুড়ে ২০ লাখেরও বেশি রক্তদাতার বিশ্বস্ত প্ল্যাটফর্ম'
+                                      : 'Trusted by 2M+ Donors Worldwide',
                                   style: const TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 12,
