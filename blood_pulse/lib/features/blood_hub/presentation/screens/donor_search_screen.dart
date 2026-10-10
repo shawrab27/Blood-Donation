@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/responsive_center_wrapper.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 import '../../data/blood_hub_api_service.dart';
 import '../widgets/donor_search/donor_search_bar.dart';
 import '../widgets/donor_search/donor_filter_chips.dart';
@@ -14,6 +15,8 @@ import '../widgets/donor_search/donor_map_view.dart';
 import '../widgets/donor_search/donor_search_skeleton.dart';
 
 /// Screen 2: Donor Search Screen conforming to Stitch UI specification.
+/// Features privacy-locked search bar, interactive filter chips, real live donor cards,
+/// interactive requisition popup cards, and the "Nearby Donor Network" live OSM map.
 class DonorSearchScreen extends ConsumerStatefulWidget {
   const DonorSearchScreen({super.key});
 
@@ -24,7 +27,7 @@ class DonorSearchScreen extends ConsumerStatefulWidget {
 class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
-  bool _isMapVisible = false;
+  bool _isMapExpanded = false;
 
   @override
   void initState() {
@@ -55,52 +58,15 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF2B2B2B)),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/blood-hub');
-            }
-          },
-        ),
-        title: const Text(
-          'Search Donors',
-          style: TextStyle(
-            fontFamily: 'Georgia',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2B2B2B),
-          ),
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () {
-              context.push(
-                '/blood-hub/request/direct',
-                extra: {
-                  'prefill_blood_group': filter.bloodGroup,
-                  'mode': 'REQUEST_ALL',
-                },
-              );
-            },
-            icon: const Icon(Icons.group_add_rounded, size: 16, color: Color(0xFFC30121)),
-            label: const Text(
-              'Request to All',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFC30121),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
+      appBar: CustomAppBar(
+        showBackButton: true,
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/blood-hub');
+          }
+        },
       ),
       body: SafeArea(
         child: ResponsiveCenterWrapper(
@@ -109,6 +75,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
             color: const Color(0xFFC30121),
             onRefresh: () async {
               await ref.read(donorSearchNotifierProvider.notifier).refresh();
+              ref.invalidate(donorMapPinsProvider);
             },
             child: ListView(
               controller: _scrollController,
@@ -117,26 +84,36 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
-                // Top Search Bar + Toggle
+                // 1. Search Bar (Privacy Locked - Never searches by name or phone)
                 DonorSearchBar(
                   searchController: _searchController,
                   onSearchChanged: (val) {
-                    setState(() {});
+                    ref.read(bloodHubFilterProvider.notifier).update(
+                          (s) => s.copyWith(
+                            clearQ: val.isEmpty,
+                            q: val.isEmpty ? null : val,
+                          ),
+                        );
                   },
-                  onRequestModeTap: () => context.push('/blood-hub/request/direct'),
                 ),
                 const SizedBox(height: 14),
 
-                // Filter Chips
+                // 2. Filter Chips: Blood Group, Campus, Division, Zila
                 DonorFilterChips(
                   currentFilter: filter,
-                  isMapVisible: _isMapVisible,
-                  onToggleMap: () => setState(() => _isMapVisible = !_isMapVisible),
                   onBloodGroupSelected: (bg) {
                     ref.read(bloodHubFilterProvider.notifier).update(
                           (s) => s.copyWith(
                             clearBloodGroup: bg == null,
                             bloodGroup: bg,
+                          ),
+                        );
+                  },
+                  onCampusSelected: (camp) {
+                    ref.read(bloodHubFilterProvider.notifier).update(
+                          (s) => s.copyWith(
+                            clearCampus: camp == null,
+                            campus: camp,
                           ),
                         );
                   },
@@ -157,62 +134,83 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                           ),
                         );
                   },
+                  onResetFilters: () {
+                    _searchController.clear();
+                    ref.read(bloodHubFilterProvider.notifier).state =
+                        const DonorSearchFilter();
+                  },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Map View
-                if (_isMapVisible) ...[
-                  const DonorMapView(),
-                  const SizedBox(height: 16),
-                ],
-
-                // Results Header
+                // 3. Available Donors Header + "Request to All" Button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Expanded(
-                      child: Text(
-                        'Available Donors',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF24191A),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Available Donors',
+                          style: TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF24191A),
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        const SizedBox(height: 2),
+                        searchPageAsync.maybeWhen(
+                          data: (page) => Text(
+                            '${page.totalCount} found near you',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              color: Color(0xFF916F6C),
+                            ),
+                          ),
+                          orElse: () => const Text(
+                            'Searching donors...',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              color: Color(0xFF916F6C),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    searchPageAsync.maybeWhen(
-                      data: (page) => Text(
-                        '${page.totalCount} found near you',
-                        style: const TextStyle(
+                    ElevatedButton.icon(
+                      onPressed: () => _showRequestAllModal(context, searchPageAsync.valueOrNull?.totalCount ?? 0),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF960017),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Icons.campaign_rounded, size: 16),
+                      label: const Text(
+                        'Request to All',
+                        style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
-                          color: Color(0xFF916F6C),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      orElse: () => const SizedBox.shrink(),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
-                // Donor Results List with Loading / Error / Empty States
+                // 4. Donor Cards List
                 searchPageAsync.when(
                   data: (page) {
-                    final query = _searchController.text.trim().toLowerCase();
-                    final donors = query.isEmpty
-                        ? page.donors
-                        : page.donors.where((d) {
-                            return d.name.toLowerCase().contains(query) ||
-                                (d.campus?.toLowerCase().contains(query) ?? false) ||
-                                d.district.toLowerCase().contains(query);
-                          }).toList();
-
-                    if (donors.isEmpty) {
+                    if (page.donors.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 48),
+                        padding: const EdgeInsets.symmetric(vertical: 40),
                         child: Center(
                           child: Column(
                             children: [
@@ -231,7 +229,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                                   color: Color(0xFF2B2B2B),
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               TextButton(
                                 onPressed: () {
                                   _searchController.clear();
@@ -239,7 +237,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                                       const DonorSearchFilter();
                                 },
                                 child: const Text(
-                                  'Clear Filters',
+                                  'Clear All Filters',
                                   style: TextStyle(
                                     fontFamily: 'Inter',
                                     color: Color(0xFFC30121),
@@ -254,7 +252,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                     }
 
                     return Column(
-                      children: donors.map((donor) {
+                      children: page.donors.map((donor) {
                         return DonorCard(
                           key: ValueKey('donor_${donor.id}'),
                           donor: donor,
@@ -311,11 +309,143 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // 5. Nearby Donor Network Section Header + Full Screen Map Button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Nearby Donor Network',
+                      style: TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() => _isMapExpanded = !_isMapExpanded);
+                      },
+                      icon: Icon(
+                        _isMapExpanded
+                            ? Icons.close_fullscreen_rounded
+                            : Icons.open_in_full_rounded,
+                        size: 14,
+                        color: const Color(0xFF960017),
+                      ),
+                      label: Text(
+                        _isMapExpanded ? 'Collapse' : 'Full Screen Map',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF960017),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // 6. Interactive OSM Live Donor Map
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: _isMapExpanded ? 460 : 300,
+                  child: const DonorMapView(),
+                ),
+                const SizedBox(height: 32),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Popup card when "Request to All" is tapped
+  void _showRequestAllModal(BuildContext context, int count) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0D5D5),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Broadcast Request to All Donors',
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This will dispatch an urgent emergency notification to all $count compatible nearby donors within your active search radius.',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: Color(0xFF5F5E5E),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push(
+                        '/blood-hub/request/direct',
+                        extra: {
+                          'mode': 'REQUEST_ALL',
+                        },
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF960017),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Confirm Emergency Broadcast',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

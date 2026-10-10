@@ -8,6 +8,20 @@ const List<String> _kBloodGroups = [
   'Any', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-',
 ];
 
+const List<String> _kTopCampuses = [
+  'All Campuses',
+  'Dhaka Medical College',
+  'BUET Campus',
+  'Dhaka University',
+  'North South University',
+  'IUT',
+  'Chittagong Medical College',
+  'Mirpur, Dhaka',
+  'Mymensingh Medical College',
+  'Rajshahi Medical College',
+  'Sylhet MAG Osmani Medical College',
+];
+
 const Map<String, List<String>> _kDivisionDistricts = {
   'Dhaka': ['Dhaka', 'Gazipur', 'Narayanganj', 'Tangail', 'Faridpur', 'Manikganj', 'Munshiganj', 'Narsingdi', 'Gopalganj', 'Kishoreganj', 'Madaripur', 'Rajbari', 'Shariatpur'],
   'Chattogram': ['Chattogram', "Cox's Bazar", 'Cumilla', 'Feni', 'Brahmanbaria', 'Chandpur', 'Noakhali', 'Lakshmipur', 'Khagrachhari', 'Rangamati', 'Bandarban'],
@@ -19,76 +33,106 @@ const Map<String, List<String>> _kDivisionDistricts = {
   'Mymensingh': ['Mymensingh', 'Jamalpur', 'Netrokona', 'Sherpur'],
 };
 
-/// Filter chips row for Blood Group, Division, Zila, Campus, and Advanced (Map toggle).
+/// Filter chips row for Blood Group, Campus, Division, and Zila matching Stitch UI.
 class DonorFilterChips extends StatelessWidget {
   const DonorFilterChips({
     super.key,
     required this.currentFilter,
     required this.onBloodGroupSelected,
+    required this.onCampusSelected,
     required this.onDivisionSelected,
     required this.onDistrictSelected,
-    required this.isMapVisible,
-    required this.onToggleMap,
+    required this.onResetFilters,
   });
 
   final DonorSearchFilter currentFilter;
   final ValueChanged<String?> onBloodGroupSelected;
+  final ValueChanged<String?> onCampusSelected;
   final ValueChanged<String?> onDivisionSelected;
   final ValueChanged<String?> onDistrictSelected;
-  final bool isMapVisible;
-  final VoidCallback onToggleMap;
+  final VoidCallback onResetFilters;
 
   @override
   Widget build(BuildContext context) {
     final bgLabel = currentFilter.bloodGroup ?? 'Blood Group';
     final isBgSelected = currentFilter.bloodGroup != null && currentFilter.bloodGroup != 'Any';
 
+    final campusLabel = currentFilter.campus ?? 'Campus';
+    final isCampusSelected = currentFilter.campus != null && currentFilter.campus != 'All Campuses';
+
     final divLabel = currentFilter.division ?? 'Division';
-    final isDivSelected = currentFilter.division != null;
+    final isDivSelected = currentFilter.division != null && currentFilter.division != 'Any';
 
     final distLabel = currentFilter.district ?? 'Zila';
-    final isDistSelected = currentFilter.district != null;
+    final isDistSelected = currentFilter.district != null && currentFilter.district != 'Any';
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: [
-          // 1. Blood Group Chip
+          // 1. Blood Group Chip (active crimson when selected)
           _FilterChipButton(
             label: bgLabel,
             isSelected: isBgSelected,
-            icon: Icons.water_drop_outlined,
             onTap: () => _showBloodGroupSheet(context),
           ),
           const SizedBox(width: 8),
 
-          // 2. Division Chip
+          // 2. Campus Chip
+          _FilterChipButton(
+            label: campusLabel,
+            isSelected: isCampusSelected,
+            onTap: () => _showCampusSheet(context),
+          ),
+          const SizedBox(width: 8),
+
+          // 3. Division Chip
           _FilterChipButton(
             label: divLabel,
             isSelected: isDivSelected,
-            icon: Icons.map_outlined,
             onTap: () => _showDivisionSheet(context),
           ),
           const SizedBox(width: 8),
 
-          // 3. Zila / District Chip
+          // 4. Zila / District Chip
           _FilterChipButton(
             label: distLabel,
             isSelected: isDistSelected,
-            icon: Icons.location_city_outlined,
             onTap: () => _showDistrictSheet(context),
           ),
           const SizedBox(width: 8),
 
-          // 4. Advanced / Map Toggle Chip
-          _FilterChipButton(
-            label: isMapVisible ? 'Hide Map' : 'Map View',
-            isSelected: isMapVisible,
-            icon: Icons.tune_rounded,
-            highlightColor: const Color(0xFF0D68AA),
-            onTap: onToggleMap,
-          ),
+          // 5. Reset Filter Button
+          if (isBgSelected || isCampusSelected || isDivSelected || isDistSelected)
+            InkWell(
+              onTap: onResetFilters,
+              borderRadius: BorderRadius.circular(50),
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE9EB),
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(color: const Color(0xFFE6BDBA)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.close_rounded, size: 16, color: Color(0xFF960017)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Clear',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF960017),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -103,7 +147,7 @@ class DonorFilterChips extends StatelessWidget {
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,8 +156,9 @@ class DonorFilterChips extends StatelessWidget {
                   'Select Blood Group',
                   style: TextStyle(
                     fontFamily: 'Georgia',
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -126,9 +171,17 @@ class DonorFilterChips extends StatelessWidget {
                     return ChoiceChip(
                       label: Text(bg),
                       selected: isSel,
-                      selectedColor: const Color(0xFFC30121),
+                      selectedColor: const Color(0xFF960017),
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                        side: BorderSide(
+                          color: isSel ? const Color(0xFF960017) : const Color(0xFFE6BDBA),
+                        ),
+                      ),
                       labelStyle: TextStyle(
-                        color: isSel ? Colors.white : const Color(0xFF2B2B2B),
+                        fontFamily: 'Inter',
+                        color: isSel ? Colors.white : const Color(0xFF24191A),
                         fontWeight: FontWeight.bold,
                       ),
                       onSelected: (_) {
@@ -140,6 +193,56 @@ class DonorFilterChips extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCampusSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text(
+                  'Select Campus or Area',
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
+                  ),
+                ),
+              ),
+              ..._kTopCampuses.map((camp) {
+                final isSel = currentFilter.campus == camp ||
+                    (camp == 'All Campuses' && currentFilter.campus == null);
+                return ListTile(
+                  title: Text(
+                    camp,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      color: isSel ? const Color(0xFF960017) : const Color(0xFF24191A),
+                    ),
+                  ),
+                  trailing: isSel ? const Icon(Icons.check, color: Color(0xFF960017)) : null,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onCampusSelected(camp == 'All Campuses' ? null : camp);
+                  },
+                );
+              }),
+            ],
           ),
         );
       },
@@ -164,29 +267,37 @@ class DonorFilterChips extends StatelessWidget {
                   'Select Division',
                   style: TextStyle(
                     fontFamily: 'Georgia',
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
                   ),
                 ),
               ),
               ListTile(
                 title: const Text('All Divisions'),
-                selected: currentFilter.division == null,
                 onTap: () {
                   Navigator.pop(ctx);
                   onDivisionSelected(null);
                 },
               ),
-              ..._kDivisionDistricts.keys.map(
-                (div) => ListTile(
-                  title: Text(div),
-                  selected: currentFilter.division == div,
+              ..._kDivisionDistricts.keys.map((div) {
+                final isSel = currentFilter.division == div;
+                return ListTile(
+                  title: Text(
+                    div,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      color: isSel ? const Color(0xFF960017) : const Color(0xFF24191A),
+                    ),
+                  ),
+                  trailing: isSel ? const Icon(Icons.check, color: Color(0xFF960017)) : null,
                   onTap: () {
                     Navigator.pop(ctx);
                     onDivisionSelected(div);
                   },
-                ),
-              ),
+                );
+              }),
             ],
           ),
         );
@@ -195,9 +306,10 @@ class DonorFilterChips extends StatelessWidget {
   }
 
   void _showDistrictSheet(BuildContext context) {
-    final districts = currentFilter.division != null
-        ? (_kDivisionDistricts[currentFilter.division!] ?? [])
-        : _kDivisionDistricts.values.expand((d) => d).toList();
+    final div = currentFilter.division;
+    final districts = div != null && _kDivisionDistricts.containsKey(div)
+        ? _kDivisionDistricts[div]!
+        : _kDivisionDistricts.values.expand((d) => d).toSet().toList()..sort();
 
     showModalBottomSheet<void>(
       context: context,
@@ -210,35 +322,43 @@ class DonorFilterChips extends StatelessWidget {
             shrinkWrap: true,
             padding: const EdgeInsets.symmetric(vertical: 16),
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Text(
-                  'Select District / Zila',
-                  style: TextStyle(
+                  div != null ? 'Select Zila in $div' : 'Select Zila',
+                  style: const TextStyle(
                     fontFamily: 'Georgia',
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
                   ),
                 ),
               ),
               ListTile(
-                title: const Text('All Districts'),
-                selected: currentFilter.district == null,
+                title: const Text('All Zilas'),
                 onTap: () {
                   Navigator.pop(ctx);
                   onDistrictSelected(null);
                 },
               ),
-              ...districts.map(
-                (dist) => ListTile(
-                  title: Text(dist),
-                  selected: currentFilter.district == dist,
+              ...districts.map((dist) {
+                final isSel = currentFilter.district == dist;
+                return ListTile(
+                  title: Text(
+                    dist,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      color: isSel ? const Color(0xFF960017) : const Color(0xFF24191A),
+                    ),
+                  ),
+                  trailing: isSel ? const Icon(Icons.check, color: Color(0xFF960017)) : null,
                   onTap: () {
                     Navigator.pop(ctx);
                     onDistrictSelected(dist);
                   },
-                ),
-              ),
+                );
+              }),
             ],
           ),
         );
@@ -251,32 +371,26 @@ class _FilterChipButton extends StatelessWidget {
   const _FilterChipButton({
     required this.label,
     required this.isSelected,
-    required this.icon,
     required this.onTap,
-    this.highlightColor,
   });
 
   final String label;
   final bool isSelected;
-  final IconData icon;
   final VoidCallback onTap;
-  final Color? highlightColor;
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = highlightColor ?? const Color(0xFFC30121);
-
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(50),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor : Colors.white,
-          borderRadius: BorderRadius.circular(50),
+          color: isSelected ? const Color(0xFF960017) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? activeColor : const Color(0xFFE8DADA),
+            color: isSelected ? const Color(0xFF960017) : const Color(0xFFE6BDBA),
             width: 1,
           ),
           boxShadow: const [
@@ -290,26 +404,20 @@ class _FilterChipButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isSelected ? Colors.white : const Color(0xFF5F5E5E),
-            ),
-            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF2B2B2B),
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF5C3F3D),
               ),
             ),
             const SizedBox(width: 4),
             Icon(
-              Icons.arrow_drop_down_rounded,
-              size: 16,
-              color: isSelected ? Colors.white : const Color(0xFF5F5E5E),
+              Icons.arrow_drop_down,
+              size: 18,
+              color: isSelected ? Colors.white : const Color(0xFF5C3F3D),
             ),
           ],
         ),

@@ -23,6 +23,8 @@ from api.models import (
     BloodRequest,
     RequestAcceptance,
     FakeReport,
+    District,
+    Division,
 )
 from api.serializers_bloodhub import (
     HospitalSerializer,
@@ -51,13 +53,16 @@ from api.conf import WAVE_TIMEOUT_MINUTES
 @permission_classes([AllowAny])
 def donor_search_view(request):
     """
-    Search available donors by blood group, component compatibility, campus, or district.
-    Enforces privacy: masked phone numbers, only opted-in (is_searchable) donors.
+    Search available donors by blood group, campus, district, division, or location.
+    STRICT PRIVACY LOCK: Searches by donor name or phone number are locked/blocked.
+    Only opted-in (is_searchable=True), available donors are returned with masked phone numbers.
     """
-    blood_group = request.query_params.get('blood_group', '').strip()
+    blood_group = request.query_params.get('blood_group', '').replace(' ', '+').strip()
     component = request.query_params.get('component', 'WHOLE').strip()
     campus = request.query_params.get('campus', '').strip()
     district = request.query_params.get('district', '').strip()
+    division = request.query_params.get('division', '').strip()
+    q = request.query_params.get('q', '').strip()
     
     lat_str = request.query_params.get('lat', '').strip()
     lng_str = request.query_params.get('lng', '').strip()
@@ -69,17 +74,44 @@ def donor_search_view(request):
     queryset = DonorProfile.objects.filter(
         is_searchable=True,
         is_available=True,
-    ).select_related('user')
+    ).select_related('user', 'upazila_linked__district__division')
 
-    if blood_group:
+    if blood_group and blood_group != 'Any':
         compatible_groups = get_compatible_donor_groups(blood_group, component)
         queryset = queryset.filter(blood_group__in=compatible_groups)
 
-    if campus:
-        queryset = queryset.filter(Q(campus__icontains=campus) | Q(institute__icontains=campus))
+    if campus and campus != 'All Campuses' and campus != 'Any':
+        queryset = queryset.filter(
+            Q(campus__icontains=campus) |
+            Q(institute__icontains=campus) |
+            Q(institution__name__icontains=campus)
+        )
 
-    if district:
-        queryset = queryset.filter(district__icontains=district)
+    if district and district != 'Any':
+        queryset = queryset.filter(
+            Q(district__icontains=district) |
+            Q(upazila_linked__district__name__icontains=district)
+        )
+
+    if division and division != 'Any':
+        districts_in_div = list(District.objects.filter(division__name__icontains=division).values_list('name', flat=True))
+        queryset = queryset.filter(
+            Q(upazila_linked__district__division__name__icontains=division) |
+            Q(district__in=districts_in_div) |
+            Q(address__icontains=division)
+        )
+
+    # STRICT PRIVACY LOCK: Never search by name, username, or phone number
+    if q:
+        queryset = queryset.filter(
+            Q(campus__icontains=q) |
+            Q(institute__icontains=q) |
+            Q(institution__name__icontains=q) |
+            Q(district__icontains=q) |
+            Q(address__icontains=q) |
+            Q(upazila_linked__name__icontains=q) |
+            Q(upazila_linked__district__name__icontains=q)
+        )
 
     if lat_str and lng_str:
         try:
@@ -87,23 +119,19 @@ def donor_search_view(request):
             req_lng = float(lng_str)
             radius = float(radius_str)
             
-            # Python-level Haversine filtering (SQLite and Postgres compatible for MVP)
             filtered_results = []
             for d in queryset:
                 if d.latitude is not None and d.longitude is not None:
                     dist = haversine_distance(req_lat, req_lng, float(d.latitude), float(d.longitude))
                     if dist <= radius:
-                        # Annotate for potential sorting/display
                         d._distance = dist
                         filtered_results.append(d)
             
-            # Sort by distance first, then rating
             filtered_results.sort(key=lambda x: (x._distance, -x.rating_avg))
             total_count = len(filtered_results)
             results = filtered_results[offset:offset + limit]
             
         except ValueError:
-            # Fallback if invalid float parsing
             total_count = queryset.count()
             results = queryset.order_by('-total_bags_donated', '-rating_avg')[offset:offset + limit]
     else:
@@ -113,6 +141,7 @@ def donor_search_view(request):
     serializer = DonorSearchSerializer(results, many=True, context={'request': request})
     return Response({
         'total': total_count,
+        'count': total_count,
         'offset': offset,
         'limit': limit,
         'results': serializer.data,
@@ -123,30 +152,63 @@ def donor_search_view(request):
 @permission_classes([AllowAny])
 def donor_map_view(request):
     """
-    Returns fuzzed coordinates (~500m) for donors within an area or boundary.
-    Strictly excludes non-searchable donors and unverified coordinates.
+    Returns fuzzed coordinates (~500m) for searchable donors matching active filters.
+    STRICT PRIVACY LOCK: Searches by donor name or phone number are locked/blocked.
     """
-    blood_group = request.query_params.get('blood_group', '').strip()
+    blood_group = request.query_params.get('blood_group', '').replace(' ', '+').strip()
     component = request.query_params.get('component', 'WHOLE').strip()
+    campus = request.query_params.get('campus', '').strip()
     district = request.query_params.get('district', '').strip()
+    division = request.query_params.get('division', '').strip()
+    q = request.query_params.get('q', '').strip()
 
     lat_str = request.query_params.get('lat', '').strip()
     lng_str = request.query_params.get('lng', '').strip()
-    radius_str = request.query_params.get('radius', '15.0').strip() # Default 15km for map view
+    radius_str = request.query_params.get('radius', '15.0').strip()
 
     queryset = DonorProfile.objects.filter(
         is_searchable=True,
         is_available=True,
     ).exclude(
         Q(latitude__isnull=True) & Q(last_lat__isnull=True)
-    )
+    ).select_related('user', 'upazila_linked__district__division')
 
-    if blood_group:
+    if blood_group and blood_group != 'Any':
         compatible_groups = get_compatible_donor_groups(blood_group, component)
         queryset = queryset.filter(blood_group__in=compatible_groups)
 
-    if district:
-        queryset = queryset.filter(district__icontains=district)
+    if campus and campus != 'All Campuses' and campus != 'Any':
+        queryset = queryset.filter(
+            Q(campus__icontains=campus) |
+            Q(institute__icontains=campus) |
+            Q(institution__name__icontains=campus)
+        )
+
+    if district and district != 'Any':
+        queryset = queryset.filter(
+            Q(district__icontains=district) |
+            Q(upazila_linked__district__name__icontains=district)
+        )
+
+    if division and division != 'Any':
+        districts_in_div = list(District.objects.filter(division__name__icontains=division).values_list('name', flat=True))
+        queryset = queryset.filter(
+            Q(upazila_linked__district__division__name__icontains=division) |
+            Q(district__in=districts_in_div) |
+            Q(address__icontains=division)
+        )
+
+    # STRICT PRIVACY LOCK: Never search by name or phone
+    if q:
+        queryset = queryset.filter(
+            Q(campus__icontains=q) |
+            Q(institute__icontains=q) |
+            Q(institution__name__icontains=q) |
+            Q(district__icontains=q) |
+            Q(address__icontains=q) |
+            Q(upazila_linked__name__icontains=q) |
+            Q(upazila_linked__district__name__icontains=q)
+        )
 
     if lat_str and lng_str:
         try:
@@ -172,6 +234,7 @@ def donor_map_view(request):
     return Response({
         'count': len(results),
         'donors': serializer.data,
+        'results': serializer.data,
     }, status=status.HTTP_200_OK)
 
 

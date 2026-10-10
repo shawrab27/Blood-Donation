@@ -8,13 +8,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
-import '../widgets/landing/landing_hero_section.dart';
 import '../widgets/landing/landing_action_cards.dart';
 import '../widgets/landing/landing_campaign_card.dart';
-import '../widgets/landing/landing_features_grid.dart';
 
-/// BloodHubLandingScreen conforms directly to Stitch design specification.
-/// Features 3 distinct action cards: Search for Donor, Emergency Blood, Blood Campaigns.
+/// BloodHubLandingScreen: Exactly 3 segments matching Stitch design specification:
+/// Segment 1: "Search for Donor"
+/// Segment 2: "Emergency Blood" (Crimson gradient with interactive Emergency Dispatch popup card)
+/// Segment 3: "Blood Campaigns" (Community Drive preview & Feed integration)
 class BloodHubLandingScreen extends ConsumerWidget {
   const BloodHubLandingScreen({super.key});
 
@@ -39,21 +39,17 @@ class BloodHubLandingScreen extends ConsumerWidget {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Hero Header
-                  LandingHeroSection(isBangla: isBangla),
-                  const SizedBox(height: 20),
-
-                  // 2. Action Cards 1 & 2: Search for Donor & Emergency Blood
+                  // 1. Action Cards: Segment 1 (Search for Donor) & Segment 2 (Emergency Blood)
                   LandingActionCards(
                     isBangla: isBangla,
                     onSearchTap: () => context.push('/blood-hub/search'),
-                    onEmergencyTap: () => context.push('/emergency'),
+                    onEmergencyTap: () => context.push('/blood-hub/request/direct'),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
-                  // 3. Card 3: Blood Campaigns (Feed filter navigation)
+                  // 2. Action Card: Segment 3 (Blood Campaigns)
                   LandingCampaignCard(
                     isBangla: isBangla,
                     onViewAllTap: () {
@@ -61,11 +57,7 @@ class BloodHubLandingScreen extends ConsumerWidget {
                       ref.read(shellTabProvider.notifier).state = 0;
                     },
                   ),
-                  const SizedBox(height: 24),
-
-                  // 4. Supporting Features Bento Grid
-                  LandingFeaturesGrid(isBangla: isBangla),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 36),
                 ],
               ),
             ),

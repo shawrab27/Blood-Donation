@@ -9,11 +9,13 @@ import 'package:blood_pulse/core/widgets/responsive_layout.dart';
 import 'package:blood_pulse/features/auth/presentation/providers/locale_provider.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/providers/poster_provider.dart';
+import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_canvas.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_editor_controls.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_generator_widget.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_share_sheet.dart';
+import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_style_selectors.dart';
 
-/// Full screen enabling customizable poster editing, live preview, export, and social sharing.
+/// Full-screen poster studio: live-preview, size/colour pickers, export & share.
 class PosterGeneratorScreen extends ConsumerStatefulWidget {
   const PosterGeneratorScreen({
     super.key,
@@ -32,6 +34,8 @@ class PosterGeneratorScreen extends ConsumerStatefulWidget {
 class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
   late PosterData _posterData;
   late PosterTemplateType _templateType;
+  PosterAspectRatio _aspectRatio = PosterAspectRatio.square;
+  PosterColorTheme _colorTheme = PosterColorTheme.crimson;
   final GlobalKey<PosterGeneratorWidgetState> _generatorKey = GlobalKey();
   bool _isProcessing = false;
 
@@ -45,95 +49,58 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
   Future<void> _exportToGallery(bool isBangla) async {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
-
     try {
-      final pngFile = await _generatorKey.currentState?.exportPNG();
-      if (pngFile == null) {
-        throw Exception('Could not capture poster image.');
-      }
-
-      final repo = ref.read(posterRepositoryProvider);
-      final savedFile = await repo.exportToGallery(pngFile);
-
+      final png = await _generatorKey.currentState?.exportPNG();
+      if (png == null) throw Exception('Could not capture poster.');
+      final saved = await ref.read(posterRepositoryProvider).exportToGallery(png);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.success,
-            content: Text(
-              isBangla
-                  ? 'গ্যালারিতে সেভ হয়েছে: ${savedFile.path.split("/").last}'
-                  : 'Poster saved to gallery: ${savedFile.path.split("/").last}',
-              style: const TextStyle(fontFamily: 'Inter'),
-            ),
-          ),
-        );
+        _snack(isBangla
+            ? 'গ্যালারিতে সেভ: ${saved.path.split('/').last}'
+            : 'Saved: ${saved.path.split('/').last}',
+            AppColors.success);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Text(
-              isBangla
-                  ? 'সেভ করতে ব্যর্থ হয়েছে: $e'
-                  : 'Failed to export poster: $e',
-              style: const TextStyle(fontFamily: 'Inter'),
-            ),
-          ),
-        );
-      }
+      if (mounted) _snack('${isBangla ? 'ব্যর্থ' : 'Failed'}: $e', AppColors.error);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
   Future<void> _sharePoster(bool isBangla, {String? platform}) async {
+    if (platform == 'gallery') { await _exportToGallery(isBangla); return; }
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
-
     try {
-      final pngFile = await _generatorKey.currentState?.exportPNG();
-      if (pngFile == null) {
-        throw Exception('Could not capture poster image.');
-      }
-
-      final repo = ref.read(posterRepositoryProvider);
-      await repo.sharePoster(
-        pngFile,
-        _posterData,
-        platform: platform,
-        isBangla: isBangla,
-      );
+      final png = await _generatorKey.currentState?.exportPNG();
+      if (png == null) throw Exception('Could not capture poster.');
+      await ref.read(posterRepositoryProvider)
+          .sharePoster(png, _posterData, platform: platform, isBangla: isBangla);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.error,
-            content: Text(
-              isBangla
-                  ? 'শেয়ার করতে ব্যর্থ হয়েছে: $e'
-                  : 'Failed to share poster: $e',
-              style: const TextStyle(fontFamily: 'Inter'),
-            ),
-          ),
-        );
-      }
+      if (mounted) _snack('${isBangla ? 'ব্যর্থ' : 'Failed'}: $e', AppColors.error);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
+  }
+
+  void _snack(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(fontFamily: 'Inter')),
+      backgroundColor: color,
+      behavior: SnackBarBehavior.floating,
+      shape: const StadiumBorder(),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
     final isBangla = locale.languageCode == 'bn';
-
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
       appBar: BloodPulseAppBar(
         showBackButton: true,
         showLogo: false,
-        title: isBangla ? 'পোস্টার জেনারেটর' : 'Poster Generator',
+        title: isBangla ? 'পোস্টার স্টুডিও' : 'Poster Studio',
         titleColor: AppColors.primary,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -143,106 +110,54 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   children: [
-                    _templateTypeSelector(isBangla),
+                    PosterTemplateTabBar(
+                      selected: _templateType,
+                      isBangla: isBangla,
+                      onChanged: (t) => setState(() => _templateType = t),
+                    ),
                     const SizedBox(height: 16),
-                    Center(
-                      child: PosterGeneratorWidget(
-                        key: _generatorKey,
-                        data: _posterData,
-                        templateType: _templateType,
-                        isBangla: isBangla,
-                      ),
+                    PosterCanvas(
+                      generatorKey: _generatorKey,
+                      data: _posterData,
+                      templateType: _templateType,
+                      aspectRatio: _aspectRatio,
+                      isBangla: isBangla,
                     ),
                     const SizedBox(height: 20),
                     PosterEditorControls(
                       initialData: _posterData,
                       isBangla: isBangla,
-                      onDataChanged: (updated) =>
-                          setState(() => _posterData = updated),
+                      selectedAspectRatio: _aspectRatio,
+                      selectedColorTheme: _colorTheme,
+                      onDataChanged: (d) => setState(() => _posterData = d),
+                      onAspectRatioChanged: (r) => setState(() => _aspectRatio = r),
+                      onColorThemeChanged: (t) => setState(() => _colorTheme = t),
                     ),
                     const SizedBox(height: 80),
                   ],
                 ),
               ),
             ),
-            _bottomActionBar(isBangla),
+            _bottomBar(isBangla),
           ],
         ),
       ),
     );
   }
 
-  Widget _templateTypeSelector(bool isBangla) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3DDE0),
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Row(
-        children: [
-          _templateTab(
-            type: PosterTemplateType.withPhoto,
-            label: isBangla ? '১. ছবিসহ' : '1. Photo',
-          ),
-          _templateTab(
-            type: PosterTemplateType.textOnly,
-            label: isBangla ? '২. টেক্সট' : '2. Text',
-          ),
-          _templateTab(
-            type: PosterTemplateType.blank,
-            label: isBangla ? '৩. কাস্টম' : '3. Custom',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _templateTab({
-    required PosterTemplateType type,
-    required String label,
-  }) {
-    final isSelected = _templateType == type;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _templateType = type),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(50),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 11.5,
-              fontWeight: FontWeight.bold,
-              color: isSelected ? Colors.white : AppColors.secondary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _bottomActionBar(bool isBangla) {
+  Widget _bottomBar(bool isBangla) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 10,
-            offset: const Offset(0, -3),
-          ),
-        ],
+        boxShadow: [BoxShadow(
+          color: Colors.black.withAlpha(15),
+          blurRadius: 10,
+          offset: const Offset(0, -3),
+        )],
       ),
       child: Row(
         children: [
@@ -256,8 +171,10 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
               onPressed: _isProcessing ? null : () => _exportToGallery(isBangla),
               icon: const Icon(Icons.download_rounded, color: AppColors.primary),
               label: Text(
-                isBangla ? 'গ্যালারিতে সংরক্ষণ' : 'Save to Gallery',
-                style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                isBangla ? 'গ্যালারিতে সেভ' : 'Save to Gallery',
+                style: const TextStyle(
+                    fontFamily: 'Inter', fontSize: 12,
+                    fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
             ),
           ),
@@ -276,12 +193,15 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
                   : () => PosterShareSheet.show(
                         context,
                         isBangla: isBangla,
-                        onSelectChannel: (platform) => _sharePoster(isBangla, platform: platform),
+                        posterData: _posterData,
+                        onSelectChannel: (p) => _sharePoster(isBangla, platform: p),
                       ),
               icon: const Icon(Icons.share_rounded, color: Colors.white),
               label: Text(
                 isBangla ? 'শেয়ার করুন' : 'Share Poster',
-                style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                    fontFamily: 'Inter', fontSize: 12,
+                    fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
           ),

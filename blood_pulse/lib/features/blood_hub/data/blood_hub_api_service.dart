@@ -46,7 +46,7 @@ class DonorSearchModel {
   factory DonorSearchModel.fromJson(Map<String, dynamic> j) {
     return DonorSearchModel(
       id: (j['id'] as num?)?.toInt() ?? 0,
-      name: (j['name'] as String?) ?? '',
+      name: (j['name'] as String?) ?? (j['full_name'] as String?) ?? '',
       bloodGroup: (j['blood_group'] as String?) ?? '',
       component: (j['component'] as String?) ?? 'WHOLE',
       district: (j['district'] as String?) ?? '',
@@ -55,8 +55,8 @@ class DonorSearchModel {
       isVerified: (j['is_verified'] as bool?) ?? false,
       isEligible: (j['is_eligible'] as bool?) ?? false,
       trustBand: (j['trust_band'] as String?) ?? 'LOW',
-      maskedPhone: (j['masked_phone'] as String?) ?? '',
-      lastDonationDays: (j['last_donation_days'] as num?)?.toInt(),
+      maskedPhone: (j['masked_phone'] as String?) ?? (j['phone_masked'] as String?) ?? '',
+      lastDonationDays: (j['last_donation_days'] as num?)?.toInt() ?? (j['cooldown_days_remaining'] as num?)?.toInt(),
     );
   }
 }
@@ -82,6 +82,9 @@ class DonorMapPin {
     required this.lat,
     required this.lng,
     required this.isVerified,
+    this.name,
+    this.campus,
+    this.district,
   });
 
   final int id;
@@ -89,6 +92,9 @@ class DonorMapPin {
   final double lat;
   final double lng;
   final bool isVerified;
+  final String? name;
+  final String? campus;
+  final String? district;
 
   factory DonorMapPin.fromJson(Map<String, dynamic> j) {
     return DonorMapPin(
@@ -97,6 +103,9 @@ class DonorMapPin {
       lat: (j['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (j['lng'] as num?)?.toDouble() ?? 0.0,
       isVerified: (j['is_verified'] as bool?) ?? false,
+      name: (j['name'] as String?) ?? (j['full_name'] as String?),
+      campus: j['campus'] as String?,
+      district: j['district'] as String?,
     );
   }
 }
@@ -173,6 +182,8 @@ class BloodHubApiService {
     String? component,
     String? district,
     String? division,
+    String? campus,
+    String? q,
     String? cursor,
     int pageSize = 20,
   }) async {
@@ -182,8 +193,13 @@ class BloodHubApiService {
         'blood_group': bloodGroup,
       if (component != null && component.isNotEmpty && component != 'Any')
         'component': component,
-      if (district != null && district.isNotEmpty) 'district': district,
-      if (division != null && division.isNotEmpty) 'division': division,
+      if (district != null && district.isNotEmpty && district != 'Any')
+        'district': district,
+      if (division != null && division.isNotEmpty && division != 'Any')
+        'division': division,
+      if (campus != null && campus.isNotEmpty && campus != 'All Campuses' && campus != 'Any')
+        'campus': campus,
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
       if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
     };
 
@@ -203,7 +219,9 @@ class BloodHubApiService {
     return DonorSearchPage(
       donors: results,
       nextCursor: data['next_cursor'] as String?,
-      totalCount: (data['count'] as num?)?.toInt() ?? results.length,
+      totalCount: (data['total'] as num?)?.toInt() ??
+          (data['count'] as num?)?.toInt() ??
+          results.length,
     );
   }
 
@@ -215,20 +233,36 @@ class BloodHubApiService {
     String? bloodGroup,
     String? component,
     String? district,
+    String? division,
+    String? campus,
+    String? q,
   }) async {
     final params = <String, String>{
       if (bloodGroup != null && bloodGroup.isNotEmpty && bloodGroup != 'Any')
         'blood_group': bloodGroup,
       if (component != null && component.isNotEmpty && component != 'Any')
         'component': component,
-      if (district != null && district.isNotEmpty) 'district': district,
+      if (district != null && district.isNotEmpty && district != 'Any')
+        'district': district,
+      if (division != null && division.isNotEmpty && division != 'Any')
+        'division': division,
+      if (campus != null && campus.isNotEmpty && campus != 'All Campuses' && campus != 'Any')
+        'campus': campus,
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
     };
 
     final uri = Uri(path: 'donors/map/', queryParameters: params);
     final response = await _api.get(uri.toString());
     final data = jsonDecode(response.body);
 
-    final list = (data is List ? data : (data as Map)['results'] as List? ?? [])
+    List<dynamic> rawList = const [];
+    if (data is List) {
+      rawList = data;
+    } else if (data is Map<String, dynamic>) {
+      rawList = (data['donors'] as List?) ?? (data['results'] as List?) ?? const [];
+    }
+
+    final list = rawList
         .whereType<Map<String, dynamic>>()
         .map(DonorMapPin.fromJson)
         .toList();
@@ -286,28 +320,38 @@ class DonorSearchFilter {
     this.component,
     this.district,
     this.division,
+    this.campus,
+    this.q,
   });
 
   final String? bloodGroup;
   final String? component;
   final String? district;
   final String? division;
+  final String? campus;
+  final String? q;
 
   DonorSearchFilter copyWith({
     String? bloodGroup,
     String? component,
     String? district,
     String? division,
+    String? campus,
+    String? q,
     bool clearBloodGroup = false,
     bool clearComponent = false,
     bool clearDistrict = false,
     bool clearDivision = false,
+    bool clearCampus = false,
+    bool clearQ = false,
   }) {
     return DonorSearchFilter(
       bloodGroup: clearBloodGroup ? null : (bloodGroup ?? this.bloodGroup),
       component: clearComponent ? null : (component ?? this.component),
       district: clearDistrict ? null : (district ?? this.district),
       division: clearDivision ? null : (division ?? this.division),
+      campus: clearCampus ? null : (campus ?? this.campus),
+      q: clearQ ? null : (q ?? this.q),
     );
   }
 }
@@ -332,6 +376,8 @@ class DonorSearchNotifier extends AutoDisposeAsyncNotifier<DonorSearchPage> {
           component: filter.component,
           district: filter.district,
           division: filter.division,
+          campus: filter.campus,
+          q: filter.q,
         );
   }
 
@@ -353,6 +399,8 @@ class DonorSearchNotifier extends AutoDisposeAsyncNotifier<DonorSearchPage> {
             component: filter.component,
             district: filter.district,
             division: filter.division,
+            campus: filter.campus,
+            q: filter.q,
             cursor: _cursor,
           );
       _hasMore = next.nextCursor != null;
@@ -387,6 +435,9 @@ final donorMapPinsProvider = FutureProvider.autoDispose<List<DonorMapPin>>((ref)
         bloodGroup: filter.bloodGroup,
         component: filter.component,
         district: filter.district,
+        division: filter.division,
+        campus: filter.campus,
+        q: filter.q,
       );
 });
 

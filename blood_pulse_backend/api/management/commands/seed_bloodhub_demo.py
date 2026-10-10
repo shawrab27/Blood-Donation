@@ -48,26 +48,36 @@ class Command(BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS(f"Hospital ready: {hosp.name}"))
 
-        # Create Demo Donors
-        emails = [
-            ("demo_donor1@bloodpulse.com", "Demo Donor 1", "01700000001", "A+"),
-            ("demo_donor2@bloodpulse.com", "Demo Donor 2", "01700000002", "O-"),
-            ("demo_admin@bloodpulse.com", "Demo Admin", "01700000003", "B+"),
+        # Create Demo Donors matching Stitch UI specifications
+        demo_donors = [
+            ("zahir.raihan@bloodpulse.com", "Zahir", "Raihan", "01700000001", "A+", "Dhaka Medical College", "Dhaka", 23.7258, 90.3957, 120),
+            ("anika.tabassum@bloodpulse.com", "Anika", "Tabassum", "01700000002", "O-", "BUET Campus", "Dhaka", 23.7266, 90.3898, 180),
+            ("samiul.islam@bloodpulse.com", "Samiul", "Islam", "01700000003", "B+", "Mirpur, Dhaka", "Dhaka", 23.8050, 90.3680, 365),
+            ("tanvir.hossain@bloodpulse.com", "Tanvir", "Hossain", "01700000004", "AB+", "Dhaka University", "Dhaka", 23.7335, 90.3928, 60),
+            ("nusrat.jahan@bloodpulse.com", "Nusrat", "Jahan", "01700000005", "A-", "North South University", "Dhaka", 23.8151, 90.4255, 150),
+            ("farhan.ahmed@bloodpulse.com", "Farhan", "Ahmed", "01700000006", "O+", "Dhaka Medical College", "Dhaka", 23.7270, 90.3970, 90),
+            ("sadia.rahman@bloodpulse.com", "Sadia", "Rahman", "01700000007", "B-", "Gazipur Campus", "Gazipur", 23.9535, 90.3833, 210),
+            ("mahmudul.hasan@bloodpulse.com", "Mahmudul", "Hasan", "01700000008", "AB-", "Chittagong Medical College", "Chattogram", 22.3587, 91.8215, 120),
         ]
 
-        for email, name, phone, bg in emails:
+        now = timezone.now()
+        for email, first, last, phone, bg, campus_name, dist_name, lat, lng, days_ago in demo_donors:
             user, u_created = User.objects.get_or_create(
                 username=email,
                 defaults={
                     'email': email,
-                    'first_name': name.split()[0],
-                    'last_name': name.split()[1],
-                    'is_staff': 'admin' in email.lower(),
-                    'is_superuser': 'admin' in email.lower(),
+                    'first_name': first,
+                    'last_name': last,
+                    'is_staff': False,
+                    'is_superuser': False,
                 }
             )
             if u_created:
                 user.set_password('demo1234')
+                user.save()
+            else:
+                user.first_name = first
+                user.last_name = last
                 user.save()
             
             profile, p_created = DonorProfile.objects.update_or_create(
@@ -75,14 +85,23 @@ class Command(BaseCommand):
                 defaults={
                     'phone_number': phone,
                     'blood_group': bg,
+                    'campus': campus_name,
+                    'district': dist_name,
+                    'address': f"{campus_name}, {dist_name}",
+                    'latitude': lat,
+                    'longitude': lng,
+                    'last_lat': lat,
+                    'last_lng': lng,
                     'is_available': True,
+                    'is_searchable': True,
                     'is_verified': True,
                     'email_verified': True,
-                    'district': "Dhaka",
                     'is_profile_complete': True,
+                    'last_donation_date': (now - timedelta(days=days_ago)).date(),
+                    'total_bags_donated': max(1, days_ago // 100),
                 }
             )
-            self.stdout.write(self.style.SUCCESS(f"User ready: {user.email}"))
+            self.stdout.write(self.style.SUCCESS(f"Donor ready: {user.get_full_name()} ({bg}, {campus_name})"))
 
         # Create a Drill Disaster Event
         now = timezone.now()

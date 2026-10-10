@@ -65,10 +65,12 @@ class HospitalSerializer(serializers.ModelSerializer):
 class DonorSearchSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     full_name = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
     phone_masked = serializers.SerializerMethodField()
     is_eligible = serializers.SerializerMethodField()
     cooldown_days_remaining = serializers.SerializerMethodField()
     badge = serializers.CharField(read_only=True)
+    division = serializers.SerializerMethodField()
 
     class Meta:
         model = DonorProfile
@@ -76,8 +78,10 @@ class DonorSearchSerializer(serializers.ModelSerializer):
             'id',
             'username',
             'full_name',
+            'name',
             'blood_group',
             'district',
+            'division',
             'campus',
             'phone_masked',
             'total_bags_donated',
@@ -97,6 +101,9 @@ class DonorSearchSerializer(serializers.ModelSerializer):
             return name or obj.user.username
         return "Anonymous Donor"
 
+    def get_name(self, obj):
+        return self.get_full_name(obj)
+
     def get_phone_masked(self, obj):
         return mask_phone_number(obj.phone_number)
 
@@ -108,24 +115,45 @@ class DonorSearchSerializer(serializers.ModelSerializer):
         res = evaluate_donor_eligibility(obj)
         return res['days_remaining']
 
+    def get_division(self, obj):
+        if obj.upazila_linked and obj.upazila_linked.district and obj.upazila_linked.district.division:
+            return obj.upazila_linked.district.division.name
+        from api.models import District
+        d = District.objects.filter(name__iexact=obj.district).select_related('division').first()
+        return d.division.name if d and d.division else "Dhaka"
+
 
 class DonorMapSerializer(serializers.ModelSerializer):
     lat = serializers.SerializerMethodField()
     lng = serializers.SerializerMethodField()
     badge = serializers.CharField(read_only=True)
+    name = serializers.SerializerMethodField()
+    phone_masked = serializers.SerializerMethodField()
 
     class Meta:
         model = DonorProfile
         fields = [
             'id',
+            'name',
             'blood_group',
+            'district',
+            'campus',
             'lat',
             'lng',
             'rating_avg',
             'badge',
             'is_verified',
-            'campus',
+            'phone_masked',
         ]
+
+    def get_name(self, obj):
+        if obj.user:
+            name = f"{obj.user.first_name} {obj.user.last_name}".strip()
+            return name or obj.user.username
+        return "Anonymous Donor"
+
+    def get_phone_masked(self, obj):
+        return mask_phone_number(obj.phone_number)
 
     def get_lat(self, obj):
         # Strict privacy fuzzing to ~500m

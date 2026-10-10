@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import 'poster_editor_inputs.dart';
+import 'poster_style_selectors.dart';
 
 /// Interactive editor controls allowing the user to customize poster content in real-time.
 class PosterEditorControls extends StatefulWidget {
@@ -15,11 +16,19 @@ class PosterEditorControls extends StatefulWidget {
     required this.initialData,
     required this.onDataChanged,
     this.isBangla = false,
+    this.selectedAspectRatio = PosterAspectRatio.square,
+    this.selectedColorTheme = PosterColorTheme.crimson,
+    this.onAspectRatioChanged,
+    this.onColorThemeChanged,
   });
 
   final PosterData initialData;
   final ValueChanged<PosterData> onDataChanged;
   final bool isBangla;
+  final PosterAspectRatio selectedAspectRatio;
+  final PosterColorTheme selectedColorTheme;
+  final ValueChanged<PosterAspectRatio>? onAspectRatioChanged;
+  final ValueChanged<PosterColorTheme>? onColorThemeChanged;
 
   @override
   State<PosterEditorControls> createState() => _PosterEditorControlsState();
@@ -127,6 +136,20 @@ class _PosterEditorControlsState extends State<PosterEditorControls> {
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          PosterSizeSelector(
+            selected: widget.selectedAspectRatio,
+            isBangla: widget.isBangla,
+            onChanged: (r) => widget.onAspectRatioChanged?.call(r),
+          ),
+          const SizedBox(height: 12),
+          PosterColorThemeSelector(
+            selected: widget.selectedColorTheme,
+            isBangla: widget.isBangla,
+            onChanged: (t) => widget.onColorThemeChanged?.call(t),
+          ),
+          const SizedBox(height: 14),
+          const Divider(color: Color(0xFFF0E0E0), thickness: 1),
           const SizedBox(height: 12),
           PosterInputPill(
             controller: _patientCtrl,
