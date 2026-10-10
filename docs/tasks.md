@@ -65,6 +65,15 @@ Working style: **one task at a time**, short steps, evidence required.
   - Thank you letter generation & 24h follow-up wellness scheduler (management command + secret token internal endpoint).
   - 2-admin dual authorization for National Emergency activation & capacity-deducted disaster pledges.
   - 100% test coverage (10 new lifecycle/emergency tests passing, 139 total backend tests passing, `manage.py check` 0 issues).
+- [x] Step 1: Auth & Roles Platform Evolution (`feature/step1-auth-roles`):
+  - Single login (Google Sign-In + phone OTP + password credentials; no separate donor/receiver login screens).
+  - Registration asks first: "I want to: [Donate & Request Blood] / [Only Request Blood]".
+  - `ONLY_REQUEST` accounts: `is_searchable = False`, excluded from `get_base_eligible_donor_queryset`, donation cooldown timer bypassed (`cooldownDaysRemaining == 0`).
+  - Google users start with incomplete profile and route directly to Feed; Blood Hub, Community, and Profile protected by soft-wall modal.
+  - PulseAI guard for incomplete profiles on personal donor queries returns: "Your blood group is not set in your profile. Please complete registration."
+  - Backend migration `0039_donorprofile_user_intent.py` additive with DB default; verified with `sqlmigrate`.
+  - Backend tests: 5/5 intent tests pass (`api.tests.test_auth_roles_intent`), 21/21 assistant tests pass (`assistant`).
+  - Flutter analyze: 0 issues; Flutter auth tests: 17/17 tests passing.
 - [ ] Donor deferral (auto-exclude + auto re-match) using the 90-day rule
 - [ ] Blood Hub restructure (merge search + request into one flow)
 - [ ] Live donor tracking map: position is SIMULATED by a timer (donor_tracking_map.dart). Needs real GPS -> Firestore (500 m fuzz) -> requester listener

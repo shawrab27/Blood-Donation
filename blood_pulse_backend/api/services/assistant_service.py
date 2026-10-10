@@ -138,6 +138,44 @@ class PulseAIAssistant:
 
         return None
 
+    def answer_query(self, query: str, lang: str = 'bn', profile_context: dict = None) -> dict:
+        """
+        Unified query entrypoint for PulseAI assistant.
+        Enforces safety guard for users with incomplete profiles asking personal questions.
+        """
+        norm = (query or '').lower().strip()
+        is_bn = (lang == 'bn') or self._is_bangla(norm)
+
+        # Profile completeness guard for personal queries
+        if profile_context is not None:
+            is_complete = profile_context.get('is_profile_complete', True)
+            blood_group = (profile_context.get('blood_group') or '').strip()
+            if not is_complete or not blood_group:
+                personal_kws = [
+                    'who can give me', 'give me blood', 'can i donate', 'amake ke',
+                    'রক্ত দিতে পারবে', 'রক্ত দিতে পারব', 'কে রক্ত দিতে পারবে', 'আমাকে কে',
+                    'amake', 'আমাকে', 'my blood', 'আমার রক্ত', 'eligible', 'আমি কি', 'who can donate'
+                ]
+                if any(kw in norm for kw in personal_kws):
+                    ans_en = "Your blood group is not set in your profile. Please complete registration."
+                    ans_bn = "আপনার প্রোফাইলে রক্তের গ্রুপ নির্ধারণ করা নেই। অনুগ্রহ করে রেজিস্ট্রেশন সম্পূর্ণ করুন।"
+                    reply = ans_bn if is_bn else ans_en
+                    self._log_event("incomplete_profile_guard")
+                    return {
+                        "answer_en": ans_en,
+                        "answer_bn": ans_bn,
+                        "response": reply,
+                        "reply": reply,
+                        "source": "guard_incomplete_profile",
+                        "confidence": 1.0,
+                        "language": 'bn' if is_bn else 'en',
+                        "emergency": False,
+                        "needs_human": False,
+                        "action": "complete_profile",
+                    }
+
+        return self.get_response(query, language=lang)
+
     def get_response(self, message: str, language: str = 'bn') -> dict:
         """
         Fallback response generator complying with the standard response contract:

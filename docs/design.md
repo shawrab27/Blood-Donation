@@ -47,7 +47,7 @@ Usage: Primary for CTAs, active states and urgent elements; Tertiary for informa
 Splash (centered logo + slogan + capsule "Let's Start") → Language select (EN/BN) → Login (phone + password) → Registration.
 
 ### Registration
-Optional avatar (camera/library) · email · primary phone (mandatory) · secondary phone (optional) · password + confirm · age · gender (Male/Female) · blood group + confirm · Student vs Civilian toggle with relevant fields · last donation date or "never donated".
+Intent Selector first: `[Donate & Request Blood]` vs `[Only Request Blood]` (capsule toggle `#C30121` active, `#FDEAEB` background) · Optional avatar (camera/library) · email · primary phone (mandatory) · secondary phone (optional) · password + confirm · age · gender (Male/Female) · blood group + confirm · Student vs Civilian toggle with relevant fields · last donation date or "never donated" (hidden for `Only Request Blood`) · No civilian NID collection in pilot (privacy-by-design).
 
 ### Feed
 Story/post creator at top (Image / Text / Feeling / Check-in). Posts: React (count), Comment, Repost (loop/recycle arrow icon).

@@ -21,6 +21,7 @@ class UserModel {
     this.lastDonationDate,
     this.profileImageUrl,
     this.badgeTier = 'Bronze',
+    this.userIntent = 'DONATE_AND_REQUEST',
   });
 
   final String uid;
@@ -38,16 +39,22 @@ class UserModel {
   final DateTime? lastDonationDate;
   final String? profileImageUrl;
   final String badgeTier; // 'Golden', 'Silver', 'Bronze'
+  final String userIntent; // 'DONATE_AND_REQUEST' or 'ONLY_REQUEST'
 
-  /// Calculates whether the user is physiologically eligible to donate blood based on the 90-day rule.
+  /// Returns false if user registered strictly to request blood
+  bool get canDonate => userIntent != 'ONLY_REQUEST';
+
+  /// Calculates whether the user is physiologically eligible to donate blood based on the cooldown rule.
   bool get isEligibleToDonate {
+    if (userIntent == 'ONLY_REQUEST') return false;
     if (lastDonationDate == null) return true;
     final daysSinceDonation = DateTime.now().difference(lastDonationDate!).inDays;
     return daysSinceDonation >= AppConfig.donorCooldownDays;
   }
 
-  /// Calculates exact number of days remaining in the 90-day cooldown interval.
+  /// Calculates exact number of days remaining in the cooldown interval. Returns 0 for ONLY_REQUEST users.
   int get cooldownDaysRemaining {
+    if (userIntent == 'ONLY_REQUEST') return 0;
     if (lastDonationDate == null) return 0;
     final nextEligible = lastDonationDate!.add(const Duration(days: AppConfig.donorCooldownDays));
     final diff = nextEligible.difference(DateTime.now()).inDays;
@@ -70,6 +77,7 @@ class UserModel {
     DateTime? lastDonationDate,
     String? profileImageUrl,
     String? badgeTier,
+    String? userIntent,
   }) {
     return UserModel(
       uid:              uid ?? this.uid,
@@ -87,6 +95,7 @@ class UserModel {
       lastDonationDate: lastDonationDate ?? this.lastDonationDate,
       profileImageUrl:  profileImageUrl ?? this.profileImageUrl,
       badgeTier:        badgeTier ?? this.badgeTier,
+      userIntent:       userIntent ?? this.userIntent,
     );
   }
 
@@ -107,6 +116,7 @@ class UserModel {
       'lastDonationDate': lastDonationDate?.toIso8601String(),
       'profileImageUrl': profileImageUrl,
       'badgeTier': badgeTier,
+      'user_intent': userIntent,
     };
   }
 
@@ -127,6 +137,7 @@ class UserModel {
       lastDonationDate: map['lastDonationDate'] != null ? DateTime.parse(map['lastDonationDate'] as String) : null,
       profileImageUrl: map['profileImageUrl'] as String?,
       badgeTier: map['badgeTier'] as String? ?? 'Bronze',
+      userIntent: map['user_intent'] as String? ?? map['userIntent'] as String? ?? 'DONATE_AND_REQUEST',
     );
   }
 }

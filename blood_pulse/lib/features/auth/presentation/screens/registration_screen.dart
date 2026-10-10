@@ -28,6 +28,8 @@ enum _Gender { male, female }
 
 enum _UserCategory { student, civilian }
 
+enum _UserIntent { donateAndRequest, onlyRequest }
+
 const List<String> _bloodGroups = [
   'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-',
 ];
@@ -93,6 +95,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   // ── State ──
   Uint8List? _avatarBytes;
+  _UserIntent _userIntent = _UserIntent.donateAndRequest;
   _Gender _gender = _Gender.male;
   _UserCategory _category = _UserCategory.civilian;
 
@@ -379,7 +382,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       _showError('Blood group confirmation does not match! Please verify your blood type.');
       return;
     }
-    if (!_neverDonated && _lastDonationDate == null) {
+    if (_userIntent == _UserIntent.donateAndRequest && !_neverDonated && _lastDonationDate == null) {
       _showError('Please specify your last donation date or check "I have never donated blood before".');
       return;
     }
@@ -415,6 +418,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       catDetails['village'] = _villageCtrl.text.trim();
     }
 
+    final isOnlyReq = _userIntent == _UserIntent.onlyRequest;
     final profile = UserProfile(
       fullName: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
@@ -425,13 +429,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       bloodGroup: _bloodGroup!,
       category: _category == _UserCategory.student ? 'student' : 'civilian',
       categoryDetails: catDetails,
-      neverDonated: _neverDonated,
-      lastDonationDate: _neverDonated ? null : _lastDonationDate,
-      totalBagsDonated: _neverDonated ? 0 : _totalBags,
+      neverDonated: isOnlyReq ? true : _neverDonated,
+      lastDonationDate: (isOnlyReq || _neverDonated) ? null : _lastDonationDate,
+      totalBagsDonated: (isOnlyReq || _neverDonated) ? 0 : _totalBags,
       isOtpVerified: true,
       isProfileComplete: true,
       nidHash: nidHash,
       avatarBytes: _avatarBytes,
+      userIntent: isOnlyReq ? 'ONLY_REQUEST' : 'DONATE_AND_REQUEST',
     );
 
     final success = await ref.read(authProvider.notifier).registerUser(profile, password: _pwCtrl.text);
@@ -511,6 +516,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               children: [
                 // Header
                 _buildHeaderSection(),
+                const SizedBox(height: 20),
+
+                // Intent Selector (Registration asks first: [Donate & Request Blood] / [Only Request Blood])
+                _buildIntentSelector(),
                 const SizedBox(height: 24),
 
                 // Avatar Photo Picker
@@ -535,9 +544,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 _buildLocationAndIdentityFields(),
                 const SizedBox(height: 24),
 
-                // Donation History Card
-                _buildDonationHistoryCard(),
-                const SizedBox(height: 32),
+                // Donation History Card (Only for Donate & Request Blood)
+                if (_userIntent == _UserIntent.donateAndRequest) ...[
+                  _buildDonationHistoryCard(),
+                  const SizedBox(height: 32),
+                ] else
+                  const SizedBox(height: 8),
 
                 // Submit Button
                 CapsuleButton(
@@ -628,6 +640,121 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             color: Color(0xFF666666),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildIntentSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel('I want to:'),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFDEAEB),
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _userIntent = _UserIntent.donateAndRequest),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _userIntent == _UserIntent.donateAndRequest
+                          ? const Color(0xFFC30121)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: _userIntent == _UserIntent.donateAndRequest
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFC30121).withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Donate & Request Blood',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _userIntent == _UserIntent.donateAndRequest
+                              ? Colors.white
+                              : const Color(0xFF2B2B2B),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _userIntent = _UserIntent.onlyRequest),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _userIntent == _UserIntent.onlyRequest
+                          ? const Color(0xFFC30121)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: _userIntent == _UserIntent.onlyRequest
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFC30121).withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Only Request Blood',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _userIntent == _UserIntent.onlyRequest
+                              ? Colors.white
+                              : const Color(0xFF2B2B2B),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_userIntent == _UserIntent.onlyRequest)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4),
+            child: Row(
+              children: const [
+                Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF0D68AA)),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'You can request blood when needed. Your profile will not appear in donor searches or maps.',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      color: Color(0xFF0D68AA),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -1274,15 +1401,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           controller: _villageCtrl,
           hint: 'Enter village or area name',
           prefixIcon: Icons.home_outlined,
-        ),
-        const SizedBox(height: 16),
-
-        _fieldLabel('NID / Birth Certificate (Optional but required for requests)'),
-        const SizedBox(height: 6),
-        CustomInputField(
-          controller: _nidBirthCtrl,
-          hint: 'Enter identification number',
-          prefixIcon: Icons.credit_card_outlined,
         ),
       ],
     );

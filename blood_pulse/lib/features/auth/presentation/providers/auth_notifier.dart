@@ -40,6 +40,7 @@ class UserProfile {
     this.avatarBytes,
     this.googlePhotoUrl,
     this.authProvider,
+    this.userIntent = 'DONATE_AND_REQUEST',
   });
 
   final String fullName;
@@ -63,6 +64,10 @@ class UserProfile {
   final Uint8List? avatarBytes;
   final String? googlePhotoUrl;
   final String? authProvider;
+  final String userIntent; // 'DONATE_AND_REQUEST' or 'ONLY_REQUEST'
+
+  bool get isOnlyRequest => userIntent == 'ONLY_REQUEST';
+  bool get canDonate => userIntent != 'ONLY_REQUEST';
 
   UserProfile copyWith({
     String? fullName,
@@ -86,6 +91,7 @@ class UserProfile {
     Uint8List? avatarBytes,
     String? googlePhotoUrl,
     String? authProvider,
+    String? userIntent,
   }) {
     return UserProfile(
       fullName:         fullName         ?? this.fullName,
@@ -109,6 +115,7 @@ class UserProfile {
       avatarBytes:      avatarBytes      ?? this.avatarBytes,
       googlePhotoUrl:   googlePhotoUrl   ?? this.googlePhotoUrl,
       authProvider:     authProvider     ?? this.authProvider,
+      userIntent:       userIntent       ?? this.userIntent,
     );
   }
 }
@@ -208,6 +215,7 @@ class AuthNotifier extends Notifier<AuthState> {
           photoUrl: pData['profile_picture'],
           googlePhotoUrl: pData['google_photo_url'],
           authProvider: pData['auth_provider'],
+          userIntent: pData['user_intent'] ?? 'DONATE_AND_REQUEST',
         );
 
         try {
@@ -316,6 +324,7 @@ class AuthNotifier extends Notifier<AuthState> {
         photoUrl: pData['profile_picture'],
         googlePhotoUrl: pData['google_photo_url'],
         authProvider: pData['auth_provider'],
+        userIntent: pData['user_intent'] ?? 'DONATE_AND_REQUEST',
       );
       try { ref.invalidate(profileProvider); } catch (_) {}
 
@@ -444,15 +453,17 @@ class AuthNotifier extends Notifier<AuthState> {
         isProfileComplete: isProfileComplete,
         missingFields: missingFields,
         photoUrl: photoUrl,
+        userIntent: (userData?['user_intent'] as String?) ?? 'DONATE_AND_REQUEST',
       );
 
+      final statusEnum = isProfileComplete ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete;
       ref.read(isGuestProvider.notifier).state = false;
       state = state.copyWith(
-        status: AuthStatus.authenticated,
+        status: statusEnum,
         user: user,
         errorMessage: null,
       );
-      debugPrint('[GoogleSignIn] ✓ Sign-in complete. isProfileComplete: $isProfileComplete');
+      debugPrint('[GoogleSignIn] ✓ Sign-in complete. status: $statusEnum isProfileComplete: $isProfileComplete');
       return true;
     } catch (e) {
       debugPrint('[GoogleSignIn] ✗ ERROR: $e');
@@ -512,6 +523,7 @@ class AuthNotifier extends Notifier<AuthState> {
       'age': completeProfile.age,
       'gender': completeProfile.gender,
       'category': completeProfile.category,
+      'user_intent': completeProfile.userIntent,
       if (password != null && password.isNotEmpty) 'password': password,
     };
 

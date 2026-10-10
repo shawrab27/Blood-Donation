@@ -106,11 +106,18 @@ def chat_view(request):
             profile = getattr(user, 'donorprofile', None) or DonorProfile.objects.filter(user=user).first()
             is_comp, missing = profile.check_is_complete() if profile else (False, ["blood_group", "phone_number", "district", "full_name"])
             if not is_comp:
-                personal_kws = ["amake", "আমাকে", "my blood", "আমার রক্ত", "can i donate", "রক্ত দিতে পারবো", "eligible", "আমি কি"]
+                personal_kws = [
+                    "who can give me", "give me blood", "কে রক্ত দিতে পারবে", "রক্ত দিতে পারবে", 
+                    "রক্ত দিতে পারবো", "amake ke", "amake", "আমাকে", "my blood", "আমার রক্ত", 
+                    "can i donate", "eligible", "আমি কি", "who can donate"
+                ]
                 if any(kw in (message_text or "").lower() for kw in personal_kws):
                     is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(message_text or '')))
-                    fixed_reply = ("আপনার প্রোফাইল এখনো সম্পূর্ণ হয়নি। ব্যক্তিগত উত্তরের জন্য রেজিস্ট্রেশন সম্পূর্ণ করুন।" if is_bn
-                                   else "Your profile is not complete yet. Please complete your registration to get a personal answer.")
+                    fixed_reply = (
+                        "আপনার প্রোফাইলে রক্তের গ্রুপ নির্ধারণ করা নেই। অনুগ্রহ করে রেজিস্ট্রেশন সম্পূর্ণ করুন।"
+                        if is_bn else
+                        "Your blood group is not set in your profile. Please complete registration."
+                    )
                     return Response({
                         "response": fixed_reply, "reply": fixed_reply, "source": "fixed_incomplete_profile",
                         "confidence": 1.0, "language": "bn" if is_bn else "en", "emergency": False,

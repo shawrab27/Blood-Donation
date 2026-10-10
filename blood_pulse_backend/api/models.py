@@ -38,6 +38,12 @@ class Hospital(models.Model):
 
 
 
+USER_INTENT_CHOICES = (
+    ('DONATE_AND_REQUEST', 'Donate & Request Blood'),
+    ('ONLY_REQUEST', 'Only Request Blood'),
+)
+
+
 class DonorProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -108,6 +114,14 @@ class DonorProfile(models.Model):
     # Blood Hub v2 Extensions
 
     is_searchable = models.BooleanField(default=False, help_text="Opt-in to donor search and map discovery")
+
+    user_intent = models.CharField(
+        max_length=30,
+        choices=USER_INTENT_CHOICES,
+        default='DONATE_AND_REQUEST',
+        db_default='DONATE_AND_REQUEST',
+        help_text="Registration intent: Donate & Request or Only Request Blood"
+    )
 
     campus = models.CharField(max_length=255, blank=True, default='', help_text="Campus or institutional affiliation")
 
@@ -202,6 +216,9 @@ class DonorProfile(models.Model):
         return len(missing) == 0, missing
 
     def save(self, *args, **kwargs):
+        if self.user_intent == 'ONLY_REQUEST':
+            self.is_searchable = False
+
         is_comp, _ = self.check_is_complete()
         self.is_profile_complete = is_comp
 
@@ -209,6 +226,8 @@ class DonorProfile(models.Model):
         if update_fields is not None:
             update_fields = set(update_fields)
             update_fields.add('is_profile_complete')
+            if self.user_intent == 'ONLY_REQUEST':
+                update_fields.add('is_searchable')
             kwargs['update_fields'] = update_fields
 
         lat = self.last_lat if self.last_lat is not None else self.latitude

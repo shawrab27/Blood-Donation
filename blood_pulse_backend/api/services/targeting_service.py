@@ -48,6 +48,7 @@ def get_base_eligible_donor_queryset(blood_group: str):
     - Cooldown passed (90 days from DONOR_COOLDOWN_DAYS)
     - Available (is_available=True)
     - Not soft-deleted (user.is_active=True)
+    - Excludes 'ONLY_REQUEST' intent users (they never donate)
     """
     cutoff_date = timezone.now().date() - timedelta(days=DONOR_COOLDOWN_DAYS)
     compatible_groups = get_compatible_donor_blood_groups(blood_group)
@@ -56,6 +57,8 @@ def get_base_eligible_donor_queryset(blood_group: str):
         user__is_active=True,
         is_available=True,
         blood_group__in=compatible_groups,
+    ).exclude(
+        user_intent='ONLY_REQUEST'
     ).filter(
         Q(last_donation_date__isnull=True) | Q(last_donation_date__lte=cutoff_date)
     )
