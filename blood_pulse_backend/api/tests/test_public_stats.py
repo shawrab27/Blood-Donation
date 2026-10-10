@@ -15,6 +15,16 @@ User = get_user_model()
 
 class PublicStatsAPITests(TestCase):
     def setUp(self):
+        # Excluded 8: +880 demo phone number prefix and case-insensitive demo email
+        u11 = User.objects.create_user(username='tester11@test.com', email='DemoTester@test.com')
+        DonorProfile.objects.create(
+            user=u11,
+            user_intent='DONATE_AND_REQUEST',
+            blood_group='O+',
+            district='Comilla',
+            phone_number='+880170000099',
+        )
+
         cache.clear()
         self.client = APIClient()
 

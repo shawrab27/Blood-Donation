@@ -183,20 +183,23 @@ class ProfileCompletionGate extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(50),
                         ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'সম্পূর্ণ করুন / Complete Profile',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'সম্পূর্ণ করুন / Complete Profile',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward_rounded, size: 18),
-                        ],
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_rounded, size: 18),
+                          ],
+                        ),
                       ),
                     ),
                   ),

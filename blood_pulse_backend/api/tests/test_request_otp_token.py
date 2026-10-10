@@ -14,8 +14,11 @@ from api.models import DonorProfile, Hospital, BloodRequest, EmailOTP, RequestSu
 from api.services.email import hash_otp
 
 
+from django.core.cache import cache
+
 class RequestOTPAndSubmitTokenTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='requester_user',
@@ -147,3 +150,140 @@ class RequestOTPAndSubmitTokenTests(TestCase):
         res = self.client.post('/api/auth/password-reset/request/', {'email': 'google@example.com'}, format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(res.data['detail'], 'Please use Google sign-in.')
+
+    def test_submit_token_expired_rejected_403(self):
+        """Expired submit token returns 403 Forbidden."""
+        import secrets, hashlib
+        self.client.force_authenticate(user=self.user)
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+        RequestSubmitToken.objects.create(
+            user=self.user,
+            token_hash=token_hash,
+            purpose='blood_request_submit',
+            expires_at=timezone.now() - timedelta(minutes=1),
+            is_used=False,
+        )
+        payload = {
+            'patient_name': 'Test Expired',
+            'blood_group': 'O+',
+            'units_needed': 1,
+            'hospital': self.hospital.id,
+            'urgency': 'CRITICAL_2H',
+            'contact_phone': '+8801711111111',
+            'ward_bed': 'Ward 1',
+            'submit_token': raw_token,
+        }
+        res = self.client.post('/api/requests/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_submit_token_another_user_rejected_403(self):
+        """Submit token belonging to another user returns 403 Forbidden."""
+        import secrets, hashlib
+        other_user = User.objects.create_user(username='other_u', email='other@example.com')
+        self.client.force_authenticate(user=self.user)
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+        RequestSubmitToken.objects.create(
+            user=other_user,
+            token_hash=token_hash,
+            purpose='blood_request_submit',
+            expires_at=timezone.now() + timedelta(minutes=15),
+            is_used=False,
+        )
+        payload = {
+            'patient_name': 'Test Other User',
+            'blood_group': 'O+',
+            'units_needed': 1,
+            'hospital': self.hospital.id,
+            'urgency': 'CRITICAL_2H',
+            'contact_phone': '+8801711111111',
+            'ward_bed': 'Ward 1',
+            'submit_token': raw_token,
+        }
+        res = self.client.post('/api/requests/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_submit_token_wrong_purpose_rejected_403(self):
+        """Submit token with different purpose returns 403 Forbidden."""
+        import secrets, hashlib
+        self.client.force_authenticate(user=self.user)
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+        RequestSubmitToken.objects.create(
+            user=self.user,
+            token_hash=token_hash,
+            purpose='other_purpose_token',
+            expires_at=timezone.now() + timedelta(minutes=15),
+            is_used=False,
+        )
+        payload = {
+            'patient_name': 'Test Wrong Purpose',
+            'blood_group': 'O+',
+            'units_needed': 1,
+            'hospital': self.hospital.id,
+            'urgency': 'CRITICAL_2H',
+            'contact_phone': '+8801711111111',
+            'ward_bed': 'Ward 1',
+            'submit_token': raw_token,
+        }
+        res = self.client.post('/api/requests/', payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_request_otp_expired_rejected(self):
+        """Expired request OTP returns 400 Bad Request."""
+        self.client.force_authenticate(user=self.user)
+        code = '123456'
+        EmailOTP.objects.create(
+            user=self.user,
+            email=self.user.email,
+            otp_hash=hash_otp(code, self.user.email),
+            purpose='blood_request_submit',
+            expires_at=timezone.now() - timedelta(minutes=1),
+            is_used=False,
+        )
+        res = self.client.post('/api/requests/otp/verify/', {'code': code}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_request_otp_five_wrong_attempts_locks(self):
+        """5 incorrect OTP attempts locks the OTP and returns 429."""
+        self.client.force_authenticate(user=self.user)
+        code = '654321'
+        EmailOTP.objects.create(
+            user=self.user,
+            email=self.user.email,
+            otp_hash=hash_otp(code, self.user.email),
+            purpose='blood_request_submit',
+            expires_at=timezone.now() + timedelta(minutes=10),
+            is_used=False,
+        )
+        for i in range(4):
+            res = self.client.post('/api/requests/otp/verify/', {'code': '000000'}, format='json')
+            self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        # 5th attempt locks
+        res5 = self.client.post('/api/requests/otp/verify/', {'code': '000000'}, format='json')
+        self.assertEqual(res5.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        # Subsequent attempt also returns 429
+        res_locked = self.client.post('/api/requests/otp/verify/', {'code': code}, format='json')
+        self.assertEqual(res_locked.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_request_otp_older_invalidated_on_resend(self):
+        """Requesting a new OTP invalidates prior unused OTP for the same purpose."""
+        self.client.force_authenticate(user=self.user)
+        code1 = '111111'
+        otp1 = EmailOTP.objects.create(
+            user=self.user,
+            email=self.user.email,
+            otp_hash=hash_otp(code1, self.user.email),
+            purpose='blood_request_submit',
+            expires_at=timezone.now() + timedelta(minutes=10),
+            is_used=False,
+        )
+        EmailOTP.objects.filter(id=otp1.id).update(last_sent_at=timezone.now() - timedelta(seconds=70))
+        # Trigger send after cooldown
+        res_send = self.client.post('/api/requests/otp/send/', {'email': self.user.email}, format='json')
+        self.assertEqual(res_send.status_code, status.HTTP_200_OK)
+
+        otp1.refresh_from_db()
+        self.assertTrue(otp1.is_used, "Older unused OTP was not marked as is_used on resend")
+

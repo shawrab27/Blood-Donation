@@ -46,3 +46,20 @@ class GeoServiceTests(TestCase):
         gh = encode_geohash(23.8103, 90.4125, precision=7)
         self.assertIsInstance(gh, str)
         self.assertEqual(len(gh), 7)
+
+    def test_geohash_parity_against_reference(self):
+        import random
+        try:
+            import geohash2
+        except ImportError:
+            return  # skip if geohash2 not installed
+        # Test 200 pseudo-random Bangladesh coordinates at precisions 4, 5, 6, 7, 9
+        random.seed(42)
+        for _ in range(200):
+            lat = random.uniform(20.5, 26.5)
+            lon = random.uniform(88.0, 92.5)
+            for prec in [4, 5, 6, 7, 9]:
+                self.assertEqual(
+                    encode_geohash(lat, lon, precision=prec),
+                    geohash2.encode(lat, lon, precision=prec)
+                )

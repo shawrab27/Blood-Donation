@@ -43,9 +43,11 @@ def compute_public_stats_data() -> dict:
             user__is_superuser=False,
         )
         .exclude(
-            Q(user__username__startswith='demo_') |
-            Q(user__email__endswith='@bloodpulse.com') |
-            Q(phone_number__startswith='0170000000')
+            Q(user__username__istartswith='demo') |
+            Q(user__email__iendswith='@bloodpulse.com') |
+            Q(user__email__istartswith='demo') |
+            Q(phone_number__startswith='017000000') |
+            Q(phone_number__startswith='+8801700000')
         )
     )
 
