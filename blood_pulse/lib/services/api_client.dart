@@ -755,6 +755,54 @@ class ApiClient {
     throw const ApiException('Network connection failed. Please check your network.');
   }
 
+  /// Fetches public statistics with a strict 3-second timeout.
+  /// Caches the result in SharedPreferences for offline resilience.
+  /// Never throws: returns cached stats on error/timeout, or null if never cached.
+  Future<Map<String, int>?> getPublicStats() async {
+    const String cacheKeyRegistered = 'bp_public_stats_registered_donors';
+    const String cacheKeyDistricts = 'bp_public_stats_districts_covered';
+
+    try {
+      final uri = Uri.parse('$baseUrl/api/public/stats/');
+      final response = await _client
+          .get(uri, headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 3));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map) {
+          final registered = (data['registered_donors'] as num?)?.toInt() ?? 0;
+          final districts = (data['districts_covered'] as num?)?.toInt() ?? 0;
+
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setInt(cacheKeyRegistered, registered);
+            await prefs.setInt(cacheKeyDistricts, districts);
+          } catch (_) {}
+
+          return {
+            'registered_donors': registered,
+            'districts_covered': districts,
+          };
+        }
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] getPublicStats failed or timed out: $e');
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey(cacheKeyRegistered) && prefs.containsKey(cacheKeyDistricts)) {
+        return {
+          'registered_donors': prefs.getInt(cacheKeyRegistered) ?? 0,
+          'districts_covered': prefs.getInt(cacheKeyDistricts) ?? 0,
+        };
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
   static String _extractErrorMessage(String responseBody) {
     try {
       final decoded = jsonDecode(responseBody);

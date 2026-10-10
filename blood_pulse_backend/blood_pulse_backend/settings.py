@@ -264,8 +264,8 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
 ]
 
-# Single source of truth for donation cooldown (90 days)
-from api.conf import DONOR_COOLDOWN_DAYS
+# Single source of truth for donation cooldown (90 days) and public stats threshold
+from api.conf import DONOR_COOLDOWN_DAYS, PUBLIC_STATS_MIN_DONORS
 
 
 

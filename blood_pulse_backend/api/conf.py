@@ -74,3 +74,6 @@ FALLBACK_DETOUR_FACTOR = 1.4
 
 # FCM Multicast batch size
 FCM_BATCH_SIZE = 500
+
+# Minimum donors required to display exact count on public screens (Phase 4)
+PUBLIC_STATS_MIN_DONORS = 10

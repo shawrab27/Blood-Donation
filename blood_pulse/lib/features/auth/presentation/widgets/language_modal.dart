@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../constants/app_config.dart';
 import '../providers/locale_provider.dart';
+import '../screens/language_selection_screen.dart';
 
 /// Language Selection Bottom Sheet Modal matching reference layout.
 class LanguageModal extends ConsumerWidget {
@@ -17,6 +19,23 @@ class LanguageModal extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final notifier = ref.read(localeProvider.notifier);
     final isBangla = locale.languageCode == 'bn';
+
+    final statsAsync = ref.watch(publicStatsProvider);
+    final stats = statsAsync.valueOrNull;
+
+    final String footerText;
+    if (stats != null &&
+        (stats['registered_donors'] ?? 0) >= AppConfig.publicStatsMinDonors) {
+      final donors = stats['registered_donors'] ?? 0;
+      final districts = stats['districts_covered'] ?? 0;
+      footerText = isBangla
+          ? '${AppConfig.toBanglaDigits(districts)}টি জেলায় ${AppConfig.toBanglaDigits(donors)} জন রক্তদাতা'
+          : '$donors donors across $districts districts';
+    } else {
+      footerText = isBangla
+          ? 'বাংলাদেশের জন্য একটি অলাভজনক রক্তদান নেটওয়ার্ক'
+          : 'A non-profit blood donation network for Bangladesh';
+    }
 
     return Center(
       child: ConstrainedBox(
@@ -171,14 +190,15 @@ class LanguageModal extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // ── Footer ──
-              const Text(
-                'Trusted by 2M+ Donors Worldwide',
-                style: TextStyle(
+              Text(
+                footerText,
+                style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 12,
                   color: Color(0xFF888888),
                   fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

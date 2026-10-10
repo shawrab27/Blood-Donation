@@ -10,6 +10,18 @@ class AppConfig {
   /// Donor cooldown period in days (fixed, non-negotiable medical standard).
   static const int donorCooldownDays = 90;
 
+  /// Minimum donors required to display exact count on public screens (Phase 4)
+  static const int publicStatsMinDonors = 10;
+
+  /// Converts an integer to Bangla digits (০-৯)
+  static String toBanglaDigits(int n) {
+    const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    return n.toString().split('').map((char) {
+      final digit = int.tryParse(char);
+      return digit != null ? bn[digit] : char;
+    }).join('');
+  }
+
   /// Application branding
   static const String appName = 'BloodPulse';
   static const String appSubtitle = 'Every Drop Connects Life';

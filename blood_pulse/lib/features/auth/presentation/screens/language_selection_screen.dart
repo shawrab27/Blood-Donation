@@ -9,7 +9,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
+import '../../../../constants/app_config.dart';
+import '../../../../services/api_client.dart';
 import '../providers/locale_provider.dart';
+
+final publicStatsProvider = FutureProvider<Map<String, int>?>((ref) async {
+  return ApiClient().getPublicStats();
+});
 
 /// Standalone Full-Screen Language Selection Screen matching Stitch UI design
 /// (Screen ID: `932651e96b3e4020b93136bf15325c1f`).
@@ -23,6 +29,23 @@ class LanguageSelectionScreen extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final notifier = ref.read(localeProvider.notifier);
     final isBangla = locale.languageCode == 'bn';
+
+    final statsAsync = ref.watch(publicStatsProvider);
+    final stats = statsAsync.valueOrNull;
+
+    final String footerText;
+    if (stats != null &&
+        (stats['registered_donors'] ?? 0) >= AppConfig.publicStatsMinDonors) {
+      final donors = stats['registered_donors'] ?? 0;
+      final districts = stats['districts_covered'] ?? 0;
+      footerText = isBangla
+          ? '${AppConfig.toBanglaDigits(districts)}টি জেলায় ${AppConfig.toBanglaDigits(donors)} জন রক্তদাতা'
+          : '$donors donors across $districts districts';
+    } else {
+      footerText = isBangla
+          ? 'বাংলাদেশের জন্য একটি অলাভজনক রক্তদান নেটওয়ার্ক'
+          : 'A non-profit blood donation network for Bangladesh';
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
@@ -282,9 +305,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  isBangla
-                                      ? 'বিশ্বজুড়ে ২০ লাখেরও বেশি রক্তদাতার বিশ্বস্ত প্ল্যাটফর্ম'
-                                      : 'Trusted by 2M+ Donors Worldwide',
+                                  footerText,
                                   style: const TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 12,

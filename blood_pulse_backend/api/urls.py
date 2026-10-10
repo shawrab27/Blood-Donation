@@ -94,6 +94,7 @@ from .views_national_emergency import (
     NationalEmergencyActiveAPIView,
     NationalEmergencyPledgeAPIView,
 )
+from .views_public_stats import public_stats_view
 
 urlpatterns = [
     # Blood Hub v2 Permanent Lifecycle Endpoints
@@ -161,6 +162,9 @@ urlpatterns = [
     # Brevo HTTPS Email OTP Verification (Rule 8)
     path('auth/otp/send/', email_otp_send_view, name='bloodhub-otp-send'),
     path('auth/otp/verify/', email_otp_verify_view, name='bloodhub-otp-verify'),
+
+    # Public Real-Time Statistics (Phase 4)
+    path('public/stats/', public_stats_view, name='public-stats'),
 
     path('', include(router.urls)),
     path('health/', health_check, name='health-check'),
