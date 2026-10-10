@@ -42,9 +42,13 @@ class CustomInputField extends StatefulWidget {
     this.focusNode,
     this.isPassword = false,
     this.enabled = true,
+    this.readOnly = false,
     this.maxLines = 1,
     this.initialValue,
   });
+
+  /// Whether the field is read-only.
+  final bool readOnly;
 
   /// Optional floating label shown above the field.
   final String? label;
@@ -117,6 +121,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
       textInputAction: widget.textInputAction,
       obscureText: effectiveObscure,
       enabled: widget.enabled,
+      readOnly: widget.readOnly,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onSubmitted,

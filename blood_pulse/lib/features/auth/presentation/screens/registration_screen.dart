@@ -22,6 +22,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_notifier.dart';
 import '../widgets/institution_autocomplete.dart';
 import '../../../../core/access/access_guard.dart';
+import '../../../feed/presentation/providers/feed_provider.dart';
 
 
 enum _Gender { male, female }
@@ -57,12 +58,20 @@ class RegistrationScreen extends ConsumerStatefulWidget {
     this.pickImageFunction,
     this.pickFileFunction,
     this.openAppSettingsFunction,
+    this.targetRoute,
+    this.prefillName,
+    this.prefillEmail,
+    this.isGoogleUser = false,
   });
 
   final ImagePicker? imagePicker;
   final Future<XFile?> Function(ImageSource source)? pickImageFunction;
   final Future<PlatformFile?> Function()? pickFileFunction;
   final Future<bool> Function()? openAppSettingsFunction;
+  final String? targetRoute;
+  final String? prefillName;
+  final String? prefillEmail;
+  final bool isGoogleUser;
 
   @override
   ConsumerState<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -113,10 +122,20 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   DateTime? _lastDonationDate;
   int _totalBags = 0;
 
+  bool get _isGoogleUser =>
+      widget.isGoogleUser ||
+      (ref.read(authProvider).user?.authProvider == 'google');
+
   @override
   void initState() {
     super.initState();
     _picker = widget.imagePicker ?? ImagePicker();
+    if (widget.prefillName != null && widget.prefillName!.isNotEmpty) {
+      _nameCtrl.text = widget.prefillName!;
+    }
+    if (widget.prefillEmail != null && widget.prefillEmail!.isNotEmpty) {
+      _emailCtrl.text = widget.prefillEmail!;
+    }
     _pwCtrl.addListener(_onPasswordChanged);
     _confirmPwCtrl.addListener(_onPasswordChanged);
   }
@@ -360,31 +379,36 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       _showError('Please enter your phone number.');
       return;
     }
-    if (_pwCtrl.text.isEmpty) {
-      _showError('Please enter a password.');
-      return;
-    }
-    if (_pwCtrl.text.length < 6) {
-      _showError('Password must be at least 6 characters.');
-      return;
-    }
-    if (_pwCtrl.text != _confirmPwCtrl.text) {
-      _showError('Passwords do not match. Please re-enter your password.');
-      return;
+    if (!_isGoogleUser) {
+      if (_pwCtrl.text.isEmpty) {
+        _showError('Please enter a password.');
+        return;
+      }
+      if (_pwCtrl.text.length < 6) {
+        _showError('Password must be at least 6 characters.');
+        return;
+      }
+      if (_pwCtrl.text != _confirmPwCtrl.text) {
+        _showError('Passwords do not match. Please re-enter your password.');
+        return;
+      }
     }
     if (!_formKey.currentState!.validate()) return;
 
-    if (_bloodGroup == null) {
-      _showError('Please select your blood group.');
-      return;
-    }
-    if (_confirmBloodGroup != _bloodGroup) {
-      _showError('Blood group confirmation does not match! Please verify your blood type.');
-      return;
-    }
-    if (_userIntent == _UserIntent.donateAndRequest && !_neverDonated && _lastDonationDate == null) {
-      _showError('Please specify your last donation date or check "I have never donated blood before".');
-      return;
+    final isOnlyReq = _userIntent == _UserIntent.onlyRequest;
+    if (!isOnlyReq) {
+      if (_bloodGroup == null) {
+        _showError('Please select your blood group.');
+        return;
+      }
+      if (_confirmBloodGroup != _bloodGroup) {
+        _showError('Blood group confirmation does not match! Please verify your blood type.');
+        return;
+      }
+      if (!_neverDonated && _lastDonationDate == null) {
+        _showError('Please specify your last donation date or check "I have never donated blood before".');
+        return;
+      }
     }
 
     final catDetails = <String, String>{};
@@ -418,7 +442,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       catDetails['village'] = _villageCtrl.text.trim();
     }
 
-    final isOnlyReq = _userIntent == _UserIntent.onlyRequest;
     final profile = UserProfile(
       fullName: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
@@ -426,7 +449,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       secondaryPhone: _altPhoneCtrl.text.isNotEmpty ? _altPhoneCtrl.text.trim() : null,
       age: int.tryParse(_ageCtrl.text.trim()) ?? 25,
       gender: _gender == _Gender.male ? 'Male' : 'Female',
-      bloodGroup: _bloodGroup!,
+      bloodGroup: isOnlyReq ? '' : (_bloodGroup ?? ''),
       category: _category == _UserCategory.student ? 'student' : 'civilian',
       categoryDetails: catDetails,
       neverDonated: isOnlyReq ? true : _neverDonated,
@@ -436,10 +459,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       isProfileComplete: true,
       nidHash: nidHash,
       avatarBytes: _avatarBytes,
+      authProvider: _isGoogleUser ? 'google' : null,
       userIntent: isOnlyReq ? 'ONLY_REQUEST' : 'DONATE_AND_REQUEST',
     );
 
-    final success = await ref.read(authProvider.notifier).registerUser(profile, password: _pwCtrl.text);
+    final success = await ref.read(authProvider.notifier).registerUser(
+      profile,
+      password: _isGoogleUser ? null : _pwCtrl.text,
+    );
     if (!mounted) return;
     if (!success) {
       final err = ref.read(authProvider).errorMessage ?? 'Registration failed. Please check your information.';
@@ -468,13 +495,25 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       final extra = GoRouterState.of(context).extra;
       String? targetRoute;
       if (extra is Map<String, dynamic>) {
-        targetRoute = extra['targetRoute'] as String?;
+        targetRoute = (extra['returnTo'] ?? extra['targetRoute']) as String?;
       }
+      targetRoute ??= widget.targetRoute;
       targetRoute ??= ref.read(pendingRedirectRouteProvider);
       ref.read(pendingRedirectRouteProvider.notifier).state = null;
 
       if (targetRoute != null && targetRoute.isNotEmpty) {
-        context.go(targetRoute);
+        if (targetRoute == '/blood-hub' || targetRoute == '1') {
+          ref.read(shellTabProvider.notifier).state = 1;
+          context.go('/dashboard');
+        } else if (targetRoute == '/communities' || targetRoute == '2') {
+          ref.read(shellTabProvider.notifier).state = 2;
+          context.go('/dashboard');
+        } else if (targetRoute == '/profile' || targetRoute == '4') {
+          ref.read(shellTabProvider.notifier).state = 4;
+          context.go('/dashboard');
+        } else {
+          context.go(targetRoute);
+        }
       } else {
         context.go('/dashboard');
       }
@@ -518,10 +557,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 _buildHeaderSection(),
                 const SizedBox(height: 20),
 
-                // Intent Selector (Registration asks first: [Donate & Request Blood] / [Only Request Blood])
-                _buildIntentSelector(),
-                const SizedBox(height: 24),
-
                 // Avatar Photo Picker
                 _buildAvatarPickerSection(),
                 const SizedBox(height: 28),
@@ -532,9 +567,21 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 _buildPersonalDetailsFields(isMobile: true),
                 const SizedBox(height: 24),
 
-                // Blood Profile Card
-                _buildBloodProfileCard(),
-                const SizedBox(height: 24),
+                // Blood Profile Card (Animated hide for Only Request Blood)
+                AnimatedCrossFade(
+                  firstChild: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBloodProfileCard(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                  secondChild: const SizedBox.shrink(),
+                  crossFadeState: _userIntent == _UserIntent.donateAndRequest
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  duration: const Duration(milliseconds: 300),
+                ),
 
                 // Identity Type
                 _buildSectionTitle('Identity Type'),
@@ -544,16 +591,31 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 _buildLocationAndIdentityFields(),
                 const SizedBox(height: 24),
 
-                // Donation History Card (Only for Donate & Request Blood)
-                if (_userIntent == _UserIntent.donateAndRequest) ...[
-                  _buildDonationHistoryCard(),
-                  const SizedBox(height: 32),
-                ] else
-                  const SizedBox(height: 8),
+                // Donation History Card (Animated hide for Only Request Blood)
+                AnimatedCrossFade(
+                  firstChild: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDonationHistoryCard(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                  secondChild: const SizedBox.shrink(),
+                  crossFadeState: _userIntent == _UserIntent.donateAndRequest
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  duration: const Duration(milliseconds: 300),
+                ),
+
+                // Intent Selector (directly ABOVE CapsuleButton submit)
+                _buildIntentSelector(),
+                const SizedBox(height: 24),
 
                 // Submit Button
                 CapsuleButton(
-                  label: auth.isLoading ? 'Creating Account...' : 'Create Account',
+                  label: auth.isLoading
+                      ? (_isGoogleUser ? 'Saving Profile...' : 'Creating Account...')
+                      : (_isGoogleUser ? 'Complete Registration' : 'Create Account'),
                   icon: Icons.arrow_forward_rounded,
                   isLoading: auth.isLoading,
                   showGlow: true,
@@ -1076,6 +1138,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           hint: 'Enter your email',
           prefixIcon: Icons.mail_outline_rounded,
           keyboardType: TextInputType.emailAddress,
+          readOnly: _isGoogleUser,
           validator: (v) {
             if (v == null || v.trim().isEmpty) return 'Please enter your email';
             if (!v.contains('@') || !v.contains('.')) return 'Please enter a valid email';
@@ -1084,35 +1147,37 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         ),
         const SizedBox(height: 16),
 
-        _fieldLabel('Password'),
-        const SizedBox(height: 6),
-        CustomInputField(
-          controller: _pwCtrl,
-          hint: 'Create a strong password',
-          prefixIcon: Icons.lock_outline_rounded,
-          isPassword: true,
-          validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Please enter a password';
-            if (v.length < 6) return 'Password must be at least 6 characters';
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
+        if (!_isGoogleUser) ...[
+          _fieldLabel('Password'),
+          const SizedBox(height: 6),
+          CustomInputField(
+            controller: _pwCtrl,
+            hint: 'Create a strong password',
+            prefixIcon: Icons.lock_outline_rounded,
+            isPassword: true,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Please enter a password';
+              if (v.length < 6) return 'Password must be at least 6 characters';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
 
-        _fieldLabel('Confirm Password'),
-        const SizedBox(height: 6),
-        CustomInputField(
-          controller: _confirmPwCtrl,
-          hint: 'Re-enter your password',
-          prefixIcon: Icons.lock_outline_rounded,
-          isPassword: true,
-          validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Please confirm your password';
-            if (v != _pwCtrl.text) return 'Passwords do not match';
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
+          _fieldLabel('Confirm Password'),
+          const SizedBox(height: 6),
+          CustomInputField(
+            controller: _confirmPwCtrl,
+            hint: 'Re-enter your password',
+            prefixIcon: Icons.lock_outline_rounded,
+            isPassword: true,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Please confirm your password';
+              if (v != _pwCtrl.text) return 'Passwords do not match';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
 
         // Age & Gender
         if (isMobile) ...[
@@ -1500,13 +1565,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             children: const [
               Icon(Icons.water_drop_rounded, color: Color(0xFFC30121), size: 20),
               SizedBox(width: 8),
-              Text(
-                'Blood Profile',
-                style: TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFC30121),
+              Expanded(
+                child: Text(
+                  'Blood Profile',
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFC30121),
+                  ),
                 ),
               ),
             ],

@@ -16,10 +16,12 @@ class ProfileCompletionGate extends ConsumerWidget {
     super.key,
     required this.child,
     this.featureName = 'this feature',
+    this.targetTabRoute,
   });
 
   final Widget child;
   final String featureName;
+  final String? targetTabRoute;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -159,7 +161,19 @@ class ProfileCompletionGate extends ConsumerWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        RegistrationCompletionModal.show(context);
+                        final auth = ref.read(authProvider);
+                        final u = auth.user;
+                        final isGoogle = u?.authProvider == 'google' ||
+                            (u != null && u.email.isNotEmpty && u.authProvider != 'credentials');
+                        context.push(
+                          '/register',
+                          extra: {
+                            'targetRoute': targetTabRoute,
+                            'prefillName': u?.fullName ?? '',
+                            'prefillEmail': u?.email ?? '',
+                            'isGoogleUser': isGoogle,
+                          },
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,

@@ -184,6 +184,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               totalBags: totalDonations,
               daysRemaining: daysRemaining,
               progressPercent: progressPercent,
+              showCountdown: authUser?.userIntent != 'ONLY_REQUEST',
             ),
             const SizedBox(height: 14),
 

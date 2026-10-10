@@ -137,7 +137,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => const RegistrationScreen(),
+      builder: (context, state) {
+        final extra = state.extra;
+        if (extra is Map<String, dynamic>) {
+          return RegistrationScreen(
+            targetRoute: (extra['targetRoute'] ?? extra['returnTo']) as String?,
+            prefillName: extra['prefillName'] as String?,
+            prefillEmail: extra['prefillEmail'] as String?,
+            isGoogleUser: extra['isGoogleUser'] as bool? ?? false,
+          );
+        }
+        return const RegistrationScreen();
+      },
     ),
     GoRoute(
       path: '/otp-verify',

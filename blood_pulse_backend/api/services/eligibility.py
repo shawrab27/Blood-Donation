@@ -27,6 +27,15 @@ def evaluate_donor_eligibility(donor, component: str = 'WHOLE') -> dict:
     now = timezone.now()
     today = now.date()
 
+    # 0. User Intent: ONLY_REQUEST users are not eligible donors
+    if getattr(donor, 'user_intent', None) == 'ONLY_REQUEST':
+        return {
+            'is_eligible': False,
+            'reason': 'User has registered to only request blood and does not donate.',
+            'days_remaining': 0,
+            'deferred_until': None,
+        }
+
     # 1. Profile completeness & availability
     if not donor.is_available:
         return {

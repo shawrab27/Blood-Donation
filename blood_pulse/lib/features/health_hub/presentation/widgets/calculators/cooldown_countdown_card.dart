@@ -10,15 +10,20 @@ import '../../providers/health_calculators_provider.dart';
 class CooldownCountdownCard extends StatelessWidget {
   final HealthCalculatorState state;
   final ValueChanged<DateTime> onDateSelected;
+  final bool isOnlyRequest;
 
   const CooldownCountdownCard({
     super.key,
     required this.state,
     required this.onDateSelected,
+    this.isOnlyRequest = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (isOnlyRequest) {
+      return const SizedBox.shrink();
+    }
     final l10n = AppLocalizations.of(context);
     final daysRemaining = state.cooldownDaysRemaining;
     final isReady = daysRemaining <= 0;

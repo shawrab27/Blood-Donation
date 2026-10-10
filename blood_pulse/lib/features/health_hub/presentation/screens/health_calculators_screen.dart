@@ -17,6 +17,7 @@ import '../widgets/calculators/eligibility_prescreen_card.dart';
 import '../widgets/calculators/calculation_history_card.dart';
 import '../widgets/common/health_accessory_contextual_card.dart';
 import '../widgets/common/health_hub_subnav_bar.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 
 class HealthCalculatorsScreen extends ConsumerStatefulWidget {
   const HealthCalculatorsScreen({super.key});
@@ -141,15 +142,17 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
             const SizedBox(height: 22),
 
             // ── 3. 90-Day Donation Cooldown Bridge ────────────────────────
-            _sectionHeader('3. 90-Day Donation Cooldown Engine'),
-            const SizedBox(height: 10),
-            CooldownCountdownCard(
-              state: healthState,
-              onDateSelected: (date) {
-                ref.read(healthCalculatorsProvider.notifier).updateMetrics(lastDonationDate: date);
-              },
-            ),
-            const SizedBox(height: 22),
+            if (ref.watch(authProvider).user?.userIntent != 'ONLY_REQUEST') ...[
+              _sectionHeader('3. 90-Day Donation Cooldown Engine'),
+              const SizedBox(height: 10),
+              CooldownCountdownCard(
+                state: healthState,
+                onDateSelected: (date) {
+                  ref.read(healthCalculatorsProvider.notifier).updateMetrics(lastDonationDate: date);
+                },
+              ),
+              const SizedBox(height: 22),
+            ],
 
             // ── 4. Daily Hydration Intake Tracker ──────────────────────────
             _sectionHeader('4. Pre-Donation Hydration Tracker'),

@@ -220,6 +220,10 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         if request.method in ['PUT', 'PATCH']:
             serializer = self.get_serializer(profile, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
+            if 'full_name' in request.data:
+                parts = str(request.data['full_name']).strip().split(' ', 1)
+                request.user.first_name = parts[0]
+                request.user.last_name = parts[1] if len(parts) > 1 else ''
             if 'first_name' in request.data:
                 request.user.first_name = request.data['first_name']
             if 'last_name' in request.data:
@@ -482,7 +486,7 @@ class NearbyDonorsView(APIView):
         # precision 4 is roughly ~39km x 19km, good for < 50km
         center_geohash = pygeohash.encode(req_lat, req_lng, precision=4)
         
-        qs = DonorProfile.objects.filter(is_searchable=True, geohash__startswith=center_geohash)
+        qs = DonorProfile.objects.filter(is_searchable=True, geohash__startswith=center_geohash).exclude(user_intent='ONLY_REQUEST')
         if blood_group:
             qs = qs.filter(blood_group=blood_group)
 

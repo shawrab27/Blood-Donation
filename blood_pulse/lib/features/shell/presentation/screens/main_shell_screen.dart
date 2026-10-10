@@ -154,6 +154,7 @@ class _BloodHubTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return const ProfileCompletionGate(
       featureName: 'Blood Hub & Emergency Requests',
+      targetTabRoute: '/blood-hub',
       child: BloodHubLandingScreen(),
     );
   }
@@ -311,7 +312,11 @@ class _CommunitiesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CommunitiesView();
+    return const ProfileCompletionGate(
+      featureName: 'Communities & Donor Clubs',
+      targetTabRoute: '/communities',
+      child: CommunitiesView(),
+    );
   }
 }
 
@@ -331,6 +336,7 @@ class _ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return const ProfileCompletionGate(
       featureName: 'User Profile & Donation History',
+      targetTabRoute: '/profile',
       child: ProfileView(),
     );
   }

@@ -74,7 +74,7 @@ def donor_search_view(request):
     queryset = DonorProfile.objects.filter(
         is_searchable=True,
         is_available=True,
-    ).select_related('user', 'upazila_linked__district__division')
+    ).exclude(user_intent='ONLY_REQUEST').select_related('user', 'upazila_linked__district__division')
 
     if blood_group and blood_group != 'Any':
         compatible_groups = get_compatible_donor_groups(blood_group, component)
@@ -169,7 +169,7 @@ def donor_map_view(request):
     queryset = DonorProfile.objects.filter(
         is_searchable=True,
         is_available=True,
-    ).exclude(
+    ).exclude(user_intent='ONLY_REQUEST').exclude(
         Q(latitude__isnull=True) & Q(last_lat__isnull=True)
     ).select_related('user', 'upazila_linked__district__division')
 

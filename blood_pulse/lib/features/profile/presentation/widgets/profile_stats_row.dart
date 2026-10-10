@@ -10,12 +10,14 @@ class ProfileStatsRow extends StatelessWidget {
   final int totalBags;
   final int daysRemaining;
   final double progressPercent;
+  final bool showCountdown;
 
   const ProfileStatsRow({
     super.key,
     required this.totalBags,
     required this.daysRemaining,
     required this.progressPercent,
+    this.showCountdown = true,
   });
 
   @override
@@ -85,10 +87,11 @@ class ProfileStatsRow extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 12),
+        if (showCountdown) ...[
+          const SizedBox(width: 12),
 
-        // ── Next Donation Countdown Card ──
-        Expanded(
+          // ── Next Donation Countdown Card ──
+          Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
@@ -153,6 +156,7 @@ class ProfileStatsRow extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ],
+  );
   }
 }

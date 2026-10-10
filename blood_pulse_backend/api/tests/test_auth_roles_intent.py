@@ -118,3 +118,114 @@ class AuthRolesIntentTests(TestCase):
             res_bn.get('answer_bn'),
             "আপনার প্রোফাইলে রক্তের গ্রুপ নির্ধারণ করা নেই। অনুগ্রহ করে রেজিস্ট্রেশন সম্পূর্ণ করুন।"
         )
+
+    def test_profile_complete_matrix(self):
+        # 1. DONATE_AND_REQUEST without blood group is incomplete
+        user1 = User.objects.create_user(username='u_matrix1', email='m1@example.com')
+        p1 = DonorProfile.objects.create(
+            user=user1,
+            phone_number='+8801711223344',
+            district='Dhaka',
+            blood_group='',
+            user_intent='DONATE_AND_REQUEST',
+        )
+        complete1, missing1 = p1.check_is_complete()
+        self.assertFalse(complete1)
+        self.assertIn('blood_group', missing1)
+
+        # 2. ONLY_REQUEST without blood group IS complete if phone and district are set
+        user2 = User.objects.create_user(username='u_matrix2', email='m2@example.com', first_name='Requester')
+        p2 = DonorProfile.objects.create(
+            user=user2,
+            phone_number='+8801711223355',
+            district='Dhaka',
+            blood_group='',
+            user_intent='ONLY_REQUEST',
+        )
+        complete2, missing2 = p2.check_is_complete()
+        self.assertTrue(complete2)
+        self.assertNotIn('blood_group', missing2)
+
+    def test_request_only_excluded_from_search_map_wave_eligibility(self):
+        from api.services.eligibility import evaluate_donor_eligibility
+        from api.services.waves import get_candidate_donors_for_wave
+        from api.models import BloodRequest
+
+        # Donor who only requests blood
+        user_req = User.objects.create_user(username='only_req_user', email='req_user@example.com', first_name='OnlyReq')
+        profile_req = DonorProfile.objects.create(
+            user=user_req,
+            phone_number='+8801799887766',
+            district='Dhaka',
+            blood_group='O+',
+            user_intent='ONLY_REQUEST',
+            is_available=True,
+            is_searchable=False,
+            latitude=23.8103,
+            longitude=90.4125,
+        )
+
+        # Eligibility check
+        elig = evaluate_donor_eligibility(profile_req)
+        self.assertFalse(elig['is_eligible'])
+        self.assertIn('User has registered to only request blood', elig['reason'])
+
+        # Wave candidates check
+        br = BloodRequest.objects.create(
+            patient_name='Patient 1',
+            blood_group='O+',
+            units_needed=1,
+            hospital_location='Dhaka Medical',
+            contact_number='+8801700000000',
+        )
+        candidates = get_candidate_donors_for_wave(br)
+        candidate_ids = [c.id for c in candidates]
+        self.assertNotIn(profile_req.id, candidate_ids)
+
+        # Donor search view check
+        res_search = self.client.get('/api/donors/search/', {'blood_group': 'O+'})
+        self.assertEqual(res_search.status_code, 200)
+        search_ids = [d['id'] for d in res_search.data.get('results', res_search.data)]
+        self.assertNotIn(profile_req.id, search_ids)
+
+        # Donor map view check
+        res_map = self.client.get('/api/donors/map/', {'blood_group': 'O+'})
+        self.assertEqual(res_map.status_code, 200)
+        map_donors = res_map.data.get('results', res_map.data.get('donors', []))
+        map_ids = [d['id'] for d in map_donors]
+        self.assertNotIn(profile_req.id, map_ids)
+
+    def test_google_user_without_password_completes_profile(self):
+        # Create Google user without usable password
+        user = User.objects.create_user(username='google_user', email='google@example.com')
+        user.set_unusable_password()
+        user.save()
+        profile = DonorProfile.objects.create(user=user)
+
+        self.client.force_authenticate(user=user)
+
+        # First PATCH: completes profile, sets blood_group, no password required
+        patch_data = {
+            'phone_number': '+8801812345678',
+            'district': 'Dhaka',
+            'blood_group': 'B+',
+            'full_name': 'Google Donor',
+            'user_intent': 'DONATE_AND_REQUEST',
+        }
+        res = self.client.patch('/api/donors/me/', patch_data, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        profile.refresh_from_db()
+        self.assertEqual(user.first_name, 'Google')
+        self.assertEqual(user.last_name, 'Donor')
+        self.assertEqual(profile.blood_group, 'B+')
+
+        # Second PATCH: user cannot change blood_group once set
+        res_bg = self.client.patch('/api/donors/me/', {'blood_group': 'A+'}, format='json')
+        self.assertEqual(res_bg.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('blood_group', res_bg.data)
+
+        # Third PATCH: user cannot change admin-locked field is_verified
+        res_locked = self.client.patch('/api/donors/me/', {'is_verified': True}, format='json')
+        self.assertEqual(res_locked.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('is_verified', res_locked.data)

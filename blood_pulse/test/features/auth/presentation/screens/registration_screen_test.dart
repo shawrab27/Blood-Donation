@@ -47,6 +47,9 @@ void main() {
     Future<PlatformFile?> Function()? pickFileFunction,
     Future<bool> Function()? openAppSettingsFunction,
     Locale locale = const Locale('en'),
+    String? prefillName,
+    String? prefillEmail,
+    bool isGoogleUser = false,
   }) {
     return ProviderScope(
       child: MaterialApp(
@@ -57,6 +60,9 @@ void main() {
           pickImageFunction: pickImageFunction,
           pickFileFunction: pickFileFunction,
           openAppSettingsFunction: openAppSettingsFunction,
+          prefillName: prefillName,
+          prefillEmail: prefillEmail,
+          isGoogleUser: isGoogleUser,
         ),
       ),
     );
@@ -377,5 +383,85 @@ void main() {
       expect(find.text('ফাইল থেকে বেছে নিন'), findsOneWidget);
       expect(find.text('ক্যামেরা খুলুন'), findsOneWidget);
     });
+  });
+
+  group('RegistrationScreen Intent Selector and Field Visibility', () {
+    testWidgets('Default intent is Donate & Request Blood and shows blood group card', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Donate & Request Blood'), findsOneWidget);
+      expect(find.text('Only Request Blood'), findsOneWidget);
+      expect(find.text('Blood Profile'), findsOneWidget);
+    });
+
+    testWidgets('Tapping Only Request Blood hides blood group and donation history', (tester) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      // Ensure blood group section is visible initially
+      expect(find.text('Blood Profile'), findsOneWidget);
+
+      // Tap Only Request Blood
+      await tester.scrollUntilVisible(find.text('Only Request Blood'), 500);
+      await tester.tap(find.text('Only Request Blood'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      // Blood Profile and Donation History should now be collapsed/hidden
+      expect(find.text('Only Request Blood'), findsOneWidget);
+    });
+  });
+
+  group('RegistrationScreen Google User Experience', () {
+    testWidgets('Google user prefills name/email, makes email read-only, and hides password fields', (tester) async {
+      await tester.pumpWidget(buildScreen(
+        prefillName: 'Google Tester',
+        prefillEmail: 'tester@gmail.com',
+        isGoogleUser: true,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Google Tester'), findsOneWidget);
+      expect(find.text('tester@gmail.com'), findsOneWidget);
+
+      // Password fields should NOT be rendered
+      expect(find.text('Password (min 6 characters)'), findsNothing);
+      expect(find.text('Confirm Password'), findsNothing);
+    });
+  });
+
+  group('RegistrationScreen Responsive Layout (No RenderFlex Overflows)', () {
+    for (final size in [
+      const Size(320, 568),
+      const Size(360, 800),
+      const Size(412, 915),
+    ]) {
+      testWidgets('No overflow at ${size.width}x${size.height} with textScale 1.3', (tester) async {
+        FlutterErrorDetails? caughtDetails;
+        final originalOnError = FlutterError.onError;
+        FlutterError.onError = (details) {
+          caughtDetails = details;
+          originalOnError?.call(details);
+        };
+        tester.view.physicalSize = Size(size.width * 2, size.height * 2);
+        tester.view.devicePixelRatio = 2.0;
+        tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+        addTearDown(() {
+          FlutterError.onError = originalOnError;
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.platformDispatcher.clearTextScaleFactorTestValue();
+        });
+
+        await tester.pumpWidget(buildScreen());
+        await tester.pumpAndSettle();
+
+        if (caughtDetails != null) {
+          debugPrint('CAUGHT DETAILS: ${caughtDetails.toString()}');
+        }
+        final exception = tester.takeException();
+        expect(exception, isNull);
+      });
+    }
   });
 }

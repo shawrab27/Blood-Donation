@@ -41,7 +41,7 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1) -> list:
     donors_qs = DonorProfile.objects.filter(
         blood_group__in=compatible_groups,
         is_available=True,
-    ).select_related('user')
+    ).exclude(user_intent='ONLY_REQUEST').select_related('user')
 
     # Exclude requester if requester is a donor profile
     if blood_request.requester_id:

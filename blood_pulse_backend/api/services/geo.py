@@ -47,6 +47,8 @@ def fuzz_coordinates(lat: float, lng: float, seed_id: str or int = None) -> tupl
         hash_digest = hashlib.md5(f"fuzz_salt_{seed_id}".encode()).hexdigest()
         # Derive angle and normalized radius
         int_angle = int(hash_digest[:4], 16) % 360
+        if int_angle % 90 == 0:
+            int_angle = (int_angle + 15) % 360
         int_offset = int(hash_digest[4:8], 16) % 1000  # 0 to 999
         radius_deg = (0.0035 + (int_offset / 1000.0) * 0.0020)  # ~380m to 600m
         angle_rad = math.radians(int_angle)

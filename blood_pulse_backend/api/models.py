@@ -203,10 +203,11 @@ class DonorProfile(models.Model):
         if not phone or is_placeholder:
             missing.append("phone_number")
 
-        bg = (self.blood_group or "").strip()
-        valid_bgs = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
-        if not bg or bg not in valid_bgs:
-            missing.append("blood_group")
+        if self.user_intent != 'ONLY_REQUEST':
+            bg = (self.blood_group or "").strip()
+            valid_bgs = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+            if not bg or bg not in valid_bgs:
+                missing.append("blood_group")
 
         dist_val = getattr(self.district, 'name', self.district)
         dist = str(dist_val or "").strip()

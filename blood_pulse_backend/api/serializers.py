@@ -65,6 +65,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     email = serializers.CharField(source='user.email', read_only=True)
     password = serializers.CharField(write_only=True, required=False)
+    blood_group = serializers.CharField(max_length=5, required=False, allow_blank=True, default='')
     donation_history = DonationHistorySerializer(many=True, read_only=True)
     recent_logs = RecentLogSerializer(many=True, read_only=True)
     global_rank = serializers.IntegerField(read_only=True)
@@ -97,7 +98,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
 
     def validate_blood_group(self, value):
         if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
-            if self.instance.blood_group.strip() != value.strip():
+            if value and self.instance.blood_group.strip() != value.strip():
                 request = self.context.get('request')
                 if not (request and request.user and request.user.is_staff):
                     raise serializers.ValidationError(
@@ -114,6 +115,16 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError("An account with this National ID is already registered.")
         return value
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        is_staff = request and request.user and request.user.is_staff
+        if not is_staff and self.instance:
+            admin_locked_fields = ['is_verified', 'is_suspended', 'manual_rank_override', 'total_bags_donated']
+            for field in admin_locked_fields:
+                if field in attrs and getattr(self.instance, field) != attrs[field]:
+                    raise serializers.ValidationError({field: f"Only administrators can modify {field}."})
+        return attrs
 
 class BloodRequestSerializer(serializers.ModelSerializer):
     class Meta:
