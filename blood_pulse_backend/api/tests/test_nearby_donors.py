@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APIClient
 from api.models import DonorProfile
-import pygeohash
+from api.services.geo import encode_geohash
 
 class DonorProfileGeohashTest(TestCase):
     def test_geohash_computed_on_save(self):
@@ -18,7 +18,7 @@ class DonorProfileGeohashTest(TestCase):
             longitude=90.4125
         )
         self.assertNotEqual(profile.geohash, '')
-        self.assertEqual(profile.geohash, pygeohash.encode(23.8103, 90.4125, precision=12))
+        self.assertEqual(profile.geohash, encode_geohash(23.8103, 90.4125, precision=12))
 
 class NearbyDonorsViewTest(TestCase):
     def setUp(self):

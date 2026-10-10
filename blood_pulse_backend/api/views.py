@@ -488,13 +488,12 @@ class NearbyDonorsView(APIView):
         req_lat = float(lat_str)
         req_lng = float(lng_str)
 
-        import pygeohash
         from datetime import date
-        from api.services.geo import haversine_distance, fuzz_coordinates
+        from api.services.geo import haversine_distance, fuzz_coordinates, encode_geohash
 
         # 1. Geohash prefix filter (narrow candidates)
         # precision 4 is roughly ~39km x 19km, good for < 50km
-        center_geohash = pygeohash.encode(req_lat, req_lng, precision=4)
+        center_geohash = encode_geohash(req_lat, req_lng, precision=4)
         
         qs = DonorProfile.objects.filter(is_searchable=True, geohash__startswith=center_geohash).exclude(user_intent='ONLY_REQUEST')
         if blood_group:
