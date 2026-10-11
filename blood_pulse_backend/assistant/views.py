@@ -115,7 +115,23 @@ def chat_view(request):
                 profile = getattr(user, 'donorprofile', None) if user else None
                 user_lat = getattr(profile, 'latitude', None)
                 user_lng = getattr(profile, 'longitude', None)
-                fare_res = estimate_fare_range(lat1=user_lat, lon1=user_lng, locale=locale)
+
+                # Extract origin and destination from query if present (e.g. "from Dhaka to Gazipur", "ঢাকা থেকে গাজীপুর")
+                p_from, p_to = None, None
+                match_en = re.search(r'\bfrom\s+([a-zA-Z\s\']+?)\s+to\s+([a-zA-Z\s\']+?)(?:\s+(?:fare|cost|rent|\?|$)|$)', redacted_text, re.IGNORECASE)
+                match_bn = re.search(r'([\u0980-\u09FF\w\s\']+?)\s*থেকে\s*([\u0980-\u09FF\w\s\']+?)(?:\s*(?:ভাড়া|পর্যন্ত|\?|$)|$)', redacted_text)
+                if match_en:
+                    p_from = match_en.group(1).strip()
+                    p_to = match_en.group(2).strip()
+                elif match_bn:
+                    p_from = match_bn.group(1).strip()
+                    p_to = match_bn.group(2).strip()
+
+                fare_res = estimate_fare_range(
+                    lat1=user_lat, lon1=user_lng,
+                    place_from=p_from, place_to=p_to,
+                    locale=locale
+                )
                 validated = validate_and_format_response(
                     raw_reply=fare_res.get('reply', ''),
                     user_query=redacted_text,

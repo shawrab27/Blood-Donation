@@ -135,3 +135,10 @@ FEEDBACK_TAG_WEIGHTS = {
     'NEVER_CONTACTED': -20,
 }
 
+# Step 8: PulseAI Fare Estimator Configuration
+FARE_ROAD_FACTOR = float(os.environ.get('FARE_ROAD_FACTOR', '1.3'))
+FARE_MIN_RATE_PER_KM = int(os.environ.get('FARE_MIN_RATE_PER_KM', '15'))
+FARE_MAX_RATE_PER_KM = int(os.environ.get('FARE_MAX_RATE_PER_KM', '20'))
+FARE_MIN_BASE_FARE = int(os.environ.get('FARE_MIN_BASE_FARE', '50'))
+FARE_MAX_BASE_FARE = int(os.environ.get('FARE_MAX_BASE_FARE', '70'))
+

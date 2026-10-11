@@ -103,7 +103,7 @@ class PulseAIServerDataAndPrivacyTests(TestCase):
             is_available=True,
         )
 
-        # Create two eligible donors in Dhaka with A+ and O+
+        # Create one eligible donor in Dhaka with O+
         u2 = User.objects.create_user(username="d2", first_name="Donor", last_name="Two", password="password123")
         DonorProfile.objects.create(
             user=u2,
@@ -114,6 +114,30 @@ class PulseAIServerDataAndPrivacyTests(TestCase):
             is_available=True,
         )
 
+        # Create snoozed donor in Dhaka (alert_pause_until in future) -> must be excluded by shared eligibility
+        u_snooze = User.objects.create_user(username="d_snooze", first_name="Snooze", last_name="Donor", password="password123")
+        DonorProfile.objects.create(
+            user=u_snooze,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='+8801733334445',
+            is_profile_complete=True,
+            is_available=True,
+            alert_pause_until=timezone.now() + timedelta(days=15),
+        )
+
+        # Create cooldown donor in Dhaka (donated 10 days ago) -> must be excluded by shared eligibility
+        u_cool = User.objects.create_user(username="d_cool", first_name="Cooldown", last_name="Donor", password="password123")
+        DonorProfile.objects.create(
+            user=u_cool,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='+8801733334446',
+            is_profile_complete=True,
+            is_available=True,
+            last_donation_date=timezone.now().date() - timedelta(days=10),
+        )
+
         res = self.client.post('/api/assistant/chat/', {
             'message': 'Who can give me blood?',
             'language': 'en',
@@ -121,12 +145,13 @@ class PulseAIServerDataAndPrivacyTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         reply = res.data['reply']
 
-        # Verifies aggregate count provided
-        self.assertIn("eligible donor(s) registered in Dhaka", reply)
+        # Verifies aggregate count provided is EXACTLY 1 (excluding self, snoozed, and cooldown)
+        self.assertIn("1 eligible donor(s) registered in Dhaka", reply)
         self.assertIn("Blood Hub", reply)
 
         # STRICT PRIVACY: Zero donor names or phone numbers leaked
-        self.assertNotIn("+8801700000002", reply)
+        self.assertNotIn("+8801733334444", reply)
+        self.assertNotIn("+8801733334445", reply)
         self.assertNotIn("d2", reply)
 
     def test_cooldown_days_and_server_eligibility(self):
@@ -153,16 +178,50 @@ class PulseAIServerDataAndPrivacyTests(TestCase):
         self.assertIn("60 day(s)", reply)
         self.assertIn("90-day cooldown", reply)
 
-        # Verify donation history inquiry
+        # Verify donation history: counts ONLY two-sided confirmed DonationMatch
+        from api.models import BloodRequest, DonationMatch
+        # Create unconfirmed match on request 1 (one-sided)
+        br1 = BloodRequest.objects.create(
+            requester=self.user,
+            patient_name="Patient A",
+            blood_group='B+',
+            units_needed=2,
+            district='Dhaka'
+        )
+        DonationMatch.objects.create(
+            request=br1,
+            donor=profile,
+            status='DONATED',
+            donor_confirmed_at=timezone.now(),
+            confirmed_at=None # Not two-sided confirmed!
+        )
+        # Create two-sided confirmed match on request 2
+        br2 = BloodRequest.objects.create(
+            requester=self.user,
+            patient_name="Patient B",
+            blood_group='B+',
+            units_needed=1,
+            district='Dhaka'
+        )
+        DonationMatch.objects.create(
+            request=br2,
+            donor=profile,
+            status='DONATED',
+            donor_confirmed_at=timezone.now(),
+            requester_confirmed_at=timezone.now(),
+            confirmed_at=timezone.now()
+        )
+
         res_hist = self.client.post('/api/assistant/chat/', {
             'message': 'What is my donation history?',
             'language': 'en',
         }, format='json')
         self.assertEqual(res_hist.status_code, status.HTTP_200_OK)
-        self.assertIn("4 verified blood donation(s)", res_hist.data['reply'])
+        # Must report 1 verified donation, not unconfirmed
+        self.assertIn("1 verified blood donation(s)", res_hist.data['reply'])
 
     def test_fare_estimator_road_factor_and_disclaimer(self):
-        # 10 km straight distance
+        # 13 km straight distance
         res = estimate_fare_range(distance_km=13.0, locale='en')
         self.assertEqual(res['distance_km'], 13.0)
         # 13 km * 15 BDT = 195 BDT; 13 km * 20 BDT = 260 BDT
@@ -170,3 +229,23 @@ class PulseAIServerDataAndPrivacyTests(TestCase):
         self.assertEqual(res['max_fare_bdt'], 260)
         self.assertIn("Approximate. Real fares vary by time, weather and vehicle.", res['disclaimer'])
         self.assertIn("৳195 - ৳260", res['reply'])
+
+    def test_fare_from_district_names_and_unknown_place(self):
+        # Known districts: Dhaka to Gazipur
+        res = estimate_fare_range(place_from="Dhaka", place_to="Gazipur", locale='en')
+        self.assertIsNotNone(res['distance_km'])
+        self.assertGreater(res['min_fare_bdt'], 0)
+        self.assertIn("Estimated road distance", res['reply'])
+
+        # Unknown location
+        res_unknown = estimate_fare_range(place_from="Dhaka", place_to="NonExistentPlaceXYZ", locale='en')
+        self.assertIsNone(res_unknown['fare_range'])
+        self.assertIn("not recognized", res_unknown['reply'])
+
+        # Chat endpoint route with Dhaka to Gazipur
+        res_chat = self.client.post('/api/assistant/chat/', {
+            'message': 'fare from Dhaka to Gazipur',
+            'language': 'en'
+        }, format='json')
+        self.assertEqual(res_chat.status_code, status.HTTP_200_OK)
+        self.assertIn("Estimated road distance", res_chat.data['reply'])
