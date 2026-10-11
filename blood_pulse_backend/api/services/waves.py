@@ -45,17 +45,18 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1, eval_time
     if wave_number > max_allowed_wave:
         return []
 
-    # 1. Component & blood group compatibility
-    compatible_groups = get_compatible_donor_groups(
-        blood_request.blood_group,
-        blood_request.component or 'WHOLE'
-    )
+    from api.services.eligibility import get_eligible_donors_base_queryset
 
-    # Base queryset: Available, searchable, matching blood group
-    donors_qs = DonorProfile.objects.filter(
-        blood_group__in=compatible_groups,
-        is_available=True,
-    ).exclude(user_intent='ONLY_REQUEST').select_related('user')
+    now = eval_time or timezone.now()
+
+    # Base queryset: Available, not suspended, active user, compatible blood group,
+    # passes cooldown, not snoozed (alert_pause_until <= now or null), not deferred
+    donors_qs = get_eligible_donors_base_queryset(
+        blood_group=blood_request.blood_group,
+        component=blood_request.component or 'WHOLE',
+        for_search=False,
+        now=now,
+    ).select_related('user')
 
     # Exclude requester if requester is a donor profile
     if blood_request.requester_id:
@@ -72,11 +73,6 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1, eval_time
     if already_notified_donor_ids:
         donors_qs = donors_qs.exclude(id__in=already_notified_donor_ids)
 
-    # Cooldown & Snooze database filter optimization
-    now = eval_time or timezone.now()
-    donors_qs = donors_qs.filter(
-        Q(alert_pause_until__isnull=True) | Q(alert_pause_until__lte=now)
-    )
 
     req_lat = blood_request.lat
     req_lng = blood_request.lng

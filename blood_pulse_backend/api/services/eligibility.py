@@ -43,6 +43,72 @@ def is_in_quiet_hours(dt=None) -> bool:
         return QUIET_HOURS_START <= hour < QUIET_HOURS_END
 
 
+def get_eligible_donors_base_queryset(
+    blood_group=None,
+    component: str = 'WHOLE',
+    for_search: bool = False,
+    now=None,
+):
+    """
+    Unified database-level donor eligibility queryset used across:
+    - Wave Engine (`get_candidate_donors_for_wave`)
+    - Donor Search (`donor_search_view`)
+    - Bulk Dispatch / "Request All" (`emergency_request_all_view`)
+    - Standby Donors
+    - Public Stats & Guest Map
+
+    Enforces:
+    - `is_available = True`
+    - `is_suspended = False`
+    - `user__is_active = True`
+    - `user_intent != 'ONLY_REQUEST'`
+    - Cooldown check: `last_donation_date <= today - cooldown_days`
+    - Snooze check: `alert_pause_until is null or <= now`
+    - Deferral check: `deferral_until is null or <= now`
+    - Searchable: if `for_search` is True, requires `is_searchable = True`
+    - Blood compatibility: filters by compatible blood groups if `blood_group` provided.
+    """
+    from django.db.models import Q
+    from api.models import DonorProfile
+    from api.services.compat import get_compatible_donor_groups
+
+    if now is None:
+        now = timezone.now()
+    today = now.date()
+
+    norm_comp = (component or 'WHOLE').upper()
+    if norm_comp == 'PLATELETS':
+        cooldown_days = PLATELET_COOLDOWN_DAYS
+    elif norm_comp == 'PLASMA':
+        cooldown_days = PLASMA_COOLDOWN_DAYS
+    else:
+        cooldown_days = DONOR_COOLDOWN_DAYS
+
+    cooldown_cutoff = today - timedelta(days=cooldown_days)
+
+    qs = (
+        DonorProfile.objects.filter(
+            is_available=True,
+            is_suspended=False,
+            user__is_active=True,
+        )
+        .exclude(user_intent='ONLY_REQUEST')
+        .filter(Q(alert_pause_until__isnull=True) | Q(alert_pause_until__lte=now))
+        .filter(Q(deferral_until__isnull=True) | Q(deferral_until__lte=now))
+        .filter(Q(last_donation_date__isnull=True) | Q(last_donation_date__lte=cooldown_cutoff))
+    )
+
+    if for_search:
+        qs = qs.filter(is_searchable=True)
+
+    if blood_group and blood_group != 'Any':
+        compatible_groups = get_compatible_donor_groups(blood_group, norm_comp)
+        qs = qs.filter(blood_group__in=compatible_groups)
+
+    return qs
+
+
+
 def evaluate_donor_eligibility(
     donor,
     component: str = 'WHOLE',

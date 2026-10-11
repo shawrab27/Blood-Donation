@@ -245,24 +245,154 @@ class WaveNotificationDeduplicationAndFCMTests(TestCase):
         self.assertEqual(candidates_w2, [])
 
     def test_fcm_batches_chunks_of_500_and_deactivates_invalid_tokens(self):
-        """Batches tokens into chunks <= 500 and deactivates invalid tokens gracefully."""
+        """Batches tokens into chunks <= 500 and deactivates invalid tokens gracefully with mock."""
         mock_donor = MagicMock()
         mock_donor.id = 999
         mock_donor.fcm_token = 'invalid_device_token'
 
         tokens_with_donors = [('token_' + str(i), mock_donor) for i in range(1050)]
 
-        # Mock Firebase Admin messaging
-        with patch('api.services.notify.settings.DEBUG', True):
-            # Test direct batching with mock
+        # Mock Firebase Admin messaging and credentials
+        mock_response = MagicMock()
+        mock_response.success_count = 500
+        mock_response.failure_count = 0
+        mock_response.responses = []
+
+        with patch('firebase_admin.messaging.send_each_for_multicast', return_value=mock_response), \
+             patch('firebase_admin.messaging.MulticastMessage'), \
+             patch('firebase_admin._apps', {'[DEFAULT]': True}):
             result = send_fcm_multicast_batches(
                 tokens_with_donors,
                 title="Test Title",
                 body="Test Body",
             )
-            # Without real firebase-admin credentials installed in tests, it safely catches and returns
-            self.assertIn('sent', result)
-            self.assertIn('failed', result)
+            self.assertEqual(result['sent'], 1500)
+            self.assertEqual(result['failed'], 0)
+
+    def test_candidate_cap_200_and_remainder_notified_next_tick(self):
+        """
+        Generates 250 matching donors.
+        Step 1 candidate call caps at 200 (WAVE_CANDIDATE_BATCH_LIMIT).
+        Wave 1 dispatch notifies the first 200 donors.
+        Next tick processes the remainder 50 candidates in wave 1 before/during progression.
+        """
+        DonorProfile.objects.all().delete()
+        # Create 250 donors
+        donors = []
+        for i in range(250):
+            u = User.objects.create_user(username=f'cap_donor_{i}', password='password123')
+            d = DonorProfile.objects.create(
+                user=u,
+                blood_group='B+',
+                phone_number=f'+8801700{i:06d}',
+                is_available=True,
+                is_profile_complete=True,
+                is_searchable=True,
+                district='Dhaka',
+                latitude=23.8103,
+                longitude=90.4125,
+            )
+            donors.append(d)
+
+        # Set request as active emergency request for tick processor
+        self.req.mode = 'EMERGENCY'
+        self.req.status = 'ACTIVE'
+        self.req.is_active = True
+        self.req.current_wave = 1
+        self.req.units_needed = 1
+        self.req.units_received = 0
+        self.req.units_pending = 0
+        self.req.save()
+
+        # 1. First fetch: capped at 200
+        candidates_first = get_candidate_donors_for_wave(self.req, wave_number=1)
+        self.assertEqual(len(candidates_first), 200)
+
+        # 2. Dispatch the first 200 notifications
+        with patch('api.services.notify.send_fcm_multicast_batches', return_value={'sent': 200, 'failed': 0, 'invalid_tokens_cleared': 0}):
+            dispatched_first = dispatch_wave_notifications(self.req, candidates_first, wave_number=1)
+            self.assertEqual(dispatched_first, 200)
+
+        # 3. Check remainder: 50 donors left for wave 1
+        candidates_remainder = get_candidate_donors_for_wave(self.req, wave_number=1)
+        self.assertEqual(len(candidates_remainder), 50)
+
+        # 4. Next wave tick processes remainder chunks
+        with patch('api.services.notify.send_fcm_multicast_batches', return_value={'sent': 50, 'failed': 0, 'invalid_tokens_cleared': 0}):
+            process_wave_tick()
+
+        # 5. After remainder processed, all 250 are notified
+        self.assertEqual(WaveNotificationLog.objects.filter(request=self.req).count(), 250)
+        self.assertEqual(get_candidate_donors_for_wave(self.req, wave_number=1), [])
+
+
+class SharedEligibilityCallersTests(TestCase):
+    """
+    Tests proving each caller (wave, donor search, request all, standby)
+    excludes snoozed, quiet-hours, and cooldown donors consistently using the shared logic.
+    """
+    def setUp(self):
+        self.client = APIClient()
+        self.requester = User.objects.create_user(username='elig_req', password='password123')
+        self.donor_user = User.objects.create_user(username='elig_donor', password='password123')
+        self.donor = DonorProfile.objects.create(
+            user=self.donor_user,
+            blood_group='O+',
+            district='Dhaka',
+            is_available=True,
+            is_profile_complete=True,
+            is_searchable=True,
+            latitude=23.8103,
+            longitude=90.4125,
+        )
+        self.req = BloodRequest.objects.create(
+            requester=self.requester,
+            blood_group='O+',
+            effective_scope='LOCAL',
+            district='Dhaka',
+            lat=23.8103,
+            lng=90.4125,
+            urgency='TODAY_24H',
+        )
+
+    def test_snoozed_donor_excluded_across_all_callers(self):
+        """Snoozed donor (alert_pause_until in future) is excluded from search, wave, and request all."""
+        self.donor.alert_pause_until = timezone.now() + timedelta(days=15)
+        self.donor.save()
+
+        # 1. Donor search caller
+        res_search = self.client.get('/api/donors/search/?blood_group=O%2B&district=Dhaka')
+        self.assertEqual(res_search.status_code, 200)
+        self.assertEqual(res_search.data['total'], 0)
+
+        # 2. Wave engine caller
+        candidates = get_candidate_donors_for_wave(self.req, wave_number=1)
+        self.assertEqual(candidates, [])
+
+        # 3. Bulk dispatch caller
+        self.client.force_authenticate(user=self.requester)
+        res_all = self.client.post(
+            f'/api/emergency/requests/{self.req.id}/bulk-dispatch/',
+            {},
+            format='json',
+        )
+        self.assertEqual(res_all.status_code, 200)
+        self.assertEqual(res_all.data['notified'], 0)
+
+    def test_cooldown_donor_excluded_across_all_callers(self):
+        """Donor on recovery cooldown (<90 days) is excluded from search, wave, and request all."""
+        self.donor.last_donation_date = timezone.now().date() - timedelta(days=30)
+        self.donor.save()
+
+        # 1. Donor search caller
+        res_search = self.client.get('/api/donors/search/?blood_group=O%2B&district=Dhaka')
+        self.assertEqual(res_search.status_code, 200)
+        self.assertEqual(res_search.data['total'], 0)
+
+        # 2. Wave engine caller
+        candidates = get_candidate_donors_for_wave(self.req, wave_number=1)
+        self.assertEqual(candidates, [])
+
 
 
 class DonorSnoozeEndpointTests(TestCase):

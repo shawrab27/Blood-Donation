@@ -56,24 +56,32 @@ def process_wave_tick() -> dict:
         if is_slot_full:
             continue
 
-        # Check wave transition for emergency requests
-        if req.mode == 'EMERGENCY' and req.next_wave_at and req.next_wave_at <= now:
-            if req.current_wave < 4:
-                next_wave = req.current_wave + 1
-                candidates = get_candidate_donors_for_wave(req, wave_number=next_wave)
-                
-                # Check if candidates were found within effective scope
-                if candidates:
-                    dispatch_wave_notifications(req, candidates, wave_number=next_wave)
+        # Check wave transition or remainder candidates for emergency requests
+        if req.mode == 'EMERGENCY':
+            # 1. Check if there are remainder candidates in current wave that were capped in previous tick
+            current_candidates = get_candidate_donors_for_wave(req, wave_number=req.current_wave)
+            if current_candidates:
+                dispatch_wave_notifications(req, current_candidates, wave_number=req.current_wave)
 
-                req.current_wave = next_wave
-                
-                # Compute next timeout
-                timeout_map = WAVE_TIMEOUT_MINUTES.get(req.urgency, WAVE_TIMEOUT_MINUTES['CRITICAL_2H'])
-                delay_mins = timeout_map.get(next_wave, 30)
-                req.next_wave_at = now + timedelta(minutes=delay_mins)
-                req.save(update_fields=['current_wave', 'next_wave_at'])
-                advanced_count += 1
+            # 2. Check wave transition when next_wave_at timer has expired
+            if req.next_wave_at and req.next_wave_at <= now:
+                if req.current_wave < 4:
+                    next_wave = req.current_wave + 1
+                    candidates = get_candidate_donors_for_wave(req, wave_number=next_wave)
+                    
+                    # Check if candidates were found within effective scope
+                    if candidates:
+                        dispatch_wave_notifications(req, candidates, wave_number=next_wave)
+
+                    req.current_wave = next_wave
+                    
+                    # Compute next timeout
+                    timeout_map = WAVE_TIMEOUT_MINUTES.get(req.urgency, WAVE_TIMEOUT_MINUTES['CRITICAL_2H'])
+                    delay_mins = timeout_map.get(next_wave, 30)
+                    req.next_wave_at = now + timedelta(minutes=delay_mins)
+                    req.save(update_fields=['current_wave', 'next_wave_at'])
+                    advanced_count += 1
+
 
 
             elif req.current_wave >= 4:

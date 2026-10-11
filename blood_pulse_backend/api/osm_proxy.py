@@ -107,14 +107,15 @@ class RouteView(APIView):
             return Response(cached)
 
         try:
-            # {lng},{lat};{lng},{lat}
             coords = f"{from_lng},{from_lat};{to_lng},{to_lat}"
             res = requests.get(
                 f'https://router.project-osrm.org/route/v1/driving/{coords}',
                 params={'overview': 'false'},
+                headers={'User-Agent': 'BloodPulse/1.0'},
                 timeout=5
             )
             res.raise_for_status()
+
             data = res.json()
             
             routes = data.get('routes', [])

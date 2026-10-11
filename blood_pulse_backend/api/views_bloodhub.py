@@ -81,32 +81,15 @@ def donor_search_view(request):
     limit = min(50, int(request.query_params.get('limit', 20)))
     offset = int(request.query_params.get('offset', 0))
 
-    now = timezone.now()
-    today = now.date()
-    from datetime import timedelta
-    from api.conf import DONOR_COOLDOWN_DAYS
+    from api.services.eligibility import get_eligible_donors_base_queryset
 
-    # Base eligible donors: is_available=True, not suspended, active user, not ONLY_REQUEST
-    # cooldown passed (90 days), not snoozed (alert_pause_until <= now or null)
-    cooldown_cutoff = today - timedelta(days=DONOR_COOLDOWN_DAYS)
+    # Use single shared eligible donors base queryset
+    queryset = get_eligible_donors_base_queryset(
+        blood_group=blood_group,
+        component=component,
+        for_search=True,
+    ).select_related('user', 'upazila_linked__district__division')
 
-    queryset = (
-        DonorProfile.objects.filter(
-            is_searchable=True,
-            is_available=True,
-            is_suspended=False,
-            user__is_active=True,
-        )
-        .exclude(user_intent='ONLY_REQUEST')
-        .filter(Q(alert_pause_until__isnull=True) | Q(alert_pause_until__lte=now))
-        .filter(Q(deferral_until__isnull=True) | Q(deferral_until__lte=now))
-        .filter(Q(last_donation_date__isnull=True) | Q(last_donation_date__lte=cooldown_cutoff))
-        .select_related('user', 'upazila_linked__district__division')
-    )
-
-    if blood_group and blood_group != 'Any':
-        compatible_groups = get_compatible_donor_groups(blood_group, component)
-        queryset = queryset.filter(blood_group__in=compatible_groups)
 
     if district and district != 'Any':
         queryset = queryset.filter(

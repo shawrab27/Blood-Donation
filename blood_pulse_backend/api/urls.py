@@ -147,6 +147,7 @@ urlpatterns = [
     path('hospitals/directory/', hospital_list_view, name='bloodhub-hospital-directory'),
     path('emergency/requests/', emergency_requests_list_create_view, name='bloodhub-emergency-requests'),
     path('emergency/requests/bulk-dispatch/', emergency_request_all_view, name='bloodhub-bulk-dispatch'),
+    path('emergency/requests/<int:pk>/bulk-dispatch/', emergency_request_all_view, name='bloodhub-request-bulk-dispatch'),
     path('emergency/requests/<int:pk>/', emergency_request_detail_view, name='bloodhub-emergency-request-detail'),
     path('emergency/requests/<int:pk>/accept/', emergency_request_accept_view, name='bloodhub-emergency-request-accept'),
     path('emergency/requests/<int:pk>/report/', emergency_request_report_view, name='bloodhub-emergency-request-report'),
