@@ -16,6 +16,12 @@ PLASMA_COOLDOWN_DAYS = 28
 # 1 degree latitude ~ 111 km -> 0.0045 degrees ~ 500m
 COORDINATE_FUZZ_DEGREE = 0.0045
 
+# Deterministic HMAC Location Fuzzing (Step 4 Privacy)
+LOCATION_FUZZ_MIN_METERS = 500.0
+LOCATION_FUZZ_MAX_METERS = 1000.0
+LOCATION_RECOMPUTE_THRESHOLD_METERS = 500.0
+LOCATION_GEOHASH_PRECISION = 7  # ~150m cell
+
 # Wave radius limits (in kilometers)
 WAVE_RADIUS_KM = {
     1: 5.0,     # Local / Campus / immediate vicinity

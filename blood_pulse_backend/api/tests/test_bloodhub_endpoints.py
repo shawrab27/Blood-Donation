@@ -65,9 +65,10 @@ class BloodHubEndpointsIntegrationTests(TestCase):
         data = response.json()
         self.assertEqual(data['total'], 1)
         res = data['results'][0]
-        # Verify phone is masked
-        self.assertNotIn('+8801712345678', res['phone_masked'])
-        self.assertTrue('****' in res['phone_masked'] or '***' in res['phone_masked'])
+        # Step 4 Privacy: phone is completely omitted from search cards (District, Donor Name, Blood Group, Badge only)
+        self.assertNotIn('phone', res)
+        self.assertNotIn('phone_masked', res)
+        self.assertEqual(set(res.keys()), {'id', 'name', 'blood_group', 'district', 'badge'})
 
     def test_donor_map_fuzzed_coordinates(self):
         response = self.client.get('/api/donors/map/?blood_group=O%2B')
@@ -118,11 +119,19 @@ class BloodHubEndpointsIntegrationTests(TestCase):
             contact_phone='+8801912345678',
         )
 
-        # Anonymous view: phone is masked, ward_bed is protected
+        # Anonymous view: strictly zero PII (hospital_name and status only, no phone or ward/bed)
         anon_resp = self.client.get(f'/api/emergency/requests/{req.id}/')
         self.assertEqual(anon_resp.status_code, status.HTTP_200_OK)
-        self.assertIn('****', anon_resp.json()['contact_phone_display'])
-        self.assertIn('Protected', anon_resp.json()['ward_bed_display'])
+        self.assertNotIn('contact_phone_display', anon_resp.json())
+        self.assertNotIn('ward_bed_display', anon_resp.json())
+        self.assertEqual(anon_resp.json()['blood_group'], 'O+')
+
+        # Authenticated non-matched viewer: phone is masked, ward_bed is protected
+        self.client.force_authenticate(user=self.donor_user)
+        non_matched_resp = self.client.get(f'/api/emergency/requests/{req.id}/')
+        self.assertEqual(non_matched_resp.status_code, status.HTTP_200_OK)
+        self.assertIn('****', non_matched_resp.json()['contact_phone_display'])
+        self.assertIn('Protected', non_matched_resp.json()['ward_bed_display'])
 
         # Requester view: unmasked
         self.client.force_authenticate(user=self.requester_user)

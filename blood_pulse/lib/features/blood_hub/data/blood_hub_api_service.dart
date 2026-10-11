@@ -28,6 +28,7 @@ class DonorSearchModel {
     required this.trustBand,
     required this.maskedPhone,
     this.lastDonationDays,
+    this.badge = 'Active Donor',
   });
 
   final int id;
@@ -42,6 +43,7 @@ class DonorSearchModel {
   final String trustBand; // LOW | MEDIUM | HIGH
   final String maskedPhone;
   final int? lastDonationDays;
+  final String badge;
 
   factory DonorSearchModel.fromJson(Map<String, dynamic> j) {
     return DonorSearchModel(
@@ -53,10 +55,11 @@ class DonorSearchModel {
       division: (j['division'] as String?) ?? '',
       campus: j['campus'] as String?,
       isVerified: (j['is_verified'] as bool?) ?? false,
-      isEligible: (j['is_eligible'] as bool?) ?? false,
+      isEligible: (j['is_eligible'] as bool?) ?? true,
       trustBand: (j['trust_band'] as String?) ?? 'LOW',
       maskedPhone: (j['masked_phone'] as String?) ?? (j['phone_masked'] as String?) ?? '',
       lastDonationDays: (j['last_donation_days'] as num?)?.toInt() ?? (j['cooldown_days_remaining'] as num?)?.toInt(),
+      badge: (j['badge'] as String?) ?? 'Active Donor',
     );
   }
 }

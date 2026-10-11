@@ -126,6 +126,18 @@ class DonorProfileSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({field: f"Only administrators can modify {field}."})
         return attrs
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        request = self.context.get('request')
+        is_owner = request and request.user and request.user.is_authenticated and (request.user.id == instance.user_id or request.user.is_staff)
+        if not is_owner:
+            # Mask exact coordinates in non-owner serialized representations
+            ret.pop('latitude', None)
+            ret.pop('longitude', None)
+            ret['public_lat'] = instance.public_lat
+            ret['public_lng'] = instance.public_lng
+        return ret
+
 class BloodRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = BloodRequest

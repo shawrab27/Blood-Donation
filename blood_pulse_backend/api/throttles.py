@@ -57,6 +57,11 @@ class DonationConfirmThrottle(UserRateThrottle):
     scope = 'donation_confirm'
 
 
+class DonorSearchThrottle(AnonRateThrottle):
+    scope = 'donor_search'
+    rate = '60/min'
+
+
 def custom_exception_handler(exc, context):
     """
     Custom DRF exception handler ensuring HTTP 429 responses always include

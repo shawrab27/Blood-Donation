@@ -63,72 +63,33 @@ class HospitalSerializer(serializers.ModelSerializer):
 
 
 class DonorSearchSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    full_name = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
-    phone_masked = serializers.SerializerMethodField()
-    is_eligible = serializers.SerializerMethodField()
-    cooldown_days_remaining = serializers.SerializerMethodField()
     badge = serializers.CharField(read_only=True)
-    division = serializers.SerializerMethodField()
 
     class Meta:
         model = DonorProfile
         fields = [
             'id',
-            'username',
-            'full_name',
             'name',
             'blood_group',
             'district',
-            'division',
-            'campus',
-            'phone_masked',
-            'total_bags_donated',
             'badge',
-            'rating_avg',
-            'rating_count',
-            'is_verified',
-            'profile_picture',
-            'last_donation_date',
-            'is_eligible',
-            'cooldown_days_remaining',
         ]
 
-    def get_full_name(self, obj):
+    def get_name(self, obj):
         if obj.user:
             name = f"{obj.user.first_name} {obj.user.last_name}".strip()
             return name or obj.user.username
         return "Anonymous Donor"
-
-    def get_name(self, obj):
-        return self.get_full_name(obj)
-
-    def get_phone_masked(self, obj):
-        return mask_phone_number(obj.phone_number)
-
-    def get_is_eligible(self, obj):
-        res = evaluate_donor_eligibility(obj)
-        return res['is_eligible']
-
-    def get_cooldown_days_remaining(self, obj):
-        res = evaluate_donor_eligibility(obj)
-        return res['days_remaining']
-
-    def get_division(self, obj):
-        if obj.upazila_linked and obj.upazila_linked.district and obj.upazila_linked.district.division:
-            return obj.upazila_linked.district.division.name
-        from api.models import District
-        d = District.objects.filter(name__iexact=obj.district).select_related('division').first()
-        return d.division.name if d and d.division else "Dhaka"
 
 
 class DonorMapSerializer(serializers.ModelSerializer):
     lat = serializers.SerializerMethodField()
     lng = serializers.SerializerMethodField()
+    public_lat = serializers.SerializerMethodField()
+    public_lng = serializers.SerializerMethodField()
     badge = serializers.CharField(read_only=True)
     name = serializers.SerializerMethodField()
-    phone_masked = serializers.SerializerMethodField()
 
     class Meta:
         model = DonorProfile
@@ -137,13 +98,11 @@ class DonorMapSerializer(serializers.ModelSerializer):
             'name',
             'blood_group',
             'district',
-            'campus',
             'lat',
             'lng',
-            'rating_avg',
+            'public_lat',
+            'public_lng',
             'badge',
-            'is_verified',
-            'phone_masked',
         ]
 
     def get_name(self, obj):
@@ -152,21 +111,27 @@ class DonorMapSerializer(serializers.ModelSerializer):
             return name or obj.user.username
         return "Anonymous Donor"
 
-    def get_phone_masked(self, obj):
-        return mask_phone_number(obj.phone_number)
+    def get_public_lat(self, obj):
+        if obj.public_lat is not None:
+            return obj.public_lat
+        raw_lat = obj.last_lat if obj.last_lat is not None else obj.latitude
+        raw_lng = obj.last_lng if obj.last_lng is not None else obj.longitude
+        f_lat, _ = fuzz_coordinates(raw_lat, raw_lng, seed_id=obj.id)
+        return f_lat
+
+    def get_public_lng(self, obj):
+        if obj.public_lng is not None:
+            return obj.public_lng
+        raw_lat = obj.last_lat if obj.last_lat is not None else obj.latitude
+        raw_lng = obj.last_lng if obj.last_lng is not None else obj.longitude
+        _, f_lng = fuzz_coordinates(raw_lat, raw_lng, seed_id=obj.id)
+        return f_lng
 
     def get_lat(self, obj):
-        # Strict privacy fuzzing to ~500m
-        raw_lat = obj.last_lat or obj.latitude
-        raw_lng = obj.last_lng or obj.longitude
-        fuzzed_lat, _ = fuzz_coordinates(raw_lat, raw_lng, seed_id=obj.id)
-        return fuzzed_lat
+        return self.get_public_lat(obj)
 
     def get_lng(self, obj):
-        raw_lat = obj.last_lat or obj.latitude
-        raw_lng = obj.last_lng or obj.longitude
-        _, fuzzed_lng = fuzz_coordinates(raw_lat, raw_lng, seed_id=obj.id)
-        return fuzzed_lng
+        return self.get_public_lng(obj)
 
 
 class BloodRequestListSerializer(serializers.ModelSerializer):
@@ -320,6 +285,11 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
                 data['patient_name'] = f"{parts[0][0]}. {' '.join(p[0] + '.' for p in parts[1:])}" if parts else "Protected Patient"
             else:
                 data['patient_name'] = "Protected Patient"
+            if instance.attendant_name:
+                parts = instance.attendant_name.strip().split()
+                data['attendant_name'] = f"{parts[0][0]}. {' '.join(p[0] + '.' for p in parts[1:])}" if parts else "Protected Attendant"
+            else:
+                data['attendant_name'] = "Protected Attendant"
             data['patient_photo'] = None
             data['requisition_slip'] = None
             if instance.lat is not None and instance.lng is not None:

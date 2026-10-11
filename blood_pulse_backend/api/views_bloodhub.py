@@ -52,92 +52,77 @@ from api.conf import WAVE_TIMEOUT_MINUTES
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([__import__('api.throttles', fromlist=['DonorSearchThrottle']).DonorSearchThrottle])
 def donor_search_view(request):
     """
-    Search available donors by blood group, campus, district, division, or location.
-    STRICT PRIVACY LOCK: Searches by donor name or phone number are locked/blocked.
-    Only opted-in (is_searchable=True), available donors are returned with masked phone numbers.
+    Search available donors by blood group + district/division only (Step 4 Privacy by Design).
+    STRICT PRIVACY LOCK:
+    - Accepts ONLY blood_group and division/district.
+    - Free-text / name / phone queries ('name', 'phone', 'q', 'search', etc.) are rejected/ignored on the server.
+    - Result cards show ONLY: district name, donor's name, blood group, platform tier badge.
+    - No phone, no exact location, no distance.
+    - Returns only eligible donors: cooldown passed (90 days), not request_only, not snoozed, available, not suspended.
+    - Throttled per Step 4 requirements.
     """
+    # Strict server-side rejection/ignore of name/phone/free-text queries
+    # If client attempts to send explicit name or phone query params, reject with clean 400
+    for blocked_param in ['name', 'phone', 'phone_number', 'mobile', 'username', 'email']:
+        if blocked_param in request.query_params:
+            return Response(
+                {'error': f"Querying donors by '{blocked_param}' is strictly forbidden by privacy policy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     blood_group = request.query_params.get('blood_group', '').replace(' ', '+').strip()
     component = request.query_params.get('component', 'WHOLE').strip()
-    campus = request.query_params.get('campus', '').strip()
     district = request.query_params.get('district', '').strip()
     division = request.query_params.get('division', '').strip()
-    q = request.query_params.get('q', '').strip()
-    
-    lat_str = request.query_params.get('lat', '').strip()
-    lng_str = request.query_params.get('lng', '').strip()
-    radius_str = request.query_params.get('radius', '10.0').strip()
     
     limit = min(50, int(request.query_params.get('limit', 20)))
     offset = int(request.query_params.get('offset', 0))
 
-    queryset = DonorProfile.objects.filter(
-        is_searchable=True,
-        is_available=True,
-    ).exclude(user_intent='ONLY_REQUEST').select_related('user', 'upazila_linked__district__division')
+    now = timezone.now()
+    today = now.date()
+    from datetime import timedelta
+    from api.conf import DONOR_COOLDOWN_DAYS
+
+    # Base eligible donors: is_available=True, not suspended, active user, not ONLY_REQUEST
+    # cooldown passed (90 days), not snoozed (alert_pause_until <= now or null)
+    cooldown_cutoff = today - timedelta(days=DONOR_COOLDOWN_DAYS)
+
+    queryset = (
+        DonorProfile.objects.filter(
+            is_searchable=True,
+            is_available=True,
+            is_suspended=False,
+            user__is_active=True,
+        )
+        .exclude(user_intent='ONLY_REQUEST')
+        .filter(Q(alert_pause_until__isnull=True) | Q(alert_pause_until__lte=now))
+        .filter(Q(deferral_until__isnull=True) | Q(deferral_until__lte=now))
+        .filter(Q(last_donation_date__isnull=True) | Q(last_donation_date__lte=cooldown_cutoff))
+        .select_related('user', 'upazila_linked__district__division')
+    )
 
     if blood_group and blood_group != 'Any':
         compatible_groups = get_compatible_donor_groups(blood_group, component)
         queryset = queryset.filter(blood_group__in=compatible_groups)
 
-    if campus and campus != 'All Campuses' and campus != 'Any':
-        queryset = queryset.filter(
-            Q(campus__icontains=campus) |
-            Q(institute__icontains=campus) |
-            Q(institution__name__icontains=campus)
-        )
-
     if district and district != 'Any':
         queryset = queryset.filter(
-            Q(district__icontains=district) |
-            Q(upazila_linked__district__name__icontains=district)
+            Q(district__iexact=district) |
+            Q(upazila_linked__district__name__iexact=district)
         )
 
     if division and division != 'Any':
-        districts_in_div = list(District.objects.filter(division__name__icontains=division).values_list('name', flat=True))
+        districts_in_div = list(District.objects.filter(division__name__iexact=division).values_list('name', flat=True))
         queryset = queryset.filter(
-            Q(upazila_linked__district__division__name__icontains=division) |
-            Q(district__in=districts_in_div) |
-            Q(address__icontains=division)
+            Q(upazila_linked__district__division__name__iexact=division) |
+            Q(district__in=districts_in_div)
         )
 
-    # STRICT PRIVACY LOCK: Never search by name, username, or phone number
-    if q:
-        queryset = queryset.filter(
-            Q(campus__icontains=q) |
-            Q(institute__icontains=q) |
-            Q(institution__name__icontains=q) |
-            Q(district__icontains=q) |
-            Q(address__icontains=q) |
-            Q(upazila_linked__name__icontains=q) |
-            Q(upazila_linked__district__name__icontains=q)
-        )
-
-    if lat_str and lng_str:
-        try:
-            req_lat = float(lat_str)
-            req_lng = float(lng_str)
-            radius = float(radius_str)
-            
-            filtered_results = []
-            for d in queryset:
-                if d.latitude is not None and d.longitude is not None:
-                    dist = haversine_distance(req_lat, req_lng, float(d.latitude), float(d.longitude))
-                    if dist <= radius:
-                        d._distance = dist
-                        filtered_results.append(d)
-            
-            filtered_results.sort(key=lambda x: (x._distance, -x.rating_avg))
-            total_count = len(filtered_results)
-            results = filtered_results[offset:offset + limit]
-            
-        except ValueError:
-            total_count = queryset.count()
-            results = queryset.order_by('-total_bags_donated', '-rating_avg')[offset:offset + limit]
-    else:
-        total_count = queryset.count()
-        results = queryset.order_by('-total_bags_donated', '-rating_avg')[offset:offset + limit]
+    total_count = queryset.count()
+    results = queryset.order_by('-total_bags_donated', 'id')[offset:offset + limit]
 
     serializer = DonorSearchSerializer(results, many=True, context={'request': request})
     return Response({
@@ -538,13 +523,40 @@ def emergency_requests_list_create_view(request):
 @permission_classes([AllowAny])
 def emergency_request_detail_view(request, pk):
     """
-    Returns full request details.
-    Protects private contact info unless the requester or accepted donor is viewing.
+    Step 4: Privacy by Design for Emergency Request Detail.
+    - Anonymous callers (e.g. the closed-request QR page): get ONLY:
+      blood_group, status, units_needed, units_received, units_pending, hospital_name,
+      and target_reached / "Target Reached" state. No patient name, photo, attendant, lat/lng, phone.
+    - Authenticated non-matched users: get standard masked patient/attendant fields,
+      protected phone, fuzzed coordinates (~500m), without raw contact info.
+    - Only the MATCHED donor (or requester/staff): gets full contact reveal and exact tracking details.
     """
     blood_req = BloodRequest.objects.filter(id=pk).first()
     if not blood_req:
         return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+    # 1. Anonymous Callers: strictly minimal public/closed details (no PII, no coordinates)
+    if not request.user or not request.user.is_authenticated:
+        hospital_name = (
+            blood_req.hospital.name_en or blood_req.hospital.name
+            if blood_req.hospital else (blood_req.hospital_name_other or blood_req.hospital_location or "Medical Facility")
+        )
+        is_target_reached = (blood_req.units_received >= blood_req.units_needed) or (blood_req.status in ('CLOSED', 'FULFILLED'))
+        return Response({
+            'id': blood_req.id,
+            'blood_group': blood_req.blood_group,
+            'component': blood_req.component,
+            'status': blood_req.status,
+            'units_needed': blood_req.units_needed,
+            'units_received': blood_req.units_received,
+            'units_pending': blood_req.units_pending,
+            'hospital_name': hospital_name,
+            'target_reached': is_target_reached,
+            'is_closed': is_target_reached or (blood_req.status == 'EXPIRED'),
+            'request_mode': blood_req.request_mode,
+        }, status=status.HTTP_200_OK)
+
+    # 2. Authenticated Callers: routed through BloodRequestDetailSerializer
     serializer = BloodRequestDetailSerializer(blood_req, context={'request': request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 

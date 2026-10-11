@@ -9,7 +9,16 @@ geohash encoding, and ETA estimation.
 
 import math
 import hashlib
-from api.conf import COORDINATE_FUZZ_DEGREE, FALLBACK_SPEED_KMH, FALLBACK_DETOUR_FACTOR
+import hmac
+from django.conf import settings
+from api.conf import (
+    COORDINATE_FUZZ_DEGREE,
+    FALLBACK_SPEED_KMH,
+    FALLBACK_DETOUR_FACTOR,
+    LOCATION_FUZZ_MIN_METERS,
+    LOCATION_FUZZ_MAX_METERS,
+    LOCATION_RECOMPUTE_THRESHOLD_METERS,
+)
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -34,32 +43,88 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return r * c
 
 
+def should_recompute_fuzzed_location(old_lat: float, old_lng: float, new_lat: float, new_lng: float, threshold_meters: float = LOCATION_RECOMPUTE_THRESHOLD_METERS) -> bool:
+    """
+    Determines whether a donor's public fuzzed location needs recomputation.
+    Recomputes only when the real location moves more than threshold_meters (default 500m)
+    or moves into a different geohash cell.
+    """
+    if old_lat is None or old_lng is None:
+        return True
+    if new_lat is None or new_lng is None:
+        return False
+
+    dist_km = haversine_distance(old_lat, old_lng, new_lat, new_lng)
+    if (dist_km * 1000.0) >= threshold_meters:
+        return True
+
+    # Also check if moved across geohash cell boundaries
+    old_gh = encode_geohash(old_lat, old_lng, precision=7)
+    new_gh = encode_geohash(new_lat, new_lng, precision=7)
+    return old_gh != new_gh
+
+
+def compute_deterministic_fuzzed_location(lat: float, lng: float, donor_id: str or int, secret_key: str = None) -> tuple:
+    """
+    Computes a deterministic fuzzed GPS point with an offset of 500-1000m
+    derived from HMAC-SHA256(server secret, donor id).
+    Guarantees the exact same donor at the same location receives the exact same offset,
+    preventing multi-query triangulation while preserving local search relevance.
+    """
+    if lat is None or lng is None:
+        return (None, None)
+
+    secret = (secret_key or getattr(settings, 'SECRET_KEY', 'bloodpulse_fuzz_fallback_secret')).encode('utf-8')
+    msg = f"donor_location_fuzz_{donor_id}".encode('utf-8')
+    digest = hmac.new(secret, msg, hashlib.sha256).hexdigest()
+
+    # 1. Derive bearing (0 to 359 degrees) from first 4 hex bytes
+    int_bearing = int(digest[:4], 16) % 360
+    # Avoid cardinal poles
+    if int_bearing % 90 == 0:
+        int_bearing = (int_bearing + 17) % 360
+    bearing_rad = math.radians(int_bearing)
+
+    # 2. Derive offset distance (500 to 1000 meters) from next 4 hex bytes
+    int_dist = int(digest[4:8], 16) % 10000  # 0 to 9999
+    distance_meters = LOCATION_FUZZ_MIN_METERS + (int_dist / 10000.0) * (LOCATION_FUZZ_MAX_METERS - LOCATION_FUZZ_MIN_METERS)
+    distance_km = distance_meters / 1000.0
+
+    # 3. Project new coordinates using spherical geodesy
+    earth_radius_km = 6371.0
+    angular_dist = distance_km / earth_radius_km
+    lat1 = math.radians(lat)
+    lng1 = math.radians(lng)
+
+    fuzz_lat_rad = math.asin(
+        math.sin(lat1) * math.cos(angular_dist) +
+        math.cos(lat1) * math.sin(angular_dist) * math.cos(bearing_rad)
+    )
+    fuzz_lng_rad = lng1 + math.atan2(
+        math.sin(bearing_rad) * math.sin(angular_dist) * math.cos(lat1),
+        math.cos(angular_dist) - math.sin(lat1) * math.sin(fuzz_lat_rad)
+    )
+
+    fuzz_lat = round(math.degrees(fuzz_lat_rad), 6)
+    fuzz_lng = round(math.degrees(fuzz_lng_rad), 6)
+    return (fuzz_lat, fuzz_lng)
+
+
 def fuzz_coordinates(lat: float, lng: float, seed_id: str or int = None) -> tuple:
     """
-    Deterministically fuzzes GPS coordinates to approximately 500 meters (~0.0045 deg).
-    Using a hash seed guarantees consistent position representation across requests
-    without revealing the donor's exact home or real-time location.
+    Deterministically fuzzes GPS coordinates to approximately 500-1000 meters.
+    Uses HMAC-derived offset when seed_id is provided, or grid-snap fallback.
     """
     if lat is None or lng is None:
         return (None, None)
 
     if seed_id is not None:
-        hash_digest = hashlib.md5(f"fuzz_salt_{seed_id}".encode()).hexdigest()
-        # Derive angle and normalized radius
-        int_angle = int(hash_digest[:4], 16) % 360
-        if int_angle % 90 == 0:
-            int_angle = (int_angle + 15) % 360
-        int_offset = int(hash_digest[4:8], 16) % 1000  # 0 to 999
-        radius_deg = (0.0035 + (int_offset / 1000.0) * 0.0020)  # ~380m to 600m
-        angle_rad = math.radians(int_angle)
-        d_lat = radius_deg * math.cos(angle_rad)
-        d_lng = radius_deg * math.sin(angle_rad) / max(0.1, math.cos(math.radians(lat)))
-        return (round(lat + d_lat, 5), round(lng + d_lng, 5))
+        return compute_deterministic_fuzzed_location(lat, lng, seed_id)
 
     # Grid snap fallback (~500m)
     grid_size = 0.0045
-    return (round(round(lat / grid_size) * grid_size, 5),
-            round(round(lng / grid_size) * grid_size, 5))
+    return (round(round(lat / grid_size) * grid_size, 6),
+            round(round(lng / grid_size) * grid_size, 6))
 
 
 def estimate_eta_minutes(distance_km: float, speed_kmh: float = FALLBACK_SPEED_KMH, detour_factor: float = FALLBACK_DETOUR_FACTOR) -> int:

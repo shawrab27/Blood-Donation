@@ -19,13 +19,8 @@ class DonorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locationText = donor.campus != null && donor.campus!.isNotEmpty
-        ? donor.campus!
-        : (donor.district.isNotEmpty ? '${donor.district}, ${donor.division}' : donor.division);
-
-    final lastDonation = donor.lastDonationDays != null
-        ? '${(donor.lastDonationDays! / 30).floor()} months ago'
-        : (donor.isEligible ? 'Eligible now' : 'Recent donor');
+    final districtText = donor.district.isNotEmpty ? donor.district : 'Bangladesh';
+    final tierBadge = donor.badge;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -45,7 +40,7 @@ class DonorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Donor Name + Verified Badge on left, Blood Group Pill on right
+          // Top Row: Donor Name + District on left, Blood Group Pill on right
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,44 +49,28 @@ class DonorCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            donor.name,
-                            style: const TextStyle(
-                              fontFamily: 'Georgia',
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF24191A),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (donor.isVerified) ...[
-                          const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified_rounded,
-                            size: 18,
-                            color: Color(0xFFC30121),
-                          ),
-                        ],
-                      ],
+                    Text(
+                      donor.name,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
-                          donor.campus != null && donor.campus!.isNotEmpty
-                              ? Icons.school_outlined
-                              : Icons.location_on_outlined,
+                        const Icon(
+                          Icons.location_on_outlined,
                           size: 15,
-                          color: const Color(0xFF5C3F3D),
+                          color: Color(0xFF5C3F3D),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            locationText,
+                            districtText,
                             style: const TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 12,
@@ -126,66 +105,30 @@ class DonorCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Middle Box: Last Donation
+          // Platform Tier Badge Box
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF8F7),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFF3DDE0)),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.history_rounded,
-                  size: 18,
-                  color: Color(0xFF916F6C),
+                  Icons.military_tech_rounded,
+                  size: 16,
+                  color: Color(0xFFC30121),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Last Donation',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF916F6C),
-                        ),
-                      ),
-                      Text(
-                        lastDonation,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF24191A),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: donor.isEligible
-                        ? const Color(0xFFE8F5E9)
-                        : const Color(0xFFEEEEEE),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    donor.isEligible ? 'Eligible' : 'Cooling Down',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: donor.isEligible
-                          ? const Color(0xFF1B8A4E)
-                          : const Color(0xFF757575),
-                    ),
+                const SizedBox(width: 6),
+                Text(
+                  tierBadge,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF24191A),
                   ),
                 ),
               ],
@@ -258,26 +201,14 @@ class DonorCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          donor.name,
-                          style: const TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF24191A),
-                          ),
-                        ),
-                        if (donor.isVerified) ...[
-                          const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified_rounded,
-                            size: 18,
-                            color: Color(0xFFC30121),
-                          ),
-                        ],
-                      ],
+                    Text(
+                      donor.name,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -299,7 +230,7 @@ class DonorCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${donor.campus ?? donor.district} • Trust: ${donor.trustBand}',
+                  '${donor.district.isNotEmpty ? donor.district : 'Bangladesh'} • ${donor.badge}',
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,

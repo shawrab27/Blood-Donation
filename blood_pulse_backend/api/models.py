@@ -145,6 +145,12 @@ class DonorProfile(models.Model):
 
     last_lng = models.FloatField(null=True, blank=True, help_text="Fuzzed longitude for privacy (~500m)")
 
+    public_lat = models.FloatField(null=True, blank=True, help_text="Deterministic fuzzed latitude for privacy (500-1000m)")
+
+    public_lng = models.FloatField(null=True, blank=True, help_text="Deterministic fuzzed longitude for privacy (500-1000m)")
+
+    public_geo_updated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when public_lat/public_lng were computed")
+
     geohash = models.CharField(max_length=12, blank=True, default='')
 
     deferral_until = models.DateTimeField(null=True, blank=True)
@@ -242,6 +248,30 @@ class DonorProfile(models.Model):
             except Exception:
                 pass
 
+        # Step 4: Deterministic public fuzzed location (HMAC 500-1000m offset)
+        real_lat = self.latitude if self.latitude is not None else self.last_lat
+        real_lng = self.longitude if self.longitude is not None else self.last_lng
+        public_geo_updated = False
+        if real_lat is not None and real_lng is not None:
+            try:
+                from api.services.geo import compute_deterministic_fuzzed_location, should_recompute_fuzzed_location
+                from django.utils import timezone
+                # Check if public coordinates missing or real location moved beyond threshold
+                need_recompute = (
+                    self.public_lat is None or
+                    self.public_lng is None or
+                    getattr(self, '_last_real_lat', None) is None or
+                    should_recompute_fuzzed_location(getattr(self, '_last_real_lat'), getattr(self, '_last_real_lng'), real_lat, real_lng)
+                )
+                if need_recompute:
+                    fuzz_lat, fuzz_lng = compute_deterministic_fuzzed_location(real_lat, real_lng, self.pk or self.user_id)
+                    self.public_lat = fuzz_lat
+                    self.public_lng = fuzz_lng
+                    self.public_geo_updated_at = timezone.now()
+                    public_geo_updated = True
+            except Exception:
+                pass
+
         update_fields = kwargs.get('update_fields')
         if update_fields is not None:
             update_fields = set(update_fields)
@@ -250,11 +280,17 @@ class DonorProfile(models.Model):
                 update_fields.add('is_searchable')
             if geohash_updated:
                 update_fields.add('geohash')
+            if public_geo_updated:
+                update_fields.add('public_lat')
+                update_fields.add('public_lng')
+                update_fields.add('public_geo_updated_at')
             kwargs['update_fields'] = update_fields
 
         super().save(*args, **kwargs)
         self._was_profile_complete = self.is_profile_complete
         self._explicit_is_searchable = False
+        self._last_real_lat = real_lat
+        self._last_real_lng = real_lng
 
 
 
