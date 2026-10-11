@@ -642,3 +642,96 @@ class Step3RequestLifecycleTests(TestCase):
         matched_res = self.client.get(f"/api/requests/{req.id}/")
         self.assertEqual(matched_res.status_code, 200)
         self.assertEqual(matched_res.data["contact_phone_display"], "+8801711223344")
+
+    # ── Missing Tests: Guest 401 & Migration 0041 pre-check ───────────────
+    def test_guest_gets_401_on_all_new_step3_endpoints(self):
+        """Guests (unauthenticated callers) receive HTTP 401 on all new Step 3 stateful endpoints."""
+        req = BloodRequest.objects.create(
+            requester=self.requester,
+            patient_name="Guest Test Patient",
+            blood_group="A+",
+            units_needed=2,
+            status="OPEN",
+            expires_at=timezone.now() + timedelta(hours=12),
+        )
+        match = DonationMatch.objects.create(
+            request=req,
+            donor=self.profile1,
+            status="ACCEPTED",
+            units_pledged=1,
+        )
+
+        self.client.logout()
+
+        # 1. Accept request
+        r1 = self.client.post(
+            f"/api/requests/{req.id}/accept/",
+            {"support_status": "CAN_SUPPORT", "units_pledged": 1},
+            format="json",
+        )
+        self.assertEqual(r1.status_code, 401, f"Expected 401 for guest accept, got {r1.status_code}")
+
+        # 2. Confirm donation
+        r2 = self.client.post(
+            f"/api/matches/{match.id}/confirm/",
+            {"action": "CONFIRM"},
+            format="json",
+        )
+        self.assertEqual(r2.status_code, 401, f"Expected 401 for guest confirm, got {r2.status_code}")
+
+        # 3. Withdraw donation
+        r3 = self.client.post(
+            f"/api/matches/{match.id}/withdraw/",
+            {"reason": "Guest withdrawal attempt"},
+            format="json",
+        )
+        self.assertEqual(r3.status_code, 401, f"Expected 401 for guest withdraw, got {r3.status_code}")
+
+        # 4. Report broker generic
+        r4 = self.client.post(
+            "/api/reports/broker/",
+            {"reason": "Broker demand", "details": "Guest trying to report"},
+            format="json",
+        )
+        self.assertEqual(r4.status_code, 401, f"Expected 401 for guest report broker, got {r4.status_code}")
+
+        # 5. Report broker specific to request
+        r5 = self.client.post(
+            f"/api/requests/{req.id}/report-broker/",
+            {"reason": "Broker demand"},
+            format="json",
+        )
+        self.assertEqual(r5.status_code, 401, f"Expected 401 for guest request report-broker, got {r5.status_code}")
+
+    def test_partB_migration_0041_duplicate_pre_check_raises_clean_error(self):
+        """Migration 0041 RunPython pre-check detects duplicates and raises RuntimeError listing counts only."""
+        from django.apps import apps
+        import importlib
+        mig_0041 = importlib.import_module("api.migrations.0041_step3_request_lifecycle")
+        check_no_duplicate_request_acceptances = mig_0041.check_no_duplicate_request_acceptances
+
+        req = BloodRequest.objects.create(
+            requester=self.requester,
+            patient_name="Precheck Patient",
+            blood_group="A+",
+            units_needed=2,
+            status="OPEN",
+            expires_at=timezone.now() + timedelta(hours=12),
+        )
+
+        # In current state, unique constraint is active. If duplicate existed prior to constraint,
+        # the pre-check function must raise a clear RuntimeError.
+        # We test the function directly:
+        import unittest
+        with unittest.mock.patch("django.db.models.query.QuerySet.count", return_value=2), \
+             unittest.mock.patch("django.db.models.query.QuerySet.__iter__", return_value=iter([{"count": 2}, {"count": 3}])):
+            with self.assertRaises(RuntimeError) as ctx:
+                check_no_duplicate_request_acceptances(apps, None)
+            err_msg = str(ctx.exception)
+            self.assertIn("Cannot apply UNIQUE(request, donor) constraint", err_msg)
+            self.assertIn("found 2 (request, donor) pair(s)", err_msg)
+            self.assertIn("5 total rows", err_msg)
+            # Assert no phone numbers or personal names appear in error message
+            self.assertNotIn("+880", err_msg)
+            self.assertNotIn(self.requester.username, err_msg)
+

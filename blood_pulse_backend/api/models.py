@@ -424,6 +424,14 @@ class BloodRequest(models.Model):
 
 
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(units_received__lte=models.F('units_needed') - models.F('units_pending')),
+                name='check_units_received_plus_pending_lte_needed',
+            ),
+        ]
+
     def __str__(self):
 
         return f"{self.blood_group} ({self.component}) needed at {self.hospital_name_other or (self.hospital.name if self.hospital else self.hospital_location)}"

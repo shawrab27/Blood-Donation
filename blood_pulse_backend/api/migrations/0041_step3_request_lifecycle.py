@@ -56,6 +56,30 @@ def backfill_step3_requests(apps, schema_editor):
         )
 
 
+def check_no_duplicate_request_acceptances(apps, schema_editor):
+    """
+    Pre-check before applying UNIQUE(request, donor) constraint on RequestAcceptance.
+    Detects existing duplicate rows and raises a clear error listing counts only (no names, no phone numbers).
+    """
+    RequestAcceptance = apps.get_model('api', 'RequestAcceptance')
+    from django.db.models import Count
+
+    duplicates = (
+        RequestAcceptance.objects.values('request_id', 'donor_id')
+        .annotate(count=Count('id'))
+        .filter(count__gt=1)
+    )
+
+    dup_count = duplicates.count()
+    if dup_count > 0:
+        total_affected_rows = sum(d['count'] for d in duplicates)
+        raise RuntimeError(
+            f"Cannot apply UNIQUE(request, donor) constraint: found {dup_count} (request, donor) pair(s) "
+            f"with duplicate acceptances ({total_affected_rows} total rows). "
+            f"Resolve duplicates manually before running this migration."
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -131,6 +155,10 @@ class Migration(migrations.Migration):
             model_name='requestacceptance',
             name='dispute_reason',
             field=models.TextField(blank=True, db_default='', default=''),
+        ),
+        migrations.RunPython(
+            check_no_duplicate_request_acceptances,
+            reverse_code=migrations.RunPython.noop,
         ),
         migrations.AddConstraint(
             model_name='requestacceptance',

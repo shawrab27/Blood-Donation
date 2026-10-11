@@ -142,17 +142,6 @@ def confirm_match_donation(
             if req.units_pending == 0 and req.units_received < req.units_needed and req.status not in ('CLOSED', 'EXPIRED'):
                 req.status = 'OPEN'
             req.save(update_fields=['units_pending', 'status'])
-
-            reported_target = match.donor.user if is_requester else req.requester
-            BrokerReport.objects.create(
-                request=req,
-                reported_user=reported_target,
-                reporter=actor,
-                target_type='DONOR' if is_requester else 'REQUEST',
-                reason='Confirmation disagreement',
-                details=match.dispute_reason,
-                status='PENDING',
-            )
             return match
 
         if match.status in ('CANCELLED', 'FAILED', 'EXPIRED'):
