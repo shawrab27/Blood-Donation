@@ -12,6 +12,7 @@ class AssistantMessage {
   final bool needsHuman;
   final int? conversationId;
   final bool hasThumbsDown;
+  final String language;
 
   AssistantMessage({
     this.id,
@@ -24,6 +25,7 @@ class AssistantMessage {
     this.emergency = false,
     this.needsHuman = false,
     this.hasThumbsDown = false,
+    this.language = 'bn',
   });
 
   factory AssistantMessage.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class AssistantMessage {
       emergency: json['emergency'] ?? false,
       needsHuman: json['needs_human'] ?? false,
       hasThumbsDown: json['has_thumbs_down'] ?? false,
+      language: json['language']?.toString() ?? 'bn',
     );
   }
 

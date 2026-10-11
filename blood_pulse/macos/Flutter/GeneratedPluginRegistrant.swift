@@ -15,10 +15,12 @@ import firebase_messaging
 import flutter_image_compress_macos
 import flutter_local_notifications
 import flutter_secure_storage_darwin
+import flutter_tts
 import geolocator_apple
 import google_sign_in_ios
 import share_plus
 import shared_preferences_foundation
+import speech_to_text
 import sqflite_darwin
 import url_launcher_macos
 import video_player_avfoundation
@@ -34,10 +36,12 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterImageCompressMacosPlugin.register(with: registry.registrar(forPlugin: "FlutterImageCompressMacosPlugin"))
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
+  FlutterTtsPlugin.register(with: registry.registrar(forPlugin: "FlutterTtsPlugin"))
   GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
+  SpeechToTextPlugin.register(with: registry.registrar(forPlugin: "SpeechToTextPlugin"))
   SqflitePlugin.register(with: registry.registrar(forPlugin: "SqflitePlugin"))
   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))
   VideoPlayerPlugin.register(with: registry.registrar(forPlugin: "VideoPlayerPlugin"))

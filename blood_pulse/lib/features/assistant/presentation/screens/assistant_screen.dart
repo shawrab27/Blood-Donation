@@ -14,6 +14,8 @@ import '../../../../widgets/pulse_loading_indicator.dart';
 import '../../../../core/widgets/avatar_helper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../../core/access/profile_completion_modal.dart';
+import 'package:flutter/foundation.dart';
+import '../../data/pulseai_audio_service.dart';
 import '../widgets/ecg_3d_background.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
@@ -28,6 +30,8 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _firstRunHandled = false;
+  bool _isListening = false;
+  String? _voiceNotice;
 
   @override
   void initState() {
@@ -35,6 +39,50 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstRun();
     });
+  }
+
+  Future<void> _toggleVoiceInput() async {
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Voice input is not supported on web.")),
+      );
+      return;
+    }
+
+    if (_isListening) {
+      await PulseAIAudioService.instance.stopListening();
+      setState(() => _isListening = false);
+      return;
+    }
+
+    // Show one-line notice once about speech recognition using device speech service
+    if (_voiceNotice == null) {
+      _voiceNotice = "Speech recognition uses device speech service. Redaction runs before sending.";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_voiceNotice!),
+          duration: const Duration(seconds: 4),
+          backgroundColor: const Color(0xFF2B2B2B),
+        ),
+      );
+    }
+
+    setState(() => _isListening = true);
+    await PulseAIAudioService.instance.startListening(
+      onResult: (words) {
+        if (!mounted) return;
+        setState(() {
+          _textController.text = words;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: const Color(0xFFC30121)),
+        );
+      },
+    );
   }
 
   void _checkFirstRun() {
@@ -328,13 +376,26 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                             onSubmitted: _sendMessage,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.mic_none_outlined, color: Colors.grey),
-                          onPressed: () {},
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
+                        if (!kIsWeb) ...[
+                          const SizedBox(width: 8),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            decoration: BoxDecoration(
+                              color: _isListening ? const Color(0xFFC30121).withOpacity(0.15) : Colors.transparent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                _isListening ? Icons.mic : Icons.mic_none_outlined,
+                                color: _isListening ? const Color(0xFFC30121) : Colors.grey,
+                              ),
+                              tooltip: _isListening ? "Listening... Tap to stop" : "Speak in Bangla or English",
+                              onPressed: _toggleVoiceInput,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                            ),
+                          ),
+                        ],
                         const SizedBox(width: 8),
                         ValueListenableBuilder<TextEditingValue>(
                           valueListenable: _textController,
@@ -577,7 +638,7 @@ class MessageWidget extends ConsumerWidget {
                     ),
                   ),
 
-                // Feedback (hidden in production typically unless hovered, but we show it small)
+                // Feedback and TTS Speak button
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
@@ -593,6 +654,35 @@ class MessageWidget extends ConsumerWidget {
                         },
                         child: Icon(Icons.thumb_down_alt_outlined, size: 14, color: message.hasThumbsDown ? Colors.red : Colors.grey),
                       ),
+                      if (!kIsWeb) ...[
+                        const SizedBox(width: 12),
+                        InkWell(
+                          onTap: () {
+                            PulseAIAudioService.instance.speakText(
+                              message.text,
+                              lang: message.language,
+                              onVoiceCheck: (hint) {
+                                if (hint != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(hint),
+                                      duration: const Duration(seconds: 4),
+                                      backgroundColor: const Color(0xFF2B2B2B),
+                                    ),
+                                  );
+                                }
+                              },
+                            );
+                          },
+                          child: const Row(
+                            children: [
+                              Icon(Icons.volume_up_outlined, size: 14, color: Colors.grey),
+                              SizedBox(width: 4),
+                              Text("Listen", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 )

@@ -72,5 +72,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>PulseAI needs microphone access for voice-based blood donation questions.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>PulseAI uses speech recognition to convert your voice to text.</string>
 </dict>
 </plist>

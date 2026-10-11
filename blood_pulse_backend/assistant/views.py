@@ -100,31 +100,44 @@ def chat_view(request):
             )
             return _save_and_respond(conv, user, redacted_text, validated, flags=["EMERGENCY"])
 
-        # 3b. Personal question gate for incomplete profile (authenticated users only)
-        if user:
-            from api.models import DonorProfile
-            profile = getattr(user, 'donorprofile', None) or DonorProfile.objects.filter(user=user).first()
-            is_comp, missing = profile.check_is_complete() if profile else (False, ["blood_group", "phone_number", "district", "full_name"])
-            if not is_comp:
-                personal_kws = [
-                    "who can give me", "give me blood", "কে রক্ত দিতে পারবে", "রক্ত দিতে পারবে", 
-                    "রক্ত দিতে পারবো", "amake ke", "amake", "আমাকে", "my blood", "আমার রক্ত", 
-                    "can i donate", "eligible", "আমি কি", "who can donate"
-                ]
-                if any(kw in (redacted_text or "").lower() for kw in personal_kws):
-                    is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(redacted_text or '')))
-                    fixed_reply = (
-                        "আপনার প্রোফাইলে রক্তের গ্রুপ নির্ধারণ করা নেই। অনুগ্রহ করে রেজিস্ট্রেশন সম্পূর্ণ করুন।"
-                        if is_bn else
-                        "Your blood group is not set in your profile. Please complete registration."
+        # 3b. Deterministic classifier for personal questions & fare estimation (the server decides, not the LLM)
+        from assistant.pipeline.personal_classifier import (
+            classify_personal_query,
+            handle_personal_query,
+            estimate_fare_range,
+        )
+
+        personal_intent = classify_personal_query(redacted_text)
+        if personal_intent:
+            if personal_intent == 'fare_estimate':
+                # Deterministic fare range calculation
+                # Extract optional user GPS from donor profile if available, without logging coordinates
+                profile = getattr(user, 'donorprofile', None) if user else None
+                user_lat = getattr(profile, 'latitude', None)
+                user_lng = getattr(profile, 'longitude', None)
+                fare_res = estimate_fare_range(lat1=user_lat, lon1=user_lng, locale=locale)
+                validated = validate_and_format_response(
+                    raw_reply=fare_res.get('reply', ''),
+                    user_query=redacted_text,
+                    locale=locale
+                )
+                fare_res['reply'] = validated['reply']
+                fare_res['response'] = validated['response']
+                return _save_and_respond(conv, user, redacted_text, fare_res, flags=["FARE_ESTIMATE_RANGE"])
+
+            # Personal profile-dependent queries:
+            if user:
+                personal_res = handle_personal_query(personal_intent, user, locale=locale, query_text=redacted_text)
+                if personal_res:
+                    validated = validate_and_format_response(
+                        raw_reply=personal_res.get('reply', ''),
+                        user_query=redacted_text,
+                        locale=locale
                     )
-                    return Response({
-                        "response": fixed_reply, "reply": fixed_reply, "source": "fixed_incomplete_profile",
-                        "confidence": 1.0, "language": "bn" if is_bn else "en", "emergency": False,
-                        "action": "complete_profile",
-                        "actions": [{'id': 'complete_profile', 'label_en': 'Complete Profile', 'label_bn': 'প্রোফাইল সম্পূর্ণ করুন', 'route': '/profile/complete'}],
-                        "missing_fields": missing, "needs_human": False, "flags": ["INCOMPLETE_PROFILE"]
-                    }, status=200)
+                    personal_res['reply'] = validated['reply']
+                    personal_res['response'] = validated['response']
+                    flags = personal_res.get('flags', ["DETERMINISTIC_PERSONAL_DATA"])
+                    return _save_and_respond(conv, user, redacted_text, personal_res, flags=flags)
 
         # 4 & 5 & 6. Router and Cache
         kb_version = str(KBEntry.objects.filter(status='APPROVED').aggregate(v=models.Max('version'))['v'] or 1)
@@ -293,7 +306,7 @@ def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_
 
     ans_text = reply_dict.get("response") or reply_dict.get("reply", "")
 
-    return Response({
+    resp_payload = {
         "conversation_id": conv.id if conv else None,
         "message_id": ast_msg_id,
         "response": ans_text,
@@ -301,11 +314,16 @@ def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_
         "source": reply_dict.get("source", "gemini"),
         "confidence": reply_dict.get("confidence", 0.95),
         "language": reply_dict.get("language", "en"),
-        "actions": formatted_actions,
+        "actions": formatted_actions or reply_dict.get("actions", []),
         "emergency": reply_dict.get("emergency", False),
         "needs_human": reply_dict.get("needs_human", False),
         "flags": flags
-    })
+    }
+    for k in ("action", "missing_fields", "distance_km", "fare_range", "min_fare_bdt", "max_fare_bdt", "disclaimer"):
+        if k in reply_dict:
+            resp_payload[k] = reply_dict[k]
+
+    return Response(resp_payload)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
