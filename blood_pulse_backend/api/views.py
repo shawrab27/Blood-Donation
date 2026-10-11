@@ -203,7 +203,15 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             if profile:
                 profile.phone_number = f"deleted_{profile.id}"
                 profile.is_available = False
-                profile.save(update_fields=['phone_number', 'is_available'])
+                if hasattr(profile, 'fcm_token'):
+                    profile.fcm_token = ''
+                if hasattr(profile, 'address'):
+                    profile.address = ''
+                if hasattr(profile, 'latitude'):
+                    profile.latitude = None
+                if hasattr(profile, 'longitude'):
+                    profile.longitude = None
+                profile.save()
             
             user.is_active = False
             user.email = f"deleted_{user.id}@example.com"
@@ -211,6 +219,10 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             user.last_name = "User"
             user.set_unusable_password()
             user.save(update_fields=['is_active', 'email', 'first_name', 'last_name', 'password'])
+            
+            # Cancel active blood requests
+            from .models import BloodRequest
+            BloodRequest.objects.filter(requester=user, status__in=['OPEN', 'SEARCHING', 'MATCHED']).update(status='CANCELLED')
             
             return Response({'detail': 'Your account and donor records have been soft-deleted and anonymized.'}, status=status.HTTP_204_NO_CONTENT)
 

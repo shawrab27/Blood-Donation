@@ -10,6 +10,9 @@ def load_emergency_phrases():
         "dying", "faint", "fainting", "die", "collapse", "collapsed",
         # Urgent blood needs
         "urgent blood need", "জরুরি রক্ত", "urgent rokt", "জরুরী রক্ত",
+        "emergency blood", "needs blood", "রক্ত দরকার", "রক্ত লাগবে",
+        "বাঁচান", "help save", "save patient", "critical condition",
+        "emergency sos",
         # Trauma & Medical emergencies
         "accident", "দুর্ঘটনা", "durghotona",
         "icu", "আইসিইউ",

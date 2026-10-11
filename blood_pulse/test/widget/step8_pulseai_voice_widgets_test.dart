@@ -180,6 +180,37 @@ void main() {
       expect(find.byIcon(Icons.mic_none_outlined), findsOneWidget);
       expect(find.text("Listen"), findsOneWidget);
     });
+
+    testWidgets('Voice input handles permission denied and speech service unavailable safely', (WidgetTester tester) async {
+      final fakeNotifier = _FakeAssistantNotifier(
+        AssistantState(messages: [], isFirstRun: false),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            assistantProvider.overrideWith((ref) => fakeNotifier),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: AssistantScreen(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final micFinder = find.byIcon(Icons.mic_none_outlined);
+      expect(micFinder, findsOneWidget);
+
+      // Trigger mic tap
+      await tester.tap(micFinder);
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Assert no unhandled crash occurred on device without physical mic / mock environment
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 

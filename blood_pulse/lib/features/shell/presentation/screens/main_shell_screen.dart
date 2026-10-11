@@ -30,10 +30,29 @@ class MainShellScreen extends ConsumerStatefulWidget {
 }
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: ref.read(shellTabProvider));
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final activeTabIndex = ref.watch(shellTabProvider);
     final l10n = AppLocalizations.of(context);
+
+    // Keep PageController synced if tab index changes externally
+    if (_pageController.hasClients && _pageController.page?.round() != activeTabIndex) {
+      _pageController.jumpToPage(activeTabIndex);
+    }
 
     final List<Widget> tabs = [
       const _FeedTab(),
@@ -43,69 +62,110 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       const _ProfileTab(),
     ];
 
-    return Scaffold(
-      appBar: const BloodPulseAppBar(),
-      body: Column(
-        children: [
-          const GlobalLiveBanner(),
-          Expanded(child: tabs[activeTabIndex]),
-        ],
-      ),
-      floatingActionButton: const PulseAIFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(15), // ~0.06 opacity
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+    return PopScope(
+      key: const ValueKey('main_shell_pop_scope'),
+      canPop: activeTabIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && activeTabIndex != 0) {
+          // Return to Feed tab on Android back button before exiting app
+          ref.read(shellTabProvider.notifier).state = 0;
+          _pageController.animateToPage(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: const BloodPulseAppBar(),
+        body: Column(
+          children: [
+            const GlobalLiveBanner(),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const ClampingScrollPhysics(),
+                onPageChanged: (index) {
+                  final feature = _featureForIndex(index);
+                  AccessGuard.checkAndHandle(
+                    context: context,
+                    ref: ref,
+                    feature: feature,
+                    onAllowed: () {
+                      ref.read(shellTabProvider.notifier).state = index;
+                    },
+                  );
+                },
+                children: tabs,
+              ),
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: activeTabIndex,
-          onTap: (index) {
-            final feature = _featureForIndex(index);
-            AccessGuard.checkAndHandle(
-              context: context,
-              ref: ref,
-              feature: feature,
-              onAllowed: () => ref.read(shellTabProvider.notifier).state = index,
-            );
-          },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: AppColors.neutral,
-          selectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 11),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.feed_outlined),
-              activeIcon: const Icon(Icons.feed_rounded),
-              label: l10n?.navFeed ?? 'Feed',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.water_drop_outlined),
-              activeIcon: const Icon(Icons.water_drop_rounded),
-              label: l10n?.navBloodHub ?? 'Blood Hub',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.groups_outlined),
-              activeIcon: const Icon(Icons.groups_rounded),
-              label: l10n?.navCommunities ?? 'Communities',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.health_and_safety_outlined),
-              activeIcon: const Icon(Icons.health_and_safety_rounded),
-              label: l10n?.navHealthHub ?? 'Health Hub',
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline_rounded),
-              activeIcon: const Icon(Icons.person_rounded),
-              label: l10n?.navProfile ?? 'Profile',
-            ),
-          ],
+        floatingActionButton: const PulseAIFAB(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(15), // ~0.06 opacity
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: activeTabIndex,
+            onTap: (index) {
+              final feature = _featureForIndex(index);
+              AccessGuard.checkAndHandle(
+                context: context,
+                ref: ref,
+                feature: feature,
+                onAllowed: () {
+                  ref.read(shellTabProvider.notifier).state = index;
+                  if (_pageController.hasClients) {
+                    _pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                },
+              );
+            },
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.neutral,
+            selectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 12),
+            unselectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 11),
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.feed_outlined),
+                activeIcon: const Icon(Icons.feed_rounded),
+                label: l10n?.navFeed ?? 'Feed',
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.water_drop_outlined),
+                activeIcon: const Icon(Icons.water_drop_rounded),
+                label: l10n?.navBloodHub ?? 'Blood Hub',
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.groups_outlined),
+                activeIcon: const Icon(Icons.groups_rounded),
+                label: l10n?.navCommunities ?? 'Communities',
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.health_and_safety_outlined),
+                activeIcon: const Icon(Icons.health_and_safety_rounded),
+                label: l10n?.navHealthHub ?? 'Health Hub',
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.person_outline_rounded),
+                activeIcon: const Icon(Icons.person_rounded),
+                label: l10n?.navProfile ?? 'Profile',
+              ),
+            ],
+          ),
         ),
       ),
     );

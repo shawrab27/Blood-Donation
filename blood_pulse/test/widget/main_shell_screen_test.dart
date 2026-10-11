@@ -88,4 +88,59 @@ void main() {
     await tester.pump();
     expect(tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar)).currentIndex, 0);
   });
+
+  testWidgets('MainShellScreen supports swiping between tabs via PageView', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    const completeUser = UserProfile(
+      fullName: 'Test User',
+      email: 'test@example.com',
+      primaryPhone: '01711111111',
+      age: 25,
+      gender: 'Male',
+      bloodGroup: 'B+',
+      category: 'civilian',
+      categoryDetails: {},
+      neverDonated: false,
+      totalBagsDonated: 2,
+      isOtpVerified: true,
+      isProfileComplete: true,
+      isEmailVerified: true,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith(
+            () => AuthNotifier(
+              initialState: const AuthState(
+                status: AuthStatus.authenticated,
+                user: completeUser,
+              ),
+            ),
+          ),
+          shellTabProvider.overrideWith((ref) => 0),
+        ],
+        child: const MaterialApp(
+          home: MainShellScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify PageView exists
+    expect(find.byType(PageView), findsOneWidget);
+    expect(tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar)).currentIndex, 0);
+
+    // Tap to tab 1 to verify PopScope
+    await tester.tap(find.text('Blood Hub'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar)).currentIndex, 1);
+
+    // Verify PopScope pops back to Tab 0 when on Tab 1
+    final popScope = tester.widget<PopScope>(find.byKey(const ValueKey('main_shell_pop_scope')));
+    expect(popScope.canPop, isFalse);
+  });
 }

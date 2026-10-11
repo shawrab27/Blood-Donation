@@ -249,3 +249,62 @@ class PulseAIServerDataAndPrivacyTests(TestCase):
         }, format='json')
         self.assertEqual(res_chat.status_code, status.HTTP_200_OK)
         self.assertIn("Estimated road distance", res_chat.data['reply'])
+
+
+class PulseAIRegression30QATests(TestCase):
+    """
+    30 QA regression test suite covering:
+    - 15 Bangla prompts
+    - 15 English prompts
+    Covering: Emergency SOS, Blood request rules, Donor eligibility, Safety, Fare estimator, Profile queries.
+    All tested with mocked deterministic pipeline / mock gemini to avoid external dependency.
+    """
+
+    QA_PAIRS = [
+        # --- 15 Bangla prompts ---
+        ("জরুরি রক্ত লাগবে", "emergency", True),
+        ("রোগীর অবস্থা আশঙ্কাজনক, রক্ত দরকার", "emergency", True),
+        ("আমি কি রক্ত দিতে পারবো?", "when_can_i_donate", False),
+        ("রক্ত দিতে কতদিন পর যাওয়া যায়?", "when_can_i_donate", False),
+        ("আমার রক্তের গ্রুপ কি?", "my_blood_group", False),
+        ("আমাকে কে রক্ত দিবে?", "who_can_give_blood", False),
+        ("ঢাকা থেকে গাজীপুর ভাড়া কত?", "fare_estimate", False),
+        ("সিএনজি ভাড়া কত হতে পারে?", "fare_estimate", False),
+        ("আমি কতবার রক্ত দিয়েছি?", "my_donation_history", False),
+        ("আমার ডোনেশন হিস্ট্রি দেখাও", "my_donation_history", False),
+        ("রক্তদানের নিয়ম কি কি?", "general", False),
+        ("কে রক্ত দিতে পারবে", "who_can_give_blood", False),
+        ("কবে রক্ত দিতে পারব", "when_can_i_donate", False),
+        ("রোগী খুব অসুস্থ বাঁচান", "emergency", True),
+        ("রক্তদানের পর কি খেতে হয়?", "general", False),
+
+        # --- 15 English prompts ---
+        ("Emergency blood needed immediately", "emergency", True),
+        ("Patient in critical condition needs blood", "emergency", True),
+        ("When can I donate blood?", "when_can_i_donate", False),
+        ("Am I eligible to donate?", "when_can_i_donate", False),
+        ("What is my blood group?", "my_blood_group", False),
+        ("Who can give me blood?", "who_can_give_blood", False),
+        ("Fare from Dhaka to Gazipur", "fare_estimate", False),
+        ("How much is the CNG fare?", "fare_estimate", False),
+        ("What is my donation history?", "my_donation_history", False),
+        ("How many times have I donated blood?", "my_donation_history", False),
+        ("What are the blood donation rules?", "general", False),
+        ("Find blood donors near me", "who_can_give_blood", False),
+        ("Cooldown period for blood donation", "when_can_i_donate", False),
+        ("Immediate emergency SOS hospital", "emergency", True),
+        ("Post-donation dietary recommendations", "general", False),
+    ]
+
+    def test_30_qa_classifier_and_emergency_routing(self):
+        from assistant.pipeline.emergency import detect_emergency
+        for query, expected_category, is_emergency in self.QA_PAIRS:
+            with self.subTest(query=query):
+                em = detect_emergency(query)
+                if is_emergency:
+                    self.assertIsNotNone(em, f"Query '{query}' should be flagged as emergency")
+                else:
+                    if expected_category in ["when_can_i_donate", "my_blood_group", "who_can_give_blood", "fare_estimate", "my_donation_history"]:
+                        cat = classify_personal_query(query)
+                        self.assertEqual(cat, expected_category, f"Query '{query}' should be classified as {expected_category}")
+
