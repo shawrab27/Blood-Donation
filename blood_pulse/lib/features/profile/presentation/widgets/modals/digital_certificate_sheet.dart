@@ -62,13 +62,15 @@ class DigitalCertificateSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Digital Donor Certificate',
-                style: TextStyle(
-                  fontFamily: 'Georgia',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.secondary,
+              const Expanded(
+                child: Text(
+                  'Digital Donor Certificate',
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
                 ),
               ),
               IconButton(

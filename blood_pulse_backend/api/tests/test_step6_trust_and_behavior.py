@@ -314,3 +314,109 @@ class Step6TrustAndBehaviorTests(TestCase):
         self.donor_p1.save()
         qs_after_snooze = eligible_public_donors_queryset()
         self.assertNotIn(self.donor_p1, qs_after_snooze)
+
+    # 8. Part 0(b) Invariant: single-sided DONATED does not count towards bags, history, certificate, or feedback
+    def test_single_sided_donated_does_not_increment_bags_or_allow_feedback(self):
+        """
+        When only one side reports DONATED:
+        - match.status becomes DONATED
+        - Donor total_bags_donated remains unchanged (0)
+        - DonationHistory is NOT created
+        - Donor cannot submit feedback (403: must be two-sided confirmed)
+        - Cooldown last_donation_date is NOT updated
+        - Only upon two-sided confirmation does total_bags_donated increment to 1 and feedback become allowed.
+        """
+        from api.models import DonationMatch, DonationHistory
+
+        # Create new unconfirmed match with donor 3 (who has no existing match on self.req)
+        match = DonationMatch.objects.create(
+            request=self.req,
+            donor=self.donor_p3,
+            role='PRIMARY',
+            status='ACCEPTED',
+            units_pledged=1,
+        )
+
+        initial_bags = self.donor_p3.total_bags_donated
+        self.assertEqual(initial_bags, 0)
+        self.assertIsNone(self.donor_p3.last_donation_date)
+
+        # Donor single-sidedly reports DONATED
+        self.client.force_authenticate(user=self.donor_user3)
+        res_status = self.client.post(
+            f'/api/matches/{match.id}/status/',
+            {'status': 'DONATED'},
+            format='json',
+        )
+        self.assertEqual(res_status.status_code, 200)
+
+        match.refresh_from_db()
+        self.assertEqual(match.status, 'DONATED')
+
+        # Invariant checks:
+        self.donor_p3.refresh_from_db()
+        self.assertEqual(self.donor_p3.total_bags_donated, initial_bags)
+        # Step 7.1: Medical cooldown starts immediately upon donor reporting DONATED
+        self.assertIsNotNone(self.donor_p3.last_donation_date)
+        self.assertEqual(DonationHistory.objects.filter(donor=self.donor_p3).count(), 0)
+
+        # Feedback is rejected because confirmation is not two-sided
+        res_fb_premature = self.client.post(
+            f'/api/requests/{self.req.id}/feedback/',
+            {'stars': 5, 'tags': ['POLITE']},
+            format='json',
+        )
+        self.assertEqual(res_fb_premature.status_code, 403)
+
+        # Now donor confirms via confirm endpoint
+        res_conf_d = self.client.post(f'/api/matches/{match.id}/confirm/', {'action': 'CONFIRM'}, format='json')
+        self.assertEqual(res_conf_d.status_code, 200)
+
+        # Still one-sided (only donor confirmed) -> bags still 0, history still 0!
+        self.donor_p3.refresh_from_db()
+        self.assertEqual(self.donor_p3.total_bags_donated, initial_bags)
+        self.assertEqual(DonationHistory.objects.filter(donor=self.donor_p3).count(), 0)
+
+        # Requester confirms -> both sides have confirmed!
+        self.client.force_authenticate(user=self.requester)
+        res_conf_r = self.client.post(f'/api/matches/{match.id}/confirm/', {'action': 'CONFIRM'}, format='json')
+        self.assertEqual(res_conf_r.status_code, 200)
+
+        # Now two-sided finalized:
+        match.refresh_from_db()
+        self.assertIsNotNone(match.confirmed_at)
+        self.assertEqual(match.status, 'DONATED')
+        self.donor_p3.refresh_from_db()
+        self.assertEqual(self.donor_p3.total_bags_donated, initial_bags + 1)
+        self.assertIsNotNone(self.donor_p3.last_donation_date)
+        self.assertEqual(DonationHistory.objects.filter(donor=self.donor_p3).count(), 1)
+
+        # Now feedback is permitted
+        self.client.force_authenticate(user=self.donor_user3)
+        res_fb_allowed = self.client.post(
+            f'/api/requests/{self.req.id}/feedback/',
+            {'stars': 5, 'tags': ['POLITE']},
+            format='json',
+        )
+        self.assertEqual(res_fb_allowed.status_code, 201)
+
+    # 9. DonorFeedback DB CheckConstraint validation
+    def test_feedback_stars_check_constraint(self):
+        """DB check constraint enforces stars BETWEEN 1 AND 5."""
+        from django.db import IntegrityError
+        # Valid 1 and 5 work
+        fb1 = DonorFeedback(request=self.req, donor=self.donor_p1, stars=1)
+        fb1.full_clean()
+
+        fb5 = DonorFeedback(request=self.req, donor=self.donor_p1, stars=5)
+        fb5.full_clean()
+
+        # Clean raises ValidationError for 0 or 6
+        fb0 = DonorFeedback(request=self.req, donor=self.donor_p1, stars=0)
+        with self.assertRaises(Exception):
+            fb0.full_clean()
+
+        fb6 = DonorFeedback(request=self.req, donor=self.donor_p1, stars=6)
+        with self.assertRaises(Exception):
+            fb6.full_clean()
+

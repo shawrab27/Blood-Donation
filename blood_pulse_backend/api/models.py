@@ -328,7 +328,8 @@ class DonorFeedback(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['request', 'donor'], name='unique_request_donor_feedback')
+            models.UniqueConstraint(fields=['request', 'donor'], name='unique_request_donor_feedback'),
+            models.CheckConstraint(check=models.Q(stars__gte=1, stars__lte=5), name='check_donor_feedback_stars_1_to_5'),
         ]
         indexes = [
             models.Index(fields=['request'], name='idx_feedback_request'),
@@ -1265,124 +1266,81 @@ class Upazila(models.Model):
 
 
 class NationalCommunity(models.Model):
-
     name = models.CharField(max_length=200)
-
     description = models.TextField()
-
     active_donors = models.CharField(max_length=50, default="0") # e.g. "125K+"
-
     logo = models.ImageField(upload_to='community_logos/', null=True, blank=True)
-
-    
+    phone_number = models.CharField(max_length=30, blank=True, default="", help_text="Direct blood contact / hotline")
+    verified_by_admin = models.BooleanField(default=False, help_text="Admin approval required before contact display")
 
     def __str__(self): return self.name
 
 
 
 class MedicalPartner(models.Model):
-
     name = models.CharField(max_length=200)
-
     location = models.CharField(max_length=200)
-
     accreditation = models.CharField(max_length=200, blank=True)
-
     image = models.ImageField(upload_to='partner_images/', null=True, blank=True)
-
     stock_status = models.JSONField(default=dict, blank=True) # e.g. {"A+": "Adequate", "O-": "Low"}
-
-    
 
     def __str__(self): return self.name
 
 
 
 class LocalClub(models.Model):
-
     STATUS_PENDING = 'pending'
-
     STATUS_APPROVED = 'approved'
-
     STATUS_REJECTED = 'rejected'
-
     STATUS_CHOICES = [
-
         (STATUS_PENDING, 'Pending Review'),
-
         (STATUS_APPROVED, 'Approved'),
-
         (STATUS_REJECTED, 'Rejected'),
-
     ]
 
-
-
     name = models.CharField(max_length=200)
-
     established_year = models.IntegerField(null=True, blank=True)
-
     slogan = models.CharField(max_length=255, blank=True)
-
     description = models.TextField()
 
-    
-
     division = models.ForeignKey(Division, on_delete=models.SET_NULL, null=True, blank=True)
-
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
-
     upazila = models.ForeignKey(Upazila, on_delete=models.SET_NULL, null=True, blank=True)
-
-    
 
     cover_photo = models.ImageField(upload_to='club_covers/', null=True, blank=True)
 
-    
-
     president_name = models.CharField(max_length=100)
-
     contact_number = models.CharField(max_length=20)
-
     president_photo = models.ImageField(upload_to='club_members/', null=True, blank=True)
 
-
-
     total_donors = models.CharField(max_length=50, default="0")
-
     active_donors = models.CharField(max_length=50, default="0")
-
     contributions = models.CharField(max_length=50, default="0")
 
-
-
     is_verified = models.BooleanField(default=False)
-
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
-
     registered_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_clubs')
-
     created_at = models.DateTimeField(auto_now_add=True, null=True)
 
-    
+    # Step 7: Privacy & verification rule
+    show_contact = models.BooleanField(default=False, help_text="Consent toggle to show contact publicly")
+    verified_by_admin = models.BooleanField(default=False, help_text="Admin approval required before public contact number display")
 
     def __str__(self): return self.name
 
 
 
 class ExecutiveMember(models.Model):
-
     club = models.ForeignKey(LocalClub, on_delete=models.CASCADE, related_name='executive_members')
-
     name = models.CharField(max_length=100)
-
-    designation = models.CharField(max_length=100)
-
+    designation = models.CharField(max_length=100) # President, General Secretary, Treasurer, Vice President
     phone_number = models.CharField(max_length=20)
-
     photo = models.ImageField(upload_to='club_members/', null=True, blank=True)
 
-
+    # Step 7: Privacy & verification rule
+    show_contact = models.BooleanField(default=False, help_text="Member toggle to show phone number")
+    consent_to_publish = models.BooleanField(default=False, help_text="Officer agreement to publish phone number")
+    verified_by_admin = models.BooleanField(default=False, help_text="Admin approval required before phone number display")
 
     def __str__(self): return f"{self.name} - {self.designation}"
 

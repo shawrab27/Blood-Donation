@@ -83,15 +83,27 @@ class DivisionDetailScreen extends ConsumerWidget {
               data: (clubs) {
                 if (clubs.isEmpty) {
                   return Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: const Center(
-                      child: Text(
-                        'No registered clubs found in this division.',
-                        style: TextStyle(fontFamily: 'Inter', color: AppColors.neutral),
+                      child: Column(
+                        children: [
+                          Icon(Icons.location_off_rounded, color: AppColors.neutral, size: 36),
+                          SizedBox(height: 8),
+                          Text(
+                            'No clubs registered here yet',
+                            style: TextStyle(fontFamily: 'Georgia', fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Be the first to register a community club for this division.',
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
+                          ),
+                        ],
                       ),
                     ),
                   );

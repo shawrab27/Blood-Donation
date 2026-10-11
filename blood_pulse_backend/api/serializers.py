@@ -251,9 +251,17 @@ class UpazilaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class NationalCommunitySerializer(serializers.ModelSerializer):
+    phone_number = serializers.SerializerMethodField()
+
     class Meta:
         model = NationalCommunity
         fields = '__all__'
+
+    def get_phone_number(self, obj):
+        # Step 7.1: Only shown when verified by admin
+        if obj.verified_by_admin:
+            return obj.phone_number
+        return ""
 
 class MedicalPartnerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -261,30 +269,58 @@ class MedicalPartnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ExecutiveMemberSerializer(serializers.ModelSerializer):
+    phone_number = serializers.SerializerMethodField()
+
     class Meta:
         model = ExecutiveMember
         fields = '__all__'
+
+    def get_phone_number(self, obj):
+        # Step 7.1 Decision: Phone returned/shown ONLY when show_contact AND verified_by_admin are both true
+        if obj.show_contact and obj.verified_by_admin:
+            return obj.phone_number
+        return ""
+
 
 class LocalClubSerializer(serializers.ModelSerializer):
     executive_members = ExecutiveMemberSerializer(many=True, read_only=True)
     division_name = serializers.CharField(source='division.name', read_only=True)
     district_name = serializers.CharField(source='district.name', read_only=True)
     upazila_name = serializers.CharField(source='upazila.name', read_only=True)
-    
+    contact_number = serializers.SerializerMethodField()
+
     class Meta:
         model = LocalClub
         fields = '__all__'
 
+    def get_contact_number(self, obj):
+        # Step 7.1 Decision: Phone returned/shown ONLY when show_contact AND verified_by_admin are both true
+        if obj.show_contact and obj.verified_by_admin:
+            return obj.contact_number
+        return ""
+
 
 class LocalClubRegistrationSerializer(serializers.ModelSerializer):
-    """Used when a user submits a new club registration. Status defaults to 'pending'."""
+    """
+    Used when a user submits a new club registration.
+    Club registration saves the officer number with a required "I agree to publish this number"
+    checkbox that sets consent_to_publish; nothing is public until admin verifies.
+    """
+    agree_to_publish = serializers.BooleanField(write_only=True, required=True)
+
     class Meta:
         model = LocalClub
         fields = [
             'name', 'established_year', 'slogan', 'description',
             'division', 'district', 'upazila',
-            'president_name', 'contact_number', 'cover_photo'
+            'president_name', 'contact_number', 'cover_photo',
+            'agree_to_publish'
         ]
+
+    def validate_agree_to_publish(self, value):
+        if not value:
+            raise serializers.ValidationError("You must agree to publish this contact number before registering.")
+        return value
 
     def validate_cover_photo(self, value):
         if value:
@@ -293,9 +329,24 @@ class LocalClubRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        agree = validated_data.pop('agree_to_publish', False)
         validated_data['status'] = LocalClub.STATUS_PENDING
         validated_data['is_verified'] = False
-        return super().create(validated_data)
+        validated_data['verified_by_admin'] = False
+        # Officer/club consent stored; nothing is public until verified_by_admin=True
+        validated_data['show_contact'] = agree
+        club = super().create(validated_data)
+        # Also create or link President ExecutiveMember with consent_to_publish
+        ExecutiveMember.objects.create(
+            club=club,
+            name=club.president_name,
+            designation='President',
+            phone_number=club.contact_number,
+            show_contact=agree,
+            consent_to_publish=agree,
+            verified_by_admin=False,
+        )
+        return club
 
 
 class AreaGuideSerializer(serializers.ModelSerializer):

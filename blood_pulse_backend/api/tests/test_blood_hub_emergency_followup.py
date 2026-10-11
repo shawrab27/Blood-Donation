@@ -66,14 +66,28 @@ class BloodHubEmergencyAndFollowUpTests(TestCase):
         self.req.status = 'ARRIVED'
         self.req.save()
 
-        # Move to DONATED
+        # Move to DONATED via single-sided status update
         self.client.force_authenticate(user=self.donor)
         res_donated = self.client.post(f'/api/matches/{match.id}/status/', {'status': 'DONATED'}, format='json')
         self.assertEqual(res_donated.status_code, status.HTTP_200_OK)
         match.refresh_from_db()
         self.assertEqual(match.status, 'DONATED')
 
-        # Donor profile stats updated
+        # Invariant Part 0(b): One-sided DONATED MUST NOT increment bags or history!
+        self.donor_profile.refresh_from_db()
+        self.assertEqual(self.donor_profile.total_bags_donated, 0)
+        self.assertEqual(FollowUp.objects.filter(match=match).count(), 0)
+
+        # Now execute two-sided confirmation (both donor and requester confirm)
+        self.client.force_authenticate(user=self.donor)
+        res_conf_d = self.client.post(f'/api/matches/{match.id}/confirm/', {'action': 'CONFIRM'}, format='json')
+        self.assertEqual(res_conf_d.status_code, status.HTTP_200_OK)
+
+        self.client.force_authenticate(user=self.requester)
+        res_conf_r = self.client.post(f'/api/matches/{match.id}/confirm/', {'action': 'CONFIRM'}, format='json')
+        self.assertEqual(res_conf_r.status_code, status.HTTP_200_OK)
+
+        # After two-sided confirmation: donor stats updated and FollowUp created
         self.donor_profile.refresh_from_db()
         self.assertEqual(self.donor_profile.total_bags_donated, 1)
 

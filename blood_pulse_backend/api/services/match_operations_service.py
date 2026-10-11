@@ -158,6 +158,12 @@ def confirm_match_donation(
                 match.donated_at = match.donated_at or now
                 match.status = 'DONATED'
                 match.save(update_fields=['donor_confirmed_at', 'donated_at', 'status', 'updated_at'])
+
+                # Cooldown Safety (Step 7.1): Donor's 90-day cooldown (last_donation_date)
+                # begins immediately upon donor's confirmation to protect health.
+                if match.donor.last_donation_date != now.date():
+                    match.donor.last_donation_date = now.date()
+                    match.donor.save(update_fields=['last_donation_date'])
         elif is_requester or is_staff:
             if match.requester_confirmed_at is None:
                 match.requester_confirmed_at = now
@@ -252,37 +258,25 @@ def update_match_status(match_id: int, actor, new_status: str, note: str = "") -
             transition(match.request, 'ARRIVED', actor)
 
     elif norm_status == 'DONATED':
-        # Part 0(b): One party reporting donation completed.
-        # Updates match progress status to DONATED and creates donor history and follow-up,
-        # but leaves request units untouched (units are only shifted upon two-sided confirmation).
+        # Part 0(b) & Step 7.1: One party reporting donation completed.
+        # Updates match progress status to DONATED.
+        # Medical Cooldown Safety: If donor reports DONATED, donor's 90-day cooldown
+        # (last_donation_date) starts immediately to safeguard health against premature re-donation.
+        # However, total_bags_donated, DonationHistory, certificate, feedback eligibility,
+        # and trust score stay strictly two-sided (confirmed_at).
         now = timezone.now()
         match.status = 'DONATED'
         match.donated_at = match.donated_at or now
         match.save(update_fields=['status', 'donated_at'])
 
-        hosp_name = match.request.hospital_name_other or (
-            match.request.hospital.name if match.request.hospital else 'Hospital'
-        )
-        DonationHistory.objects.get_or_create(
-            donor=match.donor,
-            date=now.date(),
-            location=hosp_name,
-            defaults={
-                'bags_donated': 1,
-                'notes': note or "Blood donation completed via BloodPulse dispatch.",
-            }
-        )
-        match.donor.total_bags_donated += 1
-        match.donor.last_donation_date = now.date()
-        match.donor.save(update_fields=['total_bags_donated', 'last_donation_date'])
+        if actor.id == match.donor.user_id:
+            if match.donor_confirmed_at is None:
+                match.donor_confirmed_at = now
+                match.save(update_fields=['donor_confirmed_at'])
+            if match.donor.last_donation_date != now.date():
+                match.donor.last_donation_date = now.date()
+                match.donor.save(update_fields=['last_donation_date'])
 
-        FollowUp.objects.get_or_create(
-            match=match,
-            defaults={
-                'due_at': now + timedelta(hours=24),
-                'status': 'PENDING',
-            }
-        )
         if match.request.status in ['ARRIVED', 'IN_TRANSIT', 'MATCHED']:
             transition(match.request, 'DONATED', actor)
 

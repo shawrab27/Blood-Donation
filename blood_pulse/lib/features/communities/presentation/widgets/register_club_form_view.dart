@@ -31,6 +31,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
   int? _selectedDivisionId;
   int? _selectedUpazilaId;
 
+  bool _agreeToPublish = false;
   bool _isSubmitting = false;
   static const String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
 
@@ -53,6 +54,12 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
       );
       return;
     }
+    if (!_agreeToPublish) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must agree to publish this contact number after verification.')),
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -62,6 +69,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
         'description': _descCtrl.text.trim(),
         'president_name': _presidentCtrl.text.trim(),
         'contact_number': _contactCtrl.text.trim(),
+        'agree_to_publish': true,
         if (_sloganCtrl.text.isNotEmpty) 'slogan': _sloganCtrl.text.trim(),
         if (_yearCtrl.text.isNotEmpty) 'established_year': int.tryParse(_yearCtrl.text),
         'division': _selectedDivisionId,
@@ -371,7 +379,42 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              // Consent Checkbox (Step 7.1 Requirement)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _agreeToPublish ? const Color(0xFF1B8A4E) : Colors.grey.shade300,
+                  ),
+                ),
+                child: CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: AppColors.primary,
+                  value: _agreeToPublish,
+                  onChanged: (val) => setState(() => _agreeToPublish = val ?? false),
+                  title: const Text(
+                    'I agree to publish this contact number after admin verification *',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Contact information remains hidden until reviewed and verified by BloodPulse medical admins.',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: AppColors.neutral,
+                    ),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Submit Button: Submit for Verification ▶
               SizedBox(

@@ -442,11 +442,10 @@ class DonorFeedbackAPIView(APIView):
         if not donor_profile:
             return Response({"detail": "Only donors can submit feedback."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Check if donor had a confirmed donation for this request
+        # Check if donor had a confirmed donation for this request (two-sided confirmation)
         has_confirmed_donation = DonationMatch.objects.filter(
             request=blood_req,
             donor=donor_profile,
-            status='CONFIRMED',
             confirmed_at__isnull=False,
         ).exists()
 

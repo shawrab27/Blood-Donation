@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/capsule_button.dart';
@@ -26,108 +27,102 @@ class LocalClubProfileView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Hero Banner Section ──────────────────────────────────────────
-            Stack(
-              children: [
-                Container(
-                  height: 220,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade800,
-                    image: club.coverPhotoUrl != null
-                        ? DecorationImage(
-                            image: NetworkImage(club.coverPhotoUrl!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withAlpha(190),
-                          Colors.black.withAlpha(90),
-                          Colors.black.withAlpha(220),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 220),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade800,
+                image: club.coverPhotoUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(club.coverPhotoUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withAlpha(190),
+                      Colors.black.withAlpha(90),
+                      Colors.black.withAlpha(220),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
-                Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          club.name,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      club.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    if (club.slogan.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        club.slogan,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          color: Colors.white70,
+                          fontStyle: FontStyle.italic,
                         ),
-                        if (club.slogan.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            club.slogan,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        CapsuleButton(
+                          label: 'Donate Now',
+                          height: 38,
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Donation drive open for ${club.name}!'), backgroundColor: AppColors.primary),
+                            );
+                          },
+                        ),
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.white70, width: 1.5),
+                            shape: const StadiumBorder(),
+                            backgroundColor: Colors.black.withAlpha(70),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          ),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Requested to join ${club.name}!'), backgroundColor: AppColors.primary),
+                            );
+                          },
+                          child: const Text(
+                            'Join Club',
+                            style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 13,
-                              color: Colors.white70,
-                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                        ],
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CapsuleButton(
-                              label: 'Donate Now',
-                              height: 38,
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Donation drive open for ${club.name}!'), backgroundColor: AppColors.primary),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.white70, width: 1.5),
-                                shape: const StadiumBorder(),
-                                backgroundColor: Colors.black.withAlpha(70),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                              ),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Requested to join ${club.name}!'), backgroundColor: AppColors.primary),
-                                );
-                              },
-                              child: const Text(
-                                'Join Club',
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -237,7 +232,7 @@ class LocalClubProfileView extends StatelessWidget {
 
                   // Featured President Card (Large circular photo with red border)
                   _FeaturedPresidentCard(
-                    name: club.presidentName.isNotEmpty ? club.presidentName : 'Dr. Rafiqul Islam',
+                    name: club.presidentName.isNotEmpty ? club.presidentName : 'Club President',
                     phone: club.contactNumber,
                   ),
                   const SizedBox(height: 16),
@@ -245,42 +240,20 @@ class LocalClubProfileView extends StatelessWidget {
                   // Other EC Members
                   if (hasEcMembers)
                     ...club.executiveMembers.where((m) => !m.designation.toLowerCase().contains('president')).map((m) {
-                      return _EcMemberRow(name: m.name, designation: m.designation);
+                      return _EcMemberRow(
+                        name: m.name,
+                        designation: m.designation,
+                        phone: m.phoneNumber,
+                      );
                     })
-                  else ...[
-                    const _EcMemberRow(name: 'Anika Tabassum', designation: 'Vice President'),
-                    const _EcMemberRow(name: 'Mahmud Hasan', designation: 'General Secretary'),
-                    const _EcMemberRow(name: 'Sadia Rahman', designation: 'Treasurer'),
-                  ],
-                  const SizedBox(height: 16),
-
-                  // View All Members Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF8B0014), width: 1.5),
-                        shape: const StadiumBorder(),
-                        minimumSize: const Size(double.infinity, 48),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Viewing all club members...')),
-                        );
-                      },
-                      icon: const Icon(Icons.groups_outlined, color: Color(0xFF8B0014), size: 18),
-                      label: const Text(
-                        'View All Members',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF8B0014),
-                          fontSize: 13,
-                        ),
+                  else
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'No other executive committee members listed yet.',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -390,8 +363,11 @@ class _FeaturedPresidentCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -400,29 +376,51 @@ class _FeaturedPresidentCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: const Text(
-                  'Admin',
+                  'Verified Club',
                   style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.tertiary),
                 ),
               ),
-              const SizedBox(width: 8),
               const Text(
                 'President',
                 style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFDE8E9),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: const Text(
-                  'O+ Donor',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-              ),
             ],
           ),
+          if (phone.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.call_rounded, size: 16, color: Color(0xFF1B8A4E)),
+              label: Text(
+                phone,
+                style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFF1B8A4E)),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF1B8A4E)),
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+              onPressed: () async {
+                final uri = Uri.parse('tel:$phone');
+                try {
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Contact $phone copied to clipboard.'), backgroundColor: AppColors.primary),
+                      );
+                    }
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Contact $phone copied to clipboard.'), backgroundColor: AppColors.primary),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
         ],
       ),
     );
@@ -430,12 +428,19 @@ class _FeaturedPresidentCard extends StatelessWidget {
 }
 
 class _EcMemberRow extends StatelessWidget {
-  const _EcMemberRow({required this.name, required this.designation});
+  const _EcMemberRow({
+    required this.name,
+    required this.designation,
+    this.phone = '',
+  });
   final String name;
   final String designation;
+  final String phone;
 
   @override
   Widget build(BuildContext context) {
+    final hasPhone = phone.trim().isNotEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -479,6 +484,30 @@ class _EcMemberRow extends StatelessWidget {
               ],
             ),
           ),
+          if (hasPhone)
+            IconButton(
+              icon: const Icon(Icons.phone_rounded, color: Color(0xFF1B8A4E), size: 20),
+              onPressed: () async {
+                final uri = Uri.parse('tel:$phone');
+                try {
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Contact $phone copied to clipboard.'), backgroundColor: AppColors.primary),
+                      );
+                    }
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Contact $phone copied to clipboard.'), backgroundColor: AppColors.primary),
+                    );
+                  }
+                }
+              },
+            ),
         ],
       ),
     );

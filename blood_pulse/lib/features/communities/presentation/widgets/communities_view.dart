@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../domain/providers/communities_provider.dart';
@@ -199,20 +200,23 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           // Sub-filter pill buttons: [Organizations] [Medical Partners]
-          Row(
-            children: [
-              _SubFilterChip(
-                label: 'Organizations',
-                isSelected: widget.subFilter == 0,
-                onTap: () => widget.onSubFilterChanged(0),
-              ),
-              const SizedBox(width: 8),
-              _SubFilterChip(
-                label: 'Medical Partners',
-                isSelected: widget.subFilter == 1,
-                onTap: () => widget.onSubFilterChanged(1),
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _SubFilterChip(
+                  label: 'Organizations',
+                  isSelected: widget.subFilter == 0,
+                  onTap: () => widget.onSubFilterChanged(0),
+                ),
+                const SizedBox(width: 8),
+                _SubFilterChip(
+                  label: 'Medical Partners',
+                  isSelected: widget.subFilter == 1,
+                  onTap: () => widget.onSubFilterChanged(1),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -276,13 +280,15 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Medical Partners',
-                  style: TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary,
+                const Expanded(
+                  child: Text(
+                    'Medical Partners',
+                    style: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -503,6 +509,60 @@ class _NationalOrgCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(org.description, style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.neutral, height: 1.5)),
             const SizedBox(height: 24),
+            if (org.phoneNumber.isNotEmpty) ...[
+              SizedBox(
+                width: double.infinity,
+                child: CapsuleButton(
+                  label: 'Call Blood Contact (${org.phoneNumber})',
+                  icon: Icons.phone_rounded,
+                  backgroundColor: const Color(0xFF1B8A4E),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    final uri = Uri.parse('tel:${org.phoneNumber}');
+                    try {
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      } else {
+                        // Fallback: Copy to clipboard
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Could not place call. Contact number ${org.phoneNumber} copied to clipboard.'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        }
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Contact number ${org.phoneNumber} copied to clipboard.'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+            ] else ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'Contact not published yet',
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             SizedBox(
               width: double.infinity,
               child: CapsuleButton(

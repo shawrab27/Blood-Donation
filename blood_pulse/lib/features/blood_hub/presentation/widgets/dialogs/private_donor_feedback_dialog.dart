@@ -103,24 +103,31 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F2),
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    child: const Text(
-                      'CONFIDENTIAL FEEDBACK',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: AppColors.primary,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0F2),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: const Text(
+                        'CONFIDENTIAL FEEDBACK',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
                   IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                     icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF757575)),
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -155,20 +162,24 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
               const SizedBox(height: 18),
 
               // Star Rating (1 to 5)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  final starIndex = index + 1;
-                  return IconButton(
-                    iconSize: 32,
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    icon: Icon(
-                      starIndex <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: const Color(0xFFFFA000),
-                    ),
-                    onPressed: () => setState(() => _stars = starIndex),
-                  );
-                }),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    final starIndex = index + 1;
+                    return IconButton(
+                      iconSize: 28,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 1),
+                      icon: Icon(
+                        starIndex <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: const Color(0xFFFFA000),
+                      ),
+                      onPressed: () => setState(() => _stars = starIndex),
+                    );
+                  }),
+                ),
               ),
               const SizedBox(height: 14),
 

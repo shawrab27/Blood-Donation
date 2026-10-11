@@ -54,6 +54,7 @@ class NationalCommunity {
   final String description;
   final String activeDonors;
   final String? logoUrl;
+  final String phoneNumber;
 
   NationalCommunity({
     required this.id,
@@ -61,6 +62,7 @@ class NationalCommunity {
     required this.description,
     required this.activeDonors,
     this.logoUrl,
+    this.phoneNumber = '',
   });
 
   factory NationalCommunity.fromJson(Map<String, dynamic> json) {
@@ -70,6 +72,7 @@ class NationalCommunity {
       description: json['description'] as String,
       activeDonors: json['active_donors'] as String,
       logoUrl: json['logo'] as String?,
+      phoneNumber: json['phone_number'] as String? ?? '',
     );
   }
 }

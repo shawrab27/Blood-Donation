@@ -98,16 +98,7 @@ final areaGuidesProvider = FutureProvider<List<AreaGuide>>((ref) async {
       return data.map((e) => AreaGuide.fromJson(e)).toList();
     }
   } catch (_) {}
-  // Fallback default guide matching Stitch design
-  return [
-    AreaGuide(
-      id: 1,
-      name: 'Dr. Rahman Kabir',
-      title: 'Local Blood Guide',
-      areaName: 'Uttara, Dhaka',
-      phone: '+880 1712-345678',
-    ),
-  ];
+  return [];
 });
 
 final localDonorsProvider = FutureProvider.family<List<LocalDonorItem>, String>((ref, district) async {
@@ -120,10 +111,6 @@ final localDonorsProvider = FutureProvider.family<List<LocalDonorItem>, String>(
       }
     }
   } catch (_) {}
-  // Fallback matching Stitch design
-  return [
-    LocalDonorItem(id: 1, name: 'Arif Ahmed', bloodGroup: 'A+', lastDonationDate: 'Oct 12, 2023', district: 'Dhaka'),
-    LocalDonorItem(id: 2, name: 'Nadia Islam', bloodGroup: 'O-', lastDonationDate: 'Nov 05, 2023', district: 'Dhaka'),
-    LocalDonorItem(id: 3, name: 'Rahim Uddin', bloodGroup: 'B+', lastDonationDate: 'Sep 20, 2023', district: 'Dhaka'),
-  ];
+  return [];
 });
+
