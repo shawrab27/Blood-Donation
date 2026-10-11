@@ -10,7 +10,12 @@ and evaluates pause periods and availability.
 
 from datetime import date, timedelta
 from django.utils import timezone
-from api.conf import WHOLE_BLOOD_COOLDOWN_DAYS, PLATELET_COOLDOWN_DAYS, PLASMA_COOLDOWN_DAYS
+from api.conf import (
+    DONOR_COOLDOWN_DAYS,
+    WHOLE_BLOOD_COOLDOWN_DAYS,
+    PLATELET_COOLDOWN_DAYS,
+    PLASMA_COOLDOWN_DAYS,
+)
 
 
 def evaluate_donor_eligibility(donor, component: str = 'WHOLE') -> dict:
@@ -27,7 +32,16 @@ def evaluate_donor_eligibility(donor, component: str = 'WHOLE') -> dict:
     now = timezone.now()
     today = now.date()
 
-    # 0. User Intent: ONLY_REQUEST users are not eligible donors
+    # 0a. Suspension check
+    if getattr(donor, 'is_suspended', False) or (getattr(donor, 'user', None) and not donor.user.is_active):
+        return {
+            'is_eligible': False,
+            'reason': 'Donor account is currently suspended.',
+            'days_remaining': 0,
+            'deferred_until': None,
+        }
+
+    # 0b. User Intent: ONLY_REQUEST users are not eligible donors
     if getattr(donor, 'user_intent', None) == 'ONLY_REQUEST':
         return {
             'is_eligible': False,

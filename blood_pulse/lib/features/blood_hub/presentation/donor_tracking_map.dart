@@ -15,6 +15,8 @@ import '../../../core/widgets/capsule_button.dart';
 import '../../../core/widgets/responsive_layout.dart';
 import '../../../services/tracking_service.dart';
 import '../data/blood_hub_v2_api_service.dart';
+import 'widgets/report_broker_dialog.dart';
+import 'widgets/request_units_progress_card.dart';
 import 'widgets/tracking/donor_tracking_actions_sheet.dart';
 import 'widgets/tracking/donor_tracking_bottom_panel.dart';
 
@@ -35,6 +37,11 @@ class DonorTrackingMapScreen extends ConsumerStatefulWidget {
     this.initialDonorLng = 90.3870,
     this.isDonorView = false,
     this.chatRoomId = 'emergency_chat',
+    this.unitsNeeded = 2,
+    this.unitsReceived = 0,
+    this.unitsPending = 1,
+    this.requestMode = 'PROXY',
+    this.supportStatus = 'CAN_SUPPORT',
   });
 
   final String? requestId;
@@ -50,6 +57,11 @@ class DonorTrackingMapScreen extends ConsumerStatefulWidget {
   final double initialDonorLng;
   final bool isDonorView;
   final String chatRoomId;
+  final int unitsNeeded;
+  final int unitsReceived;
+  final int unitsPending;
+  final String requestMode;
+  final String supportStatus;
 
   @override
   ConsumerState<DonorTrackingMapScreen> createState() => _DonorTrackingMapScreenState();
@@ -178,6 +190,16 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
             widget.isDonorView ? 'En Route to Hospital' : 'Live Donor Dispatch',
             style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Report Broker / Issue',
+              icon: const Icon(Icons.flag_outlined, color: Color(0xFFC30121)),
+              onPressed: () => ReportBrokerDialog.show(
+                context,
+                requestId: int.tryParse(widget.requestId ?? ''),
+              ),
+            ),
+          ],
         ),
         body: Stack(
           children: [
@@ -246,17 +268,35 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
               bottom: 16,
               left: 16,
               right: 16,
-              child: DonorTrackingBottomPanel(
-                distanceKm: _distanceKm,
-                etaMinutes: _etaMinutes,
-                currentStatus: _currentStatus,
-                isDonorView: widget.isDonorView,
-                patientName: widget.patientName,
-                donorName: widget.donorName,
-                chatRoomId: widget.chatRoomId,
-                numericMatchId: _numericMatchId,
-                onStatusUpdate: _updateStatus,
-                onReportSuccess: () => setState(() => _currentStatus = 'FAILED'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RequestUnitsProgressCard(
+                    compact: true,
+                    unitsReceived: _currentStatus == 'DONATED'
+                        ? widget.unitsNeeded
+                        : widget.unitsReceived,
+                    unitsPending: _currentStatus == 'DONATED'
+                        ? 0
+                        : widget.unitsPending,
+                    unitsNeeded: widget.unitsNeeded,
+                    requestMode: widget.requestMode,
+                    supportStatus: widget.supportStatus,
+                  ),
+                  const SizedBox(height: 10),
+                  DonorTrackingBottomPanel(
+                    distanceKm: _distanceKm,
+                    etaMinutes: _etaMinutes,
+                    currentStatus: _currentStatus,
+                    isDonorView: widget.isDonorView,
+                    patientName: widget.patientName,
+                    donorName: widget.donorName,
+                    chatRoomId: widget.chatRoomId,
+                    numericMatchId: _numericMatchId,
+                    onStatusUpdate: _updateStatus,
+                    onReportSuccess: () => setState(() => _currentStatus = 'FAILED'),
+                  ),
+                ],
               ),
             ),
           ],

@@ -332,6 +332,21 @@ class BloodRequest(models.Model):
 
     units_needed = models.PositiveIntegerField(default=1)
 
+    units_received = models.PositiveIntegerField(default=0, db_default=0)
+
+    units_pending = models.PositiveIntegerField(default=0, db_default=0)
+
+    REQUEST_MODE_CHOICES = (
+        ('SELF', 'Self'),
+        ('PROXY', 'Proxy'),
+    )
+
+    request_mode = models.CharField(max_length=10, choices=REQUEST_MODE_CHOICES, default='SELF', db_default='SELF')
+
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    close_reason = models.CharField(max_length=30, blank=True, default='', db_default='')
+
     urgency = models.CharField(max_length=20, default='CRITICAL_2H') # CRITICAL_2H, URGENT_6H, TODAY_24H, SCHEDULED
 
     needed_by = models.DateTimeField(null=True, blank=True)
@@ -493,11 +508,22 @@ class RequestAcceptance(models.Model):
 
     )
 
+    SUPPORT_STATUS_CHOICES = (
+        ('CAN_SUPPORT', 'Can Support'),
+        ('VOLUNTARY_ONLY', 'Voluntary Only / Charity'),
+    )
+
     request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='acceptances')
 
     donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='acceptances')
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACCEPTED')
+    support_status = models.CharField(max_length=30, choices=SUPPORT_STATUS_CHOICES, default='CAN_SUPPORT', db_default='CAN_SUPPORT')
+    units_pledged = models.PositiveIntegerField(default=1, db_default=1)
+    donor_confirmed_at = models.DateTimeField(null=True, blank=True)
+    requester_confirmed_at = models.DateTimeField(null=True, blank=True)
+    disputed_at = models.DateTimeField(null=True, blank=True)
+    dispute_reason = models.TextField(blank=True, default='', db_default='')
     auto_confirmed = models.BooleanField(default=False)
     donated_at = models.DateTimeField(null=True, blank=True)
 
@@ -528,6 +554,12 @@ class RequestAcceptance(models.Model):
     class Meta:
 
         ordering = ['-started_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['request', 'donor'],
+                name='unique_request_donor_acceptance',
+            ),
+        ]
 
 
 
@@ -562,6 +594,51 @@ class FakeReport(models.Model):
     class Meta:
 
         ordering = ['-created_at']
+
+
+class BrokerReport(models.Model):
+    TARGET_TYPE_CHOICES = (
+        ('BROKER', 'Suspected Broker / Money Demand'),
+        ('REQUEST', 'Fake or Misleading Request'),
+        ('DONOR', 'Donor Misconduct'),
+    )
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending Verification'),
+        ('CONFIRMED', 'Confirmed Violation'),
+        ('DISMISSED', 'Dismissed'),
+    )
+
+    request = models.ForeignKey(
+        BloodRequest,
+        on_delete=models.CASCADE,
+        related_name='broker_reports',
+        null=True,
+        blank=True,
+    )
+    reported_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='broker_reports_against',
+        null=True,
+        blank=True,
+    )
+    reporter = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='submitted_broker_reports',
+    )
+    target_type = models.CharField(max_length=20, choices=TARGET_TYPE_CHOICES, default='BROKER')
+    reason = models.TextField()
+    details = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"BrokerReport #{self.id} ({self.target_type}) [{self.status}]"
+
 
 
 
@@ -736,6 +813,18 @@ class DonationMatch(models.Model):
     donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='donor_matches')
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACCEPTED')
+
+    SUPPORT_STATUS_CHOICES = (
+        ('CAN_SUPPORT', 'Can Support'),
+        ('VOLUNTARY_ONLY', 'Voluntary Only / Charity'),
+    )
+    support_status = models.CharField(max_length=30, choices=SUPPORT_STATUS_CHOICES, default='CAN_SUPPORT', db_default='CAN_SUPPORT')
+    units_pledged = models.PositiveIntegerField(default=1, db_default=1)
+    donor_confirmed_at = models.DateTimeField(null=True, blank=True)
+    requester_confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    disputed_at = models.DateTimeField(null=True, blank=True)
+    dispute_reason = models.TextField(blank=True, default='', db_default='')
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='PRIMARY')
 

@@ -76,3 +76,37 @@ class AcceptanceConcurrencyTest(TransactionTestCase):
         
         acceptances = RequestAcceptance.objects.filter(request=self.req, status='ACCEPTED')
         self.assertEqual(acceptances.count(), 1)
+
+    @unittest.skipIf(connection.vendor == 'sqlite', "Concurrency test requires PostgreSQL (row-level locking)")
+    def test_concurrent_v2_accept_slot_race(self):
+        """Two donors racing for the last slot via V2 accept endpoint cannot overfill units_needed."""
+        client1 = APIClient()
+        client1.force_authenticate(user=self.donor1)
+        client2 = APIClient()
+        client2.force_authenticate(user=self.donor2)
+
+        results = [None, None]
+
+        def accept_v2(client, index):
+            connection.close()
+            response = client.post(
+                f'/api/requests/{self.req.id}/accept/',
+                {'support_status': 'CAN_SUPPORT', 'units_pledged': 1},
+                format='json',
+            )
+            results[index] = response.status_code
+            connection.close()
+
+        t1 = threading.Thread(target=accept_v2, args=(client1, 0))
+        t2 = threading.Thread(target=accept_v2, args=(client2, 1))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        self.assertIn(201, results)
+        self.assertTrue(409 in results or 400 in results)
+        self.req.refresh_from_db()
+        self.assertEqual(self.req.units_pending, 1)
+        self.assertLessEqual(self.req.units_received + self.req.units_pending, self.req.units_needed)
+

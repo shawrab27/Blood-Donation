@@ -19,7 +19,19 @@ class DonorProfileAdmin(admin.ModelAdmin):
         return obj.user.username
 
 class BloodRequestAdmin(admin.ModelAdmin):
-    list_display = ('id', 'patient_name', 'blood_group', 'urgency_level', 'hospital_location', 'contact_number', 'is_active', 'created_at')
+    list_display = (
+        'id',
+        'patient_name',
+        'blood_group',
+        'request_mode',
+        'units_received',
+        'units_pending',
+        'units_needed',
+        'status',
+        'is_active',
+        'created_at',
+    )
+    list_filter = ('status', 'request_mode', 'blood_group', 'is_active')
 
 class SocialPostAdmin(admin.ModelAdmin):
     list_display = ('id', 'author_username', 'text_content', 'likes_count', 'created_at')
@@ -121,7 +133,7 @@ class RequestAcceptanceAdmin(admin.ModelAdmin):
         self.message_user(request, f"Manually confirmed {count} donation(s).")
     force_confirm_selected.short_description = "Force-confirm selected DONATED entries"
 
-from .models import PasswordResetOTP
+from .models import PasswordResetOTP, BrokerReport, FakeReport
 @admin.register(PasswordResetOTP)
 class PasswordResetOTPAdmin(admin.ModelAdmin):
     list_display = ('user', 'created_at', 'expires_at', 'is_used', 'attempts')
@@ -130,3 +142,18 @@ class PasswordResetOTPAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         return self.readonly_fields
+
+
+@admin.register(BrokerReport)
+class BrokerReportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'target_type', 'request', 'reported_user', 'status', 'reason', 'created_at')
+    list_filter = ('target_type', 'status')
+    search_fields = ('reason', 'details')
+
+
+@admin.register(FakeReport)
+class FakeReportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'request', 'status', 'reason', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('reason',)
+

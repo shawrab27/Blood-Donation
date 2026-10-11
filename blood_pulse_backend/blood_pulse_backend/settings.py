@@ -249,6 +249,7 @@ else:
 FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc=')
 
 
+REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'api.throttles.custom_exception_handler'
 REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
     'rest_framework.throttling.AnonRateThrottle',
     'rest_framework.throttling.UserRateThrottle',
@@ -265,6 +266,9 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'donors_anon': '100/hour',
     'donors_user': '1000/hour',
     'requests': '50/hour',
+    'request_create': '30/hour',
+    'donor_response': '30/hour',
+    'donation_confirm': '40/hour',
     'pulseai_anon': '20/hour',
     'pulseai_user': '100/hour',
     'emergency_broadcast': '3/min',

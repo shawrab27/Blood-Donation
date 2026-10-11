@@ -4,7 +4,11 @@
 import os
 import sys
 import csv
-import pytest
+try:
+    import pytest
+except ImportError:
+    import unittest
+    raise unittest.SkipTest("pytest is not installed")
 import django
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

@@ -13,6 +13,7 @@ import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
 import '../widgets/journey_actions.dart';
 import '../widgets/journey_tracker.dart';
+import '../widgets/request_units_progress_card.dart';
 
 
 
@@ -257,6 +258,22 @@ class _JourneyBody extends ConsumerWidget {
             parent: AlwaysScrollableScrollPhysics()),
         slivers: [
           SliverToBoxAdapter(child: _StatusBanner(journey: journey)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: RequestUnitsProgressCard(
+                compact: true,
+                unitsReceived: journey.status == 'DONATED'
+                    ? journey.unitsNeeded
+                    : 0,
+                unitsPending: journey.status == 'DONATED'
+                    ? 0
+                    : journey.unitsNeeded,
+                unitsNeeded: journey.unitsNeeded,
+                status: journey.status,
+              ),
+            ),
+          ),
           SliverToBoxAdapter(child: _LiveMap(journey: journey)),
           SliverToBoxAdapter(child: _ProgressStepper(journey: journey)),
           // Role-specific info cards

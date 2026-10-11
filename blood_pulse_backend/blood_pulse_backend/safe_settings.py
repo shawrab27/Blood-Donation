@@ -17,12 +17,82 @@ from blood_pulse_backend.settings import *
 
 # Identify production database host from .env
 _prod_env_path = BASE_DIR / '.env'
-_prod_host = None
-if _prod_env_path.exists():
-    _prod_env_vals = dotenv_values(_prod_env_path)
-    _prod_db_url = _prod_env_vals.get('DATABASE_URL', '')
-    if _prod_db_url:
-        _prod_host = urlparse(_prod_db_url).hostname
+_prod_env_vals = dotenv_values(_prod_env_path) if _prod_env_path.exists() else {}
+_prod_db_url = _prod_env_vals.get('DATABASE_URL', '') or os.environ.get('PROD_DATABASE_URL', '')
+_prod_host = urlparse(_prod_db_url).hostname if _prod_db_url else None
+
+
+def verify_postgres_test_db_guard(test_db_url: str | None, prod_db_url: str | None) -> bool:
+    """
+    Safety guard for Postgres test runs (Part 0):
+    Refuses to start and prints a clear message if:
+    1) DATABASE_URL_TEST is missing,
+    2) DATABASE_URL_TEST equals DATABASE_URL, or
+    3) DATABASE_URL_TEST host matches the production host.
+    Never prints the raw connection URLs or credentials.
+    """
+    clean_test = (test_db_url or '').strip()
+    clean_prod = (prod_db_url or '').strip()
+
+    if not clean_test:
+        msg = (
+            "REFUSING TO START POSTGRES TEST RUN: DATABASE_URL_TEST is missing. "
+            "Set a dedicated non-production DATABASE_URL_TEST in your local .env."
+        )
+        sys.stderr.write(
+            f"\n======================================================================\n"
+            f"[POSTGRES TEST SAFETY GUARD TRIGGERED]\n{msg}\n"
+            f"======================================================================\n\n"
+        )
+        raise RuntimeError(msg)
+
+    if clean_prod and clean_test == clean_prod:
+        msg = (
+            "REFUSING TO START POSTGRES TEST RUN: DATABASE_URL_TEST is identical to DATABASE_URL. "
+            "Never point DATABASE_URL_TEST at the production database."
+        )
+        sys.stderr.write(
+            f"\n======================================================================\n"
+            f"[POSTGRES TEST SAFETY GUARD TRIGGERED]\n{msg}\n"
+            f"======================================================================\n\n"
+        )
+        raise RuntimeError(msg)
+
+    parsed_test = urlparse(clean_test)
+    if parsed_test.scheme not in ('postgres', 'postgresql', 'pgsql'):
+        msg = "REFUSING TO START POSTGRES TEST RUN: DATABASE_URL_TEST must be a PostgreSQL URL."
+        sys.stderr.write(
+            f"\n======================================================================\n"
+            f"[POSTGRES TEST SAFETY GUARD TRIGGERED]\n{msg}\n"
+            f"======================================================================\n\n"
+        )
+        raise RuntimeError(msg)
+
+    test_host = parsed_test.hostname
+    prod_host = urlparse(clean_prod).hostname if clean_prod else None
+    if prod_host and test_host and test_host.lower() == prod_host.lower():
+        msg = (
+            "REFUSING TO START POSTGRES TEST RUN: DATABASE_URL_TEST host matches the production host. "
+            "Use an isolated test Postgres instance with a different host."
+        )
+        sys.stderr.write(
+            f"\n======================================================================\n"
+            f"[POSTGRES TEST SAFETY GUARD TRIGGERED]\n{msg}\n"
+            f"======================================================================\n\n"
+        )
+        raise RuntimeError(msg)
+
+    return True
+
+
+if os.environ.get('USE_TEST_POSTGRES') == '1':
+    _test_db_url = os.environ.get('DATABASE_URL_TEST') or _prod_env_vals.get('DATABASE_URL_TEST', '')
+    try:
+        verify_postgres_test_db_guard(_test_db_url, _prod_db_url)
+    except RuntimeError:
+        sys.exit(1)
+    DATABASES['default'] = dj_database_url.parse(_test_db_url, conn_max_age=0)
+
 
 # Identify current configured default database host
 _current_db = DATABASES.get('default', {})
@@ -74,3 +144,4 @@ def _check_production_guard():
 
 
 _check_production_guard()
+

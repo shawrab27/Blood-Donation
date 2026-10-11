@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
 import '../../../../core/domain/entities/national_emergency.dart';
+import '../widgets/request_units_progress_card.dart';
 
 const Color _kPrimary = Color(0xFFC30121);
 const Color _kSecondary = Color(0xFF2B2B2B);
@@ -245,6 +246,13 @@ class _NationalBody extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   const Text('Disaster Progress', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: _kSecondary)),
+                  const SizedBox(height: 12),
+                  RequestUnitsProgressCard(
+                    title: 'Disaster Units Progress',
+                    unitsReceived: totalCollected,
+                    unitsPending: 0,
+                    unitsNeeded: totalNeeded > 0 ? totalNeeded : 1,
+                  ),
                   const SizedBox(height: 12),
                   LinearProgressIndicator(
                     value: pct,

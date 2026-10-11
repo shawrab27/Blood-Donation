@@ -397,7 +397,13 @@ def emergency_requests_list_create_view(request):
     patient_name = request.data.get('patient_name', '').strip()
     blood_group = request.data.get('blood_group', '').strip()
     component = request.data.get('component', 'WHOLE').strip()
-    units_needed = int(request.data.get('units_needed', 1))
+    try:
+        units_needed = int(request.data.get('units_needed', 1))
+    except (TypeError, ValueError):
+        return Response({'units_needed': ['Must be a valid integer between 1 and 5.']}, status=status.HTTP_400_BAD_REQUEST)
+    if units_needed < 1 or units_needed > 5:
+        return Response({'units_needed': ['units_needed must be between 1 and 5.']}, status=status.HTTP_400_BAD_REQUEST)
+
     urgency = request.data.get('urgency', 'CRITICAL_2H').strip()
     condition_category = request.data.get('condition_category', 'OTHER').strip()
     condition_note = request.data.get('condition_note', '')[:80]
@@ -410,6 +416,14 @@ def emergency_requests_list_create_view(request):
     contact_phone = request.data.get('contact_phone', '').strip()
     lat = request.data.get('lat')
     lng = request.data.get('lng')
+
+    from api.services.blood_hub_lifecycle_service import normalize_request_mode
+    request_mode = normalize_request_mode(
+        request.data.get('request_mode'),
+        patient_name=patient_name,
+        attendant_name=attendant_name,
+        requester=request.user,
+    )
 
     if not patient_name or not blood_group:
         return Response({'error': 'patient_name and blood_group are required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -477,8 +491,11 @@ def emergency_requests_list_create_view(request):
             patient_name=patient_name,
             blood_group=blood_group,
             mode=request.data.get('mode', 'EMERGENCY'),
+            request_mode=request_mode,
             component=component,
             units_needed=units_needed,
+            units_received=0,
+            units_pending=0,
             urgency=urgency,
             urgency_level=urgency,
             condition_category=condition_category,
@@ -534,18 +551,41 @@ def emergency_request_detail_view(request, pk):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsProfileComplete])
+@throttle_classes([__import__('api.throttles', fromlist=['DonorResponseThrottle']).DonorResponseThrottle])
 def emergency_request_accept_view(request, pk):
     """
     Donor accepts an emergency request.
-    Verifies eligibility, creates RequestAcceptance, reveals contact phone.
+    Verifies eligibility, creates RequestAcceptance, reserves units_pending, reveals contact phone.
     """
-    from django.db import transaction
+    from django.db import IntegrityError, transaction
+    from api.conf import DONOR_COOLDOWN_DAYS
+    from api.services.eligibility import evaluate_donor_eligibility
+    from api.services.blood_hub_lifecycle_service import normalize_support_status
+
+    norm_support = normalize_support_status(request.data.get('support_status'))
+    try:
+        units_pledged = int(request.data.get('units_pledged', 1) or 1)
+    except (TypeError, ValueError):
+        return Response({'error': 'units_pledged must be a valid integer.'}, status=status.HTTP_400_BAD_REQUEST)
+    if units_pledged < 1 or units_pledged > 5:
+        return Response({'error': 'units_pledged must be between 1 and 5.'}, status=status.HTTP_400_BAD_REQUEST)
+
     with transaction.atomic():
         blood_req = BloodRequest.objects.select_for_update().filter(id=pk).first()
         if not blood_req:
             return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        if blood_req.status != 'ACTIVE':
+        now = timezone.now()
+        if blood_req.expires_at and blood_req.expires_at <= now and blood_req.status not in ('CLOSED', 'FULFILLED', 'EXPIRED'):
+            blood_req.status = 'EXPIRED'
+            blood_req.is_active = False
+            blood_req.closed_at = blood_req.closed_at or now
+            blood_req.close_reason = blood_req.close_reason or 'EXPIRED'
+            blood_req.units_pending = 0
+            blood_req.save(update_fields=['status', 'is_active', 'closed_at', 'close_reason', 'units_pending'])
+            return Response({'error': 'Request has expired and is closed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if blood_req.status != 'ACTIVE' or not blood_req.is_active:
             return Response({'error': f'Request is not active (Status: {blood_req.status}).'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not hasattr(request.user, 'donorprofile'):
@@ -575,43 +615,56 @@ def emergency_request_accept_view(request, pk):
         otp_record.is_used = True
         otp_record.save(update_fields=['is_used'])
 
-        # Check 90 days eligibility
+        # Check DONOR_COOLDOWN_DAYS and full donor eligibility
         if donor.last_donation_date:
-            
             days_since_last = (timezone.now().date() - donor.last_donation_date).days
-            if days_since_last < 90:
+            if days_since_last < DONOR_COOLDOWN_DAYS:
                 return Response({
-                    'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+                    'error': f'You are not eligible to donate. You must wait {DONOR_COOLDOWN_DAYS} days after your last donation. ({DONOR_COOLDOWN_DAYS - days_since_last} days remaining)'
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+        elig = evaluate_donor_eligibility(donor, blood_req.component or 'WHOLE')
+        if not elig['is_eligible']:
+            return Response({'error': elig['reason']}, status=status.HTTP_400_BAD_REQUEST)
 
         existing_acceptance = RequestAcceptance.objects.filter(
             request=blood_req,
             donor=donor,
-        ).exclude(status__in=['FAILED', 'CANCELLED']).first()
+        ).first()
 
         if existing_acceptance:
-            serializer = RequestAcceptanceSerializer(existing_acceptance)
             return Response({
-                'message': 'You have already accepted this request.',
-                'acceptance': serializer.data,
-                'requester_phone': blood_req.contact_phone or blood_req.contact_number,
-                'ward_bed': blood_req.ward_bed,
-            }, status=status.HTTP_200_OK)
+                'error': 'You have already responded to this request.',
+                'detail': 'You have already responded to this request.',
+            }, status=status.HTTP_409_CONFLICT)
 
         # Concurrency check: Ensure we haven't reached units_needed
-        current_acceptances = RequestAcceptance.objects.filter(
+        active_acceptances_qs = RequestAcceptance.objects.filter(
             request=blood_req,
-            status__in=['ACCEPTED', 'FULFILLED']
-        ).count()
+            status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']
+        )
+        db_pending = sum(a.units_pledged for a in active_acceptances_qs)
+        effective_pending = max(blood_req.units_pending, db_pending)
 
-        if current_acceptances >= (blood_req.units_needed or 1):
+        if blood_req.units_received + effective_pending + units_pledged > (blood_req.units_needed or 1):
             return Response({'error': 'Slot Full. This request already has enough donors.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        acceptance = RequestAcceptance.objects.create(
-            request=blood_req,
-            donor=donor,
-            status='ACCEPTED',
-        )
+        blood_req.units_pending = effective_pending + units_pledged
+        blood_req.save(update_fields=['units_pending'])
+
+        try:
+            acceptance = RequestAcceptance.objects.create(
+                request=blood_req,
+                donor=donor,
+                status='ACCEPTED',
+                support_status=norm_support,
+                units_pledged=units_pledged,
+            )
+        except IntegrityError:
+            return Response({
+                'error': 'You have already responded to this request.',
+                'detail': 'You have already responded to this request.',
+            }, status=status.HTTP_409_CONFLICT)
 
         # Increment donor response counter
         donor.response_count = (donor.response_count or 0) + 1
@@ -630,9 +683,12 @@ def emergency_request_accept_view(request, pk):
 @permission_classes([IsAuthenticated])
 def emergency_request_report_view(request, pk):
     """
-    Report a request as fake, abusive, or fraudulent.
-    If 3+ confirmed reports, suspends request to PENDING_ADMIN.
+    Report a request, donor, or suspected broker as fake, abusive, or fraudulent (Part D).
+    Never exposes reporter's phone/email/location to the reported party.
+    If 3+ reports, suspends request to PENDING_ADMIN.
     """
+    from api.models import BrokerReport
+
     blood_req = BloodRequest.objects.filter(id=pk).first()
     if not blood_req:
         return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -641,10 +697,29 @@ def emergency_request_report_view(request, pk):
     if not reason:
         return Response({'error': 'Reason is required for report.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    target_type = request.data.get('target_type', 'REQUEST').strip().upper()
+    if target_type not in ('BROKER', 'REQUEST', 'DONOR'):
+        target_type = 'BROKER' if 'broker' in reason.lower() or 'money' in reason.lower() else 'REQUEST'
+
+    reported_user = blood_req.requester
+    reported_user_id = request.data.get('reported_user_id')
+    if reported_user_id:
+        from django.contrib.auth.models import User
+        reported_user = User.objects.filter(id=reported_user_id).first() or reported_user
+
     report = FakeReport.objects.create(
         request=blood_req,
         reporter=request.user,
         reason=reason,
+    )
+    broker_report = BrokerReport.objects.create(
+        request=blood_req,
+        reported_user=reported_user,
+        reporter=request.user,
+        target_type=target_type,
+        reason=reason,
+        details=request.data.get('details', '').strip(),
+        status='PENDING',
     )
 
     # Auto-quarantine if report threshold reached
@@ -657,6 +732,8 @@ def emergency_request_report_view(request, pk):
     return Response({
         'message': 'Report submitted for administrator review.',
         'report_id': report.id,
+        'broker_report_id': broker_report.id,
+        'status': broker_report.status,
     }, status=status.HTTP_201_CREATED)
 
 
@@ -781,11 +858,16 @@ def journey_location_view(request, pk):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@throttle_classes([__import__('api.throttles', fromlist=['DonationConfirmThrottle']).DonationConfirmThrottle])
 def journey_status_transition_view(request, pk):
     """
     Transitions the journey through its lifecycle milestones:
-    ACCEPTED -> ON_THE_WAY -> ARRIVED -> DONATED (or CANCELLED)
+    ACCEPTED -> ON_THE_WAY -> ARRIVED -> DONATED -> CONFIRMED (or CANCELLED)
+    Enforces two-sided confirmation and atomic unit release on cancellation.
     """
+    from django.db import transaction
+    from api.services.journeys import finalize_donation
+
     acceptance = RequestAcceptance.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not acceptance:
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -804,33 +886,94 @@ def journey_status_transition_view(request, pk):
     now = timezone.now()
 
     if new_status == 'DONATED':
-        acceptance.status = 'DONATED'
-        acceptance.donated_at = now
-        acceptance.save(update_fields=['status', 'donated_at'])
+        with transaction.atomic():
+            locked_acc = RequestAcceptance.objects.select_for_update().get(pk=acceptance.pk)
+            blood_req = BloodRequest.objects.select_for_update().get(pk=locked_acc.request_id)
+
+            if locked_acc.status == 'CONFIRMED' and locked_acc.completed_at is not None:
+                return Response({'status': 'CONFIRMED', 'message': 'Donation already confirmed.'}, status=status.HTTP_200_OK)
+
+            # Ensure units_pending reflects this active unconfirmed acceptance if created directly in tests
+            units = max(1, locked_acc.units_pledged or 1)
+            if blood_req.units_pending < units and blood_req.units_received + units <= (blood_req.units_needed or 1):
+                blood_req.units_pending = max(blood_req.units_pending, units)
+                blood_req.save(update_fields=['units_pending'])
+
+            locked_acc.status = 'DONATED'
+            locked_acc.donated_at = locked_acc.donated_at or now
+            if is_donor:
+                locked_acc.donor_confirmed_at = locked_acc.donor_confirmed_at or now
+            elif is_requester:
+                locked_acc.requester_confirmed_at = locked_acc.requester_confirmed_at or now
+            locked_acc.save(update_fields=['status', 'donated_at', 'donor_confirmed_at', 'requester_confirmed_at'])
+
+            if locked_acc.donor_confirmed_at is not None and locked_acc.requester_confirmed_at is not None:
+                finalize_donation(locked_acc, auto=False)
+                return Response({'status': 'CONFIRMED', 'message': 'Donation confirmed by both sides.'}, status=status.HTTP_200_OK)
+
         return Response({'status': 'DONATED', 'message': 'Pending requester confirmation.'})
 
     elif new_status == 'CONFIRMED':
-        if not is_requester: return Response({'error': 'Unauthorized.'}, status=403)
-        
-        from api.services.journeys import finalize_donation
-        finalize_donation(acceptance, auto=False)
+        if not is_requester:
+            return Response({'error': 'Unauthorized.'}, status=403)
 
-        return Response({
-            'message': 'Donation successfully marked as completed. Donor record updated.',
-            'status': 'CONFIRMED',
-            'completed_at': acceptance.completed_at
-        }, status=status.HTTP_200_OK)
+        with transaction.atomic():
+            locked_acc = RequestAcceptance.objects.select_for_update().get(pk=acceptance.pk)
+            blood_req = BloodRequest.objects.select_for_update().get(pk=locked_acc.request_id)
+
+            # Idempotent check
+            if locked_acc.status == 'CONFIRMED' and locked_acc.completed_at is not None:
+                return Response({
+                    'message': 'Donation already marked as completed.',
+                    'status': 'CONFIRMED',
+                    'completed_at': locked_acc.completed_at,
+                }, status=status.HTTP_200_OK)
+
+            units = max(1, locked_acc.units_pledged or 1)
+            if blood_req.units_pending < units and blood_req.units_received + units <= (blood_req.units_needed or 1):
+                blood_req.units_pending = max(blood_req.units_pending, units)
+                blood_req.save(update_fields=['units_pending'])
+
+            locked_acc.requester_confirmed_at = locked_acc.requester_confirmed_at or now
+            locked_acc.save(update_fields=['requester_confirmed_at'])
+
+            # Complete only when donor has ALSO confirmed (status=='DONATED' or donor_confirmed_at set)
+            if locked_acc.status == 'DONATED' or locked_acc.donor_confirmed_at is not None:
+                finalize_donation(locked_acc, auto=False)
+                return Response({
+                    'message': 'Donation successfully marked as completed. Donor record updated.',
+                    'status': 'CONFIRMED',
+                    'completed_at': locked_acc.completed_at,
+                }, status=status.HTTP_200_OK)
+
+            return Response({
+                'message': 'Requester confirmation recorded. Pending donor confirmation.',
+                'status': locked_acc.status,
+                'requester_confirmed_at': locked_acc.requester_confirmed_at,
+            }, status=status.HTTP_200_OK)
 
     elif new_status == 'CANCELLED':
         reason = request.data.get('reason', 'Cancelled by user.')
-        acceptance.status = 'CANCELLED'
-        acceptance.cancellation_reason = reason
-        acceptance.completed_at = now
-        acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
+        with transaction.atomic():
+            locked_acc = RequestAcceptance.objects.select_for_update().get(pk=acceptance.pk)
+            blood_req = BloodRequest.objects.select_for_update().get(pk=locked_acc.request_id)
+            if locked_acc.status == 'CONFIRMED':
+                return Response({'error': 'Cannot cancel after donation is confirmed by both sides.'}, status=status.HTTP_409_CONFLICT)
 
-        donor = acceptance.donor
-        donor.cancel_count = (donor.cancel_count or 0) + 1
-        donor.save(update_fields=['cancel_count'])
+            if not locked_acc.is_standby and locked_acc.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED'):
+                blood_req.units_pending = max(0, blood_req.units_pending - max(1, locked_acc.units_pledged or 1))
+                blood_req.save(update_fields=['units_pending'])
+
+            locked_acc.status = 'CANCELLED'
+            locked_acc.cancellation_reason = reason
+            locked_acc.completed_at = now
+            locked_acc.donor_confirmed_at = None
+            locked_acc.requester_confirmed_at = None
+            locked_acc.save(update_fields=['status', 'cancellation_reason', 'completed_at', 'donor_confirmed_at', 'requester_confirmed_at'])
+
+            donor = locked_acc.donor
+            donor.cancel_count = (donor.cancel_count or 0) + 1
+            donor.save(update_fields=['cancel_count'])
 
         return Response({
             'message': 'Journey cancelled.',
@@ -853,8 +996,10 @@ def journey_status_transition_view(request, pk):
 def journey_issue_report_view(request, pk):
     """
     Reports an issue during donation (Medical Rejection, Donor No-Show, Logistics Delay).
-    Medical rejection sets 90-day deferral; no-show increments penalty; both trigger Standby offers.
+    Medical rejection sets DONOR_COOLDOWN_DAYS deferral; no-show increments penalty; both trigger Standby offers.
     """
+    from api.conf import DONOR_COOLDOWN_DAYS
+
     acceptance = RequestAcceptance.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not acceptance:
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -886,9 +1031,9 @@ def journey_issue_report_view(request, pk):
         acceptance.completed_at = now
         acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
 
-        # Apply 90-day medical deferral
+        # Apply medical deferral using DONOR_COOLDOWN_DAYS from api/conf.py
         donor = acceptance.donor
-        deferral_date = now + timedelta(days=90)
+        deferral_date = now + timedelta(days=DONOR_COOLDOWN_DAYS)
         donor.deferral_until = deferral_date
         donor.save(update_fields=['deferral_until'])
 
@@ -955,6 +1100,7 @@ def standby_offer_respond_view(request, pk):
     Standby donor responds to offer: 'ACCEPT' or 'DECLINE'.
     Accepting creates RequestAcceptance and unmasks requester contact.
     """
+    from api.conf import DONOR_COOLDOWN_DAYS
     from api.models import StandbyOffer
     offer = StandbyOffer.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not offer:
@@ -963,14 +1109,13 @@ def standby_offer_respond_view(request, pk):
     if offer.donor.user_id != request.user.id:
         return Response({'error': 'Unauthorized.'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Check 90 days eligibility
+    # Check DONOR_COOLDOWN_DAYS eligibility
     donor = offer.donor
     if donor.last_donation_date:
-        
         days_since_last = (timezone.now().date() - donor.last_donation_date).days
-        if days_since_last < 90:
+        if days_since_last < DONOR_COOLDOWN_DAYS:
             return Response({
-                'error': f'You are not eligible to donate. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+                'error': f'You are not eligible to donate. You must wait {DONOR_COOLDOWN_DAYS} days after your last donation. ({DONOR_COOLDOWN_DAYS - days_since_last} days remaining)'
             }, status=status.HTTP_400_BAD_REQUEST)
 
     action = request.data.get('action', '').strip().upper()
@@ -1144,6 +1289,15 @@ def journey_detail_view(request, pk):
         'component': getattr(req, 'component', 'WHOLE') or 'WHOLE',
         'urgency': req.urgency or getattr(req, 'urgency_level', '') or '',
         'units_needed': req.units_needed,
+        'units_received': req.units_received,
+        'units_pending': req.units_pending,
+        'request_mode': req.request_mode,
+        'support_status': acceptance.support_status,
+        'support_status_label': (
+            'Voluntary Only / Charity'
+            if acceptance.support_status == 'VOLUNTARY_ONLY'
+            else 'Can Support'
+        ),
         'milestones': _build_milestones(acceptance),
         'eta_minutes': acceptance.eta_minutes,
         'distance_km': acceptance.distance_km,
@@ -1198,6 +1352,7 @@ def journey_list_view(request):
             'urgency': req.urgency or getattr(req, 'urgency_level', '') or '',
             'hospital_name': hospital_name,
             'is_standby': acc.is_standby,
+            'support_status': acc.support_status,
             'created_at': acc.started_at.isoformat(),
         })
 
@@ -1301,6 +1456,7 @@ def pledge_to_donate_view(request):
     POST /api/emergency/national/pledge/
     Payload: { "slot_id": 123 }
     """
+    from api.conf import DONOR_COOLDOWN_DAYS
     from api.models import DonationSlot, DisasterPledge
     import string
     import random
@@ -1317,13 +1473,12 @@ def pledge_to_donate_view(request):
         
     donor = request.user.donorprofile
     
-    # Check 90 days eligibility
+    # Check DONOR_COOLDOWN_DAYS eligibility
     if donor.last_donation_date:
-        
         days_since_last = (timezone.now().date() - donor.last_donation_date).days
-        if days_since_last < 90:
+        if days_since_last < DONOR_COOLDOWN_DAYS:
             return Response({
-                'error': f'You are not eligible to pledge. You must wait 90 days after your last donation. ({90 - days_since_last} days remaining)'
+                'error': f'You are not eligible to pledge. You must wait {DONOR_COOLDOWN_DAYS} days after your last donation. ({DONOR_COOLDOWN_DAYS - days_since_last} days remaining)'
             }, status=400)
     
     # Check if they already have an active pledge

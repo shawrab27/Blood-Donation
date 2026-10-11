@@ -16,6 +16,7 @@ import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.d
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../../core/access/registration_gate_popup.dart';
 import '../../../../services/api_client.dart';
+import '../widgets/request_units_progress_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -103,6 +104,7 @@ class _PersonalEmergencyScreenState
   String? _bloodGroup;
   String _component = 'WHOLE';
   int _unitsNeeded = 1;
+  String _requestMode = 'PROXY';
   String _urgency = 'URGENT_6H';
   String _condition = 'OTHER';
   String? _conditionNote;
@@ -248,6 +250,7 @@ class _PersonalEmergencyScreenState
     try {
       final payload = <String, dynamic>{
         'mode': 'EMERGENCY',
+        'request_mode': _requestMode,
         'blood_group': _bloodGroup,
         'component': _component,
         'units_needed': _unitsNeeded,
@@ -845,6 +848,37 @@ class _PersonalEmergencyScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
+                // ── Request Mode (SELF vs PROXY) & Units Progress (Part A.3 & Part G #1) ──
+                _sectionLabel('REQUEST MODE (SELF OR PROXY)'),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ChoiceChip(
+                      key: const Key('mode_chip_proxy'),
+                      label: const Text('For Another Patient (PROXY)'),
+                      selected: _requestMode == 'PROXY',
+                      selectedColor: _kPrimary.withValues(alpha: 0.15),
+                      onSelected: (_) => setState(() => _requestMode = 'PROXY'),
+                    ),
+                    ChoiceChip(
+                      key: const Key('mode_chip_self'),
+                      label: const Text('For Myself (SELF)'),
+                      selected: _requestMode == 'SELF',
+                      selectedColor: _kPrimary.withValues(alpha: 0.15),
+                      onSelected: (_) => setState(() => _requestMode = 'SELF'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                RequestUnitsProgressCard(
+                  compact: true,
+                  unitsReceived: 0,
+                  unitsPending: 0,
+                  unitsNeeded: _unitsNeeded,
+                  requestMode: _requestMode,
+                ),
+                const SizedBox(height: 16),
 
                 // ── Blood Group ──────────────────────────────────────────
                 _sectionLabel('BLOOD GROUP *'),

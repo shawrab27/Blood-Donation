@@ -181,6 +181,9 @@ class BloodRequestListSerializer(serializers.ModelSerializer):
             'blood_group',
             'component',
             'units_needed',
+            'units_received',
+            'units_pending',
+            'request_mode',
             'urgency',
             'needed_by',
             'condition_category',
@@ -190,6 +193,8 @@ class BloodRequestListSerializer(serializers.ModelSerializer):
             'hospital_name',
             'contact_phone_masked',
             'status',
+            'closed_at',
+            'close_reason',
             'current_wave',
             'created_at',
             'trust_band',
@@ -223,6 +228,9 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
             'blood_group',
             'component',
             'units_needed',
+            'units_received',
+            'units_pending',
+            'request_mode',
             'urgency',
             'needed_by',
             'condition_category',
@@ -244,6 +252,8 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
             'trust_score',
             'trust_band',
             'status',
+            'closed_at',
+            'close_reason',
             'current_wave',
             'next_wave_at',
             'expires_at',
@@ -259,9 +269,17 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
             return False
         if request.user.id == obj.requester_id or request.user.is_staff:
             return True
-        # Check if user has an active acceptance for this request
+        # Check if user has an active acceptance or match for this request
         if hasattr(request.user, 'donorprofile'):
-            return obj.acceptances.filter(donor=request.user.donorprofile, status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']).exists()
+            has_acc = obj.acceptances.filter(
+                donor=request.user.donorprofile,
+                status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED', 'CONFIRMED'],
+            ).exists()
+            has_match = obj.donation_matches.filter(
+                donor=request.user.donorprofile,
+                status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED'],
+            ).exists()
+            return has_acc or has_match
         return False
 
     def get_is_requester(self, obj):
@@ -275,7 +293,9 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
         if not request or not request.user or not request.user.is_authenticated:
             return False
         if hasattr(request.user, 'donorprofile'):
-            return obj.acceptances.filter(donor=request.user.donorprofile).exclude(status__in=['FAILED', 'CANCELLED']).exists()
+            has_acc = obj.acceptances.filter(donor=request.user.donorprofile).exclude(status__in=['FAILED', 'CANCELLED']).exists()
+            has_match = obj.donation_matches.filter(donor=request.user.donorprofile).exclude(status__in=['FAILED', 'CANCELLED', 'EXPIRED']).exists()
+            return has_acc or has_match
         return False
 
     def get_contact_phone_display(self, obj):
@@ -313,6 +333,7 @@ class RequestAcceptanceSerializer(serializers.ModelSerializer):
     donor_name = serializers.CharField(source='donor.user.username', read_only=True)
     donor_blood_group = serializers.CharField(source='donor.blood_group', read_only=True)
     donor_phone = serializers.CharField(source='donor.phone_number', read_only=True)
+    support_status_label = serializers.SerializerMethodField()
 
     class Meta:
         model = RequestAcceptance
@@ -324,11 +345,21 @@ class RequestAcceptanceSerializer(serializers.ModelSerializer):
             'donor_blood_group',
             'donor_phone',
             'status',
+            'support_status',
+            'support_status_label',
+            'units_pledged',
+            'donor_confirmed_at',
+            'requester_confirmed_at',
             'is_standby',
             'started_at',
             'completed_at',
             'cancellation_reason',
         ]
+
+    def get_support_status_label(self, obj):
+        if obj.support_status == 'VOLUNTARY_ONLY':
+            return 'Voluntary Only / Charity'
+        return 'Can Support'
 
 
 class FakeReportSerializer(serializers.ModelSerializer):

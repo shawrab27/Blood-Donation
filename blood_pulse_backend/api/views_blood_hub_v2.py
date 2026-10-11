@@ -8,6 +8,7 @@ Enforces object-level permissions, throttles, and delegates business logic to se
 
 import os
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import transaction
 from rest_framework import status
 from rest_framework.views import APIView
@@ -15,12 +16,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from api.models import BloodRequest, DonationMatch, FollowUp
+from api.models import BloodRequest, BrokerReport, DonationMatch, FakeReport, FollowUp
 from api.serializers_blood_hub_v2 import (
     BloodRequestCreateV2Serializer,
+    BrokerReportCreateSerializer,
     DonationMatchDetailSerializer,
     DonationMatchStatusUpdateSerializer,
-    DonationReportSerializer,
     ThankYouLetterSerializer,
     FollowUpAnswerSerializer,
     PosterDataSerializer,
@@ -32,6 +33,8 @@ from api.services.blood_hub_lifecycle_service import (
     create_draft_request,
     accept_request,
     update_match_status,
+    confirm_match_donation,
+    withdraw_match_response,
     report_match_failure,
     send_thank_you_letter,
     answer_follow_up,
@@ -39,10 +42,20 @@ from api.services.blood_hub_lifecycle_service import (
 )
 from api.permissions import IsProfileComplete
 from api.services.targeting_service import calculate_eligible_reach
+from api.throttles import (
+    DonationConfirmThrottle,
+    DonorResponseThrottle,
+    RequestCreateThrottle,
+)
 
 
 class BloodRequestCreateV2APIView(APIView):
     permission_classes = [IsAuthenticated, IsProfileComplete]
+
+    def get_throttles(self):
+        if self.request.method == 'POST':
+            return [RequestCreateThrottle()]
+        return super().get_throttles()
 
     def get(self, request):
         from api.serializers_bloodhub import BloodRequestListSerializer
@@ -80,6 +93,26 @@ class BloodRequestDetailV2APIView(APIView):
         except BloodRequest.DoesNotExist:
             return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
 
+    def patch(self, request, pk):
+        try:
+            req = BloodRequest.objects.get(pk=pk)
+        except BloodRequest.DoesNotExist:
+            return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if req.requester_id != request.user.id and not request.user.is_staff:
+            raise PermissionDenied("Only the requester can update this blood request.")
+
+        if 'units_needed' in request.data and int(request.data['units_needed']) != req.units_needed:
+            return Response(
+                {"units_needed": ["units_needed is locked after the request is posted."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = BloodRequestCreateV2Serializer(req, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class BloodRequestReachAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -112,10 +145,18 @@ class BloodRequestReachAPIView(APIView):
 
 class BloodRequestAcceptAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [DonorResponseThrottle]
 
     def post(self, request, pk):
+        support_status = request.data.get('support_status', 'CAN_SUPPORT')
+        units_pledged = request.data.get('units_pledged', 1)
         try:
-            match = accept_request(pk, request.user)
+            match = accept_request(
+                pk,
+                request.user,
+                support_status=support_status,
+                units_pledged=units_pledged,
+            )
             return Response(
                 DonationMatchDetailSerializer(match, context={'request': request}).data,
                 status=status.HTTP_201_CREATED,
@@ -128,8 +169,68 @@ class BloodRequestAcceptAPIView(APIView):
             return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+class DonationMatchWithdrawAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [DonorResponseThrottle]
+
+    def post(self, request, pk):
+        reason = request.data.get('reason', '').strip()
+        try:
+            match = withdraw_match_response(pk, request.user, reason=reason)
+            return Response(
+                DonationMatchDetailSerializer(match, context={'request': request}).data,
+                status=status.HTTP_200_OK,
+            )
+        except (ConflictError, IllegalStateTransitionError) as err:
+            return Response({"detail": str(err)}, status=status.HTTP_409_CONFLICT)
+        except DonationMatch.DoesNotExist:
+            return Response({"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class BloodRequestWithdrawAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [DonorResponseThrottle]
+
+    def post(self, request, pk):
+        donor_profile = getattr(request.user, 'donorprofile', None)
+        if not donor_profile:
+            return Response({"detail": "Donor profile not found."}, status=status.HTTP_400_BAD_REQUEST)
+        match = DonationMatch.objects.filter(request_id=pk, donor=donor_profile).first()
+        if not match:
+            return Response({"detail": "No active donor response found for this request."}, status=status.HTTP_404_NOT_FOUND)
+        reason = request.data.get('reason', '').strip()
+        try:
+            updated = withdraw_match_response(match.id, request.user, reason=reason)
+            return Response(
+                DonationMatchDetailSerializer(updated, context={'request': request}).data,
+                status=status.HTTP_200_OK,
+            )
+        except (ConflictError, IllegalStateTransitionError) as err:
+            return Response({"detail": str(err)}, status=status.HTTP_409_CONFLICT)
+
+
+class DonationMatchConfirmAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [DonationConfirmThrottle]
+
+    def post(self, request, pk):
+        action = request.data.get('action', 'CONFIRM')
+        note = request.data.get('note', '')
+        try:
+            updated = confirm_match_donation(pk, request.user, action=action, note=note)
+            return Response(
+                DonationMatchDetailSerializer(updated, context={'request': request}).data,
+                status=status.HTTP_200_OK,
+            )
+        except (ConflictError, IllegalStateTransitionError) as err:
+            return Response({"detail": str(err)}, status=status.HTTP_409_CONFLICT)
+        except DonationMatch.DoesNotExist:
+            return Response({"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
 class DonationMatchStatusAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [DonationConfirmThrottle]
 
     def post(self, request, pk):
         try:
@@ -144,12 +245,12 @@ class DonationMatchStatusAPIView(APIView):
 
         serializer = DonationMatchStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        new_status = serializer.validated_data['status']
+        new_status = serializer.validated_data['status'].upper()
         note = serializer.validated_data.get('note', '')
 
         if new_status in ['ON_THE_WAY', 'ARRIVED'] and not is_donor and not request.user.is_staff:
             raise PermissionDenied("Only the donor can report transit and arrival status.")
-        if new_status == 'DONATED' and not (is_donor or is_requester or request.user.is_staff):
+        if new_status in ['DONATED', 'CONFIRMED', 'DISPUTED'] and not (is_donor or is_requester or request.user.is_staff):
             raise PermissionDenied("Only matched participants can confirm donation completion.")
 
         try:
@@ -159,7 +260,66 @@ class DonationMatchStatusAPIView(APIView):
                 status=status.HTTP_200_OK,
             )
         except (IllegalStateTransitionError, ConflictError) as err:
-            return Response({"error": str(err)}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": str(err), "detail": str(err)}, status=status.HTTP_409_CONFLICT)
+
+
+class BrokerReportCreateAPIView(APIView):
+    """
+    POST /api/requests/<pk>/report-broker/ or POST /api/reports/broker/
+    Allows any authenticated user to report a suspected broker, fake request, or donor misconduct (Part D).
+    Reporter identity/phone/email/location is NEVER exposed in the response or to the reported party.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk=None):
+        req_obj = None
+        req_id = pk or request.data.get('request_id') or request.data.get('request')
+        if req_id:
+            try:
+                req_obj = BloodRequest.objects.get(pk=req_id)
+            except BloodRequest.DoesNotExist:
+                return Response({"detail": "Blood request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        reason = (request.data.get('reason') or '').strip()
+        if not reason:
+            return Response({"reason": ["A reason is required to submit a report."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        target_type = (request.data.get('target_type') or 'BROKER').strip().upper()
+        if target_type not in ('BROKER', 'REQUEST', 'DONOR'):
+            target_type = 'BROKER'
+
+        reported_user = None
+        reported_user_id = request.data.get('reported_user_id') or request.data.get('reported_user')
+        if reported_user_id:
+            reported_user = User.objects.filter(pk=reported_user_id).first()
+        elif req_obj and req_obj.requester_id and req_obj.requester_id != request.user.id:
+            reported_user = req_obj.requester
+
+        broker_report = BrokerReport.objects.create(
+            request=req_obj,
+            reported_user=reported_user,
+            reporter=request.user,
+            target_type=target_type,
+            reason=reason,
+            details=(request.data.get('details') or '').strip(),
+            status='PENDING',
+        )
+
+        if req_obj:
+            FakeReport.objects.create(
+                request=req_obj,
+                reporter=request.user,
+                reason=reason,
+            )
+            if req_obj.fake_reports.count() >= 3:
+                req_obj.status = 'PENDING_ADMIN'
+                req_obj.escalated_to_admin = True
+                req_obj.save(update_fields=['status', 'escalated_to_admin'])
+
+        return Response(
+            BrokerReportCreateSerializer(broker_report).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class DonationMatchReportAPIView(APIView):

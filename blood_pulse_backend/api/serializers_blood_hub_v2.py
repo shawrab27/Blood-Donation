@@ -9,12 +9,12 @@ Enforces phone masking rules, strict input validation, and role-based data proje
 from rest_framework import serializers
 from api.models import (
     BloodRequest,
+    BrokerReport,
     DonationMatch,
     DonationReport,
     ThankYouLetter,
     FollowUp,
     NationalEmergencyEvent,
-    DisasterPledge,
 )
 from api.serializers_bloodhub import mask_phone_number
 
@@ -27,6 +27,9 @@ class BloodRequestCreateV2Serializer(serializers.ModelSerializer):
             'patient_name',
             'blood_group',
             'units_needed',
+            'units_received',
+            'units_pending',
+            'request_mode',
             'component',
             'urgency',
             'needed_by',
@@ -41,14 +44,25 @@ class BloodRequestCreateV2Serializer(serializers.ModelSerializer):
             'ward_bed',
             'attendant_name',
             'contact_phone',
+            'contact_number',
             'lat',
             'lng',
             'patient_photo',
             'requisition_slip',
             'status',
+            'closed_at',
+            'close_reason',
             'created_at',
         ]
-        read_only_fields = ['id', 'status', 'created_at']
+        read_only_fields = [
+            'id',
+            'units_received',
+            'units_pending',
+            'status',
+            'closed_at',
+            'close_reason',
+            'created_at',
+        ]
 
     def validate_blood_group(self, value):
         val = (value or '').strip().upper()
@@ -58,13 +72,24 @@ class BloodRequestCreateV2Serializer(serializers.ModelSerializer):
         return val
 
     def validate_units_needed(self, value):
-        if value < 1:
-            raise serializers.ValidationError("At least 1 unit is required.")
+        if self.instance is not None and value != self.instance.units_needed:
+            raise serializers.ValidationError("units_needed is locked after the request is posted.")
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("units_needed must be between 1 and 5.")
         return value
 
+    def validate_request_mode(self, value):
+        if not value:
+            return 'SELF'
+        norm = str(value).strip().upper()
+        if norm not in ('SELF', 'PROXY'):
+            raise serializers.ValidationError("request_mode must be SELF or PROXY.")
+        return norm
+
     def validate(self, attrs):
-        if not attrs.get('hospital') and not attrs.get('hospital_name_other'):
-            raise serializers.ValidationError("A hospital selection or custom hospital name is required.")
+        if self.instance is None:
+            if not attrs.get('hospital') and not attrs.get('hospital_name_other'):
+                raise serializers.ValidationError("A hospital selection or custom hospital name is required.")
         return attrs
 
 
@@ -83,6 +108,12 @@ class DonationMatchDetailSerializer(serializers.ModelSerializer):
     requester_name = serializers.SerializerMethodField()
     requester_phone = serializers.SerializerMethodField()
     hospital_name = serializers.SerializerMethodField()
+    support_status_label = serializers.SerializerMethodField()
+    units_needed = serializers.IntegerField(source='request.units_needed', read_only=True)
+    units_received = serializers.IntegerField(source='request.units_received', read_only=True)
+    units_pending = serializers.IntegerField(source='request.units_pending', read_only=True)
+    request_status = serializers.CharField(source='request.status', read_only=True)
+    request_mode = serializers.CharField(source='request.request_mode', read_only=True)
 
     class Meta:
         model = DonationMatch
@@ -98,6 +129,19 @@ class DonationMatchDetailSerializer(serializers.ModelSerializer):
             'hospital_name',
             'status',
             'role',
+            'support_status',
+            'support_status_label',
+            'units_pledged',
+            'donor_confirmed_at',
+            'requester_confirmed_at',
+            'confirmed_at',
+            'disputed_at',
+            'dispute_reason',
+            'units_needed',
+            'units_received',
+            'units_pending',
+            'request_status',
+            'request_mode',
             'accepted_at',
             'donated_at',
             'expires_at',
@@ -139,9 +183,29 @@ class DonationMatchDetailSerializer(serializers.ModelSerializer):
             return obj.request.hospital.name_en or obj.request.hospital.name
         return obj.request.hospital_name_other or obj.request.hospital_location
 
+    def get_support_status_label(self, obj):
+        if obj.support_status == 'VOLUNTARY_ONLY':
+            return 'Voluntary Only / Charity'
+        return 'Can Support'
+
 
 class DonationMatchStatusUpdateSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=['ON_THE_WAY', 'ARRIVED', 'DONATED', 'on_the_way', 'arrived', 'donated'])
+    status = serializers.ChoiceField(
+        choices=[
+            'ON_THE_WAY',
+            'ARRIVED',
+            'DONATED',
+            'CONFIRMED',
+            'CANCELLED',
+            'DISPUTED',
+            'on_the_way',
+            'arrived',
+            'donated',
+            'confirmed',
+            'cancelled',
+            'disputed',
+        ]
+    )
     note = serializers.CharField(required=False, allow_blank=True, default='')
 
 
@@ -150,6 +214,33 @@ class DonationReportSerializer(serializers.ModelSerializer):
         model = DonationReport
         fields = ['id', 'match', 'reason', 'note', 'reported_by', 'created_at']
         read_only_fields = ['id', 'match', 'reported_by', 'created_at']
+
+
+class BrokerReportCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a BrokerReport (Part D).
+    Strictly omits reporter identity, phone, email, and location from output
+    so the reported party can never inspect who reported them.
+    """
+    class Meta:
+        model = BrokerReport
+        fields = [
+            'id',
+            'request',
+            'reported_user',
+            'target_type',
+            'reason',
+            'details',
+            'status',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'status', 'created_at']
+
+    def validate_reason(self, value):
+        clean = (value or '').strip()
+        if not clean:
+            raise serializers.ValidationError("A reason is required to submit a report.")
+        return clean
 
 
 class ThankYouLetterSerializer(serializers.ModelSerializer):
@@ -218,6 +309,9 @@ class PosterDataSerializer(serializers.ModelSerializer):
             'id',
             'blood_group',
             'units_needed',
+            'units_received',
+            'units_pending',
+            'request_mode',
             'urgency',
             'hospital_name',
             'district',
@@ -248,15 +342,24 @@ class PosterDataSerializer(serializers.ModelSerializer):
 class QRLandingSerializer(serializers.ModelSerializer):
     hospital = serializers.SerializerMethodField()
     cta_button_url = serializers.SerializerMethodField()
+    is_closed = serializers.SerializerMethodField()
+    closed_banner_message = serializers.SerializerMethodField()
 
     class Meta:
         model = BloodRequest
         fields = [
             'id',
             'status',
+            'is_closed',
+            'closed_banner_message',
+            'closed_at',
+            'close_reason',
             'blood_group',
             'hospital',
             'units_needed',
+            'units_received',
+            'units_pending',
+            'request_mode',
             'urgency',
             'cta_button_url',
         ]
@@ -266,5 +369,15 @@ class QRLandingSerializer(serializers.ModelSerializer):
             return obj.hospital.name_en or obj.hospital.name
         return obj.hospital_name_other or obj.hospital_location
 
+    def get_is_closed(self, obj):
+        return obj.status in ('CLOSED', 'FULFILLED', 'EXPIRED', 'CANCELLED', 'REJECTED') or not obj.is_active
+
+    def get_closed_banner_message(self, obj):
+        if self.get_is_closed(obj):
+            return 'No longer needed — thank you'
+        return None
+
     def get_cta_button_url(self, obj):
+        if self.get_is_closed(obj):
+            return None
         return f"/requests/{obj.id}/donate/"

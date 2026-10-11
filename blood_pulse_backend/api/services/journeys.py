@@ -1,44 +1,83 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-from django.utils import timezone
 from datetime import timedelta
-from api.models import RequestAcceptance, DonationHistory
+from django.db import transaction
+from django.utils import timezone
+from api.conf import DONOR_COOLDOWN_DAYS
+from api.models import BloodRequest, RequestAcceptance, DonationHistory
+
 
 def finalize_donation(acceptance, auto=False):
     """
     Runs the full completion pipeline for a RequestAcceptance:
-    sets completed_at, fulfills the BloodRequest, updates donor
-    metrics, writes DonationHistory, and starts the donor's
-    recovery cooldown.
+    sets completed_at, increments units_received (and auto-closes the BloodRequest
+    when units_received >= units_needed inside the same transaction), updates donor
+    metrics, writes DonationHistory, and starts the donor's recovery cooldown.
 
+    Idempotent when called multiple times on an already CONFIRMED acceptance.
     auto=True marks this as system-closed (timeout), not requester-verified.
     """
     now = timezone.now()
-    acceptance.status = 'CONFIRMED'
-    acceptance.completed_at = now
-    acceptance.auto_confirmed = auto
-    acceptance.save(update_fields=['status', 'completed_at', 'auto_confirmed'])
+    with transaction.atomic():
+        locked_acc = RequestAcceptance.objects.select_for_update().select_related('donor').get(pk=acceptance.pk)
+        blood_req = BloodRequest.objects.select_for_update().get(pk=locked_acc.request_id)
 
-    blood_req = acceptance.request
-    blood_req.status = 'FULFILLED'
-    blood_req.is_active = False
-    blood_req.save(update_fields=['status', 'is_active'])
+        if locked_acc.status == 'CONFIRMED' and locked_acc.completed_at is not None:
+            acceptance.status = locked_acc.status
+            acceptance.completed_at = locked_acc.completed_at
+            acceptance.auto_confirmed = locked_acc.auto_confirmed
+            return locked_acc
 
-    donor = acceptance.donor
-    donor.fulfilled_count = (donor.fulfilled_count or 0) + 1
-    donor.total_bags_donated = (donor.total_bags_donated or 0) + (blood_req.units_needed or 1)
-    donor.last_donation_date = now.date()
-    donor.is_available = False
-    donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date', 'is_available'])
+        units = max(1, locked_acc.units_pledged or 1)
+        locked_acc.status = 'CONFIRMED'
+        locked_acc.completed_at = now
+        locked_acc.auto_confirmed = auto
+        if not locked_acc.donor_confirmed_at:
+            locked_acc.donor_confirmed_at = locked_acc.donated_at or now
+        if not locked_acc.requester_confirmed_at and not auto:
+            locked_acc.requester_confirmed_at = now
+        locked_acc.save(
+            update_fields=[
+                'status',
+                'completed_at',
+                'auto_confirmed',
+                'donor_confirmed_at',
+                'requester_confirmed_at',
+            ]
+        )
 
-    DonationHistory.objects.create(
-        donor=donor,
-        date=now.date(),
-        location=blood_req.hospital_location or (blood_req.hospital.name if blood_req.hospital else 'Hospital'),
-        bags_donated=blood_req.units_needed or 1,
-        notes=f"Emergency requisition #{blood_req.id} fulfilled. Auto-confirmed: {auto}",
-    )
+        blood_req.units_pending = max(0, blood_req.units_pending - units)
+        blood_req.units_received = min(blood_req.units_needed, blood_req.units_received + units)
+        req_update_fields = ['units_pending', 'units_received']
+
+        if blood_req.units_received >= blood_req.units_needed:
+            blood_req.status = 'FULFILLED'
+            blood_req.is_active = False
+            blood_req.closed_at = blood_req.closed_at or now
+            blood_req.close_reason = blood_req.close_reason or 'FULFILLED'
+            req_update_fields.extend(['status', 'is_active', 'closed_at', 'close_reason'])
+        blood_req.save(update_fields=req_update_fields)
+
+        donor = locked_acc.donor
+        donor.fulfilled_count = (donor.fulfilled_count or 0) + 1
+        donor.total_bags_donated = (donor.total_bags_donated or 0) + units
+        donor.last_donation_date = now.date()
+        donor.is_available = False
+        donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date', 'is_available'])
+
+        DonationHistory.objects.create(
+            donor=donor,
+            date=now.date(),
+            location=blood_req.hospital_location or (blood_req.hospital.name if blood_req.hospital else 'Hospital'),
+            bags_donated=units,
+            notes=f"Emergency requisition #{blood_req.id} fulfilled. Auto-confirmed: {auto}",
+        )
+
+        acceptance.status = locked_acc.status
+        acceptance.completed_at = locked_acc.completed_at
+        acceptance.auto_confirmed = locked_acc.auto_confirmed
+        return locked_acc
 
 
 def auto_confirm_stale_donations(hours=48):
@@ -59,29 +98,30 @@ def auto_confirm_stale_donations(hours=48):
         finalize_donation(acceptance, auto=True)
     return closed
 
+
 def auto_manage_deferrals():
     """
-    Enforces the 90-day cooldown policy. 
-    Defers any available donor whose last_donation_date > cutoff (i.e. < 90 days ago).
+    Enforces the DONOR_COOLDOWN_DAYS policy from api/conf.py.
+    Defers any available donor whose last_donation_date > cutoff.
     Re-enables any unavailable (and unsuspended) donor whose last_donation_date <= cutoff.
     Returns (deferred_count, reenabled_count).
     """
     now = timezone.now().date()
-    cutoff = now - timedelta(days=90)
+    cutoff = now - timedelta(days=DONOR_COOLDOWN_DAYS)
 
     from api.models import DonorProfile
-    
-    # Needs to be deferred (donated less than 90 days ago)
+
+    # Needs to be deferred (donated less than DONOR_COOLDOWN_DAYS ago)
     newly_deferred = DonorProfile.objects.filter(
         is_available=True,
-        last_donation_date__gt=cutoff
+        last_donation_date__gt=cutoff,
     ).update(is_available=False)
 
-    # Needs to be re-enabled (donated 90+ days ago)
+    # Needs to be re-enabled (donated DONOR_COOLDOWN_DAYS+ days ago)
     newly_available = DonorProfile.objects.filter(
         is_available=False,
         is_suspended=False,
-        last_donation_date__lte=cutoff
+        last_donation_date__lte=cutoff,
     ).update(is_available=True)
 
     return newly_deferred, newly_available

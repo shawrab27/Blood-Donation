@@ -50,6 +50,7 @@ import 'package:blood_pulse/features/blood_hub/presentation/screens/poster_gener
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import '../features/blood_hub/presentation/screens/thank_you_letter_screen.dart';
 import '../features/blood_hub/presentation/screens/follow_up_screen.dart';
+import '../features/blood_hub/presentation/screens/qr_landing_screen.dart';
 
 
 // Health Hub 7 Sub-Screens
@@ -419,6 +420,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return FollowUpScreen(
           followupId: followupId,
           hospitalName: hospitalName,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/requests/:id/qr-landing',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'] ?? '1';
+        final reqId = int.tryParse(idStr) ?? 1;
+        final extra = state.extra as Map<String, dynamic>?;
+        return QRLandingScreen(
+          requestId: reqId,
+          initialBloodGroup: extra?['bloodGroup'] as String? ?? 'O+',
+          initialHospital: extra?['hospital'] as String? ?? 'Dhaka Medical College Hospital',
+          initialUnitsNeeded: (extra?['unitsNeeded'] as num?)?.toInt() ?? 2,
+          initialUnitsReceived: (extra?['unitsReceived'] as num?)?.toInt() ?? 2,
+          initialUnitsPending: (extra?['unitsPending'] as num?)?.toInt() ?? 0,
+          initialRequestMode: extra?['requestMode'] as String? ?? 'PROXY',
+          initialStatus: extra?['status'] as String? ?? 'CLOSED',
+          initialIsClosed: extra?['isClosed'] as bool? ?? true,
         );
       },
     ),

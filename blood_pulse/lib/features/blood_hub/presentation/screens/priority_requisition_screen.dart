@@ -14,6 +14,7 @@ import '../widgets/requisition/location_urgency_card.dart';
 import '../widgets/requisition/medical_verification_card.dart';
 import '../widgets/requisition/requisition_mode_toggle.dart';
 import '../../domain/entities/poster_template.dart';
+import '../widgets/request_units_progress_card.dart';
 
 
 /// Screen 3: Priority Blood Requisition form conforming to Stitch UI specification.
@@ -164,6 +165,14 @@ class _PriorityBloodRequisitionScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const RequisitionModeToggle(),
+                  const SizedBox(height: 14),
+                  const RequestUnitsProgressCard(
+                    compact: true,
+                    unitsReceived: 0,
+                    unitsPending: 0,
+                    unitsNeeded: 1,
+                    requestMode: 'PROXY',
+                  ),
                   const SizedBox(height: 20),
                   PatientDetailsCard(
                     nameController: _nameController,
