@@ -40,6 +40,7 @@ def eligible_public_donors_queryset():
         DonorProfile.objects
         .filter(
             is_profile_complete=True,
+            is_suspended=False,
             user_intent='DONATE_AND_REQUEST',
             is_searchable=True,
             user__is_active=True,

@@ -79,76 +79,79 @@ class DigitalCertificateSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Certificate Frame
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF9F9),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.05),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const Icon(Icons.verified_rounded, color: AppColors.primary, size: 36),
-                const SizedBox(height: 8),
-                const Text(
-                  'CERTIFICATE OF RECOGNITION',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    color: AppColors.primary,
+          // Certificate Frame wrapped in RepaintBoundary for capture and sharing
+          RepaintBoundary(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF9F9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.05),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  donorName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF24191A),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Has voluntarily contributed $totalDonations life-saving donations of blood group $bloodGroup to emergency patients.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12.5,
-                    color: Color(0xFF555555),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'BloodPulse Verified Donor • Tier ${totalDonations >= 10 ? "Platinum" : totalDonations >= 5 ? "Gold" : "Silver"}',
-                    style: const TextStyle(
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.verified_rounded, color: AppColors.primary, size: 36),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'CERTIFICATE OF RECOGNITION',
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
                       color: AppColors.primary,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                    donorName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF24191A),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Donations completed: $totalDonations (Blood Group: $bloodGroup).',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF444444),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'BloodPulse Verified Donor • Tier ${totalDonations >= 10 ? "Platinum" : totalDonations >= 5 ? "Gold" : "Silver"}',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -173,8 +176,8 @@ class DigitalCertificateSheet extends StatelessWidget {
               onPressed: () {
                 SharePlus.instance.share(
                   ShareParams(
-                    text: '🩸 I have completed $totalDonations blood donations on BloodPulse!\n'
-                        'Every donation saves lives in our community. Join the voluntary blood donor network today: https://bloodpulse.org',
+                    text: 'Donations completed: $totalDonations on BloodPulse.\n'
+                        'Blood group: $bloodGroup. Verified voluntary donor: https://bloodpulse.org',
                     subject: '$donorName - BloodPulse Donor Certificate',
                   ),
                 );

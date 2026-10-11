@@ -381,3 +381,29 @@ class QRLandingSerializer(serializers.ModelSerializer):
         if self.get_is_closed(obj):
             return None
         return f"/requests/{obj.id}/donate/"
+
+
+class DonorFeedbackCreateSerializer(serializers.ModelSerializer):
+    """
+    Step 6: Serializer for private donor feedback on requester behavior.
+    Only confirmed donors may submit; the requester can never view feedback.
+    """
+    class Meta:
+        from api.models import DonorFeedback
+        model = DonorFeedback
+        fields = ['id', 'request', 'stars', 'tags', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def validate_stars(self, value):
+        if not (1 <= value <= 5):
+            raise serializers.ValidationError("Rating stars must be between 1 and 5.")
+        return value
+
+    def validate_tags(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Tags must be provided as a list.")
+        valid_tags = {'GAVE_TRAVEL_COST', 'GAVE_FOOD', 'POLITE', 'RUDE', 'NEVER_CONTACTED'}
+        for tag in value:
+            if str(tag).strip().upper() not in valid_tags:
+                raise serializers.ValidationError(f"Invalid tag '{tag}'.")
+        return [str(t).strip().upper() for t in value]

@@ -121,3 +121,17 @@ GUEST_MAP_MAX_CELLS = 500
 GUEST_MAP_CACHE_TIMEOUT_SECONDS = 300  # 5 minutes
 CACHE_KEY_GUEST_MAP = 'bp_guest_map_v1'
 
+# Wave candidate processing batch limit (default 200)
+WAVE_CANDIDATE_BATCH_LIMIT = int(os.environ.get('WAVE_CANDIDATE_BATCH_LIMIT', '200'))
+
+# Step 6: Feedback & Requester Trust Score weights
+FEEDBACK_MIN_REVIEWS_THRESHOLD = int(os.environ.get('FEEDBACK_MIN_REVIEWS_THRESHOLD', '2'))
+FEEDBACK_STAR_MULTIPLIER = float(os.environ.get('FEEDBACK_STAR_MULTIPLIER', '5.0'))
+FEEDBACK_TAG_WEIGHTS = {
+    'GAVE_TRAVEL_COST': 5,
+    'GAVE_FOOD': 5,
+    'POLITE': 5,
+    'RUDE': -15,
+    'NEVER_CONTACTED': -20,
+}
+

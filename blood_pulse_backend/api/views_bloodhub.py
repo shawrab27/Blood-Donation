@@ -454,6 +454,18 @@ def emergency_requests_list_create_view(request):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # Step 6: Quarantine queue trigger for low trust score requesters
+        # Applies only after at least 2 reviews from different donors.
+        initial_status = 'ACTIVE'
+        is_quarantined = False
+        if requester:
+            from api.models import DonorFeedback
+            from api.conf import FEEDBACK_MIN_REVIEWS_THRESHOLD
+            reviews_count = DonorFeedback.objects.filter(request__requester=requester).values('donor').distinct().count()
+            if reviews_count >= FEEDBACK_MIN_REVIEWS_THRESHOLD and trust_band == 'LOW':
+                initial_status = 'PENDING_ADMIN'
+                is_quarantined = True
+
         blood_req = BloodRequest.objects.create(
             requester=requester,
             patient_name=patient_name,
@@ -484,7 +496,7 @@ def emergency_requests_list_create_view(request):
             patient_photo=patient_photo,
             trust_score=trust_score,
             trust_band=trust_band,
-            status='ACTIVE',
+            status=initial_status,
             current_wave=1,
             next_wave_at=next_wave_at,
             expires_at=expires_at,
@@ -492,8 +504,8 @@ def emergency_requests_list_create_view(request):
             is_drill=bool(request.data.get('is_drill', False)),
         )
 
-    # Trigger Wave 1 notification dispatch if mode is EMERGENCY
-    if blood_req.mode == 'EMERGENCY':
+    # Trigger Wave 1 notification dispatch ONLY if active and not quarantined
+    if blood_req.mode == 'EMERGENCY' and blood_req.status == 'ACTIVE':
         candidates = get_candidate_donors_for_wave(blood_req, wave_number=1)
         if candidates:
             dispatch_wave_notifications(blood_req, candidates, wave_number=1)
@@ -774,9 +786,16 @@ def maintenance_tick_view(request):
             raise PermissionDenied("Invalid token")
 
     from api.services.journeys import auto_confirm_stale_donations, auto_manage_deferrals
+    from api.services.match_operations_service import run_due_followups
     closed = auto_confirm_stale_donations(hours=48)
     deferred, reenabled = auto_manage_deferrals()
-    return Response({'auto_confirmed_count': len(closed), 'auto_deferred_count': deferred, 'auto_reenabled_count': reenabled})
+    followups_count = run_due_followups()
+    return Response({
+        'auto_confirmed_count': len(closed),
+        'auto_deferred_count': deferred,
+        'auto_reenabled_count': reenabled,
+        'followups_dispatched': followups_count,
+    })
 
 
 # ── Live Tracking Endpoints ───────────────────────────────────────────────────
@@ -1523,6 +1542,7 @@ def my_pledge_view(request):
     })
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@throttle_classes([__import__('api.throttles', fromlist=['EmergencyBroadcastThrottle']).EmergencyBroadcastThrottle])
 def emergency_request_all_view(request, pk=None):
     """
     Manually dispatch notifications to all eligible donors in the area.

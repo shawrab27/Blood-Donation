@@ -231,20 +231,8 @@ def update_match_status(match_id: int, actor, new_status: str, note: str = "") -
     if norm_status == 'CANCELLED':
         return withdraw_match_response(match_id, actor, reason=note)
 
-    if norm_status == 'CONFIRMED':
-        return confirm_match_donation(match_id, actor, action='CONFIRM', note=note)
-
-    if norm_status == 'DONATED':
-        with transaction.atomic():
-            m_locked = DonationMatch.objects.select_for_update().select_related('request', 'donor__user').get(id=match_id)
-            r_locked = BloodRequest.objects.select_for_update().get(id=m_locked.request_id)
-            if r_locked.status == 'ARRIVED' and m_locked.confirmed_at is None:
-                now = timezone.now()
-                m_locked.donor_confirmed_at = m_locked.donor_confirmed_at or now
-                m_locked.requester_confirmed_at = m_locked.requester_confirmed_at or now
-                m_locked.save(update_fields=['donor_confirmed_at', 'requester_confirmed_at', 'updated_at'])
-                return _finalize_two_sided_match(r_locked, m_locked, now, note=note, auto_close=False)
-        return confirm_match_donation(match_id, actor, action='CONFIRM', note=note)
+    if norm_status in ('COMPLETED', 'CONFIRMED'):
+        raise ValidationError({"detail": "Terminal donation completion requires two-sided confirmation via confirm_match_donation."})
 
     if norm_status in ('DISPUTED', 'DISPUTE'):
         return confirm_match_donation(match_id, actor, action='DISPUTE', note=note)
@@ -262,6 +250,41 @@ def update_match_status(match_id: int, actor, new_status: str, note: str = "") -
         match.save(update_fields=['status'])
         if match.request.status in ['IN_TRANSIT', 'MATCHED']:
             transition(match.request, 'ARRIVED', actor)
+
+    elif norm_status == 'DONATED':
+        # Part 0(b): One party reporting donation completed.
+        # Updates match progress status to DONATED and creates donor history and follow-up,
+        # but leaves request units untouched (units are only shifted upon two-sided confirmation).
+        now = timezone.now()
+        match.status = 'DONATED'
+        match.donated_at = match.donated_at or now
+        match.save(update_fields=['status', 'donated_at'])
+
+        hosp_name = match.request.hospital_name_other or (
+            match.request.hospital.name if match.request.hospital else 'Hospital'
+        )
+        DonationHistory.objects.get_or_create(
+            donor=match.donor,
+            date=now.date(),
+            location=hosp_name,
+            defaults={
+                'bags_donated': 1,
+                'notes': note or "Blood donation completed via BloodPulse dispatch.",
+            }
+        )
+        match.donor.total_bags_donated += 1
+        match.donor.last_donation_date = now.date()
+        match.donor.save(update_fields=['total_bags_donated', 'last_donation_date'])
+
+        FollowUp.objects.get_or_create(
+            match=match,
+            defaults={
+                'due_at': now + timedelta(hours=24),
+                'status': 'PENDING',
+            }
+        )
+        if match.request.status in ['ARRIVED', 'IN_TRANSIT', 'MATCHED']:
+            transition(match.request, 'DONATED', actor)
 
     return match
 
@@ -398,18 +421,52 @@ def sweep_expired_standby_matches() -> int:
 
 
 def run_due_followups() -> int:
-    """Dispatches due 24h follow-ups, sweeps expired standby offers, and marks them SENT."""
+    """
+    Step 6: Day-after check-in:
+    Sweeps expired standby offers, dispatches due 24h follow-ups, sends one FCM push from
+    standard EN/BN template (asks how the donor feels, reminds to drink water and rest;
+    no medical claims, no 'life saved' wording), and marks sent_at idempotently.
+    Expired/invalid tokens are handled gracefully without crashing.
+    """
     sweep_expired_standby_matches()
 
     due_items = FollowUp.objects.filter(
         due_at__lte=timezone.now(),
         status='PENDING',
-    )
+    ).select_related('match__donor')
+
     count = 0
     now = timezone.now()
+    from api.services.notify import send_fcm_multicast_batches
+
     for item in due_items:
+        # Mark sent_at first for idempotency
         item.status = 'SENT'
         item.sent_at = now
         item.save(update_fields=['status', 'sent_at'])
         count += 1
+
+        donor = item.match.donor
+        token = getattr(donor, 'fcm_token', None)
+        if token:
+            title = "Checking In / স্বাস্থ্য কেমন আছে?"
+            body = (
+                "How are you feeling after yesterday's blood donation? Remember to drink plenty of fluids and rest. "
+                "/ গতকাল রক্তদানের পর আপনার শরীর কেমন আছে? পর্যাপ্ত পানি পান করুন ও বিশ্রাম নিন।"
+            )
+            data_payload = {
+                'type': 'FOLLOW_UP',
+                'followup_id': str(item.id),
+                'match_id': str(item.match_id),
+            }
+            try:
+                send_fcm_multicast_batches(
+                    tokens_with_donors=[(token, donor)],
+                    title=title,
+                    body=body,
+                    data_payload=data_payload,
+                )
+            except Exception as e:
+                logger.warning("Failed to send follow-up FCM push for FollowUp #%s: %s", item.id, e)
+
     return count

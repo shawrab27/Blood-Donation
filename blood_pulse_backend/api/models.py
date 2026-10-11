@@ -294,9 +294,54 @@ class DonorProfile(models.Model):
 
 
 
-    def __str__(self):
+    class Meta:
+        indexes = [
+            models.Index(fields=['blood_group', 'geohash'], name='idx_donor_bg_geohash'),
+            models.Index(fields=['blood_group', 'is_available', 'is_suspended'], name='idx_donor_bg_avail_susp'),
+            models.Index(fields=['district', 'blood_group'], name='idx_donor_district_bg'),
+            models.Index(fields=['geohash'], name='idx_donor_geohash'),
+        ]
 
+    def __str__(self):
         return f"{self.user.username} ({self.blood_group})"
+
+
+class DonorFeedback(models.Model):
+    """
+    Step 6: Private donor feedback on requester behavior.
+    Only a donor with a donation CONFIRMED by both sides for that request may submit.
+    The requester can NEVER read feedback through any endpoint, serializer, notification, or QR page.
+    """
+    TAG_CHOICES = (
+        ('GAVE_TRAVEL_COST', 'Gave travel cost'),
+        ('GAVE_FOOD', 'Gave food / refreshments'),
+        ('POLITE', 'Polite and respectful'),
+        ('RUDE', 'Rude or aggressive'),
+        ('NEVER_CONTACTED', 'Never contacted / no-show'),
+    )
+
+    request = models.ForeignKey('BloodRequest', on_delete=models.CASCADE, related_name='donor_feedbacks')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='submitted_feedbacks')
+    stars = models.PositiveSmallIntegerField(help_text="Rating 1 to 5 stars")
+    tags = models.JSONField(default=list, blank=True, help_text="List of tag strings: gave_travel_cost, gave_food, polite, rude, never_contacted")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['request', 'donor'], name='unique_request_donor_feedback')
+        ]
+        indexes = [
+            models.Index(fields=['request'], name='idx_feedback_request'),
+            models.Index(fields=['donor'], name='idx_feedback_donor'),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if not (1 <= self.stars <= 5):
+            raise ValidationError({'stars': "Stars must be between 1 and 5."})
+
+    def __str__(self):
+        return f"Feedback for Request #{self.request_id} by Donor #{self.donor_id} ({self.stars} stars)"
 
 
 

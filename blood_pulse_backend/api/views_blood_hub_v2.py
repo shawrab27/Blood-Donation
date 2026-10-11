@@ -248,10 +248,15 @@ class DonationMatchStatusAPIView(APIView):
         new_status = serializer.validated_data['status'].upper()
         note = serializer.validated_data.get('note', '')
 
+        if new_status in ['COMPLETED', 'CONFIRMED']:
+            return Response(
+                {"error": "Terminal donation completion requires two-sided confirmation via confirm-donation endpoint.",
+                 "detail": "Terminal donation completion requires two-sided confirmation via confirm-donation endpoint."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if new_status in ['ON_THE_WAY', 'ARRIVED'] and not is_donor and not request.user.is_staff:
             raise PermissionDenied("Only the donor can report transit and arrival status.")
-        if new_status in ['DONATED', 'CONFIRMED', 'DISPUTED'] and not (is_donor or is_requester or request.user.is_staff):
-            raise PermissionDenied("Only matched participants can confirm donation completion.")
 
         try:
             updated = update_match_status(pk, request.user, new_status, note)
@@ -414,3 +419,70 @@ class BloodRequestQRLandingAPIView(APIView):
             return Response(QRLandingSerializer(req).data, status=status.HTTP_200_OK)
         except BloodRequest.DoesNotExist:
             return Response({"detail": "Requisition not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DonorFeedbackAPIView(APIView):
+    """
+    POST /api/requests/<pk>/feedback/
+    Allows ONLY a donor with a donation CONFIRMED by both sides for that request to submit feedback.
+    The requester can NEVER read feedback through any endpoint, serializer, notification, or QR page.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        from api.models import BloodRequest, DonationMatch, DonorFeedback
+        from api.serializers_blood_hub_v2 import DonorFeedbackCreateSerializer
+
+        try:
+            blood_req = BloodRequest.objects.get(pk=pk)
+        except BloodRequest.DoesNotExist:
+            return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        donor_profile = getattr(request.user, 'donorprofile', None)
+        if not donor_profile:
+            return Response({"detail": "Only donors can submit feedback."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if donor had a confirmed donation for this request
+        has_confirmed_donation = DonationMatch.objects.filter(
+            request=blood_req,
+            donor=donor_profile,
+            status='CONFIRMED',
+            confirmed_at__isnull=False,
+        ).exists()
+
+        if not has_confirmed_donation:
+            return Response(
+                {"detail": "Only donors with a donation confirmed by both sides may submit feedback for this request."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check if already submitted
+        if DonorFeedback.objects.filter(request=blood_req, donor=donor_profile).exists():
+            return Response(
+                {"detail": "You have already submitted feedback for this request."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = DonorFeedbackCreateSerializer(data={
+            'request': blood_req.id,
+            'stars': request.data.get('stars'),
+            'tags': request.data.get('tags', []),
+        })
+        serializer.is_valid(raise_exception=True)
+        serializer.save(donor=donor_profile)
+
+        return Response(
+            {"message": "Thank you for your private feedback.", "id": serializer.data['id']},
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request, pk):
+        """Requesters or normal users can NEVER read feedback."""
+        if not request.user.is_staff:
+            raise PermissionDenied("You do not have permission to view donor feedback.")
+        from api.models import DonorFeedback
+        feedbacks = DonorFeedback.objects.filter(request_id=pk)
+        return Response([
+            {'id': fb.id, 'stars': fb.stars, 'tags': fb.tags, 'created_at': fb.created_at}
+            for fb in feedbacks
+        ])

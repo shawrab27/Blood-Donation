@@ -95,6 +95,7 @@ from .views_blood_hub_v2 import (
     InternalFollowUpRunAPIView,
     BloodRequestPosterDataAPIView,
     BloodRequestQRLandingAPIView,
+    DonorFeedbackAPIView,
 )
 from .views_national_emergency import (
     NationalEmergencyApproveAPIView,
@@ -115,6 +116,7 @@ urlpatterns = [
     path('requests/<int:pk>/report-broker/', BrokerReportCreateAPIView.as_view(), name='blood-requests-report-broker'),
     path('requests/<int:pk>/poster-data/', BloodRequestPosterDataAPIView.as_view(), name='blood-requests-poster-data'),
     path('requests/<int:pk>/qr-landing/', BloodRequestQRLandingAPIView.as_view(), name='blood-requests-qr-landing'),
+    path('requests/<int:pk>/feedback/', DonorFeedbackAPIView.as_view(), name='blood-requests-feedback'),
 
     path('matches/<int:pk>/status/', DonationMatchStatusAPIView.as_view(), name='matches-status'),
     path('matches/<int:pk>/confirm/', DonationMatchConfirmAPIView.as_view(), name='matches-confirm'),

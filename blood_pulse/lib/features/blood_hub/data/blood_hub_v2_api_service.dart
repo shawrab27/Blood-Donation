@@ -8,7 +8,7 @@ import '../../../services/api_client.dart';
 /// Permanent service for BloodPulse Blood Hub v2 lifecycle endpoints.
 /// Enforces clean HTTP calls, JSON serialization, and Riverpod integration.
 class BloodHubV2ApiService {
-  BloodHubV2ApiService(this._api);
+  BloodHubV2ApiService([ApiClient? api]) : _api = api ?? ApiClient();
 
   final ApiClient _api;
 
@@ -150,10 +150,30 @@ class BloodHubV2ApiService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
     final err = jsonDecode(response.body);
-    throw Exception(err['detail'] ?? 'Requisition not found');
+    throw Exception(err['detail'] ?? 'Failed to fetch request detail');
+  }
+
+  /// POST `/api/requests/<id>/feedback/`
+  /// Submits private donor feedback on requester behavior (1-5 stars, tags).
+  Future<Map<String, dynamic>> submitDonorFeedback(
+    int requestId, {
+    required int stars,
+    List<String> tags = const [],
+  }) async {
+    final payload = <String, dynamic>{
+      'stars': stars,
+      'tags': tags,
+    };
+    final response = await _api.post('requests/$requestId/feedback/', body: payload);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    final err = jsonDecode(response.body);
+    throw Exception(err['detail'] ?? 'Failed to submit feedback');
   }
 }
 
 final bloodHubV2ApiServiceProvider = Provider<BloodHubV2ApiService>((ref) {
   return BloodHubV2ApiService(ApiClient());
 });
+

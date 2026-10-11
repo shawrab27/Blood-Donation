@@ -157,3 +157,29 @@ class FakeReportAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     search_fields = ('reason',)
 
+
+from .models import DonorFeedback
+@admin.register(DonorFeedback)
+class DonorFeedbackAdmin(admin.ModelAdmin):
+    """
+    Step 6: Private donor feedback admin queue.
+    Requester can NEVER view these records; strictly isolated to staff/administrators.
+    Flags serious complaints (RUDE, NEVER_CONTACTED) for Trust & Fraud queue review.
+    """
+    list_display = ('id', 'request_id', 'donor_username', 'requester_username', 'stars', 'tags_display', 'created_at')
+    list_filter = ('stars', 'created_at')
+    search_fields = ('request__patient_name', 'donor__user__username', 'request__requester__username')
+    readonly_fields = ('request', 'donor', 'stars', 'tags', 'created_at')
+
+    @admin.display(ordering='donor__user__username', description='Donor')
+    def donor_username(self, obj):
+        return obj.donor.user.username
+
+    @admin.display(ordering='request__requester__username', description='Requester')
+    def requester_username(self, obj):
+        return obj.request.requester.username if obj.request.requester else "Anonymous"
+
+    @admin.display(description='Tags')
+    def tags_display(self, obj):
+        return ", ".join(obj.tags) if isinstance(obj.tags, list) else str(obj.tags)
+

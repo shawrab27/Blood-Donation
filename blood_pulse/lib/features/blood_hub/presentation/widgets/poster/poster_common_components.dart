@@ -205,12 +205,13 @@ class PosterBrandFooter extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'bloodpulse.app • facebook.com/bloodpulse',
+                  'Generated via BloodPulse',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 9,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white70,
                   ),
                 ),

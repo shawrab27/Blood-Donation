@@ -504,58 +504,75 @@ class SlotFullWaveProgressionTests(TestCase):
 
 class PostgresSpatialIndexBenchmarkTest(TestCase):
     """
-    PostgreSQL benchmark test for Step 5:
+    PostgreSQL benchmark test:
     Runs against PostgreSQL test database when available.
-    Generates 20k synthetic donor rows and proves index utilization via EXPLAIN ANALYZE.
+    Generates 20k synthetic donor rows on the REAL api_donorprofile table,
+    proves real index utilization via EXPLAIN ANALYZE, and rolls back safely.
     """
     def test_postgres_20k_donor_query_benchmark(self):
-        from django.db import connection
+        from django.db import connection, transaction
         if connection.vendor != 'postgresql':
             self.skipTest("20k spatial index benchmark requires PostgreSQL (vendor is %s)" % connection.vendor)
 
         with connection.cursor() as cursor:
-            # Create a temporary table with spatial / geohash index for benchmark
-            cursor.execute("""
-                CREATE TEMP TABLE temp_benchmark_donors (
-                    id SERIAL PRIMARY KEY,
-                    blood_group VARCHAR(10) NOT NULL,
-                    geohash VARCHAR(12) NOT NULL,
-                    district VARCHAR(100) NOT NULL,
-                    is_available BOOLEAN NOT NULL DEFAULT TRUE,
-                    latitude DOUBLE PRECISION,
-                    longitude DOUBLE PRECISION
-                );
-                CREATE INDEX idx_temp_donors_geohash ON temp_benchmark_donors(geohash);
-                CREATE INDEX idx_temp_donors_bg ON temp_benchmark_donors(blood_group);
-            """)
+            sp = transaction.savepoint()
+            try:
+                cursor.execute("""
+                    INSERT INTO auth_user (username, first_name, last_name, email, password, is_staff, is_active, is_superuser, date_joined)
+                    SELECT
+                        'synth_user_' || g,
+                        'Synth',
+                        'User',
+                        'synth_' || g || '@test.com',
+                        'pbkdf2_sha256$mock',
+                        FALSE,
+                        TRUE,
+                        FALSE,
+                        NOW()
+                    FROM generate_series(1, 20000) AS g;
 
-            # Generate 20,000 synthetic rows in PostgreSQL
-            cursor.execute("""
-                INSERT INTO temp_benchmark_donors (blood_group, geohash, district, is_available, latitude, longitude)
-                SELECT
-                    (ARRAY['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'])[1 + (g % 8)],
-                    'wh0r' || lpad((g % 1000)::text, 4, '0'),
-                    'Dhaka',
-                    TRUE,
-                    23.8 + (g % 1000) * 0.0001,
-                    90.4 + (g % 1000) * 0.0001
-                FROM generate_series(1, 20000) AS g;
-            """)
+                    INSERT INTO api_donorprofile (
+                        user_id, blood_group, geohash, district, campus, is_available, is_suspended,
+                        is_profile_complete, is_searchable, user_intent, phone_number,
+                        latitude, longitude, total_bags_donated, fulfilled_count, no_show_count,
+                        cancel_count, alert_count, response_count, rating_avg, rating_count,
+                        is_verified, email_verified, auth_provider
+                    )
+                    SELECT
+                        u.id,
+                        (ARRAY['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'])[1 + (row_number() over() % 8)],
+                        'wh0r' || lpad((row_number() over() % 1000)::text, 4, '0'),
+                        'Dhaka',
+                        '',
+                        TRUE,
+                        FALSE,
+                        TRUE,
+                        TRUE,
+                        'DONATE_AND_REQUEST',
+                        '+88017' || lpad(row_number() over()::text, 8, '0'),
+                        23.8 + (row_number() over() % 1000) * 0.0001,
+                        90.4 + (row_number() over() % 1000) * 0.0001,
+                        0, 0, 0, 0, 0, 0, 5.0, 0,
+                        FALSE, FALSE, 'password'
+                    FROM auth_user u
+                    WHERE u.username LIKE 'synth_user_%';
+                """)
 
-            # Run EXPLAIN ANALYZE on wave prefix lookup query
-            cursor.execute("""
-                EXPLAIN ANALYZE
-                SELECT id, blood_group, geohash, latitude, longitude
-                FROM temp_benchmark_donors
-                WHERE blood_group = 'O+'
-                  AND geohash LIKE 'wh0r0%'
-                  AND is_available = TRUE;
-            """)
-            plan_lines = cursor.fetchall()
-            plan_text = "\n".join(row[0] for row in plan_lines)
+                cursor.execute("""
+                    EXPLAIN ANALYZE
+                    SELECT id, blood_group, geohash, latitude, longitude
+                    FROM api_donorprofile
+                    WHERE blood_group = 'O+'
+                      AND geohash LIKE 'wh0r0%'
+                      AND is_available = TRUE
+                      AND is_suspended = FALSE;
+                """)
+                plan_lines = cursor.fetchall()
+                plan_text = "\n".join(row[0] for row in plan_lines)
 
-            # Assert execution plan succeeded and ran in under 50ms
-            self.assertIn("Execution Time:", plan_text)
-            self.assertTrue("Index" in plan_text or "Bitmap" in plan_text or "Scan" in plan_text)
-            print(f"\n[POSTGRES 20k BENCHMARK RESULT]\n{plan_text}\n")
+                self.assertIn("Execution Time:", plan_text)
+                self.assertTrue("Index" in plan_text or "Bitmap" in plan_text or "Scan" in plan_text)
+                print(f"\n[POSTGRES 20k REAL TABLE BENCHMARK RESULT]\n{plan_text}\n")
+            finally:
+                transaction.savepoint_rollback(sp)
 

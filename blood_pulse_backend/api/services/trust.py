@@ -70,6 +70,31 @@ def calculate_trust_score(
         score += min(15, fulfilled * TRUST_SCORE_DONOR_FULFILLED_BONUS)
         score -= (no_shows * config.no_show_penalty)
 
+    # Step 6: Requester Trust Score from private DonorFeedback
+    # The low-score rule and feedback score apply only after at least 2 reviews from different donors.
+    if requester:
+        from api.models import DonorFeedback
+        from api.conf import (
+            FEEDBACK_MIN_REVIEWS_THRESHOLD,
+            FEEDBACK_STAR_MULTIPLIER,
+            FEEDBACK_TAG_WEIGHTS,
+        )
+        feedbacks = DonorFeedback.objects.filter(request__requester=requester)
+        distinct_donor_count = feedbacks.values('donor').distinct().count()
+
+        if distinct_donor_count >= FEEDBACK_MIN_REVIEWS_THRESHOLD:
+            total_feedback_delta = 0
+            for fb in feedbacks:
+                star_delta = (fb.stars - 3) * FEEDBACK_STAR_MULTIPLIER
+                total_feedback_delta += star_delta
+                for tag in (fb.tags or []):
+                    norm_tag = str(tag).strip().upper()
+                    if norm_tag in FEEDBACK_TAG_WEIGHTS:
+                        total_feedback_delta += FEEDBACK_TAG_WEIGHTS[norm_tag]
+
+            avg_delta = total_feedback_delta / max(1, feedbacks.count())
+            score += int(round(avg_delta))
+
     # Clamp score to [0, 100]
     score = max(0, min(100, score))
 
