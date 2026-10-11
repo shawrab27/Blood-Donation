@@ -30,8 +30,14 @@ class LiveCasePipelineSerializer(serializers.ModelSerializer):
             'created_at'
         ]
 
+    def _radius_for_wave(self, wave_number):
+        if not WAVE_RADIUS_KM:
+            return 5.0
+        idx = max(0, min(int(wave_number or 1) - 1, len(WAVE_RADIUS_KM) - 1))
+        return WAVE_RADIUS_KM[idx]
+
     def get_search_radius_km(self, obj):
-        return WAVE_RADIUS_KM.get(obj.current_wave, 150.0)
+        return self._radius_for_wave(obj.current_wave)
 
     def get_pinged_donors_count(self, obj):
         return getattr(obj, 'pinged_donors_count', obj.notifications.count())
@@ -40,12 +46,15 @@ class LiveCasePipelineSerializer(serializers.ModelSerializer):
         return getattr(obj, 'accepted_donors_count', obj.targets.filter(status='ACCEPTED').count())
 
     def get_escalation_status(self, obj):
+        w1 = self._radius_for_wave(1)
+        w2 = self._radius_for_wave(2)
+        w3 = self._radius_for_wave(3)
         if obj.current_wave == 1:
-            return f"Local Matching ({WAVE_RADIUS_KM.get(1, 5)}km)"
+            return f"Local Matching ({w1}km)"
         elif obj.current_wave == 2:
-            return f"District Escalation ({WAVE_RADIUS_KM.get(2, 25)}km)"
+            return f"District Escalation ({w2}km)"
         elif obj.current_wave == 3:
-            return f"Division Wide ({WAVE_RADIUS_KM.get(3, 100)}km)"
+            return f"Division Wide ({w3}km)"
         else:
             return "National Emergency Broadcast"
 

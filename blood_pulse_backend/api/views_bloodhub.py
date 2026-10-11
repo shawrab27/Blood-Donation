@@ -1539,24 +1539,90 @@ def my_pledge_view(request):
         'pledge': DisasterPledgeSerializer(pledge).data
     })
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsProfileComplete])
-def emergency_request_all_view(request, pk):
+@permission_classes([IsAuthenticated])
+def emergency_request_all_view(request, pk=None):
     """
     Manually dispatch notifications to all eligible donors in the area.
+    Supports either POST /api/emergency/requests/<pk>/bulk-dispatch/ or
+    POST /api/emergency/requests/bulk-dispatch/ with request_id or blood_group filter.
+    Uses unified get_candidate_donors_for_wave and evaluate_donor_eligibility.
     """
-    blood_req = BloodRequest.objects.filter(id=pk).first()
-    if not blood_req:
-        return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
+    req_id = pk or request.data.get('request_id')
+    if req_id:
+        blood_req = BloodRequest.objects.filter(id=req_id).first()
+        if not blood_req:
+            return Response({'error': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    candidates = get_candidate_donors_for_wave(blood_req, wave_number=3) # Wave 3 or max wave usually targets everyone in district
-    if not candidates:
-        return Response({'message': 'No eligible donors found.', 'notified': 0}, status=status.HTTP_200_OK)
+        effective_wave = min(getattr(blood_req, 'current_wave', 1) + 1, 4)
+        candidates = get_candidate_donors_for_wave(blood_req, wave_number=effective_wave)
+        if not candidates:
+            return Response({'message': 'No eligible donors found.', 'notified': 0}, status=status.HTTP_200_OK)
 
-    dispatch_wave_notifications(blood_req, candidates, wave_number=3)
-    return Response({'message': f'Notified {len(candidates)} donors.', 'notified': len(candidates)}, status=status.HTTP_200_OK)
+        dispatched = dispatch_wave_notifications(blood_req, candidates, wave_number=effective_wave)
+        return Response({'message': f'Notified {dispatched} donors.', 'notified': dispatched}, status=status.HTTP_200_OK)
 
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def emergency_request_all_view(request):
+    # General broadcast without saved request (e.g. preview / ad-hoc query)
     return Response({'message': 'No eligible donors found.', 'notified': 0}, status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def donor_snooze_view(request):
+    """
+    PATCH /api/users/me/snooze/ (also aliased at /api/profile/me/snooze/ and /api/donors/me/snooze/)
+    Payload: {"days": 30} or {"days": null}
+    The server sets alert_pause_until = now + 30 days (or null).
+    The client must never supply the date.
+    Returns:
+    {
+        "alert_pause_until": ISO string or null,
+        "is_snoozed": bool,
+        "days": int or null
+    }
+    """
+    profile = getattr(request.user, 'donorprofile', None)
+    if not profile:
+        profile = DonorProfile.objects.filter(user=request.user).first()
+    if not profile:
+        return Response({'error': 'Donor profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    days = request.data.get('days')
+
+    if days is None:
+        profile.alert_pause_until = None
+        profile.save(update_fields=['alert_pause_until'])
+        return Response({
+            'alert_pause_until': None,
+            'is_snoozed': False,
+            'days': None,
+            'message': 'Alert snooze disabled. You are now available for emergency alerts.',
+        }, status=status.HTTP_200_OK)
+
+    try:
+        days_int = int(days)
+    except (ValueError, TypeError):
+        return Response({'error': 'days must be an integer (e.g. 30) or null.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if days_int <= 0:
+        profile.alert_pause_until = None
+        profile.save(update_fields=['alert_pause_until'])
+        return Response({
+            'alert_pause_until': None,
+            'is_snoozed': False,
+            'days': None,
+            'message': 'Alert snooze cleared.',
+        }, status=status.HTTP_200_OK)
+
+    now = timezone.now()
+    pause_until = now + timezone.timedelta(days=days_int)
+    profile.alert_pause_until = pause_until
+    profile.save(update_fields=['alert_pause_until'])
+
+    return Response({
+        'alert_pause_until': pause_until.isoformat(),
+        'is_snoozed': True,
+        'days': days_int,
+        'message': f'Emergency alerts paused for {days_int} days.',
+    }, status=status.HTTP_200_OK)
+
+

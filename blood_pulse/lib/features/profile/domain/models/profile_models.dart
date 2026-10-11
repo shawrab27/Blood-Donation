@@ -21,6 +21,7 @@ class ProfileModel {
   final String? profilePicture;
   final int globalRank;
   final String badge;
+  final String? alertPauseUntil;
   final List<DonationHistoryModel> donationHistory;
   final List<RecentLogModel> recentLogs;
 
@@ -44,9 +45,17 @@ class ProfileModel {
     this.profilePicture,
     this.globalRank = 0,
     this.badge = 'Green Donor',
+    this.alertPauseUntil,
     this.donationHistory = const [],
     this.recentLogs = const [],
   });
+
+  bool get isSnoozed {
+    if (alertPauseUntil == null || alertPauseUntil!.isEmpty) return false;
+    final parsed = DateTime.tryParse(alertPauseUntil!);
+    if (parsed == null) return false;
+    return parsed.isAfter(DateTime.now());
+  }
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
@@ -72,6 +81,7 @@ class ProfileModel {
       profilePicture: json['profile_picture'],
       globalRank: json['global_rank'] ?? 0,
       badge: json['badge'] ?? 'Green Donor',
+      alertPauseUntil: json['alert_pause_until']?.toString(),
       donationHistory: (json['donation_history'] as List<dynamic>?)
               ?.map((e) => DonationHistoryModel.fromJson(e))
               .toList() ??
@@ -82,6 +92,7 @@ class ProfileModel {
           [],
     );
   }
+
 
   String get fullName {
     if (firstName != null && firstName!.isNotEmpty) {

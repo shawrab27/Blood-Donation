@@ -71,4 +71,55 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       return false;
     }
   }
+
+  /// Toggles 30-day snooze for emergency alerts via PATCH /api/users/me/snooze/
+  /// When enabling, sends {"days": 30}. When disabling, sends {"days": null}.
+  /// Client never supplies the date. Server recalculates and returns new state.
+  Future<bool> setSnooze({required bool enable}) async {
+    try {
+      final payload = <String, dynamic>{
+        'days': enable ? 30 : null,
+      };
+      final response = await ApiClient().patch('users/me/snooze/', body: payload);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final current = state.value;
+        if (current != null) {
+          final updated = ProfileModel(
+            id: current.id,
+            username: current.username,
+            firstName: current.firstName,
+            lastName: current.lastName,
+            email: current.email,
+            bloodGroup: current.bloodGroup,
+            district: current.district,
+            phoneNumber: current.phoneNumber,
+            lastDonationDate: current.lastDonationDate,
+            isVerified: current.isVerified,
+            isProfileComplete: current.isProfileComplete,
+            missingFields: current.missingFields,
+            bio: current.bio,
+            institute: current.institute,
+            address: current.address,
+            totalBagsDonated: current.totalBagsDonated,
+            profilePicture: current.profilePicture,
+            globalRank: current.globalRank,
+            badge: current.badge,
+            alertPauseUntil: data['alert_pause_until']?.toString(),
+            donationHistory: current.donationHistory,
+            recentLogs: current.recentLogs,
+          );
+          state = AsyncValue.data(updated);
+        } else {
+          await fetchProfile();
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return false;
+    }
+  }
 }
+

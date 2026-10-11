@@ -9,18 +9,51 @@ and evaluates pause periods and availability.
 """
 
 from datetime import date, timedelta
+from zoneinfo import ZoneInfo
 from django.utils import timezone
 from api.conf import (
     DONOR_COOLDOWN_DAYS,
     WHOLE_BLOOD_COOLDOWN_DAYS,
     PLATELET_COOLDOWN_DAYS,
     PLASMA_COOLDOWN_DAYS,
+    QUIET_HOURS_START,
+    QUIET_HOURS_END,
+    QUIET_HOURS_TZ,
 )
 
 
-def evaluate_donor_eligibility(donor, component: str = 'WHOLE') -> dict:
+def is_in_quiet_hours(dt=None) -> bool:
+    """
+    Checks if given datetime (defaults to now) is within quiet hours (22:00 to 07:00 in Asia/Dhaka).
+    Handles crossing midnight (e.g., 22, 23, 0..6).
+    """
+    if dt is None:
+        dt = timezone.now()
+    try:
+        tz = ZoneInfo(QUIET_HOURS_TZ)
+    except Exception:
+        tz = ZoneInfo('Asia/Dhaka')
+    local_time = dt.astimezone(tz)
+    hour = local_time.hour
+
+    if QUIET_HOURS_START > QUIET_HOURS_END:
+        # Crosses midnight: e.g. 22 to 7 -> hour >= 22 or hour < 7
+        return hour >= QUIET_HOURS_START or hour < QUIET_HOURS_END
+    else:
+        return QUIET_HOURS_START <= hour < QUIET_HOURS_END
+
+
+def evaluate_donor_eligibility(
+    donor,
+    component: str = 'WHOLE',
+    is_critical: bool = False,
+    check_quiet_hours: bool = False,
+    eval_time=None,
+) -> dict:
     """
     Evaluates whether a donor is eligible to donate the specified blood component today.
+    If check_quiet_hours is True and not is_critical: checks quiet hours window (22:00-07:00 Asia/Dhaka).
+    Critical requests bypass quiet hours check.
     Returns:
     {
         'is_eligible': bool,
@@ -29,6 +62,7 @@ def evaluate_donor_eligibility(donor, component: str = 'WHOLE') -> dict:
         'deferred_until': date/datetime or None
     }
     """
+
     now = timezone.now()
     today = now.date()
 
@@ -121,9 +155,21 @@ def evaluate_donor_eligibility(donor, component: str = 'WHOLE') -> dict:
                 'deferred_until': eligible_date,
             }
 
+    # 5. Quiet Hours check (22:00 to 07:00 Asia/Dhaka) - Bypassed for critical requests
+    if check_quiet_hours and not is_critical:
+        check_dt = eval_time or now
+        if is_in_quiet_hours(check_dt):
+            return {
+                'is_eligible': False,
+                'reason': f'Quiet hours active in {QUIET_HOURS_TZ} ({QUIET_HOURS_START}:00 - {QUIET_HOURS_END}:00). Non-critical dispatch withheld.',
+                'days_remaining': 0,
+                'deferred_until': None,
+            }
+
     return {
         'is_eligible': True,
         'reason': 'Eligible to donate.',
         'days_remaining': 0,
         'deferred_until': None,
     }
+

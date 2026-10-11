@@ -106,7 +106,7 @@ class ForceEscalateAPIView(APIView):
                 blood_request.next_wave_at = timezone.now() + timezone.timedelta(minutes=delay_mins)
                 blood_request.save(update_fields=['current_wave', 'next_wave_at'])
                 
-                new_radius = WAVE_RADIUS_KM.get(to_wave, 150.0)
+                new_radius = WAVE_RADIUS_KM[min(to_wave - 1, len(WAVE_RADIUS_KM) - 1)] if WAVE_RADIUS_KM else 150.0
                 
                 # Log the escalation
                 WaveEscalationLog.objects.create(

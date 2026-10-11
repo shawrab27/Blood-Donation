@@ -72,7 +72,9 @@ from .views_bloodhub import (
     active_deferral_view,
     deferral_appeal_view,
     emergency_request_all_view,
+    donor_snooze_view,
 )
+
 
 from .views_auth_reset import request_otp, confirm_reset
 from .views_request_otp import request_otp_send_view, request_otp_verify_view
@@ -187,6 +189,9 @@ urlpatterns = [
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     path('auth/firebase/', FirebaseAuthView.as_view(), name='firebase-auth'),
     path('profile/me/', DonorProfileViewSet.as_view({'get': 'me', 'put': 'me', 'patch': 'me', 'delete': 'me'}), name='profile-me'),
+    path('profile/me/snooze/', donor_snooze_view, name='profile-me-snooze'),
+    path('users/me/snooze/', donor_snooze_view, name='users-me-snooze'),
+    path('donors/me/snooze/', donor_snooze_view, name='donors-me-snooze'),
     path('profile/completion-status/', ProfileCompletionStatusView.as_view(), name='profile-completion-status'),
     path('notifications/', NotificationListView.as_view(), name='notifications-list'),
     path('notifications/unread-count/', UnreadNotificationCountView.as_view(), name='unread-notification-count'),
@@ -194,6 +199,7 @@ urlpatterns = [
     path('auth/send-verification-email/', SendVerificationEmailView.as_view(), name='send-verification-email'),
     path('auth/verify-email-code/', VerifyEmailCodeView.as_view(), name='verify-email-code'),
 ]
+
 
 from api.osm_proxy import GeocodeView, ReverseGeocodeView, RouteView
 from .views_wave_engine import WaveMetricsAPIView, LivePipelineAPIView, ForceEscalateAPIView

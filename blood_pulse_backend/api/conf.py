@@ -22,13 +22,43 @@ LOCATION_FUZZ_MAX_METERS = 1000.0
 LOCATION_RECOMPUTE_THRESHOLD_METERS = 500.0
 LOCATION_GEOHASH_PRECISION = 7  # ~150m cell
 
-# Wave radius limits (in kilometers)
-WAVE_RADIUS_KM = {
-    1: 5.0,     # Local / Campus / immediate vicinity
-    2: 25.0,    # District / metro area
-    3: 100.0,   # Division / regional
-    4: 1000.0,  # Nationwide
-}
+import os
+
+# Wave radius limits (in kilometers) - Ladder: 5 -> 25 -> 100 -> 1000 km
+# Single list overridable by WAVE_RADIUS_KM env var (e.g. "5,25,100,1000")
+def _parse_and_validate_wave_radius_km():
+    raw_env = os.environ.get('WAVE_RADIUS_KM', '').strip()
+    if raw_env:
+        try:
+            parsed = [float(x.strip()) for x in raw_env.split(',') if x.strip()]
+        except ValueError as e:
+            raise ValueError(f"Invalid WAVE_RADIUS_KM environment variable format: '{raw_env}'. Must be comma-separated numbers.") from e
+    else:
+        parsed = [5.0, 25.0, 100.0, 1000.0]
+
+    # Startup validation: must be list of numbers, positive, strictly ascending
+    if not isinstance(parsed, list) or len(parsed) < 1:
+        raise ValueError(f"WAVE_RADIUS_KM must be a non-empty list. Got: {parsed}")
+    for idx, val in enumerate(parsed):
+        if not isinstance(val, (int, float)) or val <= 0:
+            raise ValueError(f"WAVE_RADIUS_KM[{idx}] = {val} is invalid. All radii must be positive numbers.")
+        if idx > 0 and val <= parsed[idx - 1]:
+            raise ValueError(
+                f"WAVE_RADIUS_KM must be strictly ascending. Element at index {idx} ({val}) "
+                f"<= previous element ({parsed[idx - 1]})."
+            )
+    return parsed
+
+WAVE_RADIUS_KM = _parse_and_validate_wave_radius_km()
+
+# Quiet hours settings (Asia/Dhaka: 22:00 to 07:00 next day)
+QUIET_HOURS_START = int(os.environ.get('QUIET_HOURS_START', '22'))
+QUIET_HOURS_END = int(os.environ.get('QUIET_HOURS_END', '7'))
+QUIET_HOURS_TZ = os.environ.get('QUIET_HOURS_TZ', 'Asia/Dhaka')
+
+# Per-step wave candidate batch limit
+WAVE_CANDIDATE_BATCH_LIMIT = int(os.environ.get('WAVE_CANDIDATE_BATCH_LIMIT', '200'))
+
 
 # Wave transition timeouts (in minutes) based on urgency level
 WAVE_TIMEOUT_MINUTES = {

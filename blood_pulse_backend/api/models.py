@@ -534,6 +534,36 @@ class EmergencyNotification(models.Model):
 
 
 
+class WaveNotificationLog(models.Model):
+    """
+    Step 5: Audit and deduplication log for wave notification dispatches.
+    Guarantees no donor is notified twice for the same blood request across waves/ticks.
+    Never stores donor coordinates.
+    """
+    STATUS_CHOICES = (
+        ('SENT', 'Sent'),
+        ('FAILED', 'Failed'),
+        ('INVALID_TOKEN', 'Invalid Token'),
+        ('SKIPPED', 'Skipped'),
+    )
+
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='wave_notification_logs')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='wave_notification_logs')
+    wave = models.PositiveIntegerField(default=1)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SENT')
+
+    class Meta:
+        ordering = ['-sent_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['request', 'donor'],
+                name='unique_request_donor_wave_notification',
+            ),
+        ]
+
+
+
 class RequestAcceptance(models.Model):
 
     STATUS_CHOICES = (

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
@@ -32,6 +33,8 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   String _bio = 'Committed to saving lives, one drop at a time.';
+  bool _isUpdatingSnooze = false;
+
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -178,6 +181,125 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               },
             ),
             const SizedBox(height: 14),
+
+            // ── 30-Day Emergency Snooze Toggle (Directly after Basic Info Card) ──
+            Builder(
+              builder: (ctx) {
+                final currentProfile = profileAsync.valueOrNull;
+                final bool isSnoozed = currentProfile?.isSnoozed ?? false;
+                String subtitleText = 'Receive emergency donation alerts in your area';
+
+                if (isSnoozed && currentProfile?.alertPauseUntil != null) {
+                  final dt = DateTime.tryParse(currentProfile!.alertPauseUntil!);
+                  if (dt != null) {
+                    subtitleText = 'Paused until ${DateFormat('d MMM yyyy').format(dt)}';
+                  } else {
+                    subtitleText = 'Paused for 1 month';
+                  }
+                }
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSnoozed ? AppColors.primary.withValues(alpha: 0.3) : Colors.grey.shade200,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSnoozed ? const Color(0xFFFDE8E8) : const Color(0xFFF0F4F8),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isSnoozed ? Icons.notifications_paused_rounded : Icons.notifications_active_outlined,
+                          color: isSnoozed ? AppColors.primary : const Color(0xFF5A6E85),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Unavailable for 1 month',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitleText,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                color: isSnoozed ? AppColors.primary : const Color(0xFF64748B),
+                                fontWeight: isSnoozed ? FontWeight.w500 : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_isUpdatingSnooze)
+                        const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        )
+                      else
+                        Switch.adaptive(
+                          value: isSnoozed,
+                          activeColor: AppColors.primary,
+                          onChanged: (val) async {
+                            setState(() => _isUpdatingSnooze = true);
+                            final success = await ref.read(profileProvider.notifier).setSnooze(enable: val);
+                            if (mounted) {
+                              setState(() => _isUpdatingSnooze = false);
+                            }
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? (val
+                                            ? '✓ Alerts paused for 1 month.'
+                                            : '✓ Alerts resumed. You are now available.')
+                                        : 'Could not update alert status. Please check connection.',
+                                    style: const TextStyle(fontFamily: 'Inter'),
+                                  ),
+                                  backgroundColor: success
+                                      ? (val ? const Color(0xFF2B2B2B) : const Color(0xFF1B8A4E))
+                                      : AppColors.error,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+
+                    ],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+
 
             // ── Total Bags & Countdown Stats Row ──
             ProfileStatsRow(

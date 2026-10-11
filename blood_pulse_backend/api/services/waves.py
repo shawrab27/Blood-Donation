@@ -5,30 +5,44 @@
 Wave Expansion & Donor Ranking Engine.
 Determines target donor cohorts across expanding geographical tiers
 and ranks candidate donors based on proximity, reliability, and compatibility.
+Enforces dispatch scope ceilings, quiet hours (unless critical), deduplication
+against WaveNotificationLog, and pure DB geohash prefiltering.
 """
 
+from django.db.models import Q
 from django.utils import timezone
-from api.conf import WAVE_RADIUS_KM
+from api.conf import WAVE_RADIUS_KM, WAVE_CANDIDATE_BATCH_LIMIT
 from api.services.compat import get_compatible_donor_groups
 from api.services.eligibility import evaluate_donor_eligibility
-from api.services.geo import haversine_distance
+from api.services.geo import haversine_distance, encode_geohash
 
 
-def get_candidate_donors_for_wave(blood_request, wave_number: int = 1) -> list:
+# Dispatch scope ceilings: LOCAL -> 1, DISTRICT -> 2, DIVISION -> 3, NATIONWIDE -> 4
+SCOPE_MAX_WAVE = {
+    'LOCAL': 1,
+    'DISTRICT': 2,
+    'DIVISION': 3,
+    'NATIONWIDE': 4,
+}
+
+
+def get_candidate_donors_for_wave(blood_request, wave_number: int = 1, eval_time=None) -> list:
     """
     Selects and ranks candidate donors eligible for the given wave tier.
     Applies compatibility, eligibility, geographical bounds, and effective scope restrictions.
+    Enforces quiet hours (skipped for non-critical; bypassed for critical).
+    Excludes donors already logged in WaveNotificationLog or EmergencyNotification.
+    Caps results to WAVE_CANDIDATE_BATCH_LIMIT (default 200).
     """
-    from api.models import DonorProfile
+    from api.models import DonorProfile, WaveNotificationLog
 
-    effective_scope = getattr(blood_request, 'effective_scope', 'LOCAL').upper()
+    effective_scope = getattr(blood_request, 'effective_scope', 'LOCAL')
+    if not effective_scope:
+        effective_scope = 'LOCAL'
+    effective_scope = effective_scope.upper()
 
-    # Scope cap checks:
-    if effective_scope == 'LOCAL' and wave_number > 1:
-        return []
-    if effective_scope == 'DISTRICT' and wave_number > 2:
-        return []
-    if effective_scope == 'DIVISION' and wave_number > 3:
+    max_allowed_wave = SCOPE_MAX_WAVE.get(effective_scope, 1)
+    if wave_number > max_allowed_wave:
         return []
 
     # 1. Component & blood group compatibility
@@ -47,23 +61,69 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1) -> list:
     if blood_request.requester_id:
         donors_qs = donors_qs.exclude(user_id=blood_request.requester_id)
 
-    # Exclude donors already notified for this request
+    # Exclude donors already notified in WaveNotificationLog or EmergencyNotification
+    notified_wave_donor_ids = WaveNotificationLog.objects.filter(
+        request=blood_request
+    ).values_list('donor_id', flat=True)
+    if notified_wave_donor_ids:
+        donors_qs = donors_qs.exclude(id__in=notified_wave_donor_ids)
+
     already_notified_donor_ids = blood_request.notifications.values_list('donor_id', flat=True)
     if already_notified_donor_ids:
         donors_qs = donors_qs.exclude(id__in=already_notified_donor_ids)
+
+    # Cooldown & Snooze database filter optimization
+    now = eval_time or timezone.now()
+    donors_qs = donors_qs.filter(
+        Q(alert_pause_until__isnull=True) | Q(alert_pause_until__lte=now)
+    )
 
     req_lat = blood_request.lat
     req_lng = blood_request.lng
     req_district = blood_request.district
     req_upazila = blood_request.upazila
 
-    max_radius_km = WAVE_RADIUS_KM.get(wave_number, 5.0)
+    # Radius for current wave
+    if not WAVE_RADIUS_KM:
+        max_radius_km = 5.0
+    else:
+        radius_idx = max(0, min(wave_number - 1, len(WAVE_RADIUS_KM) - 1))
+        max_radius_km = WAVE_RADIUS_KM[radius_idx]
+
+    # Geohash pre-filter: in Wave 1 and Wave 2 with GPS coordinates,
+    # narrow down DB candidates using geohash prefix to avoid scanning thousands of distant donors.
+    if req_lat is not None and req_lng is not None:
+        try:
+            req_geohash = encode_geohash(req_lat, req_lng, precision=5)
+            if wave_number == 1:
+                # Wave 1 (~5km): filter on geohash length 4 (~39km cell) or same district
+                donors_qs = donors_qs.filter(
+                    Q(geohash__startswith=req_geohash[:4]) |
+                    Q(district__iexact=(req_district or '').strip())
+                )
+            elif wave_number == 2:
+                # Wave 2 (~25km): filter on geohash length 3 (~156km cell) or same district
+                donors_qs = donors_qs.filter(
+                    Q(geohash__startswith=req_geohash[:3]) |
+                    Q(district__iexact=(req_district or '').strip())
+                )
+        except Exception:
+            pass
+
+    # Urgency & Quiet Hours check
+    is_critical = (getattr(blood_request, 'urgency', '') == 'CRITICAL_2H')
 
     candidates = []
 
     for donor in donors_qs:
-        # Check medical & interval eligibility
-        eligibility = evaluate_donor_eligibility(donor, blood_request.component)
+        # Check medical & interval eligibility + Quiet Hours
+        eligibility = evaluate_donor_eligibility(
+            donor,
+            component=blood_request.component or 'WHOLE',
+            is_critical=is_critical,
+            check_quiet_hours=True,
+            eval_time=eval_time,
+        )
         if not eligibility['is_eligible']:
             continue
 
@@ -78,7 +138,7 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1) -> list:
         in_boundary = False
 
         if wave_number == 1:
-            # Wave 1: Immediate local / campus / upazila / < 5km
+            # Wave 1: Immediate local / campus / upazila / <= 5km
             if dist_km is not None and dist_km <= max_radius_km:
                 in_boundary = True
             elif req_upazila and getattr(donor, 'upazila', None) == req_upazila:
@@ -88,30 +148,29 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1) -> list:
                 in_boundary = True
 
         elif wave_number == 2:
-            # Wave 2: District-wide / < 25km
+            # Wave 2: District-wide / <= 25km
             if dist_km is not None and dist_km <= max_radius_km:
                 in_boundary = True
             elif blood_request.district and donor.district and blood_request.district.strip().lower() == donor.district.strip().lower():
                 in_boundary = True
 
         elif wave_number == 3:
-            # Wave 3: Division-wide / < 100km
+            # Wave 3: Division-wide / <= 100km
             if dist_km is not None and dist_km <= max_radius_km:
                 in_boundary = True
             elif blood_request.division_id and getattr(donor, 'division_id', None) == blood_request.division_id:
                 in_boundary = True
 
         elif wave_number >= 4:
-            # Wave 4: Nationwide broadcast
+            # Wave 4: Nationwide broadcast (or <= 1000km)
             in_boundary = True
 
         if not in_boundary:
             continue
 
         # Compute Ranking Score (Higher is better)
-        # Weights: Proximity 0.4, Activity/Reliability 0.3, Rating 0.2, Exact Group Match 0.1
         proximity_score = max(0.0, 1.0 - (dist_km / max_radius_km)) if dist_km is not None else 0.5
-        
+
         response_rate = 1.0
         if (donor.alert_count or 0) > 0:
             response_rate = min(1.0, (donor.response_count or 0) / float(donor.alert_count))
@@ -135,4 +194,7 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1) -> list:
 
     # Sort candidates by descending rank score
     candidates.sort(key=lambda c: c['rank_score'], reverse=True)
-    return candidates
+
+    # Per-step candidate limit cap
+    return candidates[:WAVE_CANDIDATE_BATCH_LIMIT]
+

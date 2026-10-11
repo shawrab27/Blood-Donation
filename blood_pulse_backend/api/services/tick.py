@@ -45,6 +45,17 @@ def process_wave_tick() -> dict:
             expired_count += 1
             continue
 
+        # Check slot-full condition (Stop wave if received + pending >= needed)
+        units_received = req.units_received or 0
+        units_pending = req.units_pending or 0
+        units_needed = req.units_needed or 1
+        is_slot_full = (units_received + units_pending) >= units_needed
+
+        # If slots are completely filled, do not advance wave or dispatch notifications.
+        # The wave pauses here and will resume if a slot reopens (e.g. withdrawal).
+        if is_slot_full:
+            continue
+
         # Check wave transition for emergency requests
         if req.mode == 'EMERGENCY' and req.next_wave_at and req.next_wave_at <= now:
             if req.current_wave < 4:
@@ -63,6 +74,7 @@ def process_wave_tick() -> dict:
                 req.next_wave_at = now + timedelta(minutes=delay_mins)
                 req.save(update_fields=['current_wave', 'next_wave_at'])
                 advanced_count += 1
+
 
             elif req.current_wave >= 4:
                 # Top wave reached without fulfillment -> escalate to admin
