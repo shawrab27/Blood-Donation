@@ -15,6 +15,7 @@ import '../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../features/auth/presentation/screens/verify_otp_reset_screen.dart';
 import '../features/auth/presentation/screens/registration_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../features/guest/presentation/screens/guest_welcome_screen.dart';
 
 // Main Shell & Emergency Request
 import '../features/shell/presentation/screens/main_shell_screen.dart';
@@ -121,6 +122,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/guest-welcome',
+      builder: (context, state) => const GuestWelcomeScreen(),
     ),
     GoRoute(
       path: '/forgot-password',
@@ -495,7 +500,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       builder: (context, state) => const AdminDashboardScreen(),
     ),
 
-    // ── Health Hub 7 Dedicated Sub-Screens ────────────────────────────────────
+    // ── Health Hub Dedicated Sub-Screens ────────────────────────────────────
+    GoRoute(
+      path: '/health-hub',
+      builder: (context, state) => const MainShellScreen(),
+    ),
     GoRoute(
       path: '/health-hub/ai-report',
       builder: (context, state) => const AiReportAnalysisScreen(),

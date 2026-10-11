@@ -15,7 +15,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from api.permissions import IsProfileComplete
 from rest_framework.response import Response
-from api.throttles import OTPAnonThrottle, OTPUserThrottle
+from api.throttles import OTPAnonThrottle, OTPUserThrottle, GuestMapAnonThrottle
 from rest_framework import status
 
 from api.models import (
@@ -237,6 +237,83 @@ def donor_map_view(request):
         'donors': serializer.data,
         'results': serializer.data,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@throttle_classes([GuestMapAnonThrottle])
+def guest_donor_map_view(request):
+    """
+    Anonymous, throttled endpoint for the guest map.
+    Takes NO query parameters (extra params are ignored).
+    Returns all published geohash cells (precision=GUEST_MAP_GEOHASH_PRECISION=4)
+    for the whole country with count >= GUEST_MAP_MIN_CELL_DONORS (3),
+    cached server-side for 5 minutes.
+    Cell latitude/longitude are strictly the geohash CELL CENTER, never donor mean.
+    total_donors = sum of published cells only, capped at 500 cells.
+    """
+    from collections import defaultdict
+    from django.core.cache import cache
+    from api.conf import (
+        CACHE_KEY_GUEST_MAP,
+        GUEST_MAP_CACHE_TIMEOUT_SECONDS,
+        GUEST_MAP_GEOHASH_PRECISION,
+        GUEST_MAP_MAX_CELLS,
+        GUEST_MAP_MIN_CELL_DONORS,
+    )
+    from api.services.geo import encode_geohash, decode_geohash
+    from api.views_public_stats import eligible_public_donors_queryset
+
+    cached = cache.get(CACHE_KEY_GUEST_MAP)
+    if cached is not None:
+        return Response(cached, status=status.HTTP_200_OK)
+
+    queryset = (
+        eligible_public_donors_queryset()
+        .exclude(Q(latitude__isnull=True) & Q(last_lat__isnull=True))
+        .exclude(Q(longitude__isnull=True) & Q(last_lng__isnull=True))
+        .values('latitude', 'longitude', 'last_lat', 'last_lng')
+    )
+
+    geohash_counts = defaultdict(int)
+    for d in queryset:
+        raw_lat = d['last_lat'] if d['last_lat'] is not None else d['latitude']
+        raw_lng = d['last_lng'] if d['last_lng'] is not None else d['longitude']
+        if raw_lat is None or raw_lng is None:
+            continue
+        try:
+            lat_f = float(raw_lat)
+            lng_f = float(raw_lng)
+        except (TypeError, ValueError):
+            continue
+
+        gh = encode_geohash(lat_f, lng_f, precision=GUEST_MAP_GEOHASH_PRECISION)
+        if gh:
+            geohash_counts[gh] += 1
+
+    published_cells = []
+    for gh in sorted(geohash_counts.keys()):
+        count = geohash_counts[gh]
+        if count >= GUEST_MAP_MIN_CELL_DONORS:
+            center_lat, center_lng = decode_geohash(gh)
+            published_cells.append({
+                'geohash': gh,
+                'count': count,
+                'latitude': center_lat,
+                'longitude': center_lng,
+            })
+
+    # Sort deterministically by (-count, geohash) and cap at GUEST_MAP_MAX_CELLS (500)
+    published_cells.sort(key=lambda c: (-c['count'], c['geohash']))
+    published_cells = published_cells[:GUEST_MAP_MAX_CELLS]
+
+    total_donors = sum(c['count'] for c in published_cells)
+    payload = {
+        'total_donors': total_donors,
+        'cells': published_cells,
+    }
+    cache.set(CACHE_KEY_GUEST_MAP, payload, timeout=GUEST_MAP_CACHE_TIMEOUT_SECONDS)
+    return Response(payload, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

@@ -121,3 +121,64 @@ class PrivacyTests(TestCase):
                 self.assertNotIn('SECRET_KEY_123', log.getMessage())
         except AssertionError:
             pass # no logs captured
+
+
+class GuestChatThrottleAndFallbackTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        from rest_framework.test import APIClient
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='c4_tester', password='pw')
+
+    def test_assistant_chat_throttle_attached_and_guest_leaves_no_record(self):
+        """AssistantChatThrottle is attached to chat_view and unauthenticated guest calls leave no server record."""
+        from assistant.views import chat_view
+        from api.throttles import AssistantChatThrottle
+        self.assertIn(AssistantChatThrottle, chat_view.cls.throttle_classes)
+        res = self.client.post(
+            '/api/assistant/chat/',
+            {'message': 'how to request blood', 'language': 'en'},
+            format='json',
+        )
+        self.assertIn(res.status_code, (200, 401, 403))
+        self.assertEqual(AssistantConversation.objects.count(), 0)
+        self.assertEqual(AssistantMessage.objects.count(), 0)
+
+    def test_outer_exception_fallback_never_uses_raw_message_text(self):
+        """If an unexpected error occurs inside chat_view, outer fallback never echoes raw message text."""
+        self.client.force_authenticate(user=self.user)
+        raw_secret = 'RAW_SECRET_PII_TOKEN_01799999999'
+        with patch('assistant.views.check_limits', side_effect=RuntimeError('boom_internal')):
+            res = self.client.post(
+                '/api/assistant/chat/',
+                {'message': f'Can I donate {raw_secret}?', 'language': 'en'},
+                format='json',
+            )
+        self.assertEqual(res.status_code, 200)
+        body_str = str(res.json())
+        self.assertNotIn(raw_secret, body_str)
+        self.assertNotIn('01799999999', body_str)
+        self.assertNotIn('boom_internal', body_str)
+        self.assertEqual(res.json().get('source'), 'static_safe_fallback')
+
+    def test_assistant_chat_throttle_enforced(self):
+        """AssistantChatThrottle (10/min) throttles calls on the 11th request."""
+        self.client.force_authenticate(user=self.user)
+        # Bypass internal check_limits so DRF AssistantChatThrottle class is specifically verified
+        with patch('assistant.views.check_limits', return_value=None):
+            for i in range(10):
+                r = self.client.post(
+                    '/api/assistant/chat/',
+                    {'message': 'how to request blood', 'language': 'en'},
+                    format='json',
+                    REMOTE_ADDR='198.51.100.77',
+                )
+                self.assertEqual(r.status_code, 200)
+            r11 = self.client.post(
+                '/api/assistant/chat/',
+                {'message': 'how to request blood', 'language': 'en'},
+                format='json',
+                REMOTE_ADDR='198.51.100.77',
+            )
+            self.assertEqual(r11.status_code, 429)

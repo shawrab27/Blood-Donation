@@ -216,31 +216,45 @@ class DonorProfile(models.Model):
 
         return len(missing) == 0, missing
 
-    def save(self, *args, **kwargs):
-        if self.user_intent == 'ONLY_REQUEST':
-            self.is_searchable = False
+    def __init__(self, *args, **kwargs):
+        self._explicit_is_searchable = 'is_searchable' in kwargs
+        super().__init__(*args, **kwargs)
+        self._was_profile_complete = bool(getattr(self, 'is_profile_complete', False))
 
+    def save(self, *args, **kwargs):
+        was_comp = getattr(self, '_was_profile_complete', False)
         is_comp, _ = self.check_is_complete()
         self.is_profile_complete = is_comp
+
+        if self.user_intent == 'ONLY_REQUEST':
+            self.is_searchable = False
+        elif is_comp and not was_comp and not getattr(self, '_explicit_is_searchable', False):
+            self.is_searchable = True
+
+        lat = self.last_lat if self.last_lat is not None else self.latitude
+        lng = self.last_lng if self.last_lng is not None else self.longitude
+        geohash_updated = False
+        if lat is not None and lng is not None:
+            try:
+                from api.services.geo import encode_geohash
+                self.geohash = encode_geohash(lat, lng, precision=12)
+                geohash_updated = True
+            except Exception:
+                pass
 
         update_fields = kwargs.get('update_fields')
         if update_fields is not None:
             update_fields = set(update_fields)
             update_fields.add('is_profile_complete')
-            if self.user_intent == 'ONLY_REQUEST':
+            if self.user_intent == 'ONLY_REQUEST' or (is_comp and not was_comp and not getattr(self, '_explicit_is_searchable', False)):
                 update_fields.add('is_searchable')
+            if geohash_updated:
+                update_fields.add('geohash')
             kwargs['update_fields'] = update_fields
 
-        lat = self.last_lat if self.last_lat is not None else self.latitude
-        lng = self.last_lng if self.last_lng is not None else self.longitude
-        if lat is not None and lng is not None:
-            try:
-                from api.services.geo import encode_geohash
-                self.geohash = encode_geohash(lat, lng, precision=12)
-            except Exception:
-                pass
-
         super().save(*args, **kwargs)
+        self._was_profile_complete = self.is_profile_complete
+        self._explicit_is_searchable = False
 
 
 

@@ -31,7 +31,7 @@ def get_client_ip(request) -> str:
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@throttle_classes([AssistantChatThrottle, PulseAIUserThrottle])
+@throttle_classes([AssistantChatThrottle, PulseAIAnonThrottle, PulseAIUserThrottle])
 def chat_view(request):
     message_text = request.data.get('message', '')
     conversation_id = request.data.get('conversation_id')
@@ -47,8 +47,8 @@ def chat_view(request):
         norm_text = convert_bangla_digits(str(message_text or ''))
         redacted_text = redact_text(norm_text)
     except Exception as redact_err:
-        logger.error(f"PulseAI redaction error: {type(redact_err).__name__}: {redact_err}")
-        is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(message_text or '')))
+        logger.error("PulseAI redaction error: %s", type(redact_err).__name__)
+        is_bn = (locale == 'bn')
         triage_text = (
             "জরুরি পরিস্থিতিতে অবিলম্বে ৯৯৯ নম্বরে কল করুন অথবা নিকটস্থ হাসপাতালে যোগাযোগ করুন।"
             if is_bn else
@@ -111,8 +111,8 @@ def chat_view(request):
                     "রক্ত দিতে পারবো", "amake ke", "amake", "আমাকে", "my blood", "আমার রক্ত", 
                     "can i donate", "eligible", "আমি কি", "who can donate"
                 ]
-                if any(kw in (message_text or "").lower() for kw in personal_kws):
-                    is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(message_text or '')))
+                if any(kw in (redacted_text or "").lower() for kw in personal_kws):
+                    is_bn = locale == 'bn' or bool(re.search(r'[\u0980-\u09FF]', str(redacted_text or '')))
                     fixed_reply = (
                         "আপনার প্রোফাইলে রক্তের গ্রুপ নির্ধারণ করা নেই। অনুগ্রহ করে রেজিস্ট্রেশন সম্পূর্ণ করুন।"
                         if is_bn else
@@ -210,8 +210,8 @@ def chat_view(request):
 
         except Exception as gemini_err:
             # Privacy-safe technical error logging without storing user message text
-            logger.error(f"PulseAI Gemini pipeline error: {type(gemini_err).__name__}: {gemini_err}")
-            # Fallback to PulseAIAssistant standard contract
+            logger.error("PulseAI Gemini pipeline error: %s", type(gemini_err).__name__)
+            # Fallback to PulseAIAssistant standard contract using redacted_text only
             pulse_ai_res = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale)
             validated = validate_and_format_response(
                 raw_reply=pulse_ai_res.get("reply") or pulse_ai_res.get("response", ""),
@@ -225,21 +225,20 @@ def chat_view(request):
             return _save_and_respond(conv, user, redacted_text, pulse_ai_res, flags=["FALLBACK"])
 
     except Exception as general_err:
-        logger.error(f"PulseAI general error: {type(general_err).__name__}: {general_err}")
-        fallback = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale if 'locale' in locals() else 'bn')
-        validated = validate_and_format_response(
-            raw_reply=fallback.get("reply") or fallback.get("response", ""),
-            user_query=redacted_text,
-            locale=locale,
-            is_fallback=True
+        logger.error("PulseAI general error: %s", type(general_err).__name__)
+        safe_lang = 'bn' if (locale == 'bn') else 'en'
+        static_safe_msg = (
+            "আমি রক্তদান ও যোগ্যতা বিষয়ে সহায়তা করতে পারি। জরুরি প্রয়োজনে ৯৯৯ নম্বরে কল করুন।"
+            if safe_lang == 'bn' else
+            "I can help with blood donation and eligibility questions. In an emergency, please call 999."
         )
         return Response({
-            "response": validated["response"],
-            "reply": validated["reply"],
-            "source": fallback.get("source", "default"),
-            "confidence": fallback.get("confidence", 0.95),
-            "language": validated["language"],
-            "emergency": validated.get("emergency", False),
+            "response": static_safe_msg,
+            "reply": static_safe_msg,
+            "source": "static_safe_fallback",
+            "confidence": 0.95,
+            "language": safe_lang,
+            "emergency": False,
             "actions": [],
         }, status=200)
 

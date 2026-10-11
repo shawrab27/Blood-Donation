@@ -99,12 +99,16 @@ class GuestLockCard extends ConsumerWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Register now / রেজিস্ট্রেশন করুন',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Text(
+                      'Register now / রেজিস্ট্রেশন করুন',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   SizedBox(width: 6),

@@ -119,3 +119,48 @@ def encode_geohash(latitude: float, longitude: float, precision: int = 7) -> str
             ch = 0
 
     return "".join(geohash)
+
+
+def decode_geohash_bbox(geohash: str):
+    """
+    Decodes geohash into (lat_interval, lon_interval)
+    where each interval is [min, max].
+    """
+    if not geohash:
+        return ([-90.0, 90.0], [-180.0, 180.0])
+
+    lat_interval = [-90.0, 90.0]
+    lon_interval = [-180.0, 180.0]
+    even = True
+
+    for c in geohash.lower():
+        cd = _GEOHASH_BASE32.find(c)
+        if cd == -1:
+            continue
+        for mask in [16, 8, 4, 2, 1]:
+            if even:
+                mid = (lon_interval[0] + lon_interval[1]) / 2.0
+                if cd & mask:
+                    lon_interval[0] = mid
+                else:
+                    lon_interval[1] = mid
+            else:
+                mid = (lat_interval[0] + lat_interval[1]) / 2.0
+                if cd & mask:
+                    lat_interval[0] = mid
+                else:
+                    lat_interval[1] = mid
+            even = not even
+
+    return lat_interval, lon_interval
+
+
+def decode_geohash(geohash: str) -> tuple:
+    """
+    Decodes a geohash string into latitude and longitude centroid.
+    Returns (lat, lon).
+    """
+    lat_interval, lon_interval = decode_geohash_bbox(geohash)
+    lat = (lat_interval[0] + lat_interval[1]) / 2.0
+    lon = (lon_interval[0] + lon_interval[1]) / 2.0
+    return (round(lat, 6), round(lon, 6))

@@ -77,3 +77,11 @@ FCM_BATCH_SIZE = 500
 
 # Minimum donors required to display exact count on public screens (Phase 4)
 PUBLIC_STATS_MIN_DONORS = 10
+
+# Guest map privacy & aggregation constants
+GUEST_MAP_GEOHASH_PRECISION = 4
+GUEST_MAP_MIN_CELL_DONORS = 3
+GUEST_MAP_MAX_CELLS = 500
+GUEST_MAP_CACHE_TIMEOUT_SECONDS = 300  # 5 minutes
+CACHE_KEY_GUEST_MAP = 'bp_guest_map_v1'
+

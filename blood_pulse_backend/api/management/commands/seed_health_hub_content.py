@@ -1,7 +1,9 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-from django.core.management.base import BaseCommand
+import os
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from api.models import (
     BloodScienceArticle, CompatibilityRule, DonationGuideSection,
     EmergencyContact, RecoveryTimelineStep
@@ -10,7 +12,26 @@ from api.models import (
 class Command(BaseCommand):
     help = 'Seeds Health Hub educational articles, compatibility matrix, donation guide, emergency contacts, and recovery timeline.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--i-understand-this-creates-fake-users',
+            action='store_true',
+            dest='confirm_fake_users',
+            help='Explicit acknowledgment required to run seed commands.',
+        )
+
     def handle(self, *args, **options):
+        django_env = (os.environ.get('DJANGO_ENV') or getattr(settings, 'DJANGO_ENV', '')).strip().lower()
+        if django_env not in ('dev', 'test'):
+            msg = f"Refusing to run seed command when DJANGO_ENV is '{django_env}'. Must be 'dev' or 'test'."
+            self.stderr.write(self.style.ERROR(msg))
+            raise CommandError(msg)
+
+        if not options.get('confirm_fake_users'):
+            msg = "Refusing to run seed command. You must pass '--i-understand-this-creates-fake-users' flag."
+            self.stderr.write(self.style.ERROR(msg))
+            raise CommandError(msg)
+
         self.stdout.write(self.style.NOTICE("Seeding Health Hub Content..."))
 
         # 1. Compatibility Rules

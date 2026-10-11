@@ -29,10 +29,15 @@ class LocMemEmailSender(EmailSender):
     """Test-only sender using Django's locmem backend or in-memory outbox."""
     def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
         from django.core.mail import EmailMultiAlternatives
+        from_addr = (
+            getattr(settings, 'BREVO_SENDER_EMAIL', '')
+            or getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+            or 'locmem@localhost'
+        )
         msg = EmailMultiAlternatives(
             subject=subject,
             body=text_content,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@bloodpulse.org'),
+            from_email=from_addr,
             to=[to_email],
         )
         if html_content:
@@ -53,20 +58,24 @@ class BrevoApiEmailSender(EmailSender):
     Sends transactional email via Brevo REST API:
     POST https://api.brevo.com/v3/smtp/email
     Timeout: 8 seconds.
+    Config strictly from env/settings (BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME).
     Never logs API keys or OTP codes.
     """
     ENDPOINT = "https://api.brevo.com/v3/smtp/email"
     TIMEOUT_SECONDS = 8
 
     def __init__(self, api_key: str = None, sender_email: str = None, sender_name: str = None):
-        self.api_key = api_key or getattr(settings, 'BREVO_API_KEY', '')
-        self.sender_email = sender_email or getattr(settings, 'BREVO_SENDER_EMAIL', 'no-reply@bloodpulse.org')
-        self.sender_name = sender_name or getattr(settings, 'BREVO_SENDER_NAME', 'BloodPulse')
+        self.api_key = api_key if api_key is not None else (getattr(settings, 'BREVO_API_KEY', '') or os.getenv('BREVO_API_KEY', ''))
+        self.sender_email = sender_email if sender_email is not None else (getattr(settings, 'BREVO_SENDER_EMAIL', '') or os.getenv('BREVO_SENDER_EMAIL', ''))
+        self.sender_name = sender_name if sender_name is not None else (getattr(settings, 'BREVO_SENDER_NAME', '') or os.getenv('BREVO_SENDER_NAME', 'BloodPulse'))
 
     def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
         if not self.api_key:
             logger.error("BREVO_API_KEY missing. Cannot dispatch email to %s", to_email)
             raise EmailProviderError("BREVO_API_KEY missing")
+        if not self.sender_email:
+            logger.error("BREVO_SENDER_EMAIL missing. Cannot dispatch email to %s", to_email)
+            raise EmailProviderError("BREVO_SENDER_EMAIL missing")
 
         headers = {
             "api-key": self.api_key,

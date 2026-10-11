@@ -15,6 +15,54 @@ import '../../domain/providers/health_hub_provider.dart';
 class ScienceOfBloodScreen extends ConsumerWidget {
   const ScienceOfBloodScreen({super.key});
 
+  static const List<({String title, String content})> _fallbackArticles = [
+    (
+      title: 'The Four Components of Blood',
+      content:
+          'Whole blood consists of red blood cells (oxygen transport), white blood cells (immune defense), platelets (clotting), and plasma (proteins, electrolytes, and nutrients).',
+    ),
+    (
+      title: 'Why Regular Donation Matters',
+      content:
+          'Red blood cells have a shelf life of 35–42 days and platelets last only 5 days. Consistent voluntary donation ensures hospitals across Bangladesh can respond to emergencies.',
+    ),
+  ];
+
+  Widget _buildArticlesColumn(List<({String title, String content})> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: items.map((article) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionHeader(article.title),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Text(
+                  article.content,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: AppColors.secondary,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final articlesAsyncValue = ref.watch(scienceArticlesProvider);
@@ -67,45 +115,18 @@ class ScienceOfBloodScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 18),
 
-              // ── 3. Dynamic Articles from Backend ────────────────────────
+              // ── 3. Dynamic Articles from Backend (with friendly fallback) ──
               articlesAsyncValue.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
                   child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 ),
-                error: (err, stack) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: Text('Unable to load articles: $err', style: const TextStyle(color: AppColors.error))),
+                error: (_, __) => _buildArticlesColumn(_fallbackArticles),
+                data: (articles) => _buildArticlesColumn(
+                  articles.isNotEmpty
+                      ? articles.map((a) => (title: a.title, content: a.content)).toList()
+                      : _fallbackArticles,
                 ),
-                data: (articles) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: articles.map((article) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionHeader(article.title),
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Text(
-                                article.content,
-                                style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.secondary, height: 1.5),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
               ),
 
               // ── 4. Blood Circulation & Clotting ─────────────────────────

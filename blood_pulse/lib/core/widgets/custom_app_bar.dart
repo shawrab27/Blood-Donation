@@ -212,12 +212,20 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                       ),
                       tooltip: 'Notifications',
                       onPressed: () {
-                        ref.read(notificationCountProvider.notifier).markAsRead();
-                        if (onNotificationTap != null) {
-                          onNotificationTap!();
-                        } else {
-                          context.push('/notifications');
-                        }
+                        AccessGuard.checkAndHandle(
+                          context: context,
+                          ref: ref,
+                          feature: AccessFeature.profile,
+                          targetRoute: '/notifications',
+                          onAllowed: () {
+                            ref.read(notificationCountProvider.notifier).markAsRead();
+                            if (onNotificationTap != null) {
+                              onNotificationTap!();
+                            } else {
+                              context.push('/notifications');
+                            }
+                          },
+                        );
                       },
                     ),
                     if (effectiveNotificationCount > 0)

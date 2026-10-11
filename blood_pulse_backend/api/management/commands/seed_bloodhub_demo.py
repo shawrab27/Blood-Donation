@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import get_user_model
 from api.models import (
     DonorProfile, Hospital, NationalEmergencyEvent, 
@@ -29,18 +29,16 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        django_env = os.environ.get('DJANGO_ENV', '').strip().lower()
+        django_env = (os.environ.get('DJANGO_ENV') or getattr(settings, 'DJANGO_ENV', '')).strip().lower()
         if django_env not in ('dev', 'test'):
-            self.stdout.write(self.style.ERROR(
-                f"Refusing to seed demo data when DJANGO_ENV is '{django_env}'. Must be 'dev' or 'test'."
-            ))
-            return
+            msg = f"Refusing to seed demo data when DJANGO_ENV is '{django_env}'. Must be 'dev' or 'test'."
+            self.stderr.write(self.style.ERROR(msg))
+            raise CommandError(msg)
 
         if not options.get('confirm_fake_users'):
-            self.stdout.write(self.style.ERROR(
-                "Refusing to seed demo data. You must pass '--i-understand-this-creates-fake-users' flag."
-            ))
-            return
+            msg = "Refusing to seed demo data. You must pass '--i-understand-this-creates-fake-users' flag."
+            self.stderr.write(self.style.ERROR(msg))
+            raise CommandError(msg)
 
         # Generate a random password printed once
         generated_password = secrets.token_urlsafe(16)

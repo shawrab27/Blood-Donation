@@ -72,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     if (!mounted) return;
     if (success) {
-      context.go('/dashboard');
+      context.go('/feed');
     } else {
       final err = ref.read(authProvider).errorMessage ?? 'Login failed.';
       ScaffoldMessenger.of(context).showSnackBar(
@@ -291,7 +291,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 height: 50,
                                 onPressed: () {
                                   ref.read(authProvider.notifier).continueAsGuest();
-                                  context.go('/feed');
+                                  context.go('/guest-welcome');
                                 },
                               ),
                               const SizedBox(height: 16),

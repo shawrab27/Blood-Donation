@@ -14,6 +14,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
@@ -225,9 +226,12 @@ if EMAIL_PROVIDER not in ('brevo_api', 'console', 'locmem'):
     raise ImproperlyConfigured(f"Unknown EMAIL_PROVIDER '{EMAIL_PROVIDER}'. Must be brevo_api, console, or locmem.")
 
 BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
-BREVO_SENDER_EMAIL = os.getenv('BREVO_SENDER_EMAIL', os.getenv('EMAIL_FROM', 'no-reply@bloodpulse.org'))
+BREVO_SENDER_EMAIL = os.getenv('BREVO_SENDER_EMAIL', os.getenv('EMAIL_FROM', ''))
 BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'BloodPulse')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f"{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>")
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    f"{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>" if BREVO_SENDER_EMAIL else BREVO_SENDER_NAME,
+)
 
 if EMAIL_PROVIDER == 'locmem':
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'

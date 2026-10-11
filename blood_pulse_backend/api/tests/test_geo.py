@@ -47,19 +47,102 @@ class GeoServiceTests(TestCase):
         self.assertIsInstance(gh, str)
         self.assertEqual(len(gh), 7)
 
+    @staticmethod
+    def _reference_geohash_encode(latitude: float, longitude: float, precision: int = 12) -> str:
+        """Independent bit-bisection reference implementation of Geohash (Niemeyer 2008)."""
+        alphabet = '0123456789bcdefghjkmnpqrstuvwxyz'
+        lat_min, lat_max = -90.0, 90.0
+        lon_min, lon_max = -180.0, 180.0
+        bits = []
+        total_bits = precision * 5
+        for i in range(total_bits):
+            if i % 2 == 0:
+                mid = (lon_min + lon_max) / 2.0
+                if longitude >= mid:
+                    bits.append(1)
+                    lon_min = mid
+                else:
+                    bits.append(0)
+                    lon_max = mid
+            else:
+                mid = (lat_min + lat_max) / 2.0
+                if latitude >= mid:
+                    bits.append(1)
+                    lat_min = mid
+                else:
+                    bits.append(0)
+                    lat_max = mid
+        chars = []
+        for idx in range(0, total_bits, 5):
+            val = (
+                (bits[idx] << 4)
+                | (bits[idx + 1] << 3)
+                | (bits[idx + 2] << 2)
+                | (bits[idx + 3] << 1)
+                | bits[idx + 4]
+            )
+            chars.append(alphabet[val])
+        return ''.join(chars)
+
     def test_geohash_parity_against_reference(self):
         import random
+        from api.services.geo import decode_geohash
         try:
             import geohash2
         except ImportError:
-            return  # skip if geohash2 not installed
-        # Test 200 pseudo-random Bangladesh coordinates at precisions 4, 5, 6, 7, 9
+            geohash2 = None
+
+        # Test 200 pseudo-random Bangladesh coordinates at precisions 4, 5, 6, 7, 9, 12
         random.seed(42)
         for _ in range(200):
             lat = random.uniform(20.5, 26.5)
             lon = random.uniform(88.0, 92.5)
             for prec in [4, 5, 6, 7, 9, 12]:
+                encoded = encode_geohash(lat, lon, precision=prec)
+                self.assertEqual(len(encoded), prec)
                 self.assertEqual(
-                    encode_geohash(lat, lon, precision=prec),
-                    geohash2.encode(lat, lon, precision=prec)
+                    encoded,
+                    self._reference_geohash_encode(lat, lon, precision=prec),
                 )
+                if geohash2 is not None:
+                    self.assertEqual(
+                        encoded,
+                        geohash2.encode(lat, lon, precision=prec),
+                    )
+            # Precision 12 decode roundtrip within <= 1e-6 degrees (decode_geohash rounds to 6 decimals)
+            dec_lat, dec_lon = decode_geohash(encode_geohash(lat, lon, precision=12))
+            self.assertAlmostEqual(lat, dec_lat, delta=1e-6)
+            self.assertAlmostEqual(lon, dec_lon, delta=1e-6)
+
+    def test_recompute_stored_geohash_for_all_donor_profiles(self):
+        """Recomputes the stored geohash of every DonorProfile row in the test DB and expects equality."""
+        from django.contrib.auth.models import User
+        from api.models import DonorProfile
+
+        sample_points = [
+            ('dhk_geo', 'Dhaka', 23.8103, 90.4125),
+            ('ctg_geo', 'Chattogram', 22.3569, 91.7832),
+            ('syl_geo', 'Sylhet', 24.8949, 91.8687),
+            ('raj_geo', 'Rajshahi', 24.3745, 88.6042),
+            ('khl_geo', 'Khulna', 22.8456, 89.5403),
+        ]
+        for idx, (uname, dist, lat, lng) in enumerate(sample_points):
+            u = User.objects.create_user(username=uname, first_name=f'Geo{idx}')
+            DonorProfile.objects.create(
+                user=u,
+                phone_number=f'0189100000{idx}',
+                blood_group='O+',
+                district=dist,
+                latitude=lat,
+                longitude=lng,
+            )
+
+        rows = list(DonorProfile.objects.all())
+        self.assertGreaterEqual(len(rows), 5)
+        for profile in rows:
+            lat = profile.last_lat if profile.last_lat is not None else profile.latitude
+            lng = profile.last_lng if profile.last_lng is not None else profile.longitude
+            if lat is not None and lng is not None:
+                expected = encode_geohash(lat, lng, precision=12)
+                self.assertEqual(profile.geohash, expected)
+

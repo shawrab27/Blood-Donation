@@ -441,7 +441,7 @@ class SocialPostViewSet(viewsets.ModelViewSet):
             author = getattr(request.user, 'donorprofile', None)
         if not author:
             guest_user, _ = User.objects.get_or_create(username='community_donor', defaults={'first_name': 'Community', 'last_name': 'Donor'})
-            author, _ = DonorProfile.objects.get_or_create(user=guest_user, defaults={'phone_number': '01700000000', 'blood_group': 'O+'})
+            author, _ = DonorProfile.objects.get_or_create(user=guest_user, defaults={'phone_number': f'community_{guest_user.id}', 'blood_group': 'O+'})
 
         text = original.text_content if original else "Reposted Community Update"
         repost_instance = SocialPost.objects.create(
@@ -1261,16 +1261,8 @@ class SendVerificationEmailView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Invalidate previous unused codes for this user
-        EmailVerificationCode.objects.filter(user=request.user, is_used=False).update(is_used=True)
-
         # Generate cryptographically secure 6-digit OTP
         code = "".join(secrets.choice("0123456789") for _ in range(6))
-        EmailVerificationCode.objects.create(
-            user=request.user,
-            email=email,
-            code=code
-        )
 
         user_display = request.user.first_name or request.user.username or "BloodPulse Member"
         subject = f"[BloodPulse] Your Verification Code: {code}"
@@ -1283,16 +1275,26 @@ class SendVerificationEmailView(APIView):
             f"The BloodPulse Team"
         )
 
+        from api.services.email_sender import get_email_sender, EmailProviderError
         try:
-            send_mail(
+            get_email_sender().send_email(
+                to_email=email,
                 subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False
+                text_content=message,
             )
-        except Exception as e:
-            logger.error(f"[EmailVerification] Mail send error: {e}")
+        except EmailProviderError:
+            return Response(
+                {"detail": "Email delivery service is temporarily unavailable. Please try again in a moment."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # Invalidate previous unused codes and record new code only after successful send
+        EmailVerificationCode.objects.filter(user=request.user, is_used=False).update(is_used=True)
+        EmailVerificationCode.objects.create(
+            user=request.user,
+            email=email,
+            code=code
+        )
 
         return Response({
             "message": f"Verification code sent to {email}.",

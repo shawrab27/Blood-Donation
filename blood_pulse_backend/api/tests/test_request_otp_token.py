@@ -343,3 +343,139 @@ class RequestOTPAndSubmitTokenTests(TestCase):
         otp1.refresh_from_db()
         self.assertTrue(otp1.is_used, "Older unused OTP was not marked as is_used on resend")
 
+
+class BrevoApiEmailSenderAndSeedGuardTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username='brevo_user',
+            email='brevo_user@example.com',
+            password='Password123!',
+            first_name='Brevo',
+        )
+        self.profile = DonorProfile.objects.create(
+            user=self.user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801722222222',
+            is_profile_complete=True,
+            email_verified=True,
+            user_intent='DONATE_AND_REQUEST',
+        )
+
+    def test_brevo_api_sender_posts_https_with_api_key_and_8s_timeout(self):
+        """BrevoApiEmailSender calls POST https://api.brevo.com/v3/smtp/email with api-key header and 8s timeout."""
+        from unittest.mock import patch, MagicMock
+        from api.services.email_sender import BrevoApiEmailSender
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 201
+
+        sender = BrevoApiEmailSender(
+            api_key='test-brevo-key',
+            sender_email='verified@sender.example',
+            sender_name='BloodPulse',
+        )
+        with patch('api.services.email_sender.requests.post', return_value=mock_resp) as mock_post:
+            ok = sender.send_email(
+                to_email='recipient@example.com',
+                subject='123456 is your code',
+                text_content='Code: 123456',
+            )
+            self.assertTrue(ok)
+            mock_post.assert_called_once()
+            args, kwargs = mock_post.call_args
+            self.assertEqual(args[0], 'https://api.brevo.com/v3/smtp/email')
+            self.assertEqual(kwargs['timeout'], 8)
+            self.assertEqual(kwargs['headers']['api-key'], 'test-brevo-key')
+            self.assertEqual(kwargs['json']['sender']['email'], 'verified@sender.example')
+            self.assertEqual(kwargs['json']['to'], [{'email': 'recipient@example.com'}])
+
+    def test_provider_429_or_timeout_returns_503_and_does_not_start_cooldown(self):
+        """On Brevo 429 or timeout, OTP endpoints return HTTP 503 and do NOT start resend cooldown."""
+        import requests as req_lib
+        from unittest.mock import patch, MagicMock
+        from django.test import override_settings
+        from api.models import PasswordResetOTP
+
+        self.client.force_authenticate(user=self.user)
+
+        # 1. Simulate HTTP 429 from Brevo on /api/requests/otp/send/
+        resp_429 = MagicMock()
+        resp_429.status_code = 429
+        with override_settings(
+            EMAIL_PROVIDER='brevo_api',
+            BREVO_API_KEY='test-key',
+            BREVO_SENDER_EMAIL='verified@sender.example',
+            BREVO_SENDER_NAME='BloodPulse',
+        ):
+            with patch('api.services.email_sender.requests.post', return_value=resp_429):
+                res = self.client.post('/api/requests/otp/send/', {'email': self.user.email}, format='json')
+                self.assertEqual(res.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+                self.assertEqual(
+                    EmailOTP.objects.filter(user=self.user, purpose='blood_request_submit').count(),
+                    0,
+                )
+
+            # 2. Simulate Timeout on /api/auth/password-reset/request/
+            with patch('api.services.email_sender.requests.post', side_effect=req_lib.exceptions.Timeout('timed out')):
+                res_pw = self.client.post('/api/auth/password-reset/request/', {'email': self.user.email}, format='json')
+                self.assertEqual(res_pw.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+                self.assertEqual(PasswordResetOTP.objects.filter(user=self.user).count(), 0)
+
+            # 3. Immediate retry when Brevo recovers (201) succeeds (cooldown was NOT started!)
+            resp_201 = MagicMock()
+            resp_201.status_code = 201
+            with patch('api.services.email_sender.requests.post', return_value=resp_201):
+                res_ok = self.client.post('/api/requests/otp/send/', {'email': self.user.email}, format='json')
+                self.assertEqual(res_ok.status_code, status.HTTP_200_OK)
+                self.assertEqual(
+                    EmailOTP.objects.filter(user=self.user, purpose='blood_request_submit').count(),
+                    1,
+                )
+
+    def test_send_test_email_command_missing_key_prints_warning_and_continues(self):
+        """manage.py send_test_email prints 'BREVO_API_KEY missing' and returns cleanly when key is absent."""
+        from io import StringIO
+        from django.core.management import call_command
+        from django.test import override_settings
+
+        out = StringIO()
+        with override_settings(EMAIL_PROVIDER='brevo_api', BREVO_API_KEY=''):
+            call_command('send_test_email', 'test@example.com', stdout=out)
+        self.assertIn('BREVO_API_KEY missing', out.getvalue())
+
+    def test_seed_commands_refuse_in_production_or_without_flag(self):
+        """seed_bloodhub_demo and seed_health_hub_content refuse under DJANGO_ENV=production or without flag."""
+        import os
+        from io import StringIO
+        from unittest.mock import patch
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        # 1. Refuses in production even when --i-understand-this-creates-fake-users is passed
+        with patch.dict(os.environ, {'DJANGO_ENV': 'production'}):
+            with self.assertRaises(CommandError):
+                call_command(
+                    'seed_bloodhub_demo',
+                    '--i-understand-this-creates-fake-users',
+                    stdout=StringIO(),
+                    stderr=StringIO(),
+                )
+            with self.assertRaises(CommandError):
+                call_command(
+                    'seed_health_hub_content',
+                    '--i-understand-this-creates-fake-users',
+                    stdout=StringIO(),
+                    stderr=StringIO(),
+                )
+
+        # 2. Refuses in dev when flag is omitted
+        with patch.dict(os.environ, {'DJANGO_ENV': 'dev'}):
+            with self.assertRaises(CommandError):
+                call_command('seed_bloodhub_demo', stdout=StringIO(), stderr=StringIO())
+            with self.assertRaises(CommandError):
+                call_command('seed_health_hub_content', stdout=StringIO(), stderr=StringIO())
+
+

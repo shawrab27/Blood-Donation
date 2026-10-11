@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../../core/access/access_guard.dart';
+import '../../../../core/access/registration_gate_popup.dart';
 import '../../../../core/access/profile_completion_modal.dart';
 import 'guest_lock_card.dart';
 import '../providers/feed_provider.dart';
@@ -286,6 +287,11 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    if (ref.read(isGuestProvider)) {
+      RegistrationGatePopup.show(context, isGuest: true);
       return;
     }
 
@@ -731,6 +737,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
   }
 
   void _onSendComment() async {
+    if (ref.read(isGuestProvider)) {
+      RegistrationGatePopup.show(context, isGuest: true);
+      return;
+    }
     final text = _commentCtrl.text.trim();
     if (text.isEmpty) return;
     _commentCtrl.clear();
@@ -1205,6 +1215,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () {
+                    if (ref.read(isGuestProvider)) {
+                      RegistrationGatePopup.show(context, isGuest: true);
+                      return;
+                    }
                     final messenger = ScaffoldMessenger.of(context);
                     ref.read(feedProvider.notifier).toggleReact(
                       post.id,
@@ -1256,6 +1270,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () {
+                    if (ref.read(isGuestProvider)) {
+                      RegistrationGatePopup.show(context, isGuest: true);
+                      return;
+                    }
                     setState(() => _showComments = !_showComments);
                     if (_showComments) {
                       Future.delayed(const Duration(milliseconds: 100), () {
@@ -1294,6 +1312,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () async {
+                    if (ref.read(isGuestProvider)) {
+                      RegistrationGatePopup.show(context, isGuest: true);
+                      return;
+                    }
                     final messenger = ScaffoldMessenger.of(context);
                     final authUser = ref.read(authProvider).user;
                     final reposterName = authUser?.fullName.isNotEmpty == true ? authUser!.fullName : 'You';

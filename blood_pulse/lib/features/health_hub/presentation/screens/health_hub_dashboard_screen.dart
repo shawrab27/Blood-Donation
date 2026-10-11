@@ -17,11 +17,13 @@ class HealthHubDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return ResponsiveCenterWrapper(
-      child: ListView(
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
+    return Material(
+      type: MaterialType.transparency,
+      child: ResponsiveCenterWrapper(
+        child: ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          children: [
           const SizedBox(height: 8),
 
           // ── Title & Intro ──────────────────────────────────────────────────
@@ -79,7 +81,8 @@ class HealthHubDashboardScreen extends StatelessWidget {
           const HealthHubArticlesSection(),
 
           const SizedBox(height: 40),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -39,3 +39,7 @@ class NearbyDonorsThrottle(UserRateThrottle):
 class OSMProxyThrottle(UserRateThrottle):
     scope = 'osm_proxy'
     rate = '10/min'
+
+class GuestMapAnonThrottle(AnonRateThrottle):
+    scope = 'guest_map'
+    rate = '30/min'

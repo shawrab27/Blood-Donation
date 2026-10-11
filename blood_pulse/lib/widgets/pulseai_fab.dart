@@ -98,6 +98,11 @@ class _PulseAIFABState extends ConsumerState<PulseAIFAB>
   }
 
   void _handleTap() {
+    final isGuest = ref.read(isGuestProvider);
+    if (isGuest) {
+      _showQuickMenu();
+      return;
+    }
     AccessGuard.checkAndHandle(
       context: context,
       ref: ref,

@@ -2,12 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/auth/presentation/providers/auth_notifier.dart';
 
+import '../core/access/access_guard.dart';
+
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(this.ref) {
     ref.listen<AuthState>(
       authProvider,
       (previous, next) {
+        if (next.status == AuthStatus.authenticated ||
+            next.status == AuthStatus.authenticatedIncomplete) {
+          if (ref.read(isGuestProvider)) {
+            ref.read(isGuestProvider.notifier).state = false;
+          }
+        }
         if (previous?.status != next.status) {
+          notifyListeners();
+        }
+      },
+    );
+    ref.listen<bool>(
+      isGuestProvider,
+      (previous, next) {
+        if (previous != next) {
           notifyListeners();
         }
       },
@@ -18,6 +34,7 @@ class RouterNotifier extends ChangeNotifier {
 
   String? redirectLogic(BuildContext context, dynamic state) {
     final authState = ref.read(authProvider);
+    final isGuest = ref.read(isGuestProvider);
     final path = state.uri.path;
     final isPreAuthRoute = path == '/login' || 
                            path == '/register' || 
@@ -27,13 +44,30 @@ class RouterNotifier extends ChangeNotifier {
                            path == '/' || 
                            path == '/onboarding' || 
                            path == '/splash' ||
-                           path == '/privacy-policy';
+                           path == '/privacy-policy' ||
+                           path == '/guest-welcome';
                         
     if (authState.status == AuthStatus.loading) {
       return null;
     }
 
     if (authState.status == AuthStatus.unauthenticated) {
+      if (isGuest) {
+        // Guest allowlist is exactly Welcome, Feed (read-only), Health Hub (and pre-auth flows)
+        final isGuestAllowed = path == '/guest-welcome' ||
+                               path == '/feed' ||
+                               path == '/health-hub' ||
+                               path.startsWith('/health-hub/') ||
+                               path == '/assistant' ||
+                               isPreAuthRoute;
+
+        if (!isGuestAllowed) {
+          // Deep link or locked navigation: redirect to guest welcome without looping
+          return '/guest-welcome';
+        }
+        return null;
+      }
+
       if (!isPreAuthRoute) {
         return '/login';
       }
@@ -47,9 +81,10 @@ class RouterNotifier extends ChangeNotifier {
                          path == '/verify-otp' ||
                          path == '/' || 
                          path == '/onboarding' || 
-                         path == '/splash';
+                         path == '/splash' ||
+                         path == '/guest-welcome';
       if (isAuthFlow) {
-        return '/feed'; // Feed is the default
+        return '/feed'; // Feed is the default; logged-in users never stay on /guest-welcome
       }
     }
     

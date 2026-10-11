@@ -242,6 +242,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Sets user state directly
   void setUserForTesting(UserProfile user) {
+    try {
+      ref.read(isGuestProvider.notifier).state = false;
+    } catch (_) {}
     state = state.copyWith(
       status: AuthStatus.authenticated,
       user: user,
@@ -250,6 +253,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Updates the current user profile in state upon profile completion or update
   void updateUser(UserProfile user) {
+    try {
+      ref.read(isGuestProvider.notifier).state = false;
+    } catch (_) {}
     state = state.copyWith(
       status: user.isProfileComplete ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete,
       user: user,
@@ -258,6 +264,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// One-click demo login for previewing all features on any device
   void loginAsDemo() {
+    try {
+      ref.read(isGuestProvider.notifier).state = false;
+    } catch (_) {}
     final user = UserProfile(
       fullName: 'Rahim Uddin',
       email: 'rahim.uddin@bloodpulse.org',
@@ -616,7 +625,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final user = UserProfile(
         fullName: 'Facebook Altruist',
         email: 'donor@facebook.com',
-        primaryPhone: '+8801800000002',
+        primaryPhone: '',
         age: 26,
         gender: 'Female',
         bloodGroup: 'A+',

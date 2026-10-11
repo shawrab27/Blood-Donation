@@ -49,6 +49,7 @@ router.register(r'health-accessories', HealthAccessoryViewSet, basename='health-
 from .views_bloodhub import (
     donor_search_view,
     donor_map_view,
+    guest_donor_map_view,
     hospital_list_view,
     emergency_requests_list_create_view,
     emergency_request_detail_view,
@@ -130,6 +131,7 @@ urlpatterns = [
     # Blood Hub v2 Core Endpoints (registered prior to router to prevent pk collisions)
     path('donors/search/', donor_search_view, name='bloodhub-donor-search'),
     path('donors/map/', donor_map_view, name='bloodhub-donor-map'),
+    path('donors/guest-map/', guest_donor_map_view, name='bloodhub-guest-donor-map'),
     path('hospitals/directory/', hospital_list_view, name='bloodhub-hospital-directory'),
     path('emergency/requests/', emergency_requests_list_create_view, name='bloodhub-emergency-requests'),
     path('emergency/requests/bulk-dispatch/', emergency_request_all_view, name='bloodhub-bulk-dispatch'),

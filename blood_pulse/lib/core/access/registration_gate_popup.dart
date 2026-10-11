@@ -18,13 +18,22 @@ class RegistrationGatePopup extends StatelessWidget {
     this.targetRoute,
   });
 
+  static bool _isShowing = false;
+
   /// Displays the modal dialog. Dismissing via X stays on the current screen.
-  static Future<void> show(BuildContext context, {required bool isGuest, String? targetRoute}) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => RegistrationGatePopup(isGuest: isGuest, targetRoute: targetRoute),
-    );
+  /// Debounced: does nothing if a registration gate popup is already currently active.
+  static Future<void> show(BuildContext context, {required bool isGuest, String? targetRoute}) async {
+    if (_isShowing) return;
+    _isShowing = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => RegistrationGatePopup(isGuest: isGuest, targetRoute: targetRoute),
+      );
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override
@@ -56,29 +65,68 @@ class RegistrationGatePopup extends StatelessWidget {
             // Top Close Button
             Align(
               alignment: Alignment.topRight,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Color(0xFF888888)),
-                splashRadius: 20,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                onPressed: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF0F1),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFF555555), size: 18),
+                  splashRadius: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ),
             ),
 
-            // Red/Pink Shield Lock Icon Badge
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFF0F1),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  color: AppColors.primary,
-                  size: 34,
-                ),
+            // Red/Pink Shield Lock Icon Badge (Stitch 2acc8f8bc1e9476a81976c9537c4842b)
+            SizedBox(
+              width: 78,
+              height: 78,
+              child: Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE5E8),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFF9CDD2), width: 1.2),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.lock_rounded,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.verified_user_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 18),
@@ -137,6 +185,7 @@ class RegistrationGatePopup extends StatelessWidget {
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50),
                   ),
@@ -144,16 +193,21 @@ class RegistrationGatePopup extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      isGuest ? 'Register Now / রেজিস্ট্রেশন করুন' : 'Complete Profile / প্রোফাইল সম্পূর্ণ করুন',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        isGuest ? 'Register Now / রেজিস্ট্রেশন করুন' : 'Complete Profile / প্রোফাইল সম্পূর্ণ করুন',
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward_rounded, size: 18),
+                    const SizedBox(width: 6),
+                    const Icon(Icons.arrow_forward_rounded, size: 16),
                   ],
                 ),
               ),

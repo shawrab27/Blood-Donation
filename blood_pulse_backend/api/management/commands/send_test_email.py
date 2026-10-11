@@ -15,11 +15,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         to_email = options['to_email'].strip()
         provider = getattr(settings, 'EMAIL_PROVIDER', 'locmem')
-        api_key = getattr(settings, 'BREVO_API_KEY', '')
+        api_key = getattr(settings, 'BREVO_API_KEY', '') or ''
 
         self.stdout.write(f"Configured EMAIL_PROVIDER: {provider}")
 
-        if provider == 'brevo_api' and not api_key:
+        if not api_key:
             self.stdout.write(self.style.WARNING("BREVO_API_KEY missing"))
             return
 

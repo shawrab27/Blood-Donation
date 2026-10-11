@@ -126,21 +126,29 @@ def request_otp(request):
         # The cooldown is enforced silently server-side.
         return _generic_success()
 
-    # Invalidate all earlier unused OTPs for that user
-    PasswordResetOTP.objects.filter(user=user, is_used=False).update(is_used=True)
-
     otp_code = str(secrets.randbelow(900000) + 100000)
     expiry_minutes = int(os.environ.get('OTP_EXPIRY_MINUTES', 10))
 
+    from api.services.email_sender import EmailProviderError
+    email_service = get_email_service()
+    try:
+        sent = email_service.send_otp(user.email, otp_code)
+        if not sent:
+            raise EmailProviderError("Email delivery returned False")
+    except EmailProviderError:
+        return Response(
+            {'detail': 'Email delivery service is temporarily unavailable. Please try again in a moment.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    # Only after provider accepts the email: invalidate old OTPs and start cooldown
+    PasswordResetOTP.objects.filter(user=user, is_used=False).update(is_used=True)
     PasswordResetOTP.objects.create(
         user=user,
         otp_hash=generate_otp_hash(otp_code),
         expires_at=now + timedelta(minutes=expiry_minutes),
         is_used=False,
     )
-
-    email_service = get_email_service()
-    email_service.send_otp(user.email, otp_code)
 
     return _generic_success()
 

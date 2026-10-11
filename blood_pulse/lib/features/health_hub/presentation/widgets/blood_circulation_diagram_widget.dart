@@ -25,9 +25,13 @@ class BloodCirculationDiagramWidget extends StatelessWidget {
             children: [
               Icon(Icons.loop_rounded, color: AppColors.primary, size: 24),
               SizedBox(width: 10),
-              Text(
-                'Human Blood Circulation Loop',
-                style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+              Expanded(
+                child: Text(
+                  'Human Blood Circulation Loop',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                ),
               ),
             ],
           ),
@@ -46,8 +50,10 @@ class BloodCirculationDiagramWidget extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Legend
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          const Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceAround,
             children: [
               _LegendItem(color: AppColors.primary, label: 'Oxygenated (Arteries)'),
               _LegendItem(color: AppColors.tertiary, label: 'Deoxygenated (Veins)'),
@@ -68,10 +74,17 @@ class _LegendItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.secondary),
+          ),
+        ),
       ],
     );
   }

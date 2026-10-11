@@ -22,23 +22,27 @@ CACHE_KEY_PUBLIC_STATS = 'bp_public_stats_v1'
 CACHE_TIMEOUT_SECONDS = 600  # 10 minutes
 
 
-def compute_public_stats_data() -> dict:
-    """
-    Computes real public stats:
-    registered_donors = complete profiles with user_intent DONATE_AND_REQUEST,
-    excluding staff, superusers, and seed/demo accounts.
-    districts_covered = distinct districts of those donors.
-    """
-    cached = cache.get(CACHE_KEY_PUBLIC_STATS)
-    if cached is not None:
-        return cached
+from django.utils import timezone
 
-    # Exclude staff, superuser, and demo seed users
-    base_qs = (
+
+def eligible_public_donors_queryset():
+    """
+    Shared base queryset for BOTH public stats and the anonymous guest map:
+    - is_profile_complete=True
+    - user_intent='DONATE_AND_REQUEST'
+    - is_searchable=True
+    - user is active, not staff, not superuser
+    - excludes demo/seed accounts
+    - excludes donors with alert_pause_until in the future
+    """
+    now = timezone.now()
+    return (
         DonorProfile.objects
         .filter(
             is_profile_complete=True,
             user_intent='DONATE_AND_REQUEST',
+            is_searchable=True,
+            user__is_active=True,
             user__is_staff=False,
             user__is_superuser=False,
         )
@@ -49,7 +53,21 @@ def compute_public_stats_data() -> dict:
             Q(phone_number__startswith='017000000') |
             Q(phone_number__startswith='+8801700000')
         )
+        .exclude(alert_pause_until__gt=now)
     )
+
+
+def compute_public_stats_data() -> dict:
+    """
+    Computes real public stats using eligible_public_donors_queryset():
+    registered_donors = eligible public donors count.
+    districts_covered = distinct non-empty districts of those donors.
+    """
+    cached = cache.get(CACHE_KEY_PUBLIC_STATS)
+    if cached is not None:
+        return cached
+
+    base_qs = eligible_public_donors_queryset()
 
     registered_donors = base_qs.count()
     districts_covered = (
