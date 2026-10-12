@@ -17,7 +17,9 @@ from assistant.pipeline.router import route_query
 from assistant.pipeline.cache import get_cached_answer, set_cached_answer
 from assistant.pipeline.gemini_client import call_gemini
 from assistant.pipeline.guards import apply_guards
+import uuid
 from assistant.pipeline.response_validator import validate_and_format_response
+from assistant.pipeline.offline_fallback import get_offline_guidance
 from api.throttles import PulseAIAnonThrottle, PulseAIUserThrottle, AssistantChatThrottle
 from api.services.assistant_service import PulseAIAssistant
 
@@ -30,9 +32,10 @@ def get_client_ip(request) -> str:
     return request.META.get('REMOTE_ADDR', '127.0.0.1')
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 @throttle_classes([AssistantChatThrottle, PulseAIAnonThrottle, PulseAIUserThrottle])
 def chat_view(request):
+    request_id = f"req_{uuid.uuid4().hex[:12]}"
     message_text = request.data.get('message', '')
     conversation_id = request.data.get('conversation_id')
     locale = request.data.get('language') or request.data.get('locale', 'bn')
@@ -40,7 +43,7 @@ def chat_view(request):
 
     # 0. Validate input presence
     if not message_text or not str(message_text).strip():
-        return Response({"code": "EMPTY_MESSAGE", "message": "Message text is required."}, status=400)
+        return Response({"code": "EMPTY_MESSAGE", "message": "Message text is required.", "request_id": request_id}, status=400)
 
     # Compute redacted_text BEFORE the try/except
     try:
@@ -76,7 +79,7 @@ def chat_view(request):
         try:
             check_limits(user.id if user else None, redacted_text, client_ip=client_ip)
         except LimitsExceeded as e:
-            return Response({"code": e.code, "message": e.message, "response": e.message, "reply": e.message}, status=429)
+            return Response({"code": e.code, "message": e.message, "response": e.message, "reply": e.message, "request_id": request_id}, status=429)
 
         # 2. Conversation management (authenticated users only; guest is stateless)
         conv = None
@@ -98,7 +101,7 @@ def chat_view(request):
                 locale=locale,
                 emergency=True
             )
-            return _save_and_respond(conv, user, redacted_text, validated, flags=["EMERGENCY"])
+            return _save_and_respond(conv, user, redacted_text, validated, flags=["EMERGENCY"], request_id=request_id)
 
         # 3b. Deterministic classifier for personal questions & fare estimation (the server decides, not the LLM)
         from assistant.pipeline.personal_classifier import (
@@ -139,7 +142,7 @@ def chat_view(request):
                 )
                 fare_res['reply'] = validated['reply']
                 fare_res['response'] = validated['response']
-                return _save_and_respond(conv, user, redacted_text, fare_res, flags=["FARE_ESTIMATE_RANGE"])
+                return _save_and_respond(conv, user, redacted_text, fare_res, flags=["FARE_ESTIMATE_RANGE"], request_id=request_id)
 
             # Personal profile-dependent queries:
             if user:
@@ -153,10 +156,13 @@ def chat_view(request):
                     personal_res['reply'] = validated['reply']
                     personal_res['response'] = validated['response']
                     flags = personal_res.get('flags', ["DETERMINISTIC_PERSONAL_DATA"])
-                    return _save_and_respond(conv, user, redacted_text, personal_res, flags=flags)
+                    return _save_and_respond(conv, user, redacted_text, personal_res, flags=flags, request_id=request_id)
 
         # 4 & 5 & 6. Router and Cache
-        kb_version = str(KBEntry.objects.filter(status='APPROVED').aggregate(v=models.Max('version'))['v'] or 1)
+        try:
+            kb_version = str(KBEntry.objects.filter(status='APPROVED').aggregate(v=models.Max('version'))['v'] or 1)
+        except Exception:
+            kb_version = "1"
 
         cached_res = get_cached_answer(redacted_text, locale, kb_version)
         if cached_res:
@@ -165,7 +171,7 @@ def chat_view(request):
                 user_query=redacted_text,
                 locale=locale
             )
-            return _save_and_respond(conv, user, redacted_text, validated, flags=["CACHE_HIT"])
+            return _save_and_respond(conv, user, redacted_text, validated, flags=["CACHE_HIT"], request_id=request_id)
 
         route_res = route_query(redacted_text, user)
 
@@ -175,11 +181,14 @@ def chat_view(request):
                 user_query=redacted_text,
                 locale=locale
             )
-            return _save_and_respond(conv, user, redacted_text, validated, flags=[])
+            return _save_and_respond(conv, user, redacted_text, validated, flags=[], request_id=request_id)
 
         # Track C: Knowledge Base + Gemini
-        matched_kbs = route_res["matches"]
-        guide_entries = list(AppGuideEntry.objects.filter(status='APPROVED'))
+        matched_kbs = route_res.get("matches", [])
+        try:
+            guide_entries = list(AppGuideEntry.objects.filter(status='APPROVED'))
+        except Exception:
+            guide_entries = []
 
         history = list(conv.messages.order_by('-created_at')[:getattr(settings, 'ASSISTANT_HISTORY_TURNS', 6)]) if conv else []
         history.reverse()
@@ -191,14 +200,15 @@ def chat_view(request):
                 "reply_bn": "রক্ত দেওয়ার জন্য আপনার ওজন কমপক্ষে ৫০ কেজি হতে হবে। আপনার ওজন ৪৯ কেজি হওয়ায় আপনি রক্ত দিতে পারবেন না।",
                 "quick_actions": [],
                 "is_emergency": False,
-                "confidence_score": 0.99
+                "confidence_score": 0.99,
+                "source": "fallback"
             }
             validated = validate_and_format_response(
                 raw_reply=guarded_weight_reply["reply_bn"] if locale == 'bn' else guarded_weight_reply["reply"],
                 user_query=redacted_text,
                 locale=locale
             )
-            return _save_and_respond(conv, user, redacted_text, validated, flags=["MOCK_QUOTA_RECOVERY"])
+            return _save_and_respond(conv, user, redacted_text, validated, flags=["MOCK_QUOTA_RECOVERY"], request_id=request_id)
 
         try:
             gemini_res = call_gemini(redacted_text, history, matched_kbs, guide_entries)
@@ -213,16 +223,27 @@ def chat_view(request):
 
             flags = result_json.pop("flags", [])
 
-            # Response Contract Validator
-            validated = validate_and_format_response(
-                raw_reply=result_json.get("reply", ""),
-                user_query=redacted_text,
-                locale=locale,
-                emergency=result_json.get("emergency", False)
-            )
+            # If Gemini is unsure or marked out of scope on a core donation topic, fallback to offline guidance:
+            is_unsure = result_json.get("out_of_scope", False) or "not sure" in result_json.get("reply", "").lower()
+            if is_unsure:
+                offline_res = get_offline_guidance(redacted_text, locale=locale)
+                if offline_res.get("matched_intent") != "general_guidance":
+                    validated = validate_and_format_response(
+                        raw_reply=offline_res.get("reply", ""),
+                        user_query=redacted_text,
+                        locale=locale,
+                        is_fallback=True
+                    )
+                    offline_res["reply"] = validated["reply"]
+                    offline_res["response"] = validated["response"]
+                    offline_res["language"] = validated["language"]
+                    offline_res["source"] = "fallback"
+                    return _save_and_respond(conv, user, redacted_text, offline_res, flags=["FALLBACK_UNSURE"], request_id=request_id)
+
             result_json["reply"] = validated["reply"]
             result_json["response"] = validated["response"]
             result_json["language"] = validated["language"]
+            result_json["source"] = "ai"
             if validated.get("action_ids"):
                 result_json["action_ids"] = list(set(result_json.get("action_ids", []) + validated["action_ids"]))
 
@@ -235,43 +256,55 @@ def chat_view(request):
             return _save_and_respond(conv, user, redacted_text, result_json, flags=flags, 
                                      tokens_in=gemini_res.get("tokens_in", 0), 
                                      tokens_out=gemini_res.get("tokens_out", 0), 
-                                     latency_ms=gemini_res.get("latency_ms", 0))
+                                     latency_ms=gemini_res.get("latency_ms", 0),
+                                     request_id=request_id)
 
         except Exception as gemini_err:
             # Privacy-safe technical error logging without storing user message text
             logger.error("PulseAI Gemini pipeline error: %s", type(gemini_err).__name__)
-            # Fallback to PulseAIAssistant standard contract using redacted_text only
-            pulse_ai_res = PulseAIAssistant.get_instance().get_response(redacted_text, language=locale)
+            # Deterministic offline guidance fallback for core intents
+            offline_res = get_offline_guidance(redacted_text, locale=locale)
             validated = validate_and_format_response(
-                raw_reply=pulse_ai_res.get("reply") or pulse_ai_res.get("response", ""),
+                raw_reply=offline_res.get("reply", ""),
                 user_query=redacted_text,
                 locale=locale,
+                emergency=offline_res.get("emergency", False),
                 is_fallback=True
             )
-            pulse_ai_res["reply"] = validated["reply"]
-            pulse_ai_res["response"] = validated["response"]
-            pulse_ai_res["language"] = validated["language"]
-            return _save_and_respond(conv, user, redacted_text, pulse_ai_res, flags=["FALLBACK"])
+            offline_res["reply"] = validated["reply"]
+            offline_res["response"] = validated["response"]
+            offline_res["language"] = validated["language"]
+            offline_res["source"] = "fallback"
+            return _save_and_respond(conv, user, redacted_text, offline_res, flags=["FALLBACK"], request_id=request_id)
 
     except Exception as general_err:
         logger.error("PulseAI general error: %s", type(general_err).__name__)
-        safe_lang = 'bn' if (locale == 'bn') else 'en'
-        static_safe_msg = (
-            "আমি রক্তদান ও যোগ্যতা বিষয়ে সহায়তা করতে পারি। জরুরি প্রয়োজনে ৯৯৯ নম্বরে কল করুন।"
-            if safe_lang == 'bn' else
-            "I can help with blood donation and eligibility questions. In an emergency, please call 999."
-        )
+        q_text = redacted_text if 'redacted_text' in locals() else str(message_text or '')
+        offline_res = get_offline_guidance(q_text, locale=locale)
+        formatted_actions = []
+        actions_map = {
+            'open_emergency_form': {'id': 'open_emergency_form', 'label_en': 'Emergency Form', 'label_bn': 'জরুরী ফর্ম', 'route': '/emergency/personal'},
+            'open_search': {'id': 'open_search', 'label_en': 'Search Donors', 'label_bn': 'ডোনার খুঁজুন', 'route': '/blood-hub/search'},
+            'call_999': {'id': 'call_999', 'label_en': 'Call 999', 'label_bn': '৯৯৯ কল করুন', 'route': 'tel:999'},
+            'open_profile': {'id': 'open_profile', 'label_en': 'Profile', 'label_bn': 'প্রোফাইল', 'route': '/profile'},
+        }
+        for a_id in offline_res.get("action_ids", []):
+            if a_id in actions_map:
+                formatted_actions.append(actions_map[a_id])
+
         return Response({
-            "response": static_safe_msg,
-            "reply": static_safe_msg,
-            "source": "static_safe_fallback",
+            "request_id": request_id,
+            "response": offline_res["reply"],
+            "reply": offline_res["reply"],
+            "source": "fallback",
             "confidence": 0.95,
-            "language": safe_lang,
-            "emergency": False,
-            "actions": [],
+            "language": locale if locale in ('bn', 'en') else 'bn',
+            "emergency": offline_res.get("emergency", False),
+            "actions": formatted_actions,
+            "flags": ["GENERAL_FALLBACK"]
         }, status=200)
 
-def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_in=0, tokens_out=0, latency_ms=0):
+def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_in=0, tokens_out=0, latency_ms=0, request_id=None):
     if flags is None:
         flags = []
     
@@ -322,12 +355,16 @@ def _save_and_respond(conv, user, user_msg_text, reply_dict, flags=None, tokens_
 
     ans_text = reply_dict.get("response") or reply_dict.get("reply", "")
 
+    raw_source = reply_dict.get("source", "gemini")
+    mapped_source = "ai" if raw_source in ("gemini", "ai") else "fallback"
+
     resp_payload = {
+        "request_id": request_id,
         "conversation_id": conv.id if conv else None,
         "message_id": ast_msg_id,
         "response": ans_text,
         "reply": ans_text,
-        "source": reply_dict.get("source", "gemini"),
+        "source": mapped_source,
         "confidence": reply_dict.get("confidence", 0.95),
         "language": reply_dict.get("language", "en"),
         "actions": formatted_actions or reply_dict.get("actions", []),

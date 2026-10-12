@@ -16,14 +16,25 @@ def route_query(text: str, user=None):
         return {"track": "A_B", "response": shortcut_res}
     
     # Track C: Semantic Search
-    query_emb = get_query_embedding(text)
+    try:
+        query_emb = get_query_embedding(text)
+    except Exception:
+        query_emb = None
+
     if not query_emb:
-        return {"track": "C", "matches": []}
+        try:
+            matches = list(KBEntry.objects.filter(status='APPROVED')[:3])
+        except Exception:
+            matches = []
+        return {"track": "C", "matches": matches}
         
     from django.db import connection
     if connection.vendor == 'sqlite':
-        matches = KBEntry.objects.filter(status='APPROVED', embedding__isnull=False)[:3]
-        return {"track": "C", "matches": list(matches)}
+        try:
+            matches = KBEntry.objects.filter(status='APPROVED')[:3]
+            return {"track": "C", "matches": list(matches)}
+        except Exception:
+            return {"track": "C", "matches": []}
 
     # Get top 3 by cosine similarity from APPROVED rows
     try:
@@ -35,5 +46,8 @@ def route_query(text: str, user=None):
         ).order_by('distance')[:3]
         return {"track": "C", "matches": list(matches)}
     except Exception:
-        matches = KBEntry.objects.filter(status='APPROVED')[:3]
-        return {"track": "C", "matches": list(matches)}
+        try:
+            matches = KBEntry.objects.filter(status='APPROVED')[:3]
+            return {"track": "C", "matches": list(matches)}
+        except Exception:
+            return {"track": "C", "matches": []}

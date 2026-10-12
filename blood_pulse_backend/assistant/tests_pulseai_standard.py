@@ -34,15 +34,15 @@ class PulseAIStandardResponseTests(TestCase):
             email_verified=True
         )
 
-    # 1. Guest access to PulseAI is blocked with 401 Unauthorized
-    def test_guest_access_blocked(self):
+    # 1. Guest access to PulseAI is allowed (Task 10C requirement)
+    def test_guest_access_allowed(self):
         anon_client = APIClient()
         response = anon_client.post(
             '/api/assistant/chat/',
             {'message': 'how can I donate blood', 'locale': 'en'},
             format='json'
         )
-        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.status_code, 200)
 
     # 2. Logged-in user access succeeds
     def test_authenticated_user_access_succeeds(self):

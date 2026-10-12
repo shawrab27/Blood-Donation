@@ -47,7 +47,10 @@ class _FakeAssistantSweepNotifier extends StateNotifier<AssistantState>
         ));
 
   @override
-  Future<void> sendMessage(String text, String locale, {String? screenContext}) async {}
+  Future<void> sendMessage(String text, String locale, {String? screenContext, bool isRetry = false}) async {}
+
+  @override
+  Future<void> retryLastMessage(String locale, {String? screenContext}) async {}
 
   @override
   Future<void> sendFeedback(AssistantMessage message, String rating, {String? reason, String? note}) async {}

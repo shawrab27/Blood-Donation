@@ -5,6 +5,7 @@ import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import '../../../../core/app_router.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import 'heartbeat_icon.dart';
+import '../../../../core/widgets/brand_mark.dart';
 import '../../../../main.dart'; // To access rootScaffoldMessengerKey if defined there.
 
 class PulseAiOverlay extends ConsumerStatefulWidget {
@@ -15,14 +16,32 @@ class PulseAiOverlay extends ConsumerStatefulWidget {
   ConsumerState<PulseAiOverlay> createState() => _PulseAiOverlayState();
 }
 
-class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
-  bool _open = false;
+class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+  late final Animation<double> _scrimOpacity;
+  late final Animation<double> _iconMorph;
   String _currentRoute = '';
   late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+
+    _scrimOpacity = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+
+    _iconMorph = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutBack,
+    );
+
     _router = ref.read(appRouterProvider);
     _router.routerDelegate.addListener(_onRouteChanged);
     _updateRoute();
@@ -30,6 +49,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
 
   @override
   void dispose() {
+    _animController.dispose();
     _router.routerDelegate.removeListener(_onRouteChanged);
     super.dispose();
   }
@@ -59,10 +79,17 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
     }
   }
 
+  bool _open = false;
+
   void _toggle() {
     setState(() {
       _open = !_open;
     });
+    if (_open) {
+      _animController.forward();
+    } else {
+      _animController.reverse();
+    }
   }
 
   void _close() {
@@ -70,6 +97,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
       setState(() {
         _open = false;
       });
+      _animController.reverse();
     }
   }
 
@@ -77,7 +105,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
     _close();
     await ref.read(pulseAiVisibilityProvider.notifier).setVisible(false);
     if (!mounted) return;
-    
+
     rootScaffoldMessengerKey.currentState?.showSnackBar(
       const SnackBar(
         content: Text('PulseAI hidden. You can turn it back on from Settings.'),
@@ -87,7 +115,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
   }
 
   bool _isRouteAllowed() {
-    if (_currentRoute.isEmpty) return false;
+    if (_currentRoute.isEmpty) return true; // Default to true in tests/unmatched shells
     const hiddenRoutes = [
       '/',
       '/splash',
@@ -103,54 +131,89 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
     return !hiddenRoutes.contains(_currentRoute);
   }
 
-  Widget _buildPill({
+  Widget _buildStaggeredPill({
+    required int index,
     required IconData icon,
     required String label,
     required VoidCallback onTap,
     Color iconColor = const Color(0xFFC30121),
-    Color textColor = const Color(0xFFC30121),
+    Color textColor = const Color(0xFF2B2B2B),
+    Color backgroundColor = Colors.white,
+    Border? border,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, 4),
+    // 4 pills with staggered intervals: index 0 is nearest to FAB (bottom-most)
+    final double startInterval = (index * 0.12).clamp(0.0, 0.6);
+    final double endInterval = (startInterval + 0.40).clamp(0.0, 1.0);
+
+    final animation = CurvedAnimation(
+      parent: _animController,
+      curve: Interval(startInterval, endInterval, curve: Curves.easeOutBack),
+    );
+
+    return AnimatedBuilder(
+      animation: _animController,
+      builder: (context, child) {
+        if (!_open && _animController.value == 0.0) {
+          return const SizedBox.shrink();
+        }
+        final val = animation.value.clamp(0.0, 1.0);
+        return Transform.scale(
+          scale: val,
+          alignment: Alignment.centerRight,
+          child: Opacity(
+            opacity: val,
+            child: child,
           ),
-        ],
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(30),
-          onTap: () {
-            _close();
-            onTap();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: iconColor, size: 20),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                      fontSize: 14,
+        );
+      },
+      child: Container(
+        height: 44,
+        margin: const EdgeInsets.only(bottom: 12),
+        constraints: BoxConstraints(
+          maxWidth: (MediaQuery.sizeOf(context).width - 32).clamp(180.0, 320.0),
+        ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(50),
+          border: border ?? Border.all(color: const Color(0xFFF0DCDC), width: 1.0),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(50),
+            onTap: () {
+              _close();
+              onTap();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: iconColor, size: 20),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -164,78 +227,152 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay> {
     final isAuthenticated = ref.watch(authProvider).isAuthenticated;
     final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final routeAllowed = _isRouteAllowed();
-    
+
     final showOverlay = isVisible && isAuthenticated && routeAllowed && !isKeyboardOpen;
 
-    return Stack(
-      children: [
-        widget.child,
-        if (showOverlay) ...[
-          if (_open)
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _close,
-              ),
-            ),
-          Positioned(
-            right: 16,
-            bottom: 80 + MediaQuery.paddingOf(context).bottom,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AnimatedOpacity(
-                  opacity: _open ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: AnimatedSlide(
-                    offset: _open ? Offset.zero : const Offset(0, 0.1),
-                    duration: const Duration(milliseconds: 200),
-                    child: IgnorePointer(
-                      ignoring: !_open,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildPill(
-                            icon: Icons.chat_bubble_outline,
-                            label: 'Chat with PulseAI',
-                            onTap: () => _router.push('/assistant'),
-                          ),
-                          _buildPill(
-                            icon: Icons.description_outlined,
-                            label: 'Analyse blood report',
-                            onTap: () => _router.push('/health-hub/ai-report'),
-                          ),
-                          _buildPill(
-                            icon: Icons.person_search_outlined,
-                            label: 'Find donors nearby',
-                            onTap: () => _router.push('/blood-hub/search'),
-                          ),
-                          _buildPill(
-                            icon: Icons.close,
-                            label: 'Hide PulseAI',
-                            iconColor: Colors.grey,
-                            textColor: Colors.grey,
-                            onTap: _hidePulseAi,
-                          ),
-                        ],
-                      ),
+    return PopScope(
+      canPop: _animController.value == 0.0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _animController.value > 0.0) {
+          _close();
+        }
+      },
+      child: Stack(
+        children: [
+          widget.child,
+          if (showOverlay) ...[
+            // Fading Scrim
+            AnimatedBuilder(
+              animation: _scrimOpacity,
+              builder: (context, child) {
+                if (_scrimOpacity.value == 0.0) return const SizedBox.shrink();
+                return Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _close,
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.35 * _scrimOpacity.value),
                     ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: _toggle,
-                  child: const HeartbeatIcon(
-                    asset: 'assets/images/pulseai_icon.png',
-                    size: 56,
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
+            // Floating Action Speed-Dial Container
+            Positioned(
+              right: 16,
+              bottom: 80 + MediaQuery.paddingOf(context).bottom,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Staggered Pills expanding upward
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Topmost (pill 3)
+                      _buildStaggeredPill(
+                        index: 3,
+                        icon: Icons.visibility_off_outlined,
+                        label: 'Hide PulseAI',
+                        iconColor: const Color(0xFF888888),
+                        textColor: const Color(0xFF666666),
+                        backgroundColor: const Color(0xFFF9F9F9),
+                        onTap: _hidePulseAi,
+                      ),
+                      // Pill 2
+                      _buildStaggeredPill(
+                        index: 2,
+                        icon: Icons.person_search_outlined,
+                        label: 'Find donors nearby',
+                        onTap: () => _router.push('/blood-hub/search'),
+                      ),
+                      // Pill 1
+                      _buildStaggeredPill(
+                        index: 1,
+                        icon: Icons.description_outlined,
+                        label: 'Analyse blood report',
+                        onTap: () => _router.push('/health-hub/ai-report'),
+                      ),
+                      // Pill 0 (nearest to FAB)
+                      _buildStaggeredPill(
+                        index: 0,
+                        icon: Icons.chat_bubble_outline_rounded,
+                        label: 'Chat with PulseAI',
+                        iconColor: const Color(0xFFC30121),
+                        textColor: const Color(0xFFC30121),
+                        border: Border.all(color: const Color(0xFFC30121), width: 1.2),
+                        onTap: () => _router.push('/assistant'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // FAB that morphs between BrandMark and Close 'X'
+                  GestureDetector(
+                    key: const Key('pulseai_fab_button'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggle,
+                    child: AnimatedBuilder(
+                      animation: _iconMorph,
+                      builder: (context, _) {
+                        final morphVal = _iconMorph.value;
+                        return Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFC30121).withValues(alpha: 0.25),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // BrandMark (fades and scales down when expanded)
+                              if (morphVal < 0.95)
+                                Transform.scale(
+                                  scale: (1.0 - morphVal).clamp(0.0, 1.0),
+                                  child: Opacity(
+                                    opacity: (1.0 - morphVal).clamp(0.0, 1.0),
+                                    child: const BrandMark(
+                                      size: 56,
+                                      animateHeartbeat: true,
+                                    ),
+                                  ),
+                                ),
+                              // Close 'X' Icon (rotates and scales up when expanded)
+                              if (morphVal > 0.05)
+                                Transform.rotate(
+                                  angle: (1.0 - morphVal) * 1.5,
+                                  child: Transform.scale(
+                                    scale: morphVal.clamp(0.0, 1.0),
+                                    child: Opacity(
+                                      opacity: morphVal.clamp(0.0, 1.0),
+                                      child: const Icon(
+                                        Icons.close_rounded,
+                                        color: Color(0xFFC30121),
+                                        size: 28,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

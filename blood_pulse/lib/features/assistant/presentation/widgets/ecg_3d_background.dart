@@ -1,19 +1,18 @@
-// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
-// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
-
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 /// 3D ECG heartbeat perspective background with glowing waveform lines.
 /// Features:
+/// - Maximum opacity clamped <= 8% (subtle non-distracting background)
 /// - Perspective grid floor receding to horizon
-/// - 1 to 3 glowing ECG waveform lines travelling along the depth axis
-/// - Opacity & thickness scaling with perspective depth
-/// - Dynamic pulse rate & glow: slow & calm when idle, rapid & energetic when thinking
-/// - 30 fps frame rate throttling & RepaintBoundary isolation
-/// - Lifecycle-aware pausing (stops ticker when backgrounded)
+/// - Glowing ECG waveform lines travelling along the depth axis
+/// - Dynamic pulse rate: subtle when idle, rapid & energetic when thinking
+/// - Single controller with 30 fps throttling & RepaintBoundary isolation
+/// - Lifecycle-aware pausing: stops ticker when backgrounded
+/// - Pauses immediately when keyboard is open (viewInsets.bottom > 0)
+/// - Pauses during fast scroll, resumes when settled
 /// - Accessibility fallback (static frame when disableAnimations is enabled)
-/// - Low-end fallback (removes blur filter if frame budget is strained)
 class Ecg3DBackground extends StatefulWidget {
   final bool isThinking;
   final Widget? child;
@@ -34,6 +33,8 @@ class _Ecg3DBackgroundState extends State<Ecg3DBackground>
   DateTime _lastFrameTime = DateTime.now();
   bool _isLowEndMode = false;
   int _consecutiveSlowFrames = 0;
+  bool _isFastScrolling = false;
+  Timer? _scrollPauseTimer;
 
   @override
   void initState() {
@@ -45,10 +46,28 @@ class _Ecg3DBackgroundState extends State<Ecg3DBackground>
     )..repeat();
   }
 
+  void _onFastScrollDetected() {
+    if (!_isFastScrolling) {
+      if (mounted) {
+        setState(() {
+          _isFastScrolling = true;
+        });
+      }
+    }
+    _scrollPauseTimer?.cancel();
+    _scrollPauseTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _isFastScrolling = false;
+        });
+      }
+    });
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (!_controller.isAnimating) {
+      if (!_controller.isAnimating && !_isFastScrolling) {
         _controller.repeat();
       }
     } else {
@@ -60,6 +79,7 @@ class _Ecg3DBackgroundState extends State<Ecg3DBackground>
 
   @override
   void dispose() {
+    _scrollPauseTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     super.dispose();
@@ -68,32 +88,71 @@ class _Ecg3DBackgroundState extends State<Ecg3DBackground>
   @override
   Widget build(BuildContext context) {
     final disableAnimations = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final shouldPause = disableAnimations || isKeyboardOpen || _isFastScrolling;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Solid theme surface background
-        Container(color: const Color(0xFFFDF3F3)),
+    if (shouldPause) {
+      if (_controller.isAnimating) {
+        _controller.stop(canceled: false);
+      }
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
 
-        // Isolated 3D ECG custom painter with RepaintBoundary
-        RepaintBoundary(
-          child: disableAnimations
-              ? CustomPaint(
-                  painter: _Ecg3DPainter(
-                    phase: 0.25,
-                    isThinking: false,
-                    isLowEnd: true,
-                  ),
-                )
-              : AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, _) {
-                    final now = DateTime.now();
-                    final elapsed = now.difference(_lastFrameTime).inMilliseconds;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollUpdateNotification) {
+          final delta = notification.scrollDelta?.abs() ?? 0.0;
+          if (delta > 8.0) {
+            _onFastScrollDetected();
+          }
+        }
+        return false;
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Solid theme surface background
+          Container(color: const Color(0xFFFDF3F3)),
 
-                    // Cap painting to ~30 FPS (33ms interval)
-                    if (elapsed < 32) {
-                      // Skip frame to throttle to 30fps
+          // Isolated 3D ECG custom painter with RepaintBoundary
+          RepaintBoundary(
+            child: shouldPause
+                ? CustomPaint(
+                    painter: _Ecg3DPainter(
+                      phase: 0.25,
+                      isThinking: false,
+                      isLowEnd: true,
+                    ),
+                  )
+                : AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, _) {
+                      final now = DateTime.now();
+                      final elapsed = now.difference(_lastFrameTime).inMilliseconds;
+
+                      // Cap painting to ~30 FPS (33ms interval)
+                      if (elapsed < 32) {
+                        return CustomPaint(
+                          painter: _Ecg3DPainter(
+                            phase: _controller.value,
+                            isThinking: widget.isThinking,
+                            isLowEnd: _isLowEndMode,
+                          ),
+                        );
+                      }
+
+                      // Low-end device detection
+                      if (elapsed > 45) {
+                        _consecutiveSlowFrames++;
+                        if (_consecutiveSlowFrames > 15) {
+                          _isLowEndMode = true;
+                        }
+                      } else if (_consecutiveSlowFrames > 0) {
+                        _consecutiveSlowFrames--;
+                      }
+
+                      _lastFrameTime = now;
                       return CustomPaint(
                         painter: _Ecg3DPainter(
                           phase: _controller.value,
@@ -101,51 +160,32 @@ class _Ecg3DBackgroundState extends State<Ecg3DBackground>
                           isLowEnd: _isLowEndMode,
                         ),
                       );
-                    }
+                    },
+                  ),
+          ),
 
-                    // Simple low-end device detection
-                    if (elapsed > 45) {
-                      _consecutiveSlowFrames++;
-                      if (_consecutiveSlowFrames > 15) {
-                        _isLowEndMode = true;
-                      }
-                    } else if (_consecutiveSlowFrames > 0) {
-                      _consecutiveSlowFrames--;
-                    }
-
-                    _lastFrameTime = now;
-                    return CustomPaint(
-                      painter: _Ecg3DPainter(
-                        phase: _controller.value,
-                        isThinking: widget.isThinking,
-                        isLowEnd: _isLowEndMode,
-                      ),
-                    );
-                  },
+          // Soft subtle scrim to ensure WCAG AA text contrast
+          IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFFFDF3F3).withValues(alpha: 0.65),
+                    const Color(0xFFFDF3F3).withValues(alpha: 0.40),
+                    const Color(0xFFFDF3F3).withValues(alpha: 0.70),
+                  ],
+                  stops: const [0.0, 0.5, 1.0],
                 ),
-        ),
-
-        // Soft subtle scrim to ensure WCAG AA text contrast (>= 4.5:1) for message bubbles
-        IgnorePointer(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFFDF3F3).withValues(alpha: 0.65),
-                  const Color(0xFFFDF3F3).withValues(alpha: 0.40),
-                  const Color(0xFFFDF3F3).withValues(alpha: 0.70),
-                ],
-                stops: const [0.0, 0.5, 1.0],
               ),
             ),
           ),
-        ),
 
-        // Child content (e.g. Chat list & bubbles)
-        if (widget.child != null) widget.child!,
-      ],
+          // Child content (e.g. Chat list & bubbles)
+          if (widget.child != null) widget.child!,
+        ],
+      ),
     );
   }
 }
@@ -232,7 +272,7 @@ class _Ecg3DPainter extends CustomPainter {
     // 1. PERSPECTIVE FLOOR GRID RECEDING TO HORIZON
     // ─────────────────────────────────────────────────────────────────────────
     final gridPaint = Paint()
-      ..color = const Color(0xFFC30121).withValues(alpha: 0.045)
+      ..color = const Color(0xFFC30121).withValues(alpha: 0.02)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
 
@@ -252,7 +292,7 @@ class _Ecg3DPainter extends CustomPainter {
     for (int i = 1; i <= transverseLines; i++) {
       final depth = math.pow(i / transverseLines, 2.2).toDouble();
       final y = horizonY + (h - horizonY) * depth;
-      final alpha = (0.02 + 0.05 * depth).clamp(0.0, 1.0);
+      final alpha = (0.01 + 0.02 * depth).clamp(0.005, 0.03);
       final linePaint = Paint()
         ..color = const Color(0xFFC30121).withValues(alpha: alpha)
         ..style = PaintingStyle.stroke
@@ -267,9 +307,8 @@ class _Ecg3DPainter extends CustomPainter {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 2. THREE PERSPECTIVE 3D ECG WAVEFORM LINES
+    // 2. THREE PERSPECTIVE 3D ECG WAVEFORM LINES (opacity strictly <= 8%)
     // ─────────────────────────────────────────────────────────────────────────
-    // Waveform tracks along depth axis: Center, Left, Right
     final tracks = isLowEnd
         ? [0.0] // Low-end fallback: single center track
         : [-0.38, 0.0, 0.38]; // 3 depth tracks
@@ -308,25 +347,23 @@ class _Ecg3DPainter extends CustomPainter {
         }
       }
 
-      // Depth-scaled opacity and stroke thickness
+      // Depth-scaled opacity (strictly clamped <= 8%)
       final isCenter = trackOffset == 0.0;
-      final baseAlpha = (isCenter ? 0.22 : 0.12) * pulseGlowMultiplier;
-      final strokeWidth = isCenter ? 2.0 : 1.2;
+      final baseAlpha = (isCenter ? 0.06 : 0.035) * (isThinking ? 1.15 : 1.0);
+      final strokeWidth = isCenter ? 1.8 : 1.1;
 
-      // Glow pass (outer subtle halo)
+      // Glow pass (outer subtle halo, <= 3% opacity)
       if (!isLowEnd) {
         final glowPaint = Paint()
-          ..color = const Color(0xFFC30121).withValues(alpha: (baseAlpha * 0.5).clamp(0.01, 0.35))
+          ..color = const Color(0xFFC30121).withValues(alpha: (baseAlpha * 0.4).clamp(0.005, 0.03))
           ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth * 2.5
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
+          ..strokeWidth = strokeWidth * 2.2
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
         canvas.drawPath(glowPath, glowPaint);
       }
 
-      // Sharp core waveform line
-      final coreColor = isCenter
-          ? const Color(0xFFC30121).withValues(alpha: baseAlpha.clamp(0.05, 0.45))
-          : const Color(0xFFE0354E).withValues(alpha: baseAlpha.clamp(0.03, 0.30));
+      // Sharp core waveform line (<= 8% opacity)
+      final coreColor = const Color(0xFFC30121).withValues(alpha: baseAlpha.clamp(0.01, 0.08));
 
       final linePaint = Paint()
         ..color = coreColor

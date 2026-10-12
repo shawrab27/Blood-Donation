@@ -118,19 +118,16 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     );
   }
 
-  String _lastQuery = '';
-
   Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty) return;
-    final userQuery = text.trim();
-    _lastQuery = userQuery;
+    final query = text.trim();
+    if (query.isEmpty) return;
     _textController.clear();
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
 
     final currentLocale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
 
     await ref.read(assistantProvider.notifier).sendMessage(
-          userQuery,
+          query,
           currentLocale,
           screenContext: widget.screenContext,
         );
@@ -250,20 +247,13 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 child: _PulseAiErrorBanner(
                                   errorCode: state.errorCode!,
+                                  requestId: state.requestId,
                                   onRetry: () {
-                                    if (_lastQuery.isNotEmpty) {
-                                      _sendMessage(_lastQuery);
-                                    } else {
-                                      final lastUserMsg = state.messages.reversed
-                                          .firstWhere(
-                                            (m) => m.isUser,
-                                            orElse: () => AssistantMessage(isUser: true, text: ''),
-                                          )
-                                          .text;
-                                      if (lastUserMsg.isNotEmpty) {
-                                        _sendMessage(lastUserMsg);
-                                      }
-                                    }
+                                    final currentLocale = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+                                    ref.read(assistantProvider.notifier).retryLastMessage(
+                                          currentLocale,
+                                          screenContext: widget.screenContext,
+                                        );
                                   },
                                 ),
                               );
@@ -995,22 +985,30 @@ class _HandoffDialogState extends ConsumerState<HandoffDialog> {
 }
 
 class TypingIndicator extends StatelessWidget {
-  const TypingIndicator({Key? key}) : super(key: key);
+  const TypingIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
+        const CircleAvatar(
           radius: 16,
           backgroundColor: Colors.white,
           backgroundImage: AssetImage('assets/images/pulseai_icon.png'),
         ),
-        SizedBox(width: 8),
-        PulseLoadingIndicator(
-          color: Color(0xFFC30121),
-          backgroundColor: Color(0xFFFDF3F3),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFDF3F3),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFC30121).withValues(alpha: 0.15)),
+          ),
+          child: const AppLoader.small(
+            color: Color(0xFFC30121),
+          ),
         ),
       ],
     );
@@ -1026,10 +1024,15 @@ class GetLocale {
 }
 
 class _PulseAiErrorBanner extends StatelessWidget {
-  const _PulseAiErrorBanner({required this.errorCode, required this.onRetry});
+  const _PulseAiErrorBanner({
+    required this.errorCode,
+    required this.onRetry,
+    this.requestId,
+  });
 
   final String errorCode;
   final VoidCallback onRetry;
+  final String? requestId;
 
   static _ErrorInfo _infoFor(String code, bool isBangla) {
     switch (code) {
@@ -1142,6 +1145,17 @@ class _PulseAiErrorBanner extends StatelessWidget {
               height: 1.35,
             ),
           ),
+          if (requestId != null && requestId!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Request ID: $requestId',
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11,
+                color: Colors.black54,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: onRetry,

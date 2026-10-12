@@ -76,36 +76,44 @@ def call_gemini(user_message: str, history, kb_entries, guide_entries, temperatu
         if fallback not in candidate_models:
             candidate_models.append(fallback)
 
+    import random
     last_error = None
     for model_name in candidate_models:
-        try:
-            start_time = time.time()
-            response = client.models.generate_content(
-                model=model_name,
-                contents=contents,
-                config=config,
-            )
-            latency_ms = int((time.time() - start_time) * 1000)
-            
-            # Parse JSON schema response
-            result_json = json.loads(response.text)
-            
-            tokens_in = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
-            tokens_out = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
-            
-            return {
-                "json": result_json,
-                "latency_ms": latency_ms,
-                "tokens_in": tokens_in,
-                "tokens_out": tokens_out,
-                "model_used": model_name
-            }
-        except Exception as e:
-            last_error = e
-            err_str = str(e)
-            logger.warning(f"Gemini call with model '{model_name}' failed: {err_str}")
-            # Try next candidate model immediately without hanging
-            continue
+        for attempt in range(2):
+            try:
+                start_time = time.time()
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config=config,
+                )
+                latency_ms = int((time.time() - start_time) * 1000)
+                
+                # Parse JSON schema response
+                result_json = json.loads(response.text)
+                
+                tokens_in = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
+                tokens_out = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
+                
+                return {
+                    "json": result_json,
+                    "latency_ms": latency_ms,
+                    "tokens_in": tokens_in,
+                    "tokens_out": tokens_out,
+                    "model_used": model_name
+                }
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                logger.warning(f"Gemini call with model '{model_name}' attempt {attempt+1} failed: {err_str}")
+                # Check if 429 rate limit or 5xx server error, and attempt retry with jitter
+                is_rate_or_server_err = any(c in err_str for c in ['429', '500', '503', '502', '504', 'quota', 'rate', 'resource_exhausted', 'unavailable'])
+                if attempt == 0 and is_rate_or_server_err:
+                    # Exponential backoff with jitter: 0.5 - 1.5s
+                    jitter_wait = random.uniform(0.5, 1.5)
+                    time.sleep(jitter_wait)
+                    continue
+                break  # Proceed to next candidate model if available
 
     if last_error:
         raise last_error

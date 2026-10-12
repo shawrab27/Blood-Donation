@@ -18,6 +18,8 @@ class AssistantState {
   final bool isLoading;
   final bool isSending;
   final String? errorCode;
+  final String? requestId;
+  final String? lastFailedText;
   final List<QuickAction> quickActions;
   final bool consentGiven;
   final bool isFirstRun;
@@ -28,6 +30,8 @@ class AssistantState {
     this.isLoading = false,
     this.isSending = false,
     this.errorCode,
+    this.requestId,
+    this.lastFailedText,
     this.quickActions = const [],
     this.consentGiven = false,
     this.isFirstRun = true,
@@ -39,6 +43,8 @@ class AssistantState {
     bool? isLoading,
     bool? isSending,
     String? errorCode,
+    String? requestId,
+    String? lastFailedText,
     List<QuickAction>? quickActions,
     bool? consentGiven,
     bool? isFirstRun,
@@ -50,6 +56,8 @@ class AssistantState {
       isLoading: isLoading ?? this.isLoading,
       isSending: isSending ?? this.isSending,
       errorCode: clearError ? null : (errorCode ?? this.errorCode),
+      requestId: clearError ? null : (requestId ?? this.requestId),
+      lastFailedText: clearError ? null : (lastFailedText ?? this.lastFailedText),
       quickActions: quickActions ?? this.quickActions,
       consentGiven: consentGiven ?? this.consentGiven,
       isFirstRun: isFirstRun ?? this.isFirstRun,
@@ -120,24 +128,32 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
     } catch (_) {}
   }
 
-  Future<void> sendMessage(String text, String locale, {String? screenContext}) async {
-    if (text.trim().isEmpty) return;
+  Future<void> sendMessage(String text, String locale, {String? screenContext, bool isRetry = false}) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
 
-    final userMsg = AssistantMessage(
-      isUser: true,
-      text: text,
-    );
+    final isSameAsLastUser = state.messages.isNotEmpty &&
+        state.messages.last.isUser &&
+        state.messages.last.text.trim() == trimmed;
+
+    final shouldAppendUserBubble = !isRetry && !isSameAsLastUser;
+
+    final updatedMessages = shouldAppendUserBubble
+        ? [...state.messages, AssistantMessage(isUser: true, text: trimmed)]
+        : state.messages;
 
     state = state.copyWith(
-      messages: [...state.messages, userMsg],
+      messages: updatedMessages,
       isSending: true,
       clearError: true,
     );
-    _saveToLocal();
+    if (shouldAppendUserBubble) {
+      _saveToLocal();
+    }
 
     try {
       final reply = await _apiService.sendMessage(
-        text, 
+        trimmed, 
         locale, 
         conversationId: state.conversationId,
         screenContext: screenContext,
@@ -147,17 +163,48 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
         messages: [...state.messages, reply],
         isSending: false,
         conversationId: reply.conversationId ?? state.conversationId,
+        requestId: reply.requestId,
+        clearError: true,
       );
       _saveToLocal();
     } on AssistantApiException catch (e) {
-      state = state.copyWith(isSending: false, errorCode: e.code);
+      state = state.copyWith(
+        isSending: false,
+        errorCode: e.code,
+        requestId: e.requestId,
+        lastFailedText: trimmed,
+      );
     } on SocketException {
-      state = state.copyWith(isSending: false, errorCode: 'NO_INTERNET');
+      state = state.copyWith(
+        isSending: false,
+        errorCode: 'NO_INTERNET',
+        lastFailedText: trimmed,
+      );
     } on TimeoutException {
-      state = state.copyWith(isSending: false, errorCode: 'TIMEOUT');
+      state = state.copyWith(
+        isSending: false,
+        errorCode: 'TIMEOUT',
+        lastFailedText: trimmed,
+      );
     } catch (_) {
-      state = state.copyWith(isSending: false, errorCode: 'GENERIC_ERROR');
+      state = state.copyWith(
+        isSending: false,
+        errorCode: 'GENERIC_ERROR',
+        lastFailedText: trimmed,
+      );
     }
+  }
+
+  Future<void> retryLastMessage(String locale, {String? screenContext}) async {
+    final textToRetry = state.lastFailedText ??
+        (state.messages.reversed
+            .firstWhere(
+              (m) => m.isUser,
+              orElse: () => AssistantMessage(isUser: true, text: ''),
+            )
+            .text);
+    if (textToRetry.trim().isEmpty) return;
+    await sendMessage(textToRetry, locale, screenContext: screenContext, isRetry: true);
   }
 
   Future<void> sendFeedback(AssistantMessage message, String rating, {String? reason, String? note}) async {

@@ -15,10 +15,11 @@ class AssistantApiException implements Exception {
   final String code;
   final String message;
   final int? statusCode;
-  AssistantApiException(this.code, this.message, {this.statusCode});
+  final String? requestId;
+  AssistantApiException(this.code, this.message, {this.statusCode, this.requestId});
 
   @override
-  String toString() => 'AssistantApiException($code: $message, statusCode: $statusCode)';
+  String toString() => 'AssistantApiException($code: $message, statusCode: $statusCode, requestId: $requestId)';
 }
 
 class AssistantApiService {
@@ -58,11 +59,26 @@ class AssistantApiService {
         return AssistantMessage.fromJson(json);
       }
 
+      String? reqId;
+      try {
+        final errJson = jsonDecode(response.body);
+        if (errJson is Map<String, dynamic>) {
+          reqId = errJson['request_id']?.toString();
+        }
+      } catch (_) {}
+
       final code = _mapStatusCode(response.statusCode, response.body);
-      throw AssistantApiException(code, response.body, statusCode: response.statusCode);
+      throw AssistantApiException(code, response.body, statusCode: response.statusCode, requestId: reqId);
     } on ApiException catch (e) {
+      String? reqId;
+      try {
+        final errJson = jsonDecode(e.message);
+        if (errJson is Map<String, dynamic>) {
+          reqId = errJson['request_id']?.toString();
+        }
+      } catch (_) {}
       final code = _mapStatusCode(e.statusCode, e.message);
-      throw AssistantApiException(code, e.message, statusCode: e.statusCode);
+      throw AssistantApiException(code, e.message, statusCode: e.statusCode, requestId: reqId);
     } on SocketException catch (e) {
       throw AssistantApiException('NO_INTERNET', e.message, statusCode: 0);
     } on TimeoutException catch (e) {

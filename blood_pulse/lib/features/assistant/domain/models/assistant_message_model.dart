@@ -13,6 +13,8 @@ class AssistantMessage {
   final int? conversationId;
   final bool hasThumbsDown;
   final String language;
+  final String? requestId;
+  final String? source;
 
   AssistantMessage({
     this.id,
@@ -26,7 +28,14 @@ class AssistantMessage {
     this.needsHuman = false,
     this.hasThumbsDown = false,
     this.language = 'bn',
+    this.requestId,
+    this.source,
   });
+
+  bool get isOfflineGuidance =>
+      source == 'fallback' ||
+      text.startsWith('[Offline guidance]') ||
+      text.startsWith('[অফলাইন নির্দেশনা]');
 
   factory AssistantMessage.fromJson(Map<String, dynamic> json) {
     return AssistantMessage(
@@ -47,6 +56,8 @@ class AssistantMessage {
       needsHuman: json['needs_human'] ?? false,
       hasThumbsDown: json['has_thumbs_down'] ?? false,
       language: json['language']?.toString() ?? 'bn',
+      requestId: json['request_id']?.toString(),
+      source: json['source']?.toString(),
     );
   }
 
@@ -62,6 +73,8 @@ class AssistantMessage {
       'emergency': emergency,
       'needs_human': needsHuman,
       'has_thumbs_down': hasThumbsDown,
+      if (requestId != null) 'request_id': requestId,
+      if (source != null) 'source': source,
     };
   }
 
@@ -75,6 +88,8 @@ class AssistantMessage {
     bool? emergency,
     bool? needsHuman,
     bool? hasThumbsDown,
+    String? requestId,
+    String? source,
   }) {
     return AssistantMessage(
       id: id ?? this.id,
@@ -86,6 +101,8 @@ class AssistantMessage {
       emergency: emergency ?? this.emergency,
       needsHuman: needsHuman ?? this.needsHuman,
       hasThumbsDown: hasThumbsDown ?? this.hasThumbsDown,
+      requestId: requestId ?? this.requestId,
+      source: source ?? this.source,
     );
   }
 }
