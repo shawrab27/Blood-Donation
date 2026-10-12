@@ -193,7 +193,11 @@ class AccessoryDetailSheet extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Price & Actions
-                  Row(
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 10,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,19 +224,22 @@ class AccessoryDetailSheet extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const Spacer(),
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
                           onOrderNow(item.affiliateUrl);
                         },
                         icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                        label: Text('Order on ${item.storeName}'),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Order on ${item.storeName}'),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          minimumSize: const Size(48, 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(50),
                           ),

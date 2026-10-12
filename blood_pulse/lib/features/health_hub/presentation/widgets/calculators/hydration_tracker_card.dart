@@ -85,23 +85,33 @@ class HydrationTrackerCard extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: glasses > 0 ? onRemoveGlass : null,
                 icon: const Icon(Icons.remove, size: 16),
-                label: const Text('Remove', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Remove', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
+                ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFB0CDEE)),
                   foregroundColor: AppColors.tertiary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                  minimumSize: const Size(48, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
               ),
               ElevatedButton.icon(
                 onPressed: onAddGlass,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('+ Add 250ml Glass'),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('+ Add 250ml Glass'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.tertiary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                   textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                  minimumSize: const Size(48, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
               ),
             ],

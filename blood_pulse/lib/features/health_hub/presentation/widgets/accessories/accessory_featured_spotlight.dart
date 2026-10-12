@@ -127,12 +127,16 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => onOrderNow(item!.affiliateUrl),
                 icon: const Icon(Icons.shopping_cart_outlined, size: 14),
-                label: Text('Order on ${item!.storeName}'),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Order on ${item!.storeName}'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  minimumSize: const Size(48, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50),
                   ),

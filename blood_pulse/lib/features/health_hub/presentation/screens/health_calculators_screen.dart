@@ -9,6 +9,7 @@ import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../providers/health_calculators_provider.dart';
+import '../providers/hydration_provider.dart';
 import '../widgets/calculators/bmi_calculator_card.dart';
 import '../widgets/calculators/vitals_log_card.dart';
 import '../widgets/calculators/cooldown_countdown_card.dart';
@@ -32,7 +33,6 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
   late TextEditingController _diaBpCtrl;
   late TextEditingController _pulseCtrl;
   late TextEditingController _hbCtrl;
-  int _waterGlasses = 4;
 
   @override
   void initState() {
@@ -149,12 +149,15 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
             // ── 4. Daily Hydration Intake Tracker ──────────────────────────
             _sectionHeader('4. Pre-Donation Hydration Tracker'),
             const SizedBox(height: 10),
-            HydrationTrackerCard(
-              glasses: _waterGlasses,
-              onAddGlass: () => setState(() => _waterGlasses++),
-              onRemoveGlass: () => setState(() {
-                if (_waterGlasses > 0) _waterGlasses--;
-              }),
+            Builder(
+              builder: (context) {
+                final hydration = ref.watch(hydrationProvider);
+                return HydrationTrackerCard(
+                  glasses: hydration.glasses,
+                  onAddGlass: () => ref.read(hydrationProvider.notifier).addGlass(),
+                  onRemoveGlass: () => ref.read(hydrationProvider.notifier).removeGlass(),
+                );
+              },
             ),
             const SizedBox(height: 22),
 

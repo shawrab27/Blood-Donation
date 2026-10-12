@@ -182,7 +182,10 @@ class AccessoryCard extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: () => onLaunchStore(item.affiliateUrl),
                             icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                            label: Text('View on ${item.storeName}', overflow: TextOverflow.ellipsis),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('View on ${item.storeName}'),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,

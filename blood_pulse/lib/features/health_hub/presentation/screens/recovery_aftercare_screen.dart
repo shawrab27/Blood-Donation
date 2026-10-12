@@ -12,6 +12,8 @@ import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../domain/models/health_hub_models.dart';
+import '../providers/hydration_provider.dart';
+import '../widgets/calculators/hydration_tracker_card.dart';
 
 class RecoveryAftercareScreen extends ConsumerStatefulWidget {
   const RecoveryAftercareScreen({super.key});
@@ -21,7 +23,6 @@ class RecoveryAftercareScreen extends ConsumerStatefulWidget {
 }
 
 class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScreen> {
-  int _waterGlasses = 6;
 
   static final List<RecoveryTimelineStep> _fallbackTimeline = [
     RecoveryTimelineStep(
@@ -125,78 +126,16 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
             ),
             const SizedBox(height: 20),
 
-            // ── 4. Interactive Hydration Tracker ────────────────────────
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEDF4FF),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFD0E4FF)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Flexible(
-                        child: Text(
-                          'Daily Hydration Intake',
-                          style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '$_waterGlasses / 8 Glasses',
-                        style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.tertiary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: (_waterGlasses / 8.0).clamp(0.0, 1.0),
-                      minHeight: 8,
-                      backgroundColor: Colors.white,
-                      color: AppColors.tertiary,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _waterGlasses > 0 ? () => setState(() => _waterGlasses--) : null,
-                        icon: const Icon(Icons.remove, size: 16),
-                        label: const Text('Remove', style: TextStyle(fontFamily: 'Inter', fontSize: 12)),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFB0CDEE)),
-                          foregroundColor: AppColors.tertiary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                          minimumSize: const Size(48, 40),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => setState(() => _waterGlasses++),
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('+ Add 250ml Glass'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.tertiary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
-                          minimumSize: const Size(48, 40),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // ── 4. Interactive Hydration Tracker (Unified Source of Truth) ─
+            Builder(
+              builder: (context) {
+                final hydration = ref.watch(hydrationProvider);
+                return HydrationTrackerCard(
+                  glasses: hydration.glasses,
+                  onAddGlass: () => ref.read(hydrationProvider.notifier).addGlass(),
+                  onRemoveGlass: () => ref.read(hydrationProvider.notifier).removeGlass(),
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -253,20 +192,42 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
-                        Expanded(
-                          child: Text(
-                            step.title,
-                            style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                        Text(
+                          step.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Georgia',
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.secondary,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          timeframe,
-                          style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.neutral),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isCompleted
+                                ? AppColors.success.withValues(alpha: 0.12)
+                                : const Color(0xFFF3E5F5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            timeframe,
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isCompleted
+                                  ? AppColors.success
+                                  : const Color(0xFF6A1B9A),
+                            ),
+                          ),
                         ),
                       ],
                     ),
