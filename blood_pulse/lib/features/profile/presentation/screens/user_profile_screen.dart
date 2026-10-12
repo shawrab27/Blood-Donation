@@ -270,16 +270,36 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     String bloodGroup = authUser?.bloodGroup.isNotEmpty == true ? authUser!.bloodGroup : 'O-';
     int totalDonations = authUser?.totalBagsDonated ?? 0;
 
+    String? profileLastDonationDate;
+
     profileAsync.whenData((p) {
       if (p != null) {
         final name = '${p.firstName ?? ''} ${p.lastName ?? ''}'.trim();
         if (name.isNotEmpty) displayName = name;
         if (p.bloodGroup != null && p.bloodGroup!.isNotEmpty) bloodGroup = p.bloodGroup!;
         if (p.totalBagsDonated > 0) totalDonations = p.totalBagsDonated;
+        profileLastDonationDate = p.lastDonationDate;
       }
     });
 
-    final int daysRemaining = countdownState.daysRemaining;
+    final int daysRemaining;
+    if (totalDonations == 0) {
+      daysRemaining = 0;
+    } else if (profileLastDonationDate != null && profileLastDonationDate!.isNotEmpty) {
+      final parsed = DateTime.tryParse(profileLastDonationDate!);
+      if (parsed != null) {
+        final daysSince = DateTime.now().difference(parsed).inDays;
+        daysRemaining = (AppConfig.donorCooldownDays - daysSince).clamp(0, AppConfig.donorCooldownDays);
+      } else {
+        daysRemaining = countdownState.daysRemaining;
+      }
+    } else if (authUser?.lastDonationDate != null) {
+      final daysSince = DateTime.now().difference(authUser!.lastDonationDate!).inDays;
+      daysRemaining = (AppConfig.donorCooldownDays - daysSince).clamp(0, AppConfig.donorCooldownDays);
+    } else {
+      daysRemaining = 0;
+    }
+
     final double progressPercent = (AppConfig.donorCooldownDays - daysRemaining).clamp(0, AppConfig.donorCooldownDays) /
         AppConfig.donorCooldownDays;
 

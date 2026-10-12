@@ -10,7 +10,6 @@ import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../../core/widgets/shimmer_loading_widget.dart';
 import '../../../../core/constants/constants.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../../blood_hub/data/blood_hub_api_service.dart';
@@ -79,13 +78,6 @@ class ResourcesHubScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 14),
 
-            // ── 2. Mandatory 2nd Position: Health Accessories Feature ───
-            const HealthAccessoryContextualCard(
-              title: 'Recommended: Emergency First Aid & Clinical Supplies',
-              subtitle: 'Sterile surgical pads, tourniquets, alcohol wipes, and diagnostic kits for clinical blood response.',
-              customButtonText: 'Explore Emergency Supplies',
-            ),
-            const SizedBox(height: 18),
 
             // ── 3. Emergency Hotlines ────────────────────────────────────
             _sectionHeader('Emergency Hotlines'),

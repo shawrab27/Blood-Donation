@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
+
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 
@@ -117,15 +117,6 @@ class _BloodCompatibilityScreenState extends ConsumerState<BloodCompatibilityScr
           'Select a blood group to inspect compatible donors and recipients.',
           style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
         ),
-        const SizedBox(height: 14),
-
-        // ── 2. Mandatory 2nd Position: Health Accessories Feature ─────
-        const HealthAccessoryContextualCard(
-          title: 'Recommended: ABO Blood Typing Rapid Test Kits',
-          subtitle: 'Accurate bedside agglutination test cards and monoclonal anti-sera reagents for quick verification.',
-          customButtonText: 'View Test Kits',
-        ),
-        const SizedBox(height: 18),
 
         // ── 3. Blood Group Selector ──────────────────────────────────
         const Text(

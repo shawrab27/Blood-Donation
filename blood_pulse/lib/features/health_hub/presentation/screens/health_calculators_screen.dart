@@ -15,7 +15,6 @@ import '../widgets/calculators/cooldown_countdown_card.dart';
 import '../widgets/calculators/hydration_tracker_card.dart';
 import '../widgets/calculators/eligibility_prescreen_card.dart';
 import '../widgets/calculators/calculation_history_card.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 
@@ -109,13 +108,6 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
             _buildPriorityHeader(healthState),
             const SizedBox(height: 14),
 
-            // ── Mandatory 2nd Position: Health Accessories Feature ─────────
-            const HealthAccessoryContextualCard(
-              title: 'Recommended: Digital BP Monitors & Pulse Oximeters',
-              subtitle: 'Calibrated diagnostic tools to measure vital pre-donation readiness accurately at home.',
-              customButtonText: 'Browse Diagnostic Gear',
-            ),
-            const SizedBox(height: 18),
 
             // ── 1. BMI & Weight Eligibility Calculator ─────────────────────
             _sectionHeader('1. BMI & Weight Eligibility Calculator'),

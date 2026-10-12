@@ -9,7 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../widgets/blood_circulation_diagram_widget.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
+
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 
@@ -108,13 +108,6 @@ class ScienceOfBloodScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
 
-              // ── 2. Mandatory 2nd Position: Health Accessories Feature ───
-              const HealthAccessoryContextualCard(
-                title: 'Recommended: Diagnostic & Capillary Sampling Gear',
-                subtitle: 'Sterile safety lancets, micro-hematocrit tubes, and digital hemoglobin meters for clinical testing.',
-                customButtonText: 'Explore Lab Accessories',
-              ),
-              const SizedBox(height: 18),
 
               // ── 3. Dynamic Articles from Backend (with friendly fallback) ──
               articlesAsyncValue.when(

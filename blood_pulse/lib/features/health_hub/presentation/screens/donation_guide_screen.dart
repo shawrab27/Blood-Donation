@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
+
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../domain/models/health_hub_models.dart';
@@ -102,15 +102,6 @@ class DonationGuideScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 14),
-
-        // ── 2. Mandatory 2nd Position: Health Accessories Feature ─────
-        const HealthAccessoryContextualCard(
-          title: 'Recommended: Donor Stress Balls & Electrolyte Recovery Flasks',
-          subtitle: 'Ergonomic hand grip squeeze therapy balls and WHO-formula hydration kits for comfortable phlebotomy.',
-          customButtonText: 'View Donor Gear',
-        ),
-        const SizedBox(height: 18),
 
         // ── 3. Categorized Sections ───────────────────────────────────
         ...groupedGuides.entries.map((entry) {

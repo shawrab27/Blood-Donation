@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
+
 import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../domain/models/health_hub_models.dart';
@@ -81,13 +81,6 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
             ),
             const SizedBox(height: 14),
 
-            // ── 2. Mandatory 2nd Position: Health Accessories Feature ───
-            const HealthAccessoryContextualCard(
-              title: 'Recommended: Iron Restoration & Oral Electrolytes',
-              subtitle: 'Elemental iron tablets, folic acid capsules, and WHO-formula oral rehydration salts for rapid recovery.',
-              customButtonText: 'View Recovery Supplements',
-            ),
-            const SizedBox(height: 18),
 
             // ── 3. 24-Hour Progress Dial Card ───────────────────────────
             Container(

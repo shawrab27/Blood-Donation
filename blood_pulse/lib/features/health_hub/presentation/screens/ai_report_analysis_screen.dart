@@ -12,7 +12,6 @@ import '../../domain/providers/health_hub_provider.dart';
 import '../widgets/ai_report/ai_report_error_banner.dart';
 import '../widgets/ai_report/ai_report_results_view.dart';
 import '../widgets/ai_report/ai_report_upload_card.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
 import '../widgets/common/health_hub_subnav_bar.dart';
 
 class AiReportAnalysisScreen extends StatefulWidget {
@@ -144,15 +143,6 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-
-            // ── Section 2: Mandatory 2nd Position Health Accessories Card ──
-            const HealthAccessoryContextualCard(
-              title: 'Recommended: Iron Restoration & Diagnostic Supplies',
-              subtitle: 'Order clinical iron capsules, sterile lancets, and rapid test kits to support optimal donor recovery.',
-              customButtonText: 'View Clinical Accessories',
-            ),
-            const SizedBox(height: 16),
 
             // ── Section 3: Document Upload Card & Analyze CTA ───────────────
             AiReportUploadCard(
