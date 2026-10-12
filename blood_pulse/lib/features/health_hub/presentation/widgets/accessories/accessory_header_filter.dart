@@ -31,7 +31,8 @@ class AccessoryHeaderFilter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Breadcrumb navigation
-        Row(
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             GestureDetector(
               onTap: () {

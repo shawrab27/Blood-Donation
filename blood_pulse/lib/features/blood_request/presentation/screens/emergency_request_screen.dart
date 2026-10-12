@@ -389,11 +389,15 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           const SizedBox(height: 16),
 
           // Units Needed
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               const Text('Units / Bags Needed', style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.secondary)),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _counterBtn(Icons.remove, () => setState(() => _unitsNeeded = (_unitsNeeded - 1).clamp(1, 20))),
                   const SizedBox(width: 16),
@@ -439,18 +443,22 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       onTap: () => setState(() => _urgency = level),
       child: Container(
         height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: isSelected ? activeColor : const Color(0xFFF3DDE0),
           borderRadius: BorderRadius.circular(50),
         ),
         alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : AppColors.neutral,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : AppColors.neutral,
+            ),
           ),
         ),
       ),
@@ -484,6 +492,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
         const SizedBox(height: 14),
         DropdownButtonFormField<String>(
           initialValue: _selectedDivision,
+          isExpanded: true,
           decoration: InputDecoration(
             hintText: 'Select Division',
             prefixIcon: const Icon(Icons.map_outlined),
@@ -558,23 +567,40 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: file != null ? AppColors.primary : const Color(0xFFE6BDBA)),
         ),
-        child: file == null
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 28),
-                  const SizedBox(height: 6),
-                  Text(title, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
-                  const SizedBox(height: 4),
-                  Text('$title Uploaded', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success)),
-                ],
-              ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: file == null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 28),
+                      const SizedBox(height: 6),
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$title Uploaded',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.success),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -590,15 +616,22 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.psychology_outlined, color: AppColors.primary, size: 24),
-                  SizedBox(width: 8),
-                  Text('AI Trust Score Engine', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                ],
+              const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.psychology_outlined, color: AppColors.primary, size: 24),
+                    SizedBox(width: 8),
+                    Text('AI Trust Score Engine', style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                  ],
+                ),
               ),
               if (_isAnalyzing)
                 const SizedBox(width: 18, height: 18, child: AppLoader()),
@@ -615,7 +648,10 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
             OutlinedButton.icon(
               onPressed: _isAnalyzing ? null : _runAiDetection,
               icon: const Icon(Icons.center_focus_strong_rounded),
-              label: const Text('Scan & Evaluate Documents with AI'),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('Scan & Evaluate Documents with AI'),
+              ),
             ),
           ] else ...[
             // Score Display

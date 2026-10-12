@@ -137,8 +137,11 @@ class AccessoryCard extends StatelessWidget {
                 const SizedBox(height: 14),
 
                 // Bottom Row: Price Range + View on Store Button + Detail Icon
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 10,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,6 +170,7 @@ class AccessoryCard extends StatelessWidget {
                     ),
 
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           tooltip: 'Item Specs & Details',
@@ -174,22 +178,24 @@ class AccessoryCard extends StatelessWidget {
                           onPressed: onOpenDetails,
                         ),
                         const SizedBox(width: 4),
-                        ElevatedButton.icon(
-                          onPressed: () => onLaunchStore(item.affiliateUrl),
-                          icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                          label: Text('View on ${item.storeName}'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            textStyle: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                        Flexible(
+                          child: ElevatedButton.icon(
+                            onPressed: () => onLaunchStore(item.affiliateUrl),
+                            icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                            label: Text('View on ${item.storeName}', overflow: TextOverflow.ellipsis),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              textStyle: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),

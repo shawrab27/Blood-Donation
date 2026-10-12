@@ -192,97 +192,104 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildSlidePage(OnboardingStepData step, int index) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 12),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmall = constraints.maxHeight < 460;
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: isSmall ? 6 : 12),
 
-          // Illustration Container - flexible to scale on any screen height
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 260),
-                child: Image.asset(
-                  step.imagePath,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFDE8E9),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: AppColors.primary.withAlpha(40), width: 2),
-                    ),
-                    child: const Icon(
-                      Icons.volunteer_activism_rounded,
-                      color: AppColors.primary,
-                      size: 70,
+                  // Illustration Container
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: isSmall ? 150 : 240),
+                    child: Image.asset(
+                      step.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: isSmall ? 140 : 200,
+                        height: isSmall ? 140 : 200,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFDE8E9),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: AppColors.primary.withAlpha(40), width: 2),
+                        ),
+                        child: Icon(
+                          Icons.volunteer_activism_rounded,
+                          color: AppColors.primary,
+                          size: isSmall ? 48 : 70,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  SizedBox(height: isSmall ? 10 : 16),
+
+                  // Step Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE9EB),
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: Text(
+                      step.stepBadge.toUpperCase(),
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: isSmall ? 8 : 14),
+
+                  // Title (Georgia font, bold, dark charcoal)
+                  Text(
+                    step.title,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: isSmall ? 22 : 28,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF202020),
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  SizedBox(height: isSmall ? 6 : 12),
+
+                  // Subtitle (Inter font, muted neutral, readable height)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    child: Text(
+                      step.description,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.normal,
+                        color: Color(0xFF667085),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: isSmall ? 10 : 20),
+                ],
               ),
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Step Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEE9EB),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Text(
-              step.stepBadge.toUpperCase(),
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.6,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Title (Georgia font, bold, dark charcoal)
-          Text(
-            step.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF202020),
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Subtitle (Inter font, muted neutral, readable height)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 320),
-            child: Text(
-              step.description,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-                color: Color(0xFF667085),
-                height: 1.5,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-        ],
-      ),
+        );
+      },
     );
   }
 

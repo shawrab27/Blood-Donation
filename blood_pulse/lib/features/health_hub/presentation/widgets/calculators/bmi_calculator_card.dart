@@ -45,21 +45,27 @@ class BmiCalculatorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('Body Mass Index (BMI)', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral)),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 10,
+                    runSpacing: 4,
                     children: [
                       Text(
                         category == 'Invalid Input' ? '--' : bmi.toStringAsFixed(1),
                         style: TextStyle(fontFamily: 'Georgia', fontSize: 32, fontWeight: FontWeight.bold, color: categoryColor),
                       ),
-                      const SizedBox(width: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
@@ -82,6 +88,7 @@ class BmiCalculatorCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       isEligibleWeight ? Icons.check_circle_rounded : Icons.warning_rounded,

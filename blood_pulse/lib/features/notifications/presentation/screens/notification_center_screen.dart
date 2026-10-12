@@ -121,13 +121,17 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
 
     if (cachedWidgets.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text('No notifications yet', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-          ],
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.notifications_off_outlined, size: 48, color: Colors.grey),
+              const SizedBox(height: 12),
+              Text('No notifications yet', style: TextStyle(color: Colors.grey.shade600, fontSize: 15)),
+            ],
+          ),
         ),
       );
     }

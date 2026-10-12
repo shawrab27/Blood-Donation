@@ -390,29 +390,32 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
                     color: _agreeToPublish ? const Color(0xFF1B8A4E) : Colors.grey.shade300,
                   ),
                 ),
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: AppColors.primary,
-                  value: _agreeToPublish,
-                  onChanged: (val) => setState(() => _agreeToPublish = val ?? false),
-                  title: const Text(
-                    'I agree to publish this contact number after admin verification *',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.secondary,
+                child: Material(
+                  color: Colors.transparent,
+                  child: CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: AppColors.primary,
+                    value: _agreeToPublish,
+                    onChanged: (val) => setState(() => _agreeToPublish = val ?? false),
+                    title: const Text(
+                      'I agree to publish this contact number after admin verification *',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.secondary,
+                      ),
                     ),
-                  ),
-                  subtitle: const Text(
-                    'Contact information remains hidden until reviewed and verified by BloodPulse medical admins.',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      color: AppColors.neutral,
+                    subtitle: const Text(
+                      'Contact information remains hidden until reviewed and verified by BloodPulse medical admins.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        color: AppColors.neutral,
+                      ),
                     ),
+                    controlAffinity: ListTileControlAffinity.leading,
                   ),
-                  controlAffinity: ListTileControlAffinity.leading,
                 ),
               ),
               const SizedBox(height: 24),
@@ -430,20 +433,24 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
                           elevation: 2,
                         ),
                         onPressed: _submit,
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Submit for Verification',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            Flexible(
+                              child: Text(
+                                'Submit for Verification',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
                           ],
                         ),
                       ),

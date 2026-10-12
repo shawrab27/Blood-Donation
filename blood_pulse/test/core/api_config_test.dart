@@ -32,5 +32,9 @@ void main() {
       // Checking that raw HTML is never exposed to user
       expect(html404, contains('<!DOCTYPE html>'));
     });
+
+    test('ApiConfig default baseUrl resolves to production Render backend', () {
+      expect(ApiConfig.baseUrl, equals('https://bloodpulse-backend.onrender.com'));
+    });
   });
 }

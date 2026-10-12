@@ -42,7 +42,11 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -68,7 +72,6 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
                   ],
                 ),
               ),
-              const Spacer(),
               Text(
                 'Approx. ${item!.priceRange}',
                 style: const TextStyle(
@@ -104,7 +107,10 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               OutlinedButton(
                 onPressed: onOpenDetails,
@@ -118,7 +124,6 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
                 ),
                 child: const Text('View Specs', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => onOrderNow(item!.affiliateUrl),
                 icon: const Icon(Icons.shopping_cart_outlined, size: 14),

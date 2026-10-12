@@ -14,7 +14,7 @@ enum ApiFlavor {
 class ApiConfig {
   ApiConfig._();
 
-  static const String _defaultUrl = 'https://blood-donation-liard.vercel.app';
+  static const String _defaultUrl = 'https://bloodpulse-backend.onrender.com';
   static const String _renderUrl = 'https://bloodpulse-backend.onrender.com';
   static const String _lanDefault = 'http://192.168.0.105:8000';
 

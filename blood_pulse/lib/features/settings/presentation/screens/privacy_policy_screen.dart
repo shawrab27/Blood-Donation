@@ -140,9 +140,12 @@ class PrivacyPolicyScreen extends ConsumerWidget {
                     children: [
                       Icon(Icons.health_and_safety_rounded, size: 18, color: AppColors.primary),
                       SizedBox(width: 8),
-                      Text(
-                        'Donor Trust Commitment',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      Flexible(
+                        child: Text(
+                          'Donor Trust Commitment',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        ),
                       ),
                     ],
                   ),
@@ -213,7 +216,7 @@ class PrivacyPolicyScreen extends ConsumerWidget {
 
   Widget _buildChip(IconData icon, String label, Color bgColor, Color textColor, {bool hasBorder = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(50),
@@ -224,7 +227,13 @@ class PrivacyPolicyScreen extends ConsumerWidget {
         children: [
           Icon(icon, size: 14, color: textColor),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontFamily: 'Inter', fontSize: 11.5, fontWeight: FontWeight.bold, color: textColor)),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontFamily: 'Inter', fontSize: 11.5, fontWeight: FontWeight.bold, color: textColor),
+            ),
+          ),
         ],
       ),
     );

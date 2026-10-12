@@ -61,11 +61,15 @@ class LanguageSelectionScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Back button if popped from previous flow
-                    if (context.canPop())
+                    if (Navigator.of(context).canPop())
                       IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new_rounded,
                             size: 20, color: Color(0xFF2B2B2B)),
-                        onPressed: () => context.pop(),
+                        onPressed: () {
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          }
+                        },
                       )
                     else
                       const SizedBox.shrink(),

@@ -60,7 +60,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
       debugPrint('[SplashVideoScreen] Video initialization failed or timed out: $e');
       if (mounted) {
         // Fallback gracefully to static logo splash without hanging
-        Timer(const Duration(milliseconds: 1200), _navigateToNext);
+        _fallbackTimer?.cancel();
+        _fallbackTimer = Timer(const Duration(milliseconds: 1200), _navigateToNext);
       }
     }
   }

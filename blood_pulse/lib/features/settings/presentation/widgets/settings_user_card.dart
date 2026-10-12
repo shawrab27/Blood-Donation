@@ -76,12 +76,15 @@ class SettingsUserCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      'Blood Donor • Type $bloodGroup',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: Color(0xFF5C3F3D),
+                    Flexible(
+                      child: Text(
+                        'Blood Donor • Type $bloodGroup',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: Color(0xFF5C3F3D),
+                        ),
                       ),
                     ),
                   ],
@@ -89,8 +92,9 @@ class SettingsUserCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFFFEE9EB),
               borderRadius: BorderRadius.circular(20),
@@ -99,7 +103,7 @@ class SettingsUserCard extends StatelessWidget {
               '$totalDonations Donated',
               style: const TextStyle(
                 fontFamily: 'Inter',
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,
               ),
