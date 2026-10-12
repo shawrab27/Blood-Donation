@@ -33,6 +33,22 @@ def root_index(request):
         'admin_dashboard': '/admin/',
     })
 
+def api_handler404(request, exception=None):
+    return JsonResponse({
+        'error': 'Service not found, please update the app or check endpoint path.',
+        'status_code': 404,
+        'path': request.path,
+    }, status=404)
+
+def api_handler500(request):
+    return JsonResponse({
+        'error': 'Server problem, please try again shortly.',
+        'status_code': 500,
+    }, status=500)
+
+handler404 = 'blood_pulse_backend.urls.api_handler404'
+handler500 = 'blood_pulse_backend.urls.api_handler500'
+
 urlpatterns = [
     path('', root_index, name='root-index'),
     path('health/', health_check, name='root-health-check'),

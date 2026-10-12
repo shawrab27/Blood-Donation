@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -53,7 +54,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
                 onPressed: _loading ? null : () => _updateStatus('COMPLETED'),
-                child: _loading ? const CircularProgressIndicator(color: Colors.white) : const Text('Confirm Donation Received'),
+                child: _loading ? const AppLoader() : const Text('Confirm Donation Received'),
               ),
             ),
           ],
@@ -122,7 +123,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
                 onPressed: _loading ? null : () => _updateStatus('ON_THE_WAY'),
-                child: _loading ? const CircularProgressIndicator(color: Colors.white) : const Text("I'm On My Way (Start Tracking)"),
+                child: _loading ? const AppLoader() : const Text("I'm On My Way (Start Tracking)"),
               ),
             ),
             const SizedBox(height: 8),
@@ -144,7 +145,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
             onPressed: _loading ? null : () => _updateStatus('ARRIVED'),
-            child: _loading ? const CircularProgressIndicator(color: Colors.white) : const Text("I've Arrived at Hospital"),
+            child: _loading ? const AppLoader() : const Text("I've Arrived at Hospital"),
           ),
         ),
       );
@@ -159,7 +160,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A7A3F), foregroundColor: Colors.white),
             onPressed: _loading ? null : () => _updateStatus('DONATED'),
-            child: _loading ? const CircularProgressIndicator(color: Colors.white) : const Text("I've Donated"),
+            child: _loading ? const AppLoader() : const Text("I've Donated"),
           ),
         ),
       );

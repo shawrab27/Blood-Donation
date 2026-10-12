@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -195,7 +196,7 @@ class _BloodRequestScreenState extends ConsumerState<BloodRequestScreen> {
               ElevatedButton(
                 onPressed: _isLoading || !_dsaAgreed ? null : _submitRequest,
                 child: _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? const SizedBox(height: 20, width: 20, child: AppLoader())
                     : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

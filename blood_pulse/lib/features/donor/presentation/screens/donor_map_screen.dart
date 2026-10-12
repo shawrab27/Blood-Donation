@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -421,7 +422,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
 
             if (_isLoading)
               const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+                child: AppLoader(),
               ),
 
             if (_errorMessage != null)
@@ -627,7 +628,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                       child: SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                        child: AppLoader(),
                       ),
                     )
                   : _searchController.text.isNotEmpty

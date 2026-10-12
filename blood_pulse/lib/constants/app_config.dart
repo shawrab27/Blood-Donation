@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import '../core/config/api_config.dart';
 
 /// Single source of truth configuration constants for BloodPulse.
 class AppConfig {
@@ -34,8 +35,8 @@ class AppConfig {
   static const Color surfaceColor = Color(0xFFFFF8F7);
   static const Color surfaceWarmColor = Color(0xFFFDF3F3);
 
-  /// API Base URL (Render / Vercel proxy)
-  static const String defaultApiBaseUrl = 'https://blood-donation-liard.vercel.app';
+  /// API Base URL resolved dynamically via ApiConfig (supporting lan-dev, rehearsal, prod)
+  static String get defaultApiBaseUrl => ApiConfig.baseUrl;
   static const String renderDirectUrl = 'https://bloodpulse-backend.onrender.com';
 
   /// Emergency response thresholds

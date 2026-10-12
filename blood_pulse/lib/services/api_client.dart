@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/config/api_config.dart';
 
 /// Typed exception representing API, network, or decoding failures in BloodPulse.
 class ApiException implements Exception {
@@ -46,13 +47,9 @@ class RequestOtpException extends ApiException {
 
 /// BloodPulse REST API Client with automatic crash-hardening, token management, and retry logic.
 class ApiClient {
-  /// Production via Vercel Reverse Proxy: `https://blood-donation-liard.vercel.app/api/`
-  /// Override via `--dart-define=API_BASE_URL=https://...`
-  static const String defaultServerUrl = 'https://blood-donation-liard.vercel.app';
-  static const String defaultBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://blood-donation-liard.vercel.app',
-  );
+  /// Production via Vercel Reverse Proxy or custom dart-define / flavor
+  static String get defaultServerUrl => ApiConfig.baseUrl;
+  static String get defaultBaseUrl => ApiConfig.baseUrl;
 
   static const Duration connectTimeout = Duration(seconds: 75);
   static const Duration receiveTimeout = Duration(seconds: 75);
@@ -318,8 +315,9 @@ class ApiClient {
         }
         return data;
       } else {
+        final friendlyMessage = _extractErrorMessage(response.body, statusCode: response.statusCode);
         throw ApiException(
-          'Google login failed [${response.statusCode}]: ${_extractErrorMessage(response.body)}',
+          friendlyMessage,
           statusCode: response.statusCode,
           rawError: response.body,
         );
@@ -659,18 +657,7 @@ class ApiClient {
   }
 
   String _normalizeUrl(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    var base = baseUrl.trim();
-    if (base.endsWith('/')) base = base.substring(0, base.length - 1);
-    
-    if (path.startsWith('/')) path = path.substring(1);
-    if (path.startsWith('api/')) path = path.substring(4);
-    if (path.startsWith('/')) path = path.substring(1);
-    
-    return '$base/api/$path';
+    return ApiConfig.resolveUrl(path);
   }
 
   Future<Map<String, String>> _getAuthHeaders() async {
@@ -715,8 +702,9 @@ class ApiClient {
         }
 
         if (response.statusCode >= 400) {
+          final friendlyMessage = _extractErrorMessage(response.body, statusCode: response.statusCode);
           throw ApiException(
-            'Request failed with status ${response.statusCode}: ${_extractErrorMessage(response.body)}',
+            friendlyMessage,
             statusCode: response.statusCode,
             rawError: response.body,
           );
@@ -803,7 +791,16 @@ class ApiClient {
     return null;
   }
 
-  static String _extractErrorMessage(String responseBody) {
+  static String _extractErrorMessage(String responseBody, {int? statusCode}) {
+    if (responseBody.trim().startsWith('<!DOCTYPE html>') || responseBody.contains('<html')) {
+      if (statusCode == 404) {
+        return 'Service not found, please update the app';
+      } else if (statusCode != null && statusCode >= 500) {
+        return 'Server problem, please try again shortly';
+      }
+      return 'Unexpected server response. Please try again.';
+    }
+
     try {
       final decoded = jsonDecode(responseBody);
       if (decoded is Map) {
@@ -811,7 +808,13 @@ class ApiClient {
         if (decoded.containsKey('message')) return decoded['message'].toString();
         if (decoded.containsKey('error')) return decoded['error'].toString();
       }
-    } catch (_) {}
+    } catch (_) {
+      if (statusCode == 404) {
+        return 'Service not found, please update the app';
+      } else if (statusCode != null && statusCode >= 500) {
+        return 'Server problem, please try again shortly';
+      }
+    }
     return responseBody.length > 100 ? '${responseBody.substring(0, 100)}...' : responseBody;
   }
 }

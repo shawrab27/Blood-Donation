@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -186,7 +187,7 @@ class _DeleteAccountConfirmationModalState
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: AppLoader(),
                           )
                         : const Text(
                             'Yes, Delete',

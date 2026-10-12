@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -600,7 +601,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                 ],
               ),
               if (_isAnalyzing)
-                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                const SizedBox(width: 18, height: 18, child: AppLoader()),
             ],
           ),
           const SizedBox(height: 12),

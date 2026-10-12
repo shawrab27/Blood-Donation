@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -295,7 +296,7 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting && cachedWidgets.isEmpty) {
           return const Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
+            child: AppLoader(),
           );
         }
 

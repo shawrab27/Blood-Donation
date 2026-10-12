@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -620,10 +621,7 @@ class _PersonalEmergencyScreenState
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: _kPrimary,
-                  ),
+                  child: AppLoader(),
                 )
               : null,
           onChanged: _onHospitalChanged,
@@ -1093,10 +1091,7 @@ class _PersonalEmergencyScreenState
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
+                          child: AppLoader(),
                         )
                       : const Text(
                           'Confirm Submit',

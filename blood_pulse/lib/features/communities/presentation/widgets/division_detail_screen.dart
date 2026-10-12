@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -74,7 +75,7 @@ class DivisionDetailScreen extends ConsumerWidget {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                  child: AppLoader(),
                 ),
               ),
               error: (err, _) => Center(
@@ -131,7 +132,7 @@ class DivisionDetailScreen extends ConsumerWidget {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                  child: AppLoader(),
                 ),
               ),
               error: (err, _) => Center(child: Text('Error: $err')),

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -90,7 +91,7 @@ class _NidVerificationScreenState extends State<NidVerificationScreen> {
             ),
             const Spacer(),
             if (_isProcessing)
-              const Center(child: CircularProgressIndicator())
+              const Center(child: AppLoader())
             else if (_isVerified)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(

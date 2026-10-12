@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -793,7 +794,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
         _buildSearchFilterCard(filter),
         const SizedBox(height: 20),
         donorsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFC30121))),
+          loading: () => const Center(child: AppLoader()),
           error: (err, st) => Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: const Color(0xFFFFDAD6), borderRadius: BorderRadius.circular(12)),

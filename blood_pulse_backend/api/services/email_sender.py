@@ -118,11 +118,68 @@ class BrevoApiEmailSender(EmailSender):
             raise EmailProviderError(f"Email service returned HTTP {resp.status_code}")
 
 
+class ResendApiEmailSender(EmailSender):
+    """
+    Sends transactional email via Resend REST API:
+    POST https://api.resend.com/emails
+    Timeout: 8 seconds.
+    Config from env/settings (RESEND_API_KEY, RESEND_SENDER_EMAIL).
+    Free tier allows 100 emails/day with owner-verified domain.
+    """
+    ENDPOINT = "https://api.resend.com/emails"
+    TIMEOUT_SECONDS = 8
+
+    def __init__(self, api_key: str = None, sender_email: str = None):
+        self.api_key = api_key if api_key is not None else (getattr(settings, 'RESEND_API_KEY', '') or os.getenv('RESEND_API_KEY', ''))
+        self.sender_email = sender_email if sender_email is not None else (getattr(settings, 'RESEND_SENDER_EMAIL', '') or os.getenv('RESEND_SENDER_EMAIL', 'onboarding@resend.dev'))
+
+    def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
+        if not self.api_key:
+            logger.error("RESEND_API_KEY missing. Cannot dispatch email to %s", to_email)
+            raise EmailProviderError("RESEND_API_KEY missing")
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "from": self.sender_email,
+            "to": [to_email],
+            "subject": subject,
+            "text": text_content,
+        }
+        if html_content:
+            payload["html"] = html_content
+
+        try:
+            resp = requests.post(
+                self.ENDPOINT,
+                json=payload,
+                headers=headers,
+                timeout=self.TIMEOUT_SECONDS,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.RequestException) as exc:
+            logger.error("Resend API request failed for recipient %s: %s", to_email, exc.__class__.__name__)
+            raise EmailProviderError(f"Email delivery timed out or network error: {exc.__class__.__name__}") from exc
+
+        if resp.status_code in (200, 201):
+            return True
+        elif resp.status_code == 429:
+            logger.warning("Resend API rate limited (429) for recipient %s", to_email)
+            raise EmailProviderError("Email service rate limit reached. Please try again shortly.")
+        else:
+            logger.error("Resend API error %s for recipient %s", resp.status_code, to_email)
+            raise EmailProviderError(f"Email service returned HTTP {resp.status_code}")
+
+
 def get_email_sender() -> EmailSender:
     """Returns the configured EmailSender instance according to EMAIL_PROVIDER setting."""
     provider = getattr(settings, 'EMAIL_PROVIDER', 'locmem')
-    if provider == 'brevo_api':
+    if provider in ('brevo_api', 'brevo'):
         return BrevoApiEmailSender()
+    elif provider in ('resend_api', 'resend'):
+        return ResendApiEmailSender()
     elif provider == 'console':
         return ConsoleEmailSender()
     return LocMemEmailSender()

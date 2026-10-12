@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -296,7 +297,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Center(
-                    child: CircularProgressIndicator(color: _kPrimary)),
+                    child: AppLoader()),
               ),
           ],
         );
@@ -372,10 +373,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
               const Positioned(
                 top: 8,
                 right: 8,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: _kPrimary,
-                ),
+                child: AppLoader(),
               ),
           ],
         ),

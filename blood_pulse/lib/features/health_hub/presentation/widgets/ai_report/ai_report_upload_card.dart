@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -99,7 +100,7 @@ class AiReportUploadCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Column(
               children: const [
-                CircularProgressIndicator(color: AppColors.primary),
+                AppLoader(),
                 SizedBox(height: 14),
                 Text(
                   'Extracting OCR text & analyzing with Medical AI...',

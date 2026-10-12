@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -58,7 +59,7 @@ class _ReportScannerScreenState extends State<ReportScannerScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircularProgressIndicator(color: AppColors.primaryRed),
+                          AppLoader(),
                           SizedBox(height: 16),
                           Text('AI analyzing hemoglobin & infectious diseases...', style: TextStyle(color: Colors.grey)),
                         ],

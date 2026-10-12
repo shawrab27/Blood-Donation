@@ -4,13 +4,11 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import '../../../../core/config/api_config.dart';
 import '../models/community_models.dart';
 
-const String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
-
-
 final divisionsProvider = FutureProvider<List<Division>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/divisions/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('divisions/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => Division.fromJson(e)).toList();
@@ -19,8 +17,8 @@ final divisionsProvider = FutureProvider<List<Division>>((ref) async {
 });
 
 final districtsProvider = FutureProvider.family<List<District>, int?>((ref, divisionId) async {
-  final url = divisionId != null ? '$_baseUrl/districts/?division_id=$divisionId' : '$_baseUrl/districts/';
-  final response = await http.get(Uri.parse(url));
+  final path = divisionId != null ? 'districts/?division_id=$divisionId' : 'districts/';
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl(path)));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => District.fromJson(e)).toList();
@@ -29,8 +27,8 @@ final districtsProvider = FutureProvider.family<List<District>, int?>((ref, divi
 });
 
 final upazilasProvider = FutureProvider.family<List<Upazila>, int?>((ref, districtId) async {
-  final url = districtId != null ? '$_baseUrl/upazilas/?district_id=$districtId' : '$_baseUrl/upazilas/';
-  final response = await http.get(Uri.parse(url));
+  final path = districtId != null ? 'upazilas/?district_id=$districtId' : 'upazilas/';
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl(path)));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => Upazila.fromJson(e)).toList();
@@ -39,7 +37,7 @@ final upazilasProvider = FutureProvider.family<List<Upazila>, int?>((ref, distri
 });
 
 final nationalCommunitiesProvider = FutureProvider<List<NationalCommunity>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/national-communities/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('national-communities/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => NationalCommunity.fromJson(e)).toList();
@@ -48,7 +46,7 @@ final nationalCommunitiesProvider = FutureProvider<List<NationalCommunity>>((ref
 });
 
 final medicalPartnersProvider = FutureProvider<List<MedicalPartner>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/medical-partners/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('medical-partners/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => MedicalPartner.fromJson(e)).toList();
@@ -77,12 +75,12 @@ class LocalClubFilter {
 }
 
 final localClubsProvider = FutureProvider.family<List<LocalClub>, LocalClubFilter>((ref, filter) async {
-  var url = '$_baseUrl/local-clubs/?';
-  if (filter.divisionId != null) url += 'division_id=${filter.divisionId}&';
-  if (filter.districtId != null) url += 'district_id=${filter.districtId}&';
-  if (filter.upazilaId != null) url += 'upazila_id=${filter.upazilaId}&';
+  var path = 'local-clubs/?';
+  if (filter.divisionId != null) path += 'division_id=${filter.divisionId}&';
+  if (filter.districtId != null) path += 'district_id=${filter.districtId}&';
+  if (filter.upazilaId != null) path += 'upazila_id=${filter.upazilaId}&';
   
-  final response = await http.get(Uri.parse(url));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl(path)));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => LocalClub.fromJson(e)).toList();
@@ -92,7 +90,7 @@ final localClubsProvider = FutureProvider.family<List<LocalClub>, LocalClubFilte
 
 final areaGuidesProvider = FutureProvider<List<AreaGuide>>((ref) async {
   try {
-    final response = await http.get(Uri.parse('$_baseUrl/area-guides/'));
+    final response = await http.get(Uri.parse(ApiConfig.resolveUrl('area-guides/')));
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       return data.map((e) => AreaGuide.fromJson(e)).toList();
@@ -103,7 +101,7 @@ final areaGuidesProvider = FutureProvider<List<AreaGuide>>((ref) async {
 
 final localDonorsProvider = FutureProvider.family<List<LocalDonorItem>, String>((ref, district) async {
   try {
-    final response = await http.get(Uri.parse('$_baseUrl/donors/?district=$district'));
+    final response = await http.get(Uri.parse(ApiConfig.resolveUrl('donors/?district=$district')));
     if (response.statusCode == 200) {
       final List data = json.decode(response.body);
       if (data.isNotEmpty) {

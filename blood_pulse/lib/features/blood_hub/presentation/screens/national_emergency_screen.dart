@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -532,7 +533,7 @@ class _PledgeSheetState extends ConsumerState<_PledgeSheet> {
             child: ElevatedButton(
               onPressed: (_selectedSlotId != null && _agreed && !_loading) ? _submitPledge : null,
               style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, shape: const StadiumBorder(), padding: const EdgeInsets.symmetric(vertical: 16)),
-              child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Confirm Pledge', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
+              child: _loading ? const SizedBox(width: 20, height: 20, child: AppLoader()) : const Text('Confirm Pledge', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),
         ],
@@ -605,6 +606,6 @@ class _Skeleton extends StatelessWidget {
   const _Skeleton();
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator(color: _kPrimary));
+    return const Center(child: AppLoader());
   }
 }

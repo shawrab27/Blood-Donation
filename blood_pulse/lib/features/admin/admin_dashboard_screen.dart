@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -232,7 +233,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           color: AppColors.primary,
           onRefresh: _loadData,
           child: _isLoading && _requests.isEmpty && _flags.isEmpty
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              ? const Center(child: AppLoader())
               : ListView(
                   padding: const EdgeInsets.all(16),
                   physics: const AlwaysScrollableScrollPhysics(),

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -10,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
+import '../../../../core/config/api_config.dart';
 import '../../domain/providers/communities_provider.dart';
 
 class RegisterClubFormView extends ConsumerStatefulWidget {
@@ -33,7 +35,6 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
 
   bool _agreeToPublish = false;
   bool _isSubmitting = false;
-  static const String _baseUrl = 'https://blood-donation-liard.vercel.app/api';
 
   @override
   void dispose() {
@@ -77,7 +78,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
       };
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/clubs/register/'),
+        Uri.parse(ApiConfig.resolveUrl('clubs/register/')),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
@@ -421,7 +422,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
                 width: double.infinity,
                 height: 50,
                 child: _isSubmitting
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    ? const Center(child: AppLoader())
                     : ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B0014),

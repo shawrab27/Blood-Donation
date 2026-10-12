@@ -917,22 +917,63 @@ class GoogleAuthView(APIView):
         verified_photo = None
         email_is_verified = False
 
+        # Audience check support from env
+        import os
+        import time
+        allowed_audiences = [
+            cid.strip() for cid in os.environ.get('GOOGLE_OAUTH_CLIENT_IDS', '').split(',') if cid.strip()
+        ]
+
         if id_token_str:
             try:
-                import urllib.request
-                import urllib.parse
-                import json
-                url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(id_token_str)}"
-                req = urllib.request.Request(url, headers={'User-Agent': 'BloodPulse-Backend'})
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    if resp.status == 200:
-                        info = json.loads(resp.read().decode('utf-8'))
-                        verified_email = info.get('email')
-                        verified_name = info.get('name', '')
-                        verified_uid = info.get('sub')
-                        verified_photo = info.get('picture')
-                        ev = info.get('email_verified')
-                        email_is_verified = ev is True or ev == 'true'
+                info = None
+                # 1. Try google.oauth2.id_token verification
+                try:
+                    from google.oauth2 import id_token as google_id_token
+                    from google.auth.transport import requests as google_requests
+                    info = google_id_token.verify_oauth2_token(
+                        id_token_str,
+                        google_requests.Request(),
+                        audience=None
+                    )
+                except Exception as g_err:
+                    logger.debug(f"[GoogleAuthView] google.oauth2 verifier: {g_err}")
+
+                # 2. Fallback to Google tokeninfo endpoint
+                if not info:
+                    import urllib.request
+                    import urllib.parse
+                    import json
+                    url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(id_token_str)}"
+                    req = urllib.request.Request(url, headers={'User-Agent': 'BloodPulse-Backend'})
+                    with urllib.request.urlopen(req, timeout=8) as resp:
+                        if resp.status == 200:
+                            info = json.loads(resp.read().decode('utf-8'))
+
+                if info:
+                    # Check token expiration
+                    exp = info.get('exp')
+                    if exp and int(exp) < int(time.time()):
+                        return Response(
+                            {'error': 'Google token has expired.'},
+                            status=status.HTTP_401_UNAUTHORIZED
+                        )
+
+                    # Check audience against GOOGLE_OAUTH_CLIENT_IDS
+                    token_aud = info.get('aud')
+                    if allowed_audiences and token_aud not in allowed_audiences:
+                        logger.warning(f"[GoogleAuthView] Token audience mismatch: {token_aud}")
+                        return Response(
+                            {'error': 'Invalid token audience.'},
+                            status=status.HTTP_401_UNAUTHORIZED
+                        )
+
+                    verified_email = info.get('email')
+                    verified_name = info.get('name', '')
+                    verified_uid = info.get('sub')
+                    verified_photo = info.get('picture')
+                    ev = info.get('email_verified')
+                    email_is_verified = ev is True or ev == 'true' or ev == 'True'
             except Exception as id_err:
                 logger.warning(f"[GoogleAuthView] id_token verification failed: {id_err}")
 

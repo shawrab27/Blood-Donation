@@ -9,20 +9,11 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/config/api_config.dart';
 import '../models/health_hub_models.dart';
 
-const String _apiBase = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'https://blood-donation-liard.vercel.app/api',
-);
-
-String get _baseUrl {
-  final clean = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
-  return clean.endsWith('/health-hub') ? clean : '$clean/health-hub';
-}
-
 final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/science-articles/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('health-hub/science-articles/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => BloodScienceArticle.fromJson(e)).toList();
@@ -31,7 +22,7 @@ final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) 
 });
 
 final compatibilityRulesProvider = FutureProvider<List<CompatibilityRule>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/compatibility/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('health-hub/compatibility/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => CompatibilityRule.fromJson(e)).toList();
@@ -40,7 +31,7 @@ final compatibilityRulesProvider = FutureProvider<List<CompatibilityRule>>((ref)
 });
 
 final donationGuideProvider = FutureProvider<List<DonationGuideSection>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/donation-guide/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('health-hub/donation-guide/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => DonationGuideSection.fromJson(e)).toList();
@@ -49,7 +40,7 @@ final donationGuideProvider = FutureProvider<List<DonationGuideSection>>((ref) a
 });
 
 final emergencyContactsProvider = FutureProvider<List<EmergencyContact>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/emergency-contacts/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('health-hub/emergency-contacts/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => EmergencyContact.fromJson(e)).toList();
@@ -58,7 +49,7 @@ final emergencyContactsProvider = FutureProvider<List<EmergencyContact>>((ref) a
 });
 
 final recoveryTimelineProvider = FutureProvider<List<RecoveryTimelineStep>>((ref) async {
-  final response = await http.get(Uri.parse('$_baseUrl/recovery-timeline/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('health-hub/recovery-timeline/')));
   if (response.statusCode == 200) {
     final List data = json.decode(response.body);
     return data.map((e) => RecoveryTimelineStep.fromJson(e)).toList();
@@ -106,7 +97,7 @@ class AiAnalysisService {
       'filename': imageFile.name.isNotEmpty ? imageFile.name : 'report.jpg',
     });
 
-    final primaryUrl = '$_baseUrl/analyze-report/';
+    final primaryUrl = ApiConfig.resolveUrl('health-hub/analyze-report/');
 
     try {
       final response = await http.post(
@@ -147,9 +138,8 @@ class AiAnalysisService {
 }
 
 final healthAccessoriesProvider = FutureProvider<List<HealthAccessory>>((ref) async {
-  final cleanBase = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
   try {
-    final response = await http.get(Uri.parse('$cleanBase/health-accessories/'));
+    final response = await http.get(Uri.parse(ApiConfig.resolveUrl('health-accessories/')));
     if (response.statusCode == 200) {
       final decoded = json.decode(utf8.decode(response.bodyBytes));
       final List<dynamic> data = decoded is List ? decoded : (decoded['results'] ?? []);
@@ -167,8 +157,7 @@ final healthAccessoriesProvider = FutureProvider<List<HealthAccessory>>((ref) as
 
 
 final hospitalsDirectoryProvider = FutureProvider<List<HospitalModel>>((ref) async {
-  final cleanBase = _apiBase.endsWith('/') ? _apiBase.substring(0, _apiBase.length - 1) : _apiBase;
-  final response = await http.get(Uri.parse('$cleanBase/hospitals/'));
+  final response = await http.get(Uri.parse(ApiConfig.resolveUrl('hospitals/')));
   if (response.statusCode == 200) {
     final Map<String, dynamic> decoded = json.decode(utf8.decode(response.bodyBytes));
     final List<dynamic> data = decoded.containsKey('results') ? decoded['results'] : decoded;

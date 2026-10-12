@@ -33,8 +33,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
   }
 
   Future<void> _initializeAndPlayVideo() async {
-    // Safety max timer (3.5s total) so the user is never stuck waiting
-    _fallbackTimer = Timer(const Duration(milliseconds: 3500), () {
+    // Safety max timer (3.0s strict fallback as per Task 10A spec)
+    _fallbackTimer = Timer(const Duration(milliseconds: 3000), () {
       if (mounted && !_hasNavigated) {
         _navigateToNext();
       }
@@ -59,7 +59,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
     } catch (e) {
       debugPrint('[SplashVideoScreen] Video initialization failed or timed out: $e');
       if (mounted) {
-        Timer(const Duration(milliseconds: 800), _navigateToNext);
+        // Fallback gracefully to static logo splash without hanging
+        Timer(const Duration(milliseconds: 1200), _navigateToNext);
       }
     }
   }

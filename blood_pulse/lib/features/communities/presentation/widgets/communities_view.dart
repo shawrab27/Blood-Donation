@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -246,7 +247,7 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                  child: AppLoader(),
                 ),
               ),
               error: (err, _) => Center(child: Text('Error loading networks: $err')),
@@ -311,7 +312,7 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(color: AppColors.primary),
+                  child: AppLoader(),
                 ),
               ),
               error: (err, _) => Center(child: Text('Error loading partners: $err')),
@@ -963,7 +964,7 @@ class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
 
         // Guide Card: Dr. Rahman Kabir
         guidesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          loading: () => const Center(child: AppLoader()),
           error: (err, _) => const SizedBox.shrink(),
           data: (guides) {
             return Column(
@@ -1119,7 +1120,7 @@ class _LoadingPill extends StatelessWidget {
     return Container(
       height: 36,
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(50)),
-      child: const Center(child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))),
+      child: const Center(child: SizedBox(width: 14, height: 14, child: AppLoader())),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -104,12 +105,7 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                       SizedBox(
                         width: 108,
                         height: 108,
-                        child: CircularProgressIndicator(
-                          value: 0.85,
-                          strokeWidth: 9,
-                          backgroundColor: Colors.grey.shade200,
-                          color: AppColors.primary,
-                        ),
+                        child: const AppLoader(),
                       ),
                       const Column(
                         mainAxisSize: MainAxisSize.min,
@@ -150,10 +146,13 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Daily Hydration Intake',
-                        style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                      const Flexible(
+                        child: Text(
+                          'Daily Hydration Intake',
+                          style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         '$_waterGlasses / 8 Glasses',
                         style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.tertiary),
@@ -171,7 +170,11 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       OutlinedButton.icon(
                         onPressed: _waterGlasses > 0 ? () => setState(() => _waterGlasses--) : null,
@@ -181,9 +184,9 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                           side: const BorderSide(color: Color(0xFFB0CDEE)),
                           foregroundColor: AppColors.tertiary,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                          minimumSize: const Size(48, 40),
                         ),
                       ),
-                      const Spacer(),
                       ElevatedButton.icon(
                         onPressed: () => setState(() => _waterGlasses++),
                         icon: const Icon(Icons.add, size: 16),
@@ -194,6 +197,7 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                           textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                          minimumSize: const Size(48, 40),
                         ),
                       ),
                     ],
@@ -210,7 +214,7 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
             ),
             const SizedBox(height: 12),
             timelineAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              loading: () => const Center(child: AppLoader()),
               error: (_, __) => _buildTimelineSteps(_fallbackTimeline),
               data: (steps) => _buildTimelineSteps(steps.isNotEmpty ? steps : _fallbackTimeline),
             ),
@@ -258,11 +262,15 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          step.title,
-                          style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                        Expanded(
+                          child: Text(
+                            step.title,
+                            style: const TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           timeframe,
                           style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.neutral),

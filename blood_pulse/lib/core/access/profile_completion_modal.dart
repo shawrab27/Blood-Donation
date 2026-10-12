@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -284,7 +285,7 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                     ),
                     child: _isSubmitting
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        ? const SizedBox(width: 20, height: 20, child: AppLoader())
                         : const Text('Save & Complete Registration',
                             style: TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.bold)),
                   ),

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -126,12 +127,13 @@ class ProfileStatsRow extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      CircularProgressIndicator(
-                        value: isEligible ? 1.0 : progressPercent.clamp(0.05, 1.0),
-                        strokeWidth: 5.5,
-                        backgroundColor: const Color(0xFFFEE9EB),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isEligible ? AppColors.success : AppColors.primary,
+                      CustomPaint(
+                        size: const Size(58, 58),
+                        painter: _CountdownRingPainter(
+                          progress: isEligible ? 1.0 : progressPercent.clamp(0.05, 1.0),
+                          progressColor: isEligible ? AppColors.success : AppColors.primary,
+                          backgroundColor: const Color(0xFFFEE9EB),
+                          strokeWidth: 5.5,
                         ),
                       ),
                       Column(
@@ -158,5 +160,54 @@ class ProfileStatsRow extends StatelessWidget {
       ],
     ],
   );
+  }
+}
+
+class _CountdownRingPainter extends CustomPainter {
+  final double progress;
+  final Color progressColor;
+  final Color backgroundColor;
+  final double strokeWidth;
+
+  const _CountdownRingPainter({
+    required this.progress,
+    required this.progressColor,
+    required this.backgroundColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final bgPaint = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    final fgPaint = Paint()
+      ..color = progressColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = strokeWidth;
+
+    const startAngle = -3.141592653589793 / 2;
+    final sweepAngle = 2 * 3.141592653589793 * progress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      fgPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CountdownRingPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.progressColor != progressColor ||
+        oldDelegate.backgroundColor != backgroundColor;
   }
 }

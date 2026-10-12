@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -567,8 +568,7 @@ class _AcceptButton extends StatelessWidget {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
+                  child: AppLoader())
               : const Icon(Icons.volunteer_activism_rounded, size: 18),
           label: Text(
             responding ? 'Confirming…' : 'Accept & Help',

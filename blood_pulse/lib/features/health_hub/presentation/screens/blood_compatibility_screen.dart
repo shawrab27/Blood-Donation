@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -60,7 +61,7 @@ class _BloodCompatibilityScreenState extends ConsumerState<BloodCompatibilityScr
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: rulesAsyncValue.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            loading: () => const Center(child: AppLoader()),
             error: (_, __) => _buildCompatibilityContent(isFallback: true),
             data: (rules) {
               if (rules.isEmpty) return _buildCompatibilityContent(isFallback: true);
@@ -173,9 +174,11 @@ class _BloodCompatibilityScreenState extends ConsumerState<BloodCompatibilityScr
                 children: [
                   const Icon(Icons.arrow_upward_rounded, color: AppColors.primary, size: 24),
                   const SizedBox(width: 8),
-                  Text(
-                    '$_selectedGroup Can DONATE Blood To:',
-                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                  Expanded(
+                    child: Text(
+                      '$_selectedGroup Can DONATE Blood To:',
+                      style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                    ),
                   ),
                 ],
               ),
@@ -211,9 +214,11 @@ class _BloodCompatibilityScreenState extends ConsumerState<BloodCompatibilityScr
                 children: [
                   const Icon(Icons.arrow_downward_rounded, color: AppColors.success, size: 24),
                   const SizedBox(width: 8),
-                  Text(
-                    '$_selectedGroup Can RECEIVE Blood From:',
-                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                  Expanded(
+                    child: Text(
+                      '$_selectedGroup Can RECEIVE Blood From:',
+                      style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                    ),
                   ),
                 ],
               ),

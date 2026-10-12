@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -251,7 +252,7 @@ class _DonorMapViewState extends ConsumerState<DonorMapView> {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFFC30121)),
+          child: AppLoader(),
         ),
         error: (err, _) => Center(
           child: Text(

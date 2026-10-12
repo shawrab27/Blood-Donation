@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -57,7 +58,7 @@ class DonationGuideScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: guideAsyncValue.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            loading: () => const Center(child: AppLoader()),
             error: (_, __) => _buildGuideContent(_fallbackGuides),
             data: (guides) => _buildGuideContent(guides.isNotEmpty ? guides : _fallbackGuides),
           ),

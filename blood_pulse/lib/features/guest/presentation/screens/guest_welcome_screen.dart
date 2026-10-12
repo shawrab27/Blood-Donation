@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -451,10 +452,7 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                     Container(
                       color: Colors.white.withValues(alpha: 0.7),
                       child: const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                          strokeWidth: 2.5,
-                        ),
+                        child: AppLoader(),
                       ),
                     )
                   else if (_isOfflineOrError)

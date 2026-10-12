@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -103,13 +104,10 @@ class _CapsuleButtonState extends State<CapsuleButton>
 
     Widget child;
     if (widget.isLoading) {
-      child = SizedBox(
+      child = const SizedBox(
         width: 22,
         height: 22,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.5,
-          valueColor: AlwaysStoppedAnimation<Color>(fg),
-        ),
+        child: AppLoader(),
       );
     } else {
       child = Row(

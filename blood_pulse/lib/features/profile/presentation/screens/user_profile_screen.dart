@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -260,7 +261,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         const SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          child: AppLoader(),
                         )
                       else
                         Switch.adaptive(

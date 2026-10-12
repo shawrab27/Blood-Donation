@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -96,7 +97,7 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
         child: ResponsiveCenterWrapper(
           maxWidth: 840,
           child: asyncAccessories.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            loading: () => const Center(child: AppLoader()),
             error: (e, st) => const Center(
               child: Text(
                 'Unable to load accessories catalog.',

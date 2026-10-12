@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -234,7 +235,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 560),
                   child: state.isLoading && state.messages.isEmpty
-                      ? const Center(child: CircularProgressIndicator(color: Color(0xFFC30121)))
+                      ? const Center(child: AppLoader())
                       : ListView.builder(
                           controller: _scrollController,
                           reverse: true,

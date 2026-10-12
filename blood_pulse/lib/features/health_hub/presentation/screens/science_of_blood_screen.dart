@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -119,7 +120,7 @@ class ScienceOfBloodScreen extends ConsumerWidget {
               articlesAsyncValue.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  child: Center(child: AppLoader()),
                 ),
                 error: (_, __) => _buildArticlesColumn(_fallbackArticles),
                 data: (articles) => _buildArticlesColumn(

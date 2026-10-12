@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -7,6 +8,7 @@ import 'package:blood_pulse/core/widgets/avatar_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/config/api_config.dart';
 import '../../domain/providers/profile_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -99,7 +101,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Stack(
                     alignment: Alignment.bottomRight,
                     children: [
-                      AvatarHelper(radius: 50, fallbackName: profile?.fullName ?? 'User', serverPhotoUrl: profile?.profilePicture != null ? 'https://blood-donation-liard.vercel.app${profile!.profilePicture}' : null),
+                      AvatarHelper(radius: 50, fallbackName: profile?.fullName ?? 'User', serverPhotoUrl: profile?.profilePicture != null ? '${ApiConfig.baseUrl}${profile!.profilePicture}' : null),
                       Container(
                         decoration: const BoxDecoration(
                           color: Color(0xFFC30121),
@@ -186,7 +188,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       ),
                       child: _isLoading 
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
+                          ? const SizedBox(height: 20, width: 20, child: AppLoader())
                           : const Text('Save Changes', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                     ),
                   )
