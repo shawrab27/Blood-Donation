@@ -68,60 +68,75 @@ class AssistantState {
 
 class AssistantNotifier extends StateNotifier<AssistantState> {
   final AssistantApiService _apiService;
-  late Box _box;
+  Box? _box;
 
   AssistantNotifier(this._apiService) : super(AssistantState(isLoading: true)) {
     _init();
   }
 
   Future<void> _init() async {
-    _box = await Hive.openBox('assistant_box');
-    
-    // Load local history
-    final history = _box.get('history', defaultValue: <String>[]);
-    final List<AssistantMessage> msgs = (history as List).map((e) {
-      return AssistantMessage.fromJson(jsonDecode(e as String));
-    }).toList();
-    
-    final bool firstRun = _box.get('first_run', defaultValue: true);
-    final bool consent = _box.get('consent', defaultValue: false);
-    final int? convId = _box.get('conversation_id');
+    try {
+      final box = await Hive.openBox('assistant_box');
+      if (!mounted) return;
+      _box = box;
+      
+      // Load local history
+      final history = _box?.get('history', defaultValue: <String>[]);
+      final List<AssistantMessage> msgs = (history is List ? history : []).map((e) {
+        return AssistantMessage.fromJson(jsonDecode(e as String));
+      }).toList();
+      
+      final bool firstRun = _box?.get('first_run', defaultValue: true) ?? true;
+      final bool consent = _box?.get('consent', defaultValue: false) ?? false;
+      final int? convId = _box?.get('conversation_id');
 
-    state = state.copyWith(
-      messages: msgs,
-      isFirstRun: firstRun,
-      consentGiven: consent,
-      conversationId: convId,
-    );
+      if (!mounted) return;
+      state = state.copyWith(
+        messages: msgs,
+        isFirstRun: firstRun,
+        consentGiven: consent,
+        conversationId: convId,
+      );
 
-    _loadQuickActions();
+      _loadQuickActions();
+    } catch (_) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false);
+      }
+    }
   }
 
   Future<void> _loadQuickActions() async {
     try {
       final actions = await _apiService.getQuickActions();
+      if (!mounted) return;
       state = state.copyWith(quickActions: actions, isLoading: false);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false);
     }
   }
 
   void _saveToLocal() {
+    if (_box == null || !_box!.isOpen) return;
     // keep last 30
     final msgs = state.messages.length > 30 
       ? state.messages.sublist(state.messages.length - 30)
       : state.messages;
       
     final historyList = msgs.map((m) => jsonEncode(m.toJson())).toList();
-    _box.put('history', historyList);
+    _box!.put('history', historyList);
     if (state.conversationId != null) {
-      _box.put('conversation_id', state.conversationId);
+      _box!.put('conversation_id', state.conversationId);
     }
   }
 
   Future<void> saveConsent(bool consent) async {
-    await _box.put('first_run', false);
-    await _box.put('consent', consent);
+    if (_box != null && _box!.isOpen) {
+      await _box!.put('first_run', false);
+      await _box!.put('consent', consent);
+    }
+    if (!mounted) return;
     state = state.copyWith(isFirstRun: false, consentGiven: consent);
     try {
       await _apiService.saveConsent(consent);
@@ -232,8 +247,8 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
 
   Future<void> clearChat() async {
     state = state.copyWith(messages: [], conversationId: null);
-    await _box.delete('history');
-    await _box.delete('conversation_id');
+    await _box?.delete('history');
+    await _box?.delete('conversation_id');
     try {
       await _apiService.clearConversations();
     } catch (_) {}
