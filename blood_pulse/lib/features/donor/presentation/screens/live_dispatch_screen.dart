@@ -1245,9 +1245,11 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
     final isRequester = _activeRole == DispatchRole.requester;
     final name = isRequester ? widget.donorName : widget.patientName;
     final phone = isRequester ? widget.donorPhone : '';
-    final roleTag = isRequester ? 'Universal Donor' : 'Patient / Ward 04';
+    final roleTag = isRequester
+        ? (widget.bloodGroup.isNotEmpty ? '${widget.bloodGroup} Donor' : 'Verified Donor')
+        : 'Patient / Requester';
     final subtitle = isRequester
-        ? '★ 4.9 • 14 Lifesaving Units'
+        ? (widget.bloodGroup.isNotEmpty ? 'Blood Group: ${widget.bloodGroup}' : 'Registered Donor')
         : '${widget.hospitalName} • Urgent';
 
     return Container(

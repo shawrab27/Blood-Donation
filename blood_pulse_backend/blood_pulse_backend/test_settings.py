@@ -44,3 +44,7 @@ if _final_host == BLOCKED_PROD_HOST:
         f"\n[CRITICAL SAFETY GUARD] Aborting: Active test DB host is blocked production host: {BLOCKED_PROD_HOST}\n"
     )
     sys.exit(1)
+
+EMAIL_PROVIDER = 'locmem'
+EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+

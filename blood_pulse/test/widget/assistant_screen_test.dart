@@ -19,6 +19,7 @@ class _FakeAssistantNotifier extends StateNotifier<AssistantState>
   _FakeAssistantNotifier(super.initial);
 
   String? lastSentMessage;
+  String? _lastUserQuery;
   String? thumbsDownCalledFor;
   bool handoffCalled = false;
 
@@ -26,12 +27,14 @@ class _FakeAssistantNotifier extends StateNotifier<AssistantState>
   Future<void> sendMessage(String text, String locale,
       {bool isRetry = false, String? screenContext}) async {
     lastSentMessage = text;
+    _lastUserQuery = text;
   }
 
   @override
   Future<void> retryLastMessage(String locale, {String? screenContext}) async {
-    if (lastSentMessage != null) {
-      await sendMessage(lastSentMessage!, locale, isRetry: true, screenContext: screenContext);
+    final toRetry = _lastUserQuery ?? lastSentMessage;
+    if (toRetry != null) {
+      await sendMessage(toRetry, locale, isRetry: true, screenContext: screenContext);
     }
   }
 

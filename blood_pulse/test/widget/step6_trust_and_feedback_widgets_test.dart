@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/dialogs/private_donor_feedback_dialog.dart';
 import 'package:blood_pulse/features/profile/presentation/widgets/modals/digital_certificate_sheet.dart';
@@ -101,13 +102,13 @@ void main() {
       await tester.tap(find.text('View Certificate'));
       await tester.pumpAndSettle();
 
-      // Verify certificate text and strict wording "Donations completed"
-      expect(find.text('Digital Donor Certificate'), findsOneWidget);
-      expect(find.text('CERTIFICATE OF RECOGNITION'), findsOneWidget);
+      // Verify certificate text and strict wording "Donations completed" / "Total Contribution"
+      expect(find.text('Verified Donor Certificate'), findsOneWidget);
+      expect(find.text('Certificate of Appreciation'), findsOneWidget);
       expect(find.text('Tanvir Ahmed'), findsOneWidget);
-      expect(find.text('Donations completed: 7 (Blood Group: B+).'), findsOneWidget);
-      expect(find.text('BloodPulse Verified Donor • Tier Gold'), findsOneWidget);
-      expect(find.text('Share Certificate'), findsOneWidget);
+      expect(find.textContaining('Total Contribution: 7 Bags'), findsOneWidget);
+      expect(find.text('Save Image'), findsOneWidget);
+      expect(find.text('Export PDF'), findsOneWidget);
 
       // Ensure no raw phone, email, or exact location is present
       expect(find.textContaining('017'), findsNothing);

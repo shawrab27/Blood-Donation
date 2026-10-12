@@ -35,7 +35,7 @@ void main() {
       // Options Card
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Notification Received'), findsOneWidget);
-      expect(find.text('Show PulseAI assistant'), findsOneWidget);
+      expect(find.text('Show PulseAI Assistant'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Rate Us'), findsOneWidget);
       expect(find.text('Share App'), findsOneWidget);
@@ -84,14 +84,15 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('Delete Account?'), findsOneWidget);
       expect(find.textContaining('This action cannot be undone'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
       expect(find.text('Yes, Delete'), findsOneWidget);
       expect(find.text('Donations'), findsOneWidget);
-      expect(find.text('Lives Saved'), findsOneWidget);
-      expect(find.text('Blood Pool'), findsOneWidget);
+      expect(find.text('Requests'), findsOneWidget);
+      expect(find.text('Posts'), findsOneWidget);
     });
 
     testWidgets('LogoutConfirmationModal renders safe session alert and actions', (tester) async {
@@ -140,7 +141,7 @@ void main() {
       expect(find.text('Donate to BloodPulse'), findsOneWidget);
       expect(find.text('Inbox & Notifications'), findsOneWidget);
       expect(find.text('FAQ & Donor Guide'), findsOneWidget);
-      expect(find.text('BloodPulse Assistant'), findsOneWidget);
+      expect(find.text('PulseAI Assistant'), findsOneWidget);
       expect(find.text('Settings & Security'), findsOneWidget);
       expect(find.text('Log Out'), findsOneWidget);
     });

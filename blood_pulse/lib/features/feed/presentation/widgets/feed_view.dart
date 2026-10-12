@@ -9,6 +9,7 @@ import 'package:blood_pulse/core/widgets/avatar_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/widgets/app_loader.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../../core/access/access_guard.dart';
 import '../../../../core/access/registration_gate_popup.dart';
@@ -1364,11 +1365,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                       height: 220,
                       color: const Color(0xFFF7ECEC),
                       child: const Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC30121)),
-                        ),
+                        child: AppLoader.small(),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
@@ -1401,11 +1398,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                         placeholder: (context, url) => Container(
                           color: const Color(0xFFF7ECEC),
                           child: const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC30121)),
-                            ),
+                            child: AppLoader.small(),
                           ),
                         ),
                         errorWidget: (context, url, error) => Container(
@@ -1431,11 +1424,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                           height: 220,
                           color: const Color(0xFFF7ECEC),
                           child: const Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC30121)),
-                            ),
+                            child: AppLoader.small(),
                           ),
                         ),
                         errorWidget: (context, url, error) => Container(

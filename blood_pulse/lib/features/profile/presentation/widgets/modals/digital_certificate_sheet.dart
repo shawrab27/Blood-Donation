@@ -14,6 +14,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/config/api_config.dart';
 import '../../../../../services/api_client.dart';
 
 /// Modal bottom sheet displaying the Verified Official Donor Certificate.
@@ -55,7 +56,7 @@ class DigitalCertificateSheet extends StatefulWidget {
 
 class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
   final GlobalKey _certificateKey = GlobalKey();
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _isExporting = false;
   String? _certificateId;
   DateTime _issuedDate = DateTime.now();
@@ -65,10 +66,9 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
   void initState() {
     super.initState();
     _donationsCount = widget.totalDonations;
+    _certificateId = 'bp-cert-${widget.donorName.hashCode.abs().toRadixString(16)}';
     if (_donationsCount >= 1) {
       _fetchOrIssueCertificate();
-    } else {
-      _isLoading = false;
     }
   }
 
@@ -224,7 +224,7 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
 
   void _shareCertificate() {
     final verifyUrl = _certificateId != null
-        ? 'https://bloodpulse-backend.onrender.com/verify/$_certificateId'
+        ? '${ApiConfig.baseUrl}/verify/$_certificateId'
         : 'https://bloodpulse.org';
     SharePlus.instance.share(
       ShareParams(
@@ -447,7 +447,7 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
 
   Widget _buildCertificateCard() {
     final verifyUrl = _certificateId != null
-        ? 'https://bloodpulse-backend.onrender.com/verify/$_certificateId'
+        ? '${ApiConfig.baseUrl}/verify/$_certificateId'
         : 'https://bloodpulse.org';
 
     return Container(
@@ -583,87 +583,104 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // Left: QR Code & Verification Info
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFD3B79C), width: 1),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFD3B79C), width: 1),
+                              ),
+                              child: QrImageView(
+                                data: verifyUrl,
+                                version: QrVersions.auto,
+                                size: 58,
+                                gapless: true,
+                              ),
                             ),
-                            child: QrImageView(
-                              data: verifyUrl,
-                              version: QrVersions.auto,
-                              size: 58,
-                              gapless: true,
+                            const SizedBox(height: 4),
+                            Text(
+                              _certificateId != null
+                                  ? 'ID: ${_certificateId!.substring(0, _certificateId!.length > 8 ? 8 : _certificateId!.length).toUpperCase()}'
+                                  : 'Verified',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF886A50),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _certificateId != null
-                                ? 'ID: ${_certificateId!.substring(0, _certificateId!.length > 8 ? 8 : _certificateId!.length).toUpperCase()}'
-                                : 'Verified',
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF886A50),
+                            const Text(
+                              'Scan to verify validity',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 8.5,
+                                color: Color(0xFF7A6867),
+                              ),
                             ),
-                          ),
-                          const Text(
-                            'Scan to verify validity',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 8.5,
-                              color: Color(0xFF7A6867),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
 
                       // Right: Signature Block
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Nasim Shawrab',
-                            style: TextStyle(
-                              fontFamily: 'Georgia',
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                              color: Color(0xFF221A1A),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Nasim Shawrab',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Georgia',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                                color: Color(0xFF221A1A),
+                              ),
                             ),
-                          ),
-                          Container(
-                            width: 120,
-                            height: 1,
-                            margin: const EdgeInsets.symmetric(vertical: 3),
-                            color: const Color(0xFF332929),
-                          ),
-                          const Text(
-                            'Nasim Shawrab\nLead Software Engineer',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF4A3E3D),
-                              height: 1.25,
+                            Container(
+                              width: 120,
+                              height: 1,
+                              margin: const EdgeInsets.symmetric(vertical: 3),
+                              color: const Color(0xFF332929),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            DateFormat('d MMM yyyy').format(_issuedDate),
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 8.5,
-                              color: Color(0xFF7A6867),
+                            const Text(
+                              'Nasim Shawrab\nLead Software Engineer',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF4A3E3D),
+                                height: 1.25,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 3),
+                            Text(
+                              DateFormat('d MMM yyyy').format(_issuedDate),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 8.5,
+                                color: Color(0xFF7A6867),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

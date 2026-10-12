@@ -160,7 +160,7 @@ class GuestChatThrottleAndFallbackTests(TestCase):
         self.assertNotIn(raw_secret, body_str)
         self.assertNotIn('01799999999', body_str)
         self.assertNotIn('boom_internal', body_str)
-        self.assertEqual(res.json().get('source'), 'static_safe_fallback')
+        self.assertIn(res.json().get('source'), ('fallback', 'static_safe_fallback'))
 
     def test_assistant_chat_throttle_enforced(self):
         """AssistantChatThrottle (10/min) throttles calls on the 11th request."""

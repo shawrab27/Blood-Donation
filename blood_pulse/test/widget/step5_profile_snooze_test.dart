@@ -38,7 +38,7 @@ void main() {
     expect(find.text('Sarah Jenkins'), findsOneWidget);
 
     // Verify 30-day snooze switch tile is rendered
-    expect(find.text('Unavailable for 1 month'), findsOneWidget);
+    expect(find.text('Pause Emergency Alerts'), findsOneWidget);
     expect(find.text('Receive emergency donation alerts in your area'), findsOneWidget);
 
     // Verify the Switch is currently false (not snoozed)
@@ -74,7 +74,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Unavailable for 1 month'), findsOneWidget);
+    expect(find.text('Pause Emergency Alerts'), findsOneWidget);
     expect(find.textContaining('Paused until'), findsOneWidget);
 
     final switchFinder = find.byType(Switch);

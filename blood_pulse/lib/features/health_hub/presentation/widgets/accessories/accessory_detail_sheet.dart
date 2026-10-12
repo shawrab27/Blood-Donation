@@ -125,27 +125,6 @@ class AccessoryDetailSheet extends StatelessWidget {
                                 height: 1.25,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 18),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${item.rating}',
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2B2B2B),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '(${item.reviewsCount} customer reviews)',
-                                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF757575)),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),

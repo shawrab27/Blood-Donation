@@ -34,7 +34,7 @@ class _DeleteAccountConfirmationModalState
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isDeleting = false;
-  bool _isLoadingSummary = true;
+  bool _isLoadingSummary = false;
   int _donationsCount = 0;
   int _requestsCount = 0;
   int _postsCount = 0;
@@ -42,6 +42,8 @@ class _DeleteAccountConfirmationModalState
   @override
   void initState() {
     super.initState();
+    final authUser = ref.read(authProvider).user;
+    _donationsCount = authUser?.totalBagsDonated ?? 0;
     _fetchAccountSummary();
   }
 
@@ -110,11 +112,11 @@ class _DeleteAccountConfirmationModalState
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -169,7 +171,7 @@ class _DeleteAccountConfirmationModalState
 
               // Donor Verified Impact Summary Card (Rule 30: no fake lives saved)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF0F1),
                   borderRadius: BorderRadius.circular(18),
@@ -183,11 +185,11 @@ class _DeleteAccountConfirmationModalState
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildImpactMetric('$_donationsCount', 'Donations'),
+                          Expanded(child: _buildImpactMetric('$_donationsCount', 'Donations')),
                           Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
-                          _buildImpactMetric('$_requestsCount', 'Requests'),
+                          Expanded(child: _buildImpactMetric('$_requestsCount', 'Requests')),
                           Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
-                          _buildImpactMetric('$_postsCount', 'Posts'),
+                          Expanded(child: _buildImpactMetric('$_postsCount', 'Posts')),
                         ],
                       ),
               ),
@@ -282,9 +284,13 @@ class _DeleteAccountConfirmationModalState
 
   Widget _buildImpactMetric(String value, String label) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontFamily: 'Georgia',
             fontSize: 18,
@@ -295,6 +301,9 @@ class _DeleteAccountConfirmationModalState
         const SizedBox(height: 2),
         Text(
           label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 11,

@@ -143,5 +143,6 @@ def _check_production_guard():
             sys.exit(1)
 
 
-_check_production_guard()
+if os.environ.get('DJANGO_SETTINGS_MODULE') == 'blood_pulse_backend.safe_settings':
+    _check_production_guard()
 

@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,11 +43,11 @@ void main() {
       final repository =
           PosterRepositoryImpl(fakeDataSource);
 
-      final dummyFile = File('test_poster.png');
-      final exported = await repository.exportToGallery(dummyFile);
-      expect(exported.path, contains('BloodPulse/Posters'));
+      final dummyBytes = Uint8List.fromList([1, 2, 3]);
+      final exportedPath = await repository.exportToGallery(dummyBytes);
+      expect(exportedPath, contains('BloodPulse/Posters'));
 
-      await repository.sharePoster(dummyFile, samplePosterData);
+      await repository.sharePoster(dummyBytes, samplePosterData);
       expect(fakeDataSource.shareCalled, isTrue);
     });
   });
@@ -186,14 +187,12 @@ void main() {
 
       // Export PNG at production pixelRatio = 3.0 inside runAsync
       await tester.runAsync(() async {
-        final file = await globalKey.currentState!.exportPNG(
+        final bytes = await globalKey.currentState!.exportPNG(
           pixelRatio: 3.0,
-          targetDirectory: Directory.systemTemp,
         );
-        expect(file.existsSync(), isTrue);
+        expect(bytes.isNotEmpty, isTrue);
 
         // Verify exported PNG image width is exactly 380 * 3.0 = 1140 pixels
-        final bytes = await file.readAsBytes();
         final decodedImage = await decodeImageFromList(bytes);
         expect(decodedImage.width, equals(1140));
         expect(decodedImage.height, equals((posterSize.height * 3.0).round()));
@@ -212,13 +211,13 @@ class _FakePosterDataSource implements PosterLocalDataSource {
   bool shareCalled = false;
 
   @override
-  Future<File> exportToGallery(File pngFile) async {
-    return File('/fake/path/BloodPulse/Posters/poster_123.png');
+  Future<String> exportToGallery(Uint8List pngBytes, {String? filename}) async {
+    return '/fake/path/BloodPulse/Posters/poster_123.png';
   }
 
   @override
   Future<void> sharePoster(
-    File pngFile,
+    Uint8List pngBytes,
     PosterData data, {
     String? platform,
     bool isBangla = false,

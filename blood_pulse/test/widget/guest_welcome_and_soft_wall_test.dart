@@ -23,6 +23,7 @@ import 'package:blood_pulse/features/health_hub/domain/providers/health_hub_prov
 import 'package:blood_pulse/core/access/access_guard.dart';
 import 'package:blood_pulse/core/access/registration_gate_popup.dart';
 import 'package:blood_pulse/core/router_notifier.dart';
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 
 class _TestFeedNotifier extends FeedNotifier {
   _TestFeedNotifier(List<FeedPostItem> initial) {
@@ -483,8 +484,8 @@ void main() {
         ),
       );
       await tester.pump();
-      // While completer is pending, CircularProgressIndicator is shown
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // While completer is pending, AppLoader is shown
+      expect(find.byType(AppLoader), findsOneWidget);
 
       completer.complete({'total_donors': 0, 'cells': <Map<String, dynamic>>[]});
       await tester.pump();

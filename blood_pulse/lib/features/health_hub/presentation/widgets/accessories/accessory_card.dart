@@ -62,27 +62,6 @@ class AccessoryCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 18),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${item.rating}',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2B2B2B),
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '(${item.reviewsCount})',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: Color(0xFF888888),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 14),

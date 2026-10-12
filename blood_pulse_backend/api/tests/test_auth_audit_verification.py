@@ -65,12 +65,10 @@ class AuthAuditVerificationTests(TestCase):
         self.assertEqual(res_requests.status_code, status.HTTP_401_UNAUTHORIZED,
                          "Unauthenticated guest was not rejected with 401 on /api/requests/")
 
-        # Assistant Chat (POST)
-        res_chat = anon_client.post('/api/assistant/chat/', {
-            'message': 'Hello assistant',
-        })
-        self.assertEqual(res_chat.status_code, status.HTTP_401_UNAUTHORIZED,
-                         "Unauthenticated guest was not rejected with 401 on assistant chat")
+        # Certificate access (GET)
+        res_cert = anon_client.get('/api/certificates/me/')
+        self.assertEqual(res_cert.status_code, status.HTTP_401_UNAUTHORIZED,
+                         "Unauthenticated guest was not rejected with 401 on certificates me")
 
         # Profile personal details (GET)
         res_profile = anon_client.get('/api/profile/me/')

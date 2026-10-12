@@ -41,8 +41,6 @@ class HealthAccessory {
   }
 
   String get tier => 'Health Item';
-  double get rating => 4.8;
-  int get reviewsCount => 150;
   
   IconData get icon {
     switch (category) {

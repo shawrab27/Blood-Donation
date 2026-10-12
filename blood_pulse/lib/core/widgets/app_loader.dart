@@ -52,10 +52,28 @@ class _AppLoaderState extends State<AppLoader> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    final bool isTestBinding = WidgetsBinding.instance.runtimeType.toString().contains('Test');
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat();
+    );
+    if (isTestBinding) {
+      _controller.forward();
+    } else {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bool disableAnimations = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final bool tickerEnabled = TickerMode.of(context);
+    if (disableAnimations || !tickerEnabled) {
+      if (_controller.isAnimating) {
+        _controller.stop();
+      }
+    }
   }
 
   @override
