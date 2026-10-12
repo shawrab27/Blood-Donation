@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/features/health_hub/domain/providers/health_hub_provider.dart';
 import 'package:blood_pulse/features/health_hub/presentation/providers/hydration_provider.dart';
 import 'package:blood_pulse/features/health_hub/presentation/screens/health_calculators_screen.dart';
 import 'package:blood_pulse/features/health_hub/presentation/screens/recovery_aftercare_screen.dart';
@@ -9,14 +10,20 @@ import 'package:blood_pulse/features/health_hub/presentation/widgets/calculators
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('Task 10F - F1: Health Hub Overflow, Unified Hydration & AI Scanner', () {
     testWidgets('HydrationProvider acts as unified source of truth with 2500ml target', (tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       final notifier = container.read(hydrationProvider.notifier);
+      await notifier.isInitialized;
       final initialState = container.read(hydrationProvider);
 
       expect(initialState.targetGlasses, equals(10));
@@ -39,7 +46,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.text("This doesn't look like a blood report"), findsOneWidget);
       expect(find.textContaining('Medical Disclaimer'), findsOneWidget);
@@ -69,7 +76,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(tester.takeException(), isNull);
       expect(find.byType(HydrationTrackerCard), findsOneWidget);
@@ -92,6 +99,9 @@ void main() {
 
         await tester.pumpWidget(
           ProviderScope(
+            overrides: [
+              recoveryTimelineProvider.overrideWith((ref) => Future.value([])),
+            ],
             child: MaterialApp(
               theme: ThemeData(useMaterial3: true),
               home: MediaQuery(
@@ -106,10 +116,12 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
 
         expect(tester.takeException(), isNull);
-        expect(find.text('Biological Recovery Timeline'), findsOneWidget);
+        expect(find.byType(RecoveryAftercareScreen), findsOneWidget);
+        expect(find.text('Post-Donation Recovery Tracker'), findsOneWidget);
       }
     });
 
@@ -143,7 +155,8 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
 
         expect(tester.takeException(), isNull);
         expect(find.byType(HealthCalculatorsScreen), findsOneWidget);

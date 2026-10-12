@@ -1,7 +1,7 @@
-import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,12 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-import '../../domain/models/health_accessory_model.dart';
+import '../../domain/models/product_model.dart';
 import '../../domain/providers/health_hub_provider.dart';
-import '../widgets/accessories/accessory_card.dart';
-import '../widgets/accessories/accessory_detail_sheet.dart';
-import '../widgets/accessories/accessory_featured_spotlight.dart';
 import '../widgets/accessories/accessory_header_filter.dart';
+import '../widgets/accessories/product_card.dart';
+import '../widgets/accessories/product_detail_sheet.dart';
 import '../widgets/common/health_hub_subnav_bar.dart';
 
 class HealthAccessoriesScreen extends ConsumerStatefulWidget {
@@ -31,11 +30,26 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
 
   final List<String> _categories = const [
     'All',
-    'Diagnostic & Clinic',
-    'Consumables',
-    'Parts & Kits',
-    'Donor Gear',
+    'Tier 1 • Diagnostics',
+    'Tier 2 • Consumables',
+    'Tier 3 • Parts & Cuffs',
+    'Tier 4 • Donor Gear',
   ];
+
+  int? get _selectedTierNumber {
+    switch (_selectedCategory) {
+      case 'Tier 1 • Diagnostics':
+        return 1;
+      case 'Tier 2 • Consumables':
+        return 2;
+      case 'Tier 3 • Parts & Cuffs':
+        return 3;
+      case 'Tier 4 • Donor Gear':
+        return 4;
+      default:
+        return null;
+    }
+  }
 
   @override
   void dispose() {
@@ -65,13 +79,13 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
     }
   }
 
-  void _openAccessoryDetails(HealthAccessory item) {
+  void _openProductDetails(ProductModel item) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AccessoryDetailSheet(
-        item: item,
+      builder: (_) => ProductDetailSheet(
+        product: item,
         onOrderNow: _launchStoreUrl,
       ),
     );
@@ -79,7 +93,19 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
 
   @override
   Widget build(BuildContext context) {
-    final asyncAccessories = ref.watch(healthAccessoriesProvider);
+    final asyncProducts = ref.watch(
+      productsProvider((query: _searchQuery, tier: _selectedTierNumber)),
+    );
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount;
+    if (screenWidth >= 600) {
+      crossAxisCount = 3;
+    } else if (screenWidth >= 350) {
+      crossAxisCount = 2;
+    } else {
+      crossAxisCount = 1;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
@@ -95,70 +121,81 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
       ),
       body: SafeArea(
         child: ResponsiveCenterWrapper(
-          maxWidth: 840,
-          child: asyncAccessories.when(
-            loading: () => const Center(child: AppLoader()),
-            error: (e, st) => const Center(
-              child: Text(
-                'Unable to load accessories catalog.',
-                style: TextStyle(fontFamily: 'Inter', color: AppColors.error),
+          maxWidth: 960,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Top Subnav
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: HealthHubSubnavBar(activeRoute: '/health-hub/accessories'),
+                ),
               ),
-            ),
-            data: (items) {
-              final filteredItems = items.where((item) {
-                final matchesCategory = _selectedCategory == 'All' || item.category == _selectedCategory;
-                final matchesSearch = _searchQuery.isEmpty ||
-                    item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                    item.description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                    item.category.toLowerCase().contains(_searchQuery.toLowerCase());
-                return matchesCategory && matchesSearch;
-              }).toList();
 
-              final featuredItem = items.isNotEmpty ? items.first : null;
-
-              return CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  // Top Subnav
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: HealthHubSubnavBar(activeRoute: '/health-hub/accessories'),
-                    ),
+              // Header Filter (Search + Tier Choice Chips)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+                  child: AccessoryHeaderFilter(
+                    searchController: _searchController,
+                    searchQuery: _searchQuery,
+                    selectedCategory: _selectedCategory,
+                    categories: _categories,
+                    onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
+                    onClearSearch: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                    onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
                   ),
+                ),
+              ),
 
-                  // Header Filter
-                  SliverToBoxAdapter(
+              // Product Grid / State Handling
+              asyncProducts.when(
+                loading: () => const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: AppLoader()),
+                ),
+                error: (e, st) => SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-                      child: AccessoryHeaderFilter(
-                        searchController: _searchController,
-                        searchQuery: _searchQuery,
-                        selectedCategory: _selectedCategory,
-                        categories: _categories,
-                        onSearchChanged: (val) => setState(() => _searchQuery = val.trim()),
-                        onClearSearch: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                        onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.neutral),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Unable to connect to accessories catalog',
+                            style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Please check your internet connection or try again.',
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF666666)),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => ref.invalidate(productsProvider),
+                            icon: const Icon(Icons.refresh, size: 16),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-
-                  // 2nd Position: Featured Spotlight Banner
-                  if (_searchQuery.isEmpty && _selectedCategory == 'All' && featuredItem != null)
-                    SliverToBoxAdapter(
-                      child: AccessoryFeaturedSpotlight(
-                        item: featuredItem,
-                        onOpenDetails: () => _openAccessoryDetails(featuredItem),
-                        onOrderNow: _launchStoreUrl,
-                      ),
-                    ),
-
-                  // Products List
-                  if (filteredItems.isEmpty)
-                    SliverFillRemaining(
+                ),
+                data: (products) {
+                  if (products.isEmpty) {
+                    return SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
                         child: Padding(
@@ -179,82 +216,100 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Try adjusting your search terms or category filter.',
+                                'Try adjusting your search terms or tier filter.',
                                 style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF757575)),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final item = filteredItems[index];
-                            return AccessoryCard(
-                              item: item,
-                              onOpenDetails: () => _openAccessoryDetails(item),
-                              onLaunchStore: _launchStoreUrl,
-                            );
-                          },
-                          childCount: filteredItems.length,
-                        ),
+                    );
+                  }
+
+                  final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+                  final double baseHeight;
+                  if (crossAxisCount == 1) {
+                    baseHeight = 360.0;
+                  } else if (crossAxisCount == 2) {
+                    baseHeight = 440.0;
+                  } else {
+                    baseHeight = 420.0;
+                  }
+                  final itemHeight = baseHeight * (textScale > 1.0 ? textScale : 1.0);
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 14,
+                        mainAxisExtent: itemHeight,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final item = products[index];
+                          return ProductCard(
+                            product: item,
+                            onOpenDetails: () => _openProductDetails(item),
+                            onLaunchStore: _launchStoreUrl,
+                          );
+                        },
+                        childCount: products.length,
                       ),
                     ),
+                  );
+                },
+              ),
 
-                  // Footer Disclaimer
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF0F1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFFFD4D8)),
-                        ),
-                        child: const Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 22),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Affiliate & Medical Transparency',
-                                    style: TextStyle(
-                                      fontFamily: 'Georgia',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'These are general product search links, not endorsements from specific sellers. Sponsored — BloodPulse may earn a commission from purchases.',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 12,
-                                      color: Color(0xFF555555),
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
+              // Footer Transparency Banner
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFFD4D8)),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 22),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Price Transparency & External Partners',
+                                style: TextStyle(
+                                  fontFamily: 'Georgia',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
                               ),
-                            ),
-                          ],
+                              SizedBox(height: 4),
+                              Text(
+                                'Prices listed are approximate market estimates in Bangladeshi Taka (BDT) and may vary by pharmacy or distributor. BloodPulse does not sell these products directly; tapping links directs you to verified third-party retailers.',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 12,
+                                  color: Color(0xFF555555),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              );
-            },
+                ),
+              ),
+            ],
           ),
         ),
       ),

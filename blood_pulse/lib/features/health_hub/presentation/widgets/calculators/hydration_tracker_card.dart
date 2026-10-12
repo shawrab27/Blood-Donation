@@ -43,19 +43,21 @@ class HydrationTrackerCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.water_drop_rounded, color: AppColors.tertiary, size: 26),
                   const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Hydration Tracker',
-                        style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                      ),
-                      Text(
-                        '$totalMl ml / 2,500 ml target',
-                        style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
-                      ),
-                    ],
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Hydration Tracker',
+                          style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                        ),
+                        Text(
+                          '$totalMl ml / 2,500 ml target',
+                          style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

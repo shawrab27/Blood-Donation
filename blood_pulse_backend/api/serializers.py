@@ -5,8 +5,9 @@ from rest_framework import serializers
 from .models import (
     Hospital, DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, FakeAccountFlag, AdminAction,
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
+    DonationHistory, RecentLog, HealthAccessory, Certificate,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
-    DonationHistory, RecentLog, HealthAccessory, Certificate
+    Product, ProductImage
 )
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -473,3 +474,30 @@ class CertificateSerializer(serializers.ModelSerializer):
 
     def get_verify_url(self, obj):
         return f"/verify/{obj.id}/"
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image_url', 'public_id', 'display_order', 'created_at']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+    price_range_text = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'tier', 'description',
+            'price_min', 'price_max', 'currency', 'price_range_text',
+            'external_url', 'store_name', 'is_active', 'is_featured',
+            'sort_order', 'is_demo', 'availability_text', 'images',
+            'created_at', 'updated_at'
+        ]
+
+    def get_price_range_text(self, obj):
+        if obj.price_min == obj.price_max:
+            return f"৳{int(obj.price_min)}" if obj.currency == 'BDT' else f"{obj.currency} {obj.price_min}"
+        return f"৳{int(obj.price_min)} - ৳{int(obj.price_max)}" if obj.currency == 'BDT' else f"{obj.currency} {obj.price_min} - {obj.price_max}"
+

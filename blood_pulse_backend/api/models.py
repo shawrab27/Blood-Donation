@@ -1220,6 +1220,58 @@ class UserLocationState(models.Model):
         return f"Location for {self.user.username}: {dist} ({self.source})"
 
 
+class Product(models.Model):
+    TIER_CHOICES = [
+        (1, 'Tier 1 - Diagnostic & Clinic'),
+        (2, 'Tier 2 - Consumables'),
+        (3, 'Tier 3 - Parts & Kits'),
+        (4, 'Tier 4 - Donor Gear'),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    tier = models.IntegerField(choices=TIER_CHOICES, default=1)
+    description = models.TextField(blank=True, default='')
+    price_min = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    price_max = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
+    currency = models.CharField(max_length=10, default='BDT')
+    external_url = models.URLField(max_length=500, blank=True, default='')
+    store_name = models.CharField(max_length=255, blank=True, default='')
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    sort_order = models.IntegerField(default=0)
+    is_demo = models.BooleanField(default=False)
+    availability_text = models.CharField(max_length=100, blank=True, default='Available Online')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'tier']),
+            models.Index(fields=['sort_order']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} (Tier {self.tier}) - {self.store_name}"
+
+
+class ProductImage(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image_url = models.URLField(max_length=500)
+    public_id = models.CharField(max_length=255, blank=True, default='')
+    display_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+
+    def __str__(self):
+        return f"Image {self.id} for {self.product.name}"
+
+
+
 
 
 

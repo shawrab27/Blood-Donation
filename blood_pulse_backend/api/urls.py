@@ -5,6 +5,7 @@ from .views_leaderboard import LeaderboardAPIView
 from .views_certificates import CertificateIssueAPIView, CertificateVerifyAPIView
 from .views_feed_media import MediaUploadView, UserLocationSyncView
 from .views_feed import FeedListCreateAPIView, FeedPostDetailAPIView, FeedPostReportAPIView
+from .views_products import ProductViewSet
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -50,6 +51,7 @@ router.register(r'health-hub/donation-guide', DonationGuideSectionViewSet, basen
 router.register(r'health-hub/emergency-contacts', EmergencyContactViewSet, basename='emergency-contacts')
 router.register(r'health-hub/recovery-timeline', RecoveryTimelineStepViewSet, basename='recovery-timeline')
 router.register(r'health-accessories', HealthAccessoryViewSet, basename='health-accessories')
+router.register(r'products', ProductViewSet, basename='products')
 
 from .views_bloodhub import (
     donor_search_view,

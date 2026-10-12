@@ -183,3 +183,37 @@ class DonorFeedbackAdmin(admin.ModelAdmin):
     def tags_display(self, obj):
         return ", ".join(obj.tags) if isinstance(obj.tags, list) else str(obj.tags)
 
+
+from .models import Product, ProductImage
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
+    fields = ('image_url', 'public_id', 'display_order')
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    inlines = [ProductImageInline]
+    list_display = (
+        'id', 'name', 'tier', 'store_name', 'price_min',
+        'price_max', 'currency', 'is_active', 'is_featured',
+        'sort_order', 'is_demo', 'created_at'
+    )
+    list_editable = ('price_min', 'price_max', 'is_active', 'is_featured', 'sort_order')
+    list_filter = ('tier', 'is_active', 'is_featured', 'is_demo')
+    search_fields = ('name', 'description', 'store_name')
+    ordering = ('sort_order', '-created_at')
+
+    def delete_model(self, request, obj):
+        # Clean up images
+        for img in obj.images.all():
+            if img.public_id and not obj.is_demo:
+                try:
+                    import cloudinary.uploader
+                    cloudinary.uploader.destroy(img.public_id)
+                except Exception:
+                    pass
+        super().delete_model(request, obj)
+
+

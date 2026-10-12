@@ -33,8 +33,10 @@ class HydrationState {
 }
 
 class HydrationNotifier extends StateNotifier<HydrationState> {
+  late final Future<void> isInitialized;
+
   HydrationNotifier() : super(HydrationState(dateKey: _getDhakaTodayKey())) {
-    _initFromStorage();
+    isInitialized = _initFromStorage();
   }
 
   static const String _kDateKey = 'bp_hydration_date';

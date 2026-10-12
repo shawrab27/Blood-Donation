@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/product_model.dart';
 import '../../../../core/config/api_config.dart';
 import '../models/health_hub_models.dart';
 
@@ -136,6 +138,66 @@ class AiAnalysisService {
     }
   }
 }
+
+
+final productsProvider = FutureProvider.family<List<ProductModel>, ({String? query, int? tier})>((ref, filter) async {
+  final queryParams = <String, String>{};
+  if (filter.tier != null && filter.tier! > 0) {
+    queryParams['tier'] = filter.tier.toString();
+  }
+  if (filter.query != null && filter.query!.trim().isNotEmpty) {
+    queryParams['q'] = filter.query!.trim();
+  }
+
+  final queryString = queryParams.isNotEmpty
+      ? '?${queryParams.entries.map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}').join('&')}'
+      : '';
+
+  final endpoint = 'products/$queryString';
+  final url = ApiConfig.resolveUrl(endpoint);
+
+  try {
+    final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) {
+      final decoded = json.decode(utf8.decode(response.bodyBytes));
+      final List<dynamic> data = decoded is List ? decoded : (decoded['results'] ?? []);
+      final products = data.map((e) => ProductModel.fromJson(e as Map<String, dynamic>)).toList();
+
+      // Cache last valid products payload for offline resilience
+      if (filter.tier == null && (filter.query == null || filter.query!.isEmpty)) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('bp_cached_products', utf8.decode(response.bodyBytes));
+        } catch (_) {}
+      }
+
+      return products;
+    }
+  } catch (e) {
+    debugPrint('[productsProvider] Network/API fetch error: $e');
+  }
+
+  // Fallback to cached products in SharedPreferences
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('bp_cached_products');
+    if (cached != null && cached.isNotEmpty) {
+      final decoded = json.decode(cached);
+      final List<dynamic> data = decoded is List ? decoded : (decoded['results'] ?? []);
+      var products = data.map((e) => ProductModel.fromJson(e as Map<String, dynamic>)).toList();
+      if (filter.tier != null && filter.tier! > 0) {
+        products = products.where((p) => p.tier == filter.tier).toList();
+      }
+      if (filter.query != null && filter.query!.trim().isNotEmpty) {
+        final q = filter.query!.trim().toLowerCase();
+        products = products.where((p) => p.name.toLowerCase().contains(q) || p.description.toLowerCase().contains(q)).toList();
+      }
+      return products;
+    }
+  } catch (_) {}
+
+  return [];
+});
 
 final healthAccessoriesProvider = FutureProvider<List<HealthAccessory>>((ref) async {
   try {
