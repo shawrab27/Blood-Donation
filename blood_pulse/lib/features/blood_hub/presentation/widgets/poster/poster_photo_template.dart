@@ -1,11 +1,13 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import 'poster_common_components.dart';
+import 'poster_file_image_web.dart'
+    if (dart.library.io) 'poster_file_image_mobile.dart';
 
 /// Template 1: Patient Photo + Text (Urgent Red Design).
 /// Aligned with Stitch Screen: BloodPulse Emergency Social Media Posters (Full Story).
@@ -78,13 +80,11 @@ class PosterPhotoTemplate extends StatelessWidget {
         height: 110,
       );
     } else if (data.photoPath != null && data.photoPath!.isNotEmpty) {
-      imageWidget = Image.file(
-        File(data.photoPath!),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: 110,
-        errorBuilder: (_, _, _) => _photoFallback(),
-      );
+      // On web, local file paths are not accessible — show placeholder.
+      // On mobile, Image.file renders the local photo.
+      imageWidget = kIsWeb
+          ? _photoFallback()
+          : _fileImage(data.photoPath!);
     } else {
       imageWidget = _photoFallback();
     }
@@ -126,6 +126,9 @@ class PosterPhotoTemplate extends StatelessWidget {
       ),
     );
   }
+
+  /// Delegates to conditionally-imported [fileImageWidget] (dart:io on mobile, stub on web).
+  Widget _fileImage(String path) => fileImageWidget(path);
 
   Widget _photoFallback() {
     return Container(

@@ -96,11 +96,15 @@ CORS_ALLOWED_ORIGINS = [
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
+    r"^https://.*\.pages\.dev$",       # Cloudflare Pages
+    r"^https://.*\.netlify\.app$",     # Netlify
+    r"^https://.*\.web\.app$",         # Firebase Hosting
     r"^http://172\.20\.10\.\d+(:\d+)?$",
     r"^http://192\.168\.\d+\.\d+(:\d+)?$",
     r"^http://localhost(:\d+)?$",
     r"^http://127\.0\.0\.1(:\d+)?$",
 ]
+# Append any additional origins from the CORS_ALLOWED_ORIGINS env variable (comma-separated).
 if _cors_origins_env:
     CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in _cors_origins_env.split(',') if origin.strip()])
 

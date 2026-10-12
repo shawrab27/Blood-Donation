@@ -2,13 +2,17 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/foundation.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+// Conditional OCR import: mobile uses ML Kit, web uses a stub.
+// ignore: uri_does_not_exist
+import '../../../../core/services/ocr_service.dart'
+    if (dart.library.html) '../../../../core/services/ocr_service_web.dart'
+    if (dart.library.io) '../../../../core/services/ocr_service_mobile.dart';
 import '../../../blood_hub/data/blood_hub_api_service.dart';
 import '../models/health_accessory_model.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../../../../core/config/api_config.dart';
@@ -70,19 +74,13 @@ class AiAnalysisService {
   ];
 
   static Future<AiReportResult> analyzeReport(XFile imageFile) async {
-    // 1. Run on-device OCR using Google ML Kit Text Recognition
+    // 1. Run on-device OCR via platform-agnostic OcrService.
+    //    On web, createOcrService() returns WebOcrService which yields ''.
     String extractedText = '';
     try {
-      final inputImage = InputImage.fromFilePath(imageFile.path);
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      try {
-        final recognizedText = await textRecognizer.processImage(inputImage);
-        extractedText = recognizedText.text.trim();
-      } finally {
-        await textRecognizer.close();
-      }
+      extractedText = await createOcrService().extractText(imageFile.path);
     } catch (e) {
-      debugPrint('[AiAnalysisService] ML Kit OCR error: $e');
+      debugPrint('[AiAnalysisService] OCR error: $e');
     }
 
     final textLower = extractedText.toLowerCase();

@@ -143,4 +143,61 @@ void main() {
     final popScope = tester.widget<PopScope>(find.byKey(const ValueKey('main_shell_pop_scope')));
     expect(popScope.canPop, isFalse);
   });
+
+  testWidgets('MainShellScreen renders NavigationRail on expanded screens (>=840px)', (tester) async {
+    // Desktop/expanded viewport: 1024x768
+    tester.view.physicalSize = const Size(1024, 768);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    const completeUser = UserProfile(
+      fullName: 'Test Desktop User',
+      email: 'desktop@example.com',
+      primaryPhone: '01711111111',
+      age: 28,
+      gender: 'Male',
+      bloodGroup: 'O+',
+      category: 'civilian',
+      categoryDetails: {},
+      neverDonated: false,
+      totalBagsDonated: 5,
+      isOtpVerified: true,
+      isProfileComplete: true,
+      isEmailVerified: true,
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith(
+            () => AuthNotifier(
+              initialState: const AuthState(
+                status: AuthStatus.authenticated,
+                user: completeUser,
+              ),
+            ),
+          ),
+          shellTabProvider.overrideWith((ref) => 0),
+        ],
+        child: const MaterialApp(
+          home: MainShellScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // On expanded screens (width >= 840), NavigationRail is present, BottomNavigationBar is absent
+    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(BottomNavigationBar), findsNothing);
+
+    // Verify NavigationRail has 5 destinations
+    final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
+    expect(rail.destinations.length, 5);
+    expect(rail.selectedIndex, 0);
+
+    // Tap destination 1 (Blood Hub)
+    await tester.tap(find.text('Blood Hub'));
+    await tester.pump();
+    expect(tester.widget<NavigationRail>(find.byType(NavigationRail)).selectedIndex, 1);
+  });
 }

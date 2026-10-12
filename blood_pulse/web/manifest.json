@@ -1,13 +1,15 @@
 {
-    "name": "blood_pulse",
-    "short_name": "blood_pulse",
-    "start_url": ".",
+    "name": "BloodPulse",
+    "short_name": "BloodPulse",
+    "description": "Nationwide blood donation network for Bangladesh – donate, request, and save lives.",
+    "start_url": "./",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FDF3F3",
+    "theme_color": "#C30121",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "lang": "en",
+    "categories": ["health", "medical"],
     "icons": [
         {
             "src": "icons/Icon-192.png",

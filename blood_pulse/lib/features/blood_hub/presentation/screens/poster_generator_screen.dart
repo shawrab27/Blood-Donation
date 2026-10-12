@@ -52,11 +52,11 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
     try {
       final png = await _generatorKey.currentState?.exportPNG();
       if (png == null) throw Exception('Could not capture poster.');
-      final saved = await ref.read(posterRepositoryProvider).exportToGallery(png);
+      final savedPath = await ref.read(posterRepositoryProvider).exportToGallery(png);
       if (mounted) {
         _snack(isBangla
-            ? 'গ্যালারিতে সেভ: ${saved.path.split('/').last}'
-            : 'Saved: ${saved.path.split('/').last}',
+            ? 'গ্যালারিতে সেভ: ${savedPath.split('/').last}'
+            : 'Saved: ${savedPath.split('/').last}',
             AppColors.success);
       }
     } catch (e) {

@@ -1,12 +1,10 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import 'poster_blank_template.dart';
 import 'poster_photo_template.dart';
@@ -43,41 +41,22 @@ class PosterGeneratorWidgetState extends State<PosterGeneratorWidget> {
     _repaintKey = GlobalKey();
   }
 
-  /// Exports the current visual state of the poster into a high-res PNG file.
-  Future<File> exportPNG({
-    double pixelRatio = 3.0,
-    Directory? targetDirectory,
-  }) async {
+  /// Exports the current visual state of the poster into high-res PNG bytes.
+  /// Returns raw [Uint8List] — no file I/O here; storage is the data layer's job.
+  Future<Uint8List> exportPNG({double pixelRatio = 3.0}) async {
     try {
       final boundary = effectiveRepaintKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception('Repaint boundary context is not attached yet.');
       }
-
       final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
         throw Exception('Failed to encode image to PNG format.');
       }
-
-      final Uint8List pngBytes = byteData.buffer.asUint8List();
-      Directory dir;
-      if (targetDirectory != null) {
-        dir = targetDirectory;
-      } else {
-        try {
-          dir = await getTemporaryDirectory();
-        } catch (_) {
-          dir = Directory.systemTemp;
-        }
-      }
-      final file = File(
-        '${dir.path}/bloodpulse_poster_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
-      await file.writeAsBytes(pngBytes, flush: true);
-      return file;
+      return byteData.buffer.asUint8List();
     } catch (e) {
       debugPrint('[ERROR] Poster PNG capture failed: $e');
       rethrow;

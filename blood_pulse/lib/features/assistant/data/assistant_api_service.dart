@@ -3,8 +3,8 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
+import 'package:http/http.dart' as http;
 import '../../../services/api_client.dart'; // Standard API client using token
 import '../domain/models/assistant_message_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,7 +79,8 @@ class AssistantApiService {
       } catch (_) {}
       final code = _mapStatusCode(e.statusCode, e.message);
       throw AssistantApiException(code, e.message, statusCode: e.statusCode, requestId: reqId);
-    } on SocketException catch (e) {
+    } on http.ClientException catch (e) {
+      // http.ClientException covers SocketException on mobile and fetch errors on web
       throw AssistantApiException('NO_INTERNET', e.message, statusCode: 0);
     } on TimeoutException catch (e) {
       throw AssistantApiException('TIMEOUT', e.message ?? 'timeout', statusCode: 408);

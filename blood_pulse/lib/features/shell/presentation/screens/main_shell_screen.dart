@@ -62,6 +62,80 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       const _ProfileTab(),
     ];
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isExpanded = screenWidth >= 840;
+
+    void onTabSelected(int index) {
+      final feature = _featureForIndex(index);
+      AccessGuard.checkAndHandle(
+        context: context,
+        ref: ref,
+        feature: feature,
+        onAllowed: () {
+          ref.read(shellTabProvider.notifier).state = index;
+          if (_pageController.hasClients) {
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        },
+      );
+    }
+
+    final navigationRailDestinations = [
+      NavigationRailDestination(
+        icon: const Icon(Icons.feed_outlined),
+        selectedIcon: const Icon(Icons.feed_rounded),
+        label: Text(l10n?.navFeed ?? 'Feed'),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.water_drop_outlined),
+        selectedIcon: const Icon(Icons.water_drop_rounded),
+        label: Text(l10n?.navBloodHub ?? 'Blood Hub'),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.groups_outlined),
+        selectedIcon: const Icon(Icons.groups_rounded),
+        label: Text(l10n?.navCommunities ?? 'Communities'),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.health_and_safety_outlined),
+        selectedIcon: const Icon(Icons.health_and_safety_rounded),
+        label: Text(l10n?.navHealthHub ?? 'Health Hub'),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.person_outline_rounded),
+        selectedIcon: const Icon(Icons.person_rounded),
+        label: Text(l10n?.navProfile ?? 'Profile'),
+      ),
+    ];
+
+    Widget buildPageView({required double maxWidth}) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: PageView(
+            controller: _pageController,
+            physics: const ClampingScrollPhysics(),
+            onPageChanged: (index) {
+              final feature = _featureForIndex(index);
+              AccessGuard.checkAndHandle(
+                context: context,
+                ref: ref,
+                feature: feature,
+                onAllowed: () {
+                  ref.read(shellTabProvider.notifier).state = index;
+                },
+              );
+            },
+            children: tabs,
+          ),
+        ),
+      );
+    }
+
     return PopScope(
       key: const ValueKey('main_shell_pop_scope'),
       canPop: activeTabIndex == 0,
@@ -82,91 +156,92 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           children: [
             const GlobalLiveBanner(),
             Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const ClampingScrollPhysics(),
-                onPageChanged: (index) {
-                  final feature = _featureForIndex(index);
-                  AccessGuard.checkAndHandle(
-                    context: context,
-                    ref: ref,
-                    feature: feature,
-                    onAllowed: () {
-                      ref.read(shellTabProvider.notifier).state = index;
-                    },
-                  );
-                },
-                children: tabs,
-              ),
+              child: isExpanded
+                  ? Row(
+                      children: [
+                        NavigationRail(
+                          selectedIndex: activeTabIndex,
+                          onDestinationSelected: onTabSelected,
+                          labelType: NavigationRailLabelType.all,
+                          backgroundColor: AppColors.surface,
+                          selectedIconTheme: const IconThemeData(color: AppColors.primary),
+                          unselectedIconTheme: const IconThemeData(color: AppColors.neutral),
+                          selectedLabelTextStyle: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: AppColors.primary,
+                          ),
+                          unselectedLabelTextStyle: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11,
+                            color: AppColors.neutral,
+                          ),
+                          destinations: navigationRailDestinations,
+                        ),
+                        const VerticalDivider(thickness: 1, width: 1, color: Color(0xFFEEEEEE)),
+                        Expanded(
+                          child: buildPageView(maxWidth: 1100.0),
+                        ),
+                      ],
+                    )
+                  : buildPageView(
+                      maxWidth: screenWidth >= 600 ? 720.0 : double.infinity,
+                    ),
             ),
           ],
         ),
         floatingActionButton: const PulseAIFAB(),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(15), // ~0.06 opacity
-                blurRadius: 16,
-                offset: const Offset(0, -4),
+        bottomNavigationBar: isExpanded
+            ? null
+            : Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(15), // ~0.06 opacity
+                      blurRadius: 16,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: BottomNavigationBar(
+                  currentIndex: activeTabIndex,
+                  onTap: onTabSelected,
+                  type: BottomNavigationBarType.fixed,
+                  selectedItemColor: AppColors.primary,
+                  unselectedItemColor: AppColors.neutral,
+                  selectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 12),
+                  unselectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 11),
+                  items: [
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.feed_outlined),
+                      activeIcon: const Icon(Icons.feed_rounded),
+                      label: l10n?.navFeed ?? 'Feed',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.water_drop_outlined),
+                      activeIcon: const Icon(Icons.water_drop_rounded),
+                      label: l10n?.navBloodHub ?? 'Blood Hub',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.groups_outlined),
+                      activeIcon: const Icon(Icons.groups_rounded),
+                      label: l10n?.navCommunities ?? 'Communities',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.health_and_safety_outlined),
+                      activeIcon: const Icon(Icons.health_and_safety_rounded),
+                      label: l10n?.navHealthHub ?? 'Health Hub',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: const Icon(Icons.person_outline_rounded),
+                      activeIcon: const Icon(Icons.person_rounded),
+                      label: l10n?.navProfile ?? 'Profile',
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            currentIndex: activeTabIndex,
-            onTap: (index) {
-              final feature = _featureForIndex(index);
-              AccessGuard.checkAndHandle(
-                context: context,
-                ref: ref,
-                feature: feature,
-                onAllowed: () {
-                  ref.read(shellTabProvider.notifier).state = index;
-                  if (_pageController.hasClients) {
-                    _pageController.animateToPage(
-                      index,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
-              );
-            },
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.neutral,
-            selectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 12),
-            unselectedLabelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 11),
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.feed_outlined),
-                activeIcon: const Icon(Icons.feed_rounded),
-                label: l10n?.navFeed ?? 'Feed',
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.water_drop_outlined),
-                activeIcon: const Icon(Icons.water_drop_rounded),
-                label: l10n?.navBloodHub ?? 'Blood Hub',
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.groups_outlined),
-                activeIcon: const Icon(Icons.groups_rounded),
-                label: l10n?.navCommunities ?? 'Communities',
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.health_and_safety_outlined),
-                activeIcon: const Icon(Icons.health_and_safety_rounded),
-                label: l10n?.navHealthHub ?? 'Health Hub',
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.person_outline_rounded),
-                activeIcon: const Icon(Icons.person_rounded),
-                label: l10n?.navProfile ?? 'Profile',
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

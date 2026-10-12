@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import 'package:blood_pulse/features/blood_hub/domain/repositories/poster_repository.dart';
 import 'package:blood_pulse/features/blood_hub/data/datasources/poster_local_datasource.dart';
@@ -13,19 +13,19 @@ class PosterRepositoryImpl implements PosterRepository {
   const PosterRepositoryImpl(this._localDataSource);
 
   @override
-  Future<File> exportToGallery(File pngFile) {
-    return _localDataSource.exportToGallery(pngFile);
+  Future<String> exportToGallery(Uint8List pngBytes, {String? filename}) {
+    return _localDataSource.exportToGallery(pngBytes, filename: filename);
   }
 
   @override
   Future<void> sharePoster(
-    File pngFile,
+    Uint8List pngBytes,
     PosterData data, {
     String? platform,
     bool isBangla = false,
   }) {
     return _localDataSource.sharePoster(
-      pngFile,
+      pngBytes,
       data,
       platform: platform,
       isBangla: isBangla,

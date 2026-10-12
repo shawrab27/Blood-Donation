@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,10 +10,10 @@ import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.d
 
 /// Local data source contract for poster storage and sharing operations.
 abstract class PosterLocalDataSource {
-  Future<File> exportToGallery(File pngFile);
+  Future<String> exportToGallery(Uint8List pngBytes, {String? filename});
 
   Future<void> sharePoster(
-    File pngFile,
+    Uint8List pngBytes,
     PosterData data, {
     String? platform,
     bool isBangla = false,
@@ -24,7 +25,7 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
   const PosterLocalDataSourceImpl();
 
   @override
-  Future<File> exportToGallery(File pngFile) async {
+  Future<String> exportToGallery(Uint8List pngBytes, {String? filename}) async {
     Directory? baseDir;
     try {
       baseDir = await getExternalStorageDirectory();
@@ -38,14 +39,15 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
       await posterDir.create(recursive: true);
     }
 
-    final targetPath =
-        '${posterDir.path}/poster_${DateTime.now().millisecondsSinceEpoch}.png';
-    return await pngFile.copy(targetPath);
+    final name = filename ?? 'poster_${DateTime.now().millisecondsSinceEpoch}.png';
+    final targetPath = '${posterDir.path}/$name';
+    await File(targetPath).writeAsBytes(pngBytes);
+    return targetPath;
   }
 
   @override
   Future<void> sharePoster(
-    File pngFile,
+    Uint8List pngBytes,
     PosterData data, {
     String? platform,
     bool isBangla = false,
@@ -66,9 +68,14 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
       }
     }
 
+    // Write bytes to a temp file for share_plus
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/bloodpulse_poster_share.png');
+    await tempFile.writeAsBytes(pngBytes);
+
     // Default to native multi-channel share sheet with file attached
     await Share.shareXFiles(
-      [XFile(pngFile.path)],
+      [XFile(tempFile.path)],
       text: caption,
       subject: isBangla
           ? 'জরুরি রক্ত প্রয়োজন: ${data.bloodGroup}'
