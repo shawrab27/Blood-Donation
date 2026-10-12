@@ -22,6 +22,10 @@ class ProfileModel {
   final int globalRank;
   final String badge;
   final String? alertPauseUntil;
+  final bool showContact;
+  final bool publicProfile;
+  final bool notificationsEnabled;
+  final bool emergencyAlertsEnabled;
   final List<DonationHistoryModel> donationHistory;
   final List<RecentLogModel> recentLogs;
 
@@ -46,6 +50,10 @@ class ProfileModel {
     this.globalRank = 0,
     this.badge = 'Green Donor',
     this.alertPauseUntil,
+    this.showContact = false,
+    this.publicProfile = false,
+    this.notificationsEnabled = true,
+    this.emergencyAlertsEnabled = true,
     this.donationHistory = const [],
     this.recentLogs = const [],
   });
@@ -82,6 +90,10 @@ class ProfileModel {
       globalRank: json['global_rank'] ?? 0,
       badge: json['badge'] ?? 'Green Donor',
       alertPauseUntil: json['alert_pause_until']?.toString(),
+      showContact: json['show_contact'] ?? false,
+      publicProfile: json['public_profile'] ?? false,
+      notificationsEnabled: json['notifications_enabled'] ?? true,
+      emergencyAlertsEnabled: json['emergency_alerts_enabled'] ?? true,
       donationHistory: (json['donation_history'] as List<dynamic>?)
               ?.map((e) => DonationHistoryModel.fromJson(e))
               .toList() ??

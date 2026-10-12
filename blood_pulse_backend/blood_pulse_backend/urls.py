@@ -49,6 +49,8 @@ def api_handler500(request):
 handler404 = 'blood_pulse_backend.urls.api_handler404'
 handler500 = 'blood_pulse_backend.urls.api_handler500'
 
+from api.views_certificates import CertificateVerifyAPIView
+
 urlpatterns = [
     path('', root_index, name='root-index'),
     path('health/', health_check, name='root-health-check'),
@@ -58,4 +60,5 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('api/users/update-fcm/', update_fcm_view, name='update-fcm'),
     path('api/assistant/', include('assistant.urls')),
+    path('verify/<uuid:certificate_id>/', CertificateVerifyAPIView.as_view(), name='public-certificate-verify'),
 ]

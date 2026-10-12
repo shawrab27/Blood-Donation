@@ -2,18 +2,22 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
+import '../../../../../core/providers/pulse_ai_visibility_provider.dart';
 import 'drawer_donate_sheet.dart';
 import 'drawer_learn_more_sheet.dart';
 
 /// Navigation menu items inside Profile Drawer matching Stitch Screen 4.
-class ProfileDrawerMenuList extends StatelessWidget {
+class ProfileDrawerMenuList extends ConsumerWidget {
   const ProfileDrawerMenuList({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPulseAiVisible = ref.watch(pulseAiVisibilityProvider);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -49,10 +53,52 @@ class ProfileDrawerMenuList extends StatelessWidget {
             },
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+          // PulseAI Floating Assistant Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                const Icon(Icons.smart_toy_outlined, color: AppColors.primary, size: 22),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'PulseAI Assistant',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF24191A),
+                        ),
+                      ),
+                      Text(
+                        'Floating shortcut on main screen',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: Color(0xFF5C3F3D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(
+                  value: isPulseAiVisible,
+                  activeColor: AppColors.primary,
+                  onChanged: (val) {
+                    ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
           _buildItem(
             icon: Icons.support_agent_rounded,
-            title: 'BloodPulse Assistant',
-            subtitle: 'Get instant help with AI',
+            title: 'Chat with PulseAI',
+            subtitle: 'Get instant clinical answers',
             onTap: () {
               Navigator.of(context).pop();
               context.push('/assistant');

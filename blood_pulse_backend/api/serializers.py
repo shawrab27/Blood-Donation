@@ -6,7 +6,7 @@ from .models import (
     Hospital, DonorProfile, BloodRequest, SocialPost, PostReaction, Comment, FakeAccountFlag, AdminAction,
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember, AreaGuide,
     BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep,
-    DonationHistory, RecentLog, HealthAccessory
+    DonationHistory, RecentLog, HealthAccessory, Certificate
 )
 
 class HospitalSerializer(serializers.ModelSerializer):
@@ -70,6 +70,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     recent_logs = RecentLogSerializer(many=True, read_only=True)
     global_rank = serializers.IntegerField(read_only=True)
     badge = serializers.CharField(read_only=True)
+    days_until_eligible = serializers.IntegerField(read_only=True)
     missing_fields = serializers.SerializerMethodField()
 
     def get_missing_fields(self, obj):
@@ -80,12 +81,20 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         model = DonorProfile
         fields = [
             'id', 'username', 'password', 'first_name', 'last_name', 'email', 'blood_group', 
-            'district', 'phone_number', 'nid_hash', 'last_donation_date', 'is_verified', 
+            'district', 'phone_number', 'nid_hash', 'last_donation_date', 'days_until_eligible', 'is_verified', 
             'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'institution', 'upazila_linked', 'address', 
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
             'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
-            'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until'
+            'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until',
+            'public_profile', 'show_contact', 'notifications_enabled', 'emergency_alerts_enabled'
         ]
+
+    def validate_last_donation_date(self, value):
+        if value:
+            from datetime import date
+            if value > date.today():
+                raise serializers.ValidationError("Last donation date cannot be in the future.")
+        return value
 
     def validate_phone_number(self, value):
         if not value:
@@ -358,3 +367,79 @@ class HealthAccessorySerializer(serializers.ModelSerializer):
     class Meta:
         model = HealthAccessory
         fields = '__all__'
+
+
+class UserIdentitySerializer(serializers.Serializer):
+    id = serializers.IntegerField(source='id')
+    display_name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+    badge = serializers.CharField(read_only=True)
+    blood_group = serializers.CharField(read_only=True, default='')
+
+    def get_display_name(self, obj):
+        user = getattr(obj, 'user', None)
+        if getattr(obj, 'public_profile', False) and user:
+            first = user.first_name or getattr(obj, 'google_display_name', '') or "Donor"
+            initial = f" {user.last_name[0]}." if user.last_name else ""
+            return f"{first}{initial}".strip()
+        g_name = getattr(obj, 'google_display_name', '')
+        if g_name and getattr(obj, 'public_profile', False):
+            return g_name
+        return "Anonymous Hero"
+
+    def get_avatar_url(self, obj):
+        if getattr(obj, 'public_profile', False):
+            pic = getattr(obj, 'profile_picture', None)
+            if pic:
+                try:
+                    return pic.url
+                except Exception:
+                    pass
+            return getattr(obj, 'google_photo_url', None)
+        return None
+
+
+class CertificateSerializer(serializers.ModelSerializer):
+    donor_name = serializers.SerializerMethodField()
+    blood_group = serializers.SerializerMethodField()
+    first_donation_date = serializers.SerializerMethodField()
+    last_donation_date = serializers.SerializerMethodField()
+    verify_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Certificate
+        fields = [
+            'id', 'donor_name', 'blood_group', 'donation_count_snapshot',
+            'first_donation_date', 'last_donation_date', 'issued_at',
+            'revoked', 'verify_url'
+        ]
+
+    def get_donor_name(self, obj):
+        u = obj.user
+        full = f"{u.first_name} {u.last_name}".strip()
+        if full:
+            return full
+        profile = getattr(u, 'donorprofile', None)
+        if profile and profile.google_display_name:
+            return profile.google_display_name
+        return u.username
+
+    def get_blood_group(self, obj):
+        profile = getattr(obj.user, 'donorprofile', None)
+        return profile.blood_group if profile else ""
+
+    def get_first_donation_date(self, obj):
+        profile = getattr(obj.user, 'donorprofile', None)
+        if not profile:
+            return None
+        hist = profile.donation_history.order_by('date').first()
+        if hist:
+            return hist.date.isoformat()
+        return profile.last_donation_date.isoformat() if profile.last_donation_date else None
+
+    def get_last_donation_date(self, obj):
+        profile = getattr(obj.user, 'donorprofile', None)
+        return profile.last_donation_date.isoformat() if profile and profile.last_donation_date else None
+
+    def get_verify_url(self, obj):
+        return f"/verify/{obj.id}/"

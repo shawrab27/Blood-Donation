@@ -1,5 +1,8 @@
 from .views_admin_notifications import AdminNotificationComposeAPIView, AdminNotificationHistoryAPIView
 from .views_admin_staff import AdminStaffListAPIView, AdminStaffToggleAPIView
+from .views_account import LogoutAPIView, AccountSummaryAPIView, AccountDeleteAPIView
+from .views_leaderboard import LeaderboardAPIView
+from .views_certificates import CertificateIssueAPIView, CertificateVerifyAPIView
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -140,7 +143,21 @@ urlpatterns = [
     # Auth Reset
     path('auth/password-reset/request/', request_otp, name='password-reset-request'),
     path('auth/password-reset/confirm/', confirm_reset, name='password-reset-confirm'),
-    
+
+    # Auth Logout (B4)
+    path('auth/logout/', LogoutAPIView.as_view(), name='auth-logout'),
+
+    # Account Lifecycle (B5)
+    path('account/summary/', AccountSummaryAPIView.as_view(), name='account-summary'),
+    path('account/', AccountDeleteAPIView.as_view(), name='account-delete'),
+
+    # Leaderboard (B6)
+    path('leaderboard/', LeaderboardAPIView.as_view(), name='leaderboard'),
+
+    # Certificate (B7)
+    path('certificates/', CertificateIssueAPIView.as_view(), name='certificates-issue'),
+    path('certificates/me/', CertificateIssueAPIView.as_view(), name='certificates-me'),
+    path('certificates/<uuid:certificate_id>/verify/', CertificateVerifyAPIView.as_view(), name='certificates-verify'),
 
     # Blood Hub v2 Core Endpoints (registered prior to router to prevent pk collisions)
     path('donors/search/', donor_search_view, name='bloodhub-donor-search'),

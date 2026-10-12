@@ -778,6 +778,12 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    try {
+      final refresh = await _apiClient.getRefreshToken();
+      if (refresh != null && refresh.isNotEmpty) {
+        await _apiClient.post('auth/logout/', body: {'refresh': refresh});
+      }
+    } catch (_) {}
     ref.read(isGuestProvider.notifier).state = false;
     ref.read(pendingRedirectRouteProvider.notifier).state = null;
     state = const AuthState(status: AuthStatus.unauthenticated);
@@ -805,17 +811,28 @@ class AuthNotifier extends Notifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
-  Future<bool> deleteAccount({void Function(String error)? onError}) async {
+  Future<bool> deleteAccount({
+    String? password,
+    bool confirm = false,
+    void Function(String error)? onError,
+  }) async {
     try {
-      final response = await _apiClient.delete('donors/me/');
+      final payload = {
+        if (password != null && password.isNotEmpty) 'password': password,
+        'confirm': confirm || password == null || password.isEmpty,
+      };
+      final response = await _apiClient.delete('account/', body: payload);
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        logout();
+        await logout();
         return true;
       } else {
         final err = _extractErrorMessage(response.body);
         onError?.call(err);
         return false;
       }
+    } on ApiException catch (e) {
+      onError?.call(e.message);
+      return false;
     } catch (e) {
       onError?.call('Error deleting account: $e');
       return false;

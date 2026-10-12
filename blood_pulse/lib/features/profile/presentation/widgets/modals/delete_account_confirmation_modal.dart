@@ -1,17 +1,18 @@
-import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:convert';
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/providers/auth_notifier.dart';
-import '../../../domain/providers/profile_provider.dart';
+import '../../../../../services/api_client.dart';
 
 /// Stitch Screen 7: Delete Account Confirmation Modal Sheet / Dialog.
-/// Features danger alert badge, donor impact summary card (Donations, Lives Saved, Blood Pool),
-/// and irreversible permanent soft-deletion confirmation.
+/// Features danger alert badge, verified impact metrics (Donations, Requests, Posts),
+/// re-auth password confirmation, and compliant account deletion.
 class DeleteAccountConfirmationModal extends ConsumerStatefulWidget {
   const DeleteAccountConfirmationModal({super.key});
 
@@ -30,14 +31,58 @@ class DeleteAccountConfirmationModal extends ConsumerStatefulWidget {
 
 class _DeleteAccountConfirmationModalState
     extends ConsumerState<DeleteAccountConfirmationModal> {
+  final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
   bool _isDeleting = false;
+  bool _isLoadingSummary = true;
+  int _donationsCount = 0;
+  int _requestsCount = 0;
+  int _postsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAccountSummary();
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchAccountSummary() async {
+    try {
+      final response = await ApiClient().get('account/summary/');
+      if (response.statusCode == 200 && mounted) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        setState(() {
+          _donationsCount = (data['donations_count'] as num?)?.toInt() ?? 0;
+          _requestsCount = (data['requests_count'] as num?)?.toInt() ?? 0;
+          _postsCount = (data['posts_count'] as num?)?.toInt() ?? 0;
+          _isLoadingSummary = false;
+        });
+        return;
+      }
+    } catch (_) {}
+    if (mounted) {
+      final authUser = ref.read(authProvider).user;
+      setState(() {
+        _donationsCount = authUser?.totalBagsDonated ?? 0;
+        _isLoadingSummary = false;
+      });
+    }
+  }
 
   Future<void> _handleDelete() async {
     setState(() => _isDeleting = true);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final password = _passwordController.text.trim();
 
     final success = await ref.read(authProvider.notifier).deleteAccount(
+      password: password.isNotEmpty ? password : null,
+      confirm: true,
       onError: (error) {
         if (mounted) {
           setState(() => _isDeleting = false);
@@ -62,142 +107,174 @@ class _DeleteAccountConfirmationModalState
 
   @override
   Widget build(BuildContext context) {
-    final authUser = ref.watch(authProvider).user;
-    final profileAsync = ref.watch(profileProvider);
-
-    int donations = authUser?.totalBagsDonated ?? 0;
-    profileAsync.whenData((p) {
-      if (p != null && p.totalBagsDonated > 0) {
-        donations = p.totalBagsDonated;
-      }
-    });
-
-    final int livesSaved = donations * 3;
-    const String bloodPool = '0+';
-
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Close X Button
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
-                onPressed: () => Navigator.of(context).pop(),
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Close X Button
+              Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
+                  onPressed: () => Navigator.of(context).pop(),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
               ),
-            ),
 
-            // Danger Trash Icon Circle
-            Container(
-              width: 58,
-              height: 58,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFDAD6),
-                shape: BoxShape.circle,
+              // Danger Trash Icon Circle
+              Container(
+                width: 58,
+                height: 58,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFDAD6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFBA1A1A), size: 30),
               ),
-              child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFBA1A1A), size: 30),
-            ),
-            const SizedBox(height: 14),
+              const SizedBox(height: 14),
 
-            // Title
-            const Text(
-              'Delete Account?',
-              style: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFBA1A1A),
+              // Title
+              const Text(
+                'Delete Account?',
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFBA1A1A),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-            // Warning Subtitle
-            const Text(
-              'Are you sure you want to delete your account? All your donation records, saved certificates, and donor rankings will be permanently erased. This action cannot be undone.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 13,
-                color: Color(0xFF5C3F3D),
-                height: 1.45,
+              // Warning Subtitle
+              const Text(
+                'Are you sure you want to delete your account? All your personal posts, notifications, and identity will be permanently erased. Emergency blood requests will be anonymized to protect patient records. This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: Color(0xFF5C3F3D),
+                  height: 1.45,
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: 18),
 
-            // Donor Impact Summary Card
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F1),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFF3DDE0)),
+              // Donor Verified Impact Summary Card (Rule 30: no fake lives saved)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F1),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFF3DDE0)),
+                ),
+                child: _isLoadingSummary
+                    ? const Center(child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: SizedBox(width: 24, height: 24, child: AppLoader()),
+                      ))
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildImpactMetric('$_donationsCount', 'Donations'),
+                          Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
+                          _buildImpactMetric('$_requestsCount', 'Requests'),
+                          Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
+                          _buildImpactMetric('$_postsCount', 'Posts'),
+                        ],
+                      ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              const SizedBox(height: 18),
+
+              // Re-authentication Password Field
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13),
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  hintText: 'Enter password to confirm deletion',
+                  hintStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12),
+                  labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13),
+                  prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  filled: true,
+                  fillColor: const Color(0xFFFFF8F7),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: const BorderSide(color: Color(0xFFBA1A1A)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Dual Capsule Action Buttons
+              Row(
                 children: [
-                  _buildImpactMetric('$donations', 'Donations'),
-                  Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
-                  _buildImpactMetric('$livesSaved', 'Lives Saved'),
-                  Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
-                  _buildImpactMetric(bloodPool, 'Blood Pool'),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF24191A),
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFBA1A1A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: _isDeleting ? null : _handleDelete,
+                      child: _isDeleting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: AppLoader(),
+                            )
+                          : const Text(
+                              'Yes, Delete',
+                              style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 22),
-
-            // Dual Capsule Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF24191A),
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFBA1A1A),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    onPressed: _isDeleting ? null : _handleDelete,
-                    child: _isDeleting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: AppLoader(),
-                          )
-                        : const Text(
-                            'Yes, Delete',
-                            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

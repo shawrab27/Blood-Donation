@@ -25,6 +25,10 @@ import 'package:blood_pulse/features/blood_hub/presentation/screens/poster_gener
 import 'package:blood_pulse/features/blood_request/presentation/screens/emergency_request_screen.dart';
 import 'package:blood_pulse/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:blood_pulse/features/assistant/presentation/screens/assistant_screen.dart';
+import 'package:blood_pulse/features/profile/presentation/screens/user_profile_screen.dart';
+import 'package:blood_pulse/features/profile/presentation/widgets/modals/digital_certificate_sheet.dart';
+import 'package:blood_pulse/features/profile/presentation/widgets/modals/delete_account_confirmation_modal.dart';
+import 'package:blood_pulse/core/widgets/user_identity_widget.dart';
 
 import 'package:blood_pulse/features/assistant/presentation/providers/assistant_provider.dart';
 import 'package:blood_pulse/features/assistant/domain/models/assistant_message_model.dart';
@@ -95,6 +99,23 @@ void main() {
     'EmergencyRequestScreen': () => const EmergencyRequestScreen(),
     'NotificationCenterScreen': () => const NotificationCenterScreen(),
     'AssistantScreen': () => const AssistantScreen(),
+    'UserProfileScreen': () => const UserProfileScreen(),
+    'DigitalCertificateSheet': () => const DigitalCertificateSheet(
+          donorName: 'Nasim Shawrab',
+          bloodGroup: 'O-',
+          totalDonations: 12,
+        ),
+    'DeleteAccountConfirmationModal': () => const DeleteAccountConfirmationModal(),
+    'UserIdentityWidget': () => const Scaffold(
+          body: Center(
+            child: UserIdentityWidget(
+              displayName: 'Nasim Shawrab',
+              bloodGroup: 'O-',
+              badge: 'Gold Donor',
+              subtitle: 'Active voluntary donor',
+            ),
+          ),
+        ),
   };
 
   group('Automated Full-App Overflow Sweep (Zero RenderFlex Overflow Guarantee)', () {

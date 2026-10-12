@@ -140,12 +140,14 @@ class ProfileStatsRow extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            isEligible ? 'NOW' : '${daysRemaining}d',
+                            isEligible ? 'Eligible\nnow' : '${daysRemaining}d',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: 'Georgia',
-                              fontSize: isEligible ? 13 : 15,
+                              fontSize: isEligible ? 10 : 15,
                               fontWeight: FontWeight.bold,
                               color: isEligible ? AppColors.success : AppColors.primary,
+                              height: 1.1,
                             ),
                           ),
                         ],

@@ -4,11 +4,14 @@ import 'package:blood_pulse/core/widgets/app_loader.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
+import '../../../../services/api_client.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/providers/profile_provider.dart';
 import '../../../../constants/app_config.dart';
@@ -65,34 +68,153 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
-  void _showImagePickerModal() {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 16),
-            const Text('Update Profile Picture', style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
-              title: const Text('Take Photo', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.camera);
-              },
+  Future<void> _pickFile() async {
+    try {
+      final file = await FilePicker.pickFile(type: FileType.image);
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        ref.read(authProvider.notifier).updateAvatar(bytes);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✓ Profile picture updated from file!'),
+              backgroundColor: Color(0xFF1B8A4E),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: AppColors.tertiary),
-              title: const Text('Choose from Gallery', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.gallery);
-              },
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not attach file: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  void _removePhoto() {
+    ref.read(authProvider.notifier).updateAvatar(Uint8List(0));
+    try {
+      ApiClient().patch('profile/me/', body: {'profile_picture': null});
+    } catch (_) {}
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Profile photo removed'),
+          backgroundColor: Color(0xFF2B2B2B),
+        ),
+      );
+    }
+  }
+
+  void _showImagePickerModal() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Profile Photo',
+                    style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // 3 top icons in a row: Attach from File, Open Camera, Open Library
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildPhotoActionIcon(
+                    icon: Icons.camera_alt_rounded,
+                    label: 'Camera',
+                    color: AppColors.primary,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickImage(ImageSource.camera);
+                    },
+                  ),
+                  _buildPhotoActionIcon(
+                    icon: Icons.photo_library_rounded,
+                    label: 'Library',
+                    color: const Color(0xFF0D68AA),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickImage(ImageSource.gallery);
+                    },
+                  ),
+                  _buildPhotoActionIcon(
+                    icon: Icons.attach_file_rounded,
+                    label: 'File',
+                    color: const Color(0xFF2E7D32),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickFile();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              TextButton.icon(
+                icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFBA1A1A), size: 18),
+                label: const Text(
+                  'Remove Current Photo',
+                  style: TextStyle(fontFamily: 'Inter', color: Color(0xFFBA1A1A), fontWeight: FontWeight.w600),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _removePhoto();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoActionIcon({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF24191A),
+              ),
             ),
           ],
         ),
@@ -101,9 +223,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Future<void> _selectLastDonationDate() async {
+    final countdown = ref.read(profileCountdownProvider);
+    final initial = countdown.lastDonationDate ?? DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 46)),
+      initialDate: initial.isAfter(DateTime.now()) ? DateTime.now() : initial,
       firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -118,6 +242,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     if (picked != null) {
       ref.read(profileCountdownProvider.notifier).recordDonation(picked);
+      try {
+        await ApiClient().patch('profile/me/', body: {
+          'last_donation_date': DateFormat('yyyy-MM-dd').format(picked),
+        });
+      } catch (_) {}
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -137,9 +266,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     String displayName = authUser?.fullName.trim().isNotEmpty == true
         ? authUser!.fullName
-        : 'Sarah Jenkins';
+        : 'Blood Donor';
     String bloodGroup = authUser?.bloodGroup.isNotEmpty == true ? authUser!.bloodGroup : 'O-';
-    int totalDonations = authUser?.totalBagsDonated ?? 12;
+    int totalDonations = authUser?.totalBagsDonated ?? 0;
 
     profileAsync.whenData((p) {
       if (p != null) {
@@ -236,7 +365,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Unavailable for 1 month',
+                              'Pause Emergency Alerts',
                               style: TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 15,

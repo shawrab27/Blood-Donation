@@ -14,6 +14,8 @@ class ProfileCountdownState {
   final UserModel? user;
   final String? errorMessage;
 
+  DateTime? get lastDonationDate => user?.lastDonationDate;
+
   int get daysRemaining {
     if (user?.lastDonationDate == null) return 0;
     final nextEligible = user!.lastDonationDate!.add(const Duration(days: AppConfig.donorCooldownDays));
@@ -37,7 +39,7 @@ class ProfileCountdownState {
 class ProfileCountdownNotifier extends StateNotifier<ProfileCountdownState> {
   ProfileCountdownNotifier()
       : super(
-          ProfileCountdownState(
+          const ProfileCountdownState(
             user: UserModel(
               uid: 'usr_101',
               name: 'Blood Donor',
@@ -50,14 +52,14 @@ class ProfileCountdownNotifier extends StateNotifier<ProfileCountdownState> {
               upazila: 'Dhanmondi',
               bloodGroup: 'O+',
               adminLocked: true,
-              lastDonationDate: DateTime.now().subtract(const Duration(days: 46)),
+              lastDonationDate: null,
               badgeTier: 'Golden',
             ),
           ),
         );
 
   /// Synchronizes countdown user model with currently authenticated UserProfile
-  void syncWithAuthUser(String? name, String? email, String? bloodGroup, String? phone) {
+  void syncWithAuthUser(String? name, String? email, String? bloodGroup, String? phone, [DateTime? lastDonationDate]) {
     if (state.user != null) {
       state = state.copyWith(
         user: state.user!.copyWith(
@@ -65,6 +67,7 @@ class ProfileCountdownNotifier extends StateNotifier<ProfileCountdownState> {
           email: (email != null && email.isNotEmpty) ? email : state.user!.email,
           phonePrimary: (phone != null && phone.isNotEmpty) ? phone : state.user!.phonePrimary,
           bloodGroup: (bloodGroup != null && bloodGroup.isNotEmpty) ? bloodGroup : state.user!.bloodGroup,
+          lastDonationDate: lastDonationDate ?? state.user!.lastDonationDate,
         ),
       );
     }

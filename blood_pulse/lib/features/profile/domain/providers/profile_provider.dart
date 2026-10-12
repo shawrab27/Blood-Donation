@@ -106,6 +106,10 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
             globalRank: current.globalRank,
             badge: current.badge,
             alertPauseUntil: data['alert_pause_until']?.toString(),
+            showContact: current.showContact,
+            publicProfile: current.publicProfile,
+            notificationsEnabled: current.notificationsEnabled,
+            emergencyAlertsEnabled: current.emergencyAlertsEnabled,
             donationHistory: current.donationHistory,
             recentLogs: current.recentLogs,
           );

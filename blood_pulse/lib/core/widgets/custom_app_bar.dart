@@ -11,6 +11,7 @@ import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/profile/domain/providers/profile_provider.dart';
 import '../../features/notifications/domain/providers/notification_provider.dart';
 import '../access/access_guard.dart';
+import 'profile_drawer.dart';
 
 /// Centralized, reusable Custom AppBar for BloodPulse.
 ///
@@ -32,6 +33,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool showNotification;
   final VoidCallback? onNotificationTap;
   final bool showProfile;
+  final VoidCallback? onProfileTap;
   
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
@@ -52,6 +54,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     this.showNotification = true,
     this.onNotificationTap,
     this.showProfile = true,
+    this.onProfileTap,
     
     this.actions,
     this.bottom,
@@ -265,7 +268,13 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                       context: context,
                       ref: ref,
                       feature: AccessFeature.profile,
-                      onAllowed: () => context.push('/profile'),
+                      onAllowed: () {
+                        if (onProfileTap != null) {
+                          onProfileTap!();
+                        } else {
+                          ProfileDrawer.show(context);
+                        }
+                      },
                     );
                   },
                   child: Padding(

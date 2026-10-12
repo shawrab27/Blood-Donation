@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 from django.contrib.auth.models import User
 
@@ -158,36 +159,51 @@ class DonorProfile(models.Model):
     alert_pause_until = models.DateTimeField(null=True, blank=True)
 
     firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
-
-    
+    public_profile = models.BooleanField(default=False, help_text="Consent to display name on public leaderboard")
+    show_contact = models.BooleanField(default=False, help_text="Consent to display contact phone in settings / search")
+    notifications_enabled = models.BooleanField(default=True, help_text="Push notifications enabled")
+    emergency_alerts_enabled = models.BooleanField(default=True, help_text="Critical blood request alerts enabled")
 
     @property
+    def days_until_eligible(self):
+        if not self.last_donation_date:
+            return 0
+        from datetime import date
+        today = date.today()
+        if self.last_donation_date > today:
+            return 90
+        days_since = (today - self.last_donation_date).days
+        return max(0, 90 - days_since)
 
+    @property
+    def verified_donations_count(self):
+        return max(self.total_bags_donated or 0, 0)
+
+    @property
     def global_rank(self):
-
-        # Count how many donors have more bags donated
-
-        return DonorProfile.objects.filter(total_bags_donated__gt=self.total_bags_donated).count() + 1
-
-        
+        count = self.verified_donations_count
+        if count == 0:
+            return None
+        return DonorProfile.objects.filter(total_bags_donated__gt=count).count() + 1
 
     @property
-
     def badge(self):
-
         if self.manual_rank_override:
-
             return self.manual_rank_override
-
-        rank = self.global_rank
-
-        if rank == 1: return "Gold Donor"
-
-        if rank == 2: return "Platinum Donor"
-
-        if rank == 3: return "Bronze Donor"
-
-        return "Green Donor"
+        if getattr(self.user, 'is_staff', False):
+            return "Staff"
+        if hasattr(self.user, 'localclub_set') and self.user.localclub_set.exists():
+            return "Club Officer"
+        count = self.verified_donations_count
+        if count >= 10:
+            return "Legendary Donor"
+        elif count >= 5:
+            return "Platinum Donor"
+        elif count >= 3:
+            return "Gold Donor"
+        elif count >= 1:
+            return "Verified Donor"
+        return "New Donor"
 
 
 
@@ -1090,6 +1106,21 @@ class DonationHistory(models.Model):
     def __str__(self):
 
         return f"{self.donor.user.username} - {self.bags_donated} bag(s) on {self.date}"
+
+
+
+class Certificate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='certificates')
+    issued_at = models.DateTimeField(auto_now_add=True)
+    donation_count_snapshot = models.PositiveIntegerField(default=1)
+    revoked = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-issued_at']
+
+    def __str__(self):
+        return f"Certificate {self.id} for {self.user.username} ({self.donation_count_snapshot} donations)"
 
 
 

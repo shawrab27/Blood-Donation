@@ -9,10 +9,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
+import '../../../profile/domain/providers/profile_provider.dart';
+import '../../../profile/domain/providers/leaderboard_provider.dart';
 import 'language_picker_sheet.dart';
 import 'contact_us_sheet.dart';
 
-/// Primary Settings Options Card matching Stitch Screen 5 (7 Items + AI Assistant toggle).
+/// Primary Settings Options Card matching Stitch Screen 5.
+/// 100% dynamically wired to backend privacy, notifications, and clinical settings.
 class SettingsOptionsCard extends ConsumerStatefulWidget {
   const SettingsOptionsCard({super.key});
 
@@ -21,7 +24,7 @@ class SettingsOptionsCard extends ConsumerStatefulWidget {
 }
 
 class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
-  bool _notificationsReceived = true;
+  bool _isUpdating = false;
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
@@ -38,11 +41,36 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
     }
   }
 
+  Future<void> _updateField(String key, dynamic value) async {
+    setState(() => _isUpdating = true);
+    final success = await ref.read(profileProvider.notifier).updateProfile({key: value});
+    if (key == 'public_profile') {
+      ref.invalidate(leaderboardProvider);
+    }
+    if (mounted) {
+      setState(() => _isUpdating = false);
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not update setting. Please check your connection.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentLocale = ref.watch(localeProvider);
     final isBangla = currentLocale.languageCode == 'bn';
     final isPulseAiVisible = ref.watch(pulseAiVisibilityProvider);
+    final profile = ref.watch(profileProvider).valueOrNull;
+
+    final notificationsEnabled = profile?.notificationsEnabled ?? true;
+    final emergencyAlertsEnabled = profile?.emergencyAlertsEnabled ?? true;
+    final showContact = profile?.showContact ?? false;
+    final publicProfile = profile?.publicProfile ?? false;
 
     return Container(
       decoration: BoxDecoration(
@@ -69,110 +97,69 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // 2. Notification Received
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEEF2FF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.notifications_rounded, color: Color(0xFF004B7E), size: 18),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Notification Received',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF24191A),
-                        ),
-                      ),
-                      Text(
-                        'Urgent requests & updates',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          color: Color(0xFF5C3F3D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch.adaptive(
-                  value: _notificationsReceived,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: AppColors.primary,
-                  inactiveTrackColor: const Color(0xFFE4E2E1),
-                  onChanged: (val) => setState(() => _notificationsReceived = val),
-                ),
-              ],
-            ),
+          // 2. Notifications Enabled
+          _buildSwitchTile(
+            icon: Icons.notifications_rounded,
+            iconBgColor: const Color(0xFFEEF2FF),
+            iconColor: const Color(0xFF004B7E),
+            title: 'Notification Received',
+            subtitle: 'Urgent requests & donor reminders',
+            value: notificationsEnabled,
+            onChanged: _isUpdating ? null : (val) => _updateField('notifications_enabled', val),
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // PulseAI Assistant Toggle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEE9EB),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.support_agent_rounded, color: AppColors.primary, size: 18),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Show PulseAI assistant',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF24191A),
-                        ),
-                      ),
-                      Text(
-                        'Floating clinical AI companion',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          color: Color(0xFF5C3F3D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch.adaptive(
-                  value: isPulseAiVisible,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: AppColors.primary,
-                  inactiveTrackColor: const Color(0xFFE4E2E1),
-                  onChanged: (val) {
-                    ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
-                  },
-                ),
-              ],
-            ),
+          // 3. Emergency Alerts Enabled
+          _buildSwitchTile(
+            icon: Icons.notification_important_rounded,
+            iconBgColor: const Color(0xFFFFEAEA),
+            iconColor: AppColors.primary,
+            title: 'Emergency Alerts',
+            subtitle: 'Critical patient alerts in your district',
+            value: emergencyAlertsEnabled,
+            onChanged: _isUpdating ? null : (val) => _updateField('emergency_alerts_enabled', val),
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // 3. Privacy Policy
+          // 4. Show Contact Phone
+          _buildSwitchTile(
+            icon: Icons.phone_enabled_rounded,
+            iconBgColor: const Color(0xFFE8F5E9),
+            iconColor: const Color(0xFF2E7D32),
+            title: 'Show Contact Phone',
+            subtitle: 'Allow verified patients to call you directly',
+            value: showContact,
+            onChanged: _isUpdating ? null : (val) => _updateField('show_contact', val),
+          ),
+          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+
+          // 5. Public Profile / Leaderboard Consent
+          _buildSwitchTile(
+            icon: Icons.leaderboard_rounded,
+            iconBgColor: const Color(0xFFFFF3E0),
+            iconColor: const Color(0xFFE65100),
+            title: 'Public Profile & Leaderboard',
+            subtitle: 'Show your name on top donor rankings',
+            value: publicProfile,
+            onChanged: _isUpdating ? null : (val) => _updateField('public_profile', val),
+          ),
+          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+
+          // 6. PulseAI Assistant Toggle
+          _buildSwitchTile(
+            icon: Icons.support_agent_rounded,
+            iconBgColor: const Color(0xFFFEE9EB),
+            iconColor: AppColors.primary,
+            title: 'Show PulseAI Assistant',
+            subtitle: 'Floating clinical AI companion',
+            value: isPulseAiVisible,
+            onChanged: (val) {
+              ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
+            },
+          ),
+          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+
+          // 7. Privacy Policy
           _buildTile(
             icon: Icons.verified_user_rounded,
             iconBgColor: const Color(0xFFFFDAD7),
@@ -183,7 +170,7 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // 4. Rate Us
+          // 8. Rate Us
           _buildTile(
             icon: Icons.star_rounded,
             iconBgColor: const Color(0xFFEFF6FF),
@@ -194,7 +181,7 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // 5. Share App
+          // 9. Share App
           _buildTile(
             icon: Icons.send_rounded,
             iconBgColor: const Color(0xFFF3E8FF),
@@ -214,7 +201,7 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // 6. Learn More
+          // 10. Learn More
           _buildTile(
             icon: Icons.info_rounded,
             iconBgColor: const Color(0xFFEFF6FF),
@@ -225,7 +212,7 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           ),
           const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
 
-          // 7. Contact Us
+          // 11. Contact Us
           _buildTile(
             icon: Icons.support_agent_rounded,
             iconBgColor: const Color(0xFFFEF3C7),
@@ -233,6 +220,62 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
             title: 'Contact Us',
             subtitle: '24/7 Support & emergency helpline',
             onTap: () => ContactUsSheet.show(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF24191A),
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    color: Color(0xFF5C3F3D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            activeThumbColor: Colors.white,
+            activeTrackColor: AppColors.primary,
+            inactiveTrackColor: const Color(0xFFE4E2E1),
+            onChanged: onChanged,
           ),
         ],
       ),

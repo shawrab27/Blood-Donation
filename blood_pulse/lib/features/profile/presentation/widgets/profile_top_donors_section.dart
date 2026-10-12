@@ -1,23 +1,25 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/providers/leaderboard_provider.dart';
 
 /// Stitch Screen 1: Top Donors leaderboard horizontal row
-/// Shows Global Rank badge along with top active donor community avatars.
-class ProfileTopDonorsSection extends StatelessWidget {
+/// Shows Global / National Rank badge along with top active verified donors.
+/// 100% dynamic, real database data, privacy-compliant ("FirstName L." or "Anonymous Hero").
+class ProfileTopDonorsSection extends ConsumerWidget {
   const ProfileTopDonorsSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final topDonors = [
-      {'name': 'Mark R.', 'rank': 1, 'bags': 14, 'color': const Color(0xFFFFD700)},
-      {'name': 'Sara T.', 'rank': 2, 'bags': 12, 'color': const Color(0xFFC0C0C0)},
-      {'name': 'David K.', 'rank': 3, 'bags': 11, 'color': const Color(0xFFCD7F32)},
-      {'name': 'Elena M.', 'rank': 4, 'bags': 10, 'color': AppColors.primary},
-      {'name': 'Tariq A.', 'rank': 5, 'bags': 9, 'color': AppColors.primary},
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(leaderboardProvider);
+
+    final rankBadgeText = state.myRank != null && state.myRank != 'Unranked'
+        ? 'National Rank #${state.myRank}'
+        : 'Unranked';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -48,9 +50,9 @@ class ProfileTopDonorsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: const Color(0xFFE6BDBA)),
                 ),
-                child: const Text(
-                  'Global Rank #3',
-                  style: TextStyle(
+                child: Text(
+                  rankBadgeText,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -62,80 +64,127 @@ class ProfileTopDonorsSection extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Horizontal scroll of top donors
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: topDonors.map((donor) {
-                final rank = donor['rank'] as int;
-                final name = donor['name'] as String;
-                final bags = donor['bags'] as int;
-                final color = donor['color'] as Color;
+          if (state.isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: AppLoader(),
+                ),
+              ),
+            )
+          else if (state.topDonors.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              alignment: Alignment.center,
+              child: Text(
+                'Be the first verified donor in Bangladesh to claim the #1 spot!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: state.topDonors.map((donor) {
+                  final rank = donor.rank;
+                  final name = donor.name;
+                  final bags = donor.donationsCount;
+                  final Color color = rank == 1
+                      ? const Color(0xFFFFD700)
+                      : rank == 2
+                          ? const Color(0xFFC0C0C0)
+                          : rank == 3
+                              ? const Color(0xFFCD7F32)
+                              : AppColors.primary;
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: Column(
-                    children: [
-                      Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: color.withValues(alpha: 0.15),
-                            child: Text(
-                              name[0],
-                              style: TextStyle(
-                                fontFamily: 'Georgia',
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: color == const Color(0xFFFFD700) ? const Color(0xFFB45309) : color,
+                  final initial = name.isNotEmpty ? name[0].toUpperCase() : 'H';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 14),
+                    child: Column(
+                      children: [
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: color.withValues(alpha: 0.15),
+                              backgroundImage: donor.avatarUrl != null
+                                  ? NetworkImage(donor.avatarUrl!)
+                                  : null,
+                              child: donor.avatarUrl == null
+                                  ? Text(
+                                      initial,
+                                      style: TextStyle(
+                                        fontFamily: 'Georgia',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: color == const Color(0xFFFFD700)
+                                            ? const Color(0xFFB45309)
+                                            : color,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              child: Text(
+                                '$rank',
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  height: 1.0,
+                                ),
                               ),
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1.5),
-                            ),
-                            child: Text(
-                              '$rank',
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.0,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF24191A),
+                          ],
                         ),
-                      ),
-                      Text(
-                        '$bags Bags',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 9.5,
-                          color: Color(0xFF64748B),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          width: 68,
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF24191A),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                        Text(
+                          '$bags ${bags == 1 ? "Bag" : "Bags"}',
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 9.5,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
         ],
       ),
     );
