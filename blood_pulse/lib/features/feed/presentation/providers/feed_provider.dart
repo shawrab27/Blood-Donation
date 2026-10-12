@@ -86,6 +86,11 @@ class FeedPostItem {
     this.achievementBadge,
     this.imageUrl,
     this.imageBytes,
+    this.media = const [],
+    this.district,
+    this.division,
+    this.kind = 'general',
+    this.isFailed = false,
     this.location,
     this.reactCount = 0,
     this.isReacted = false,
@@ -116,6 +121,11 @@ class FeedPostItem {
   final String? achievementBadge; // e.g. "Platinum Badge"
   final String? imageUrl;
   final Uint8List? imageBytes;
+  final List<Map<String, dynamic>> media;
+  final String? district;
+  final String? division;
+  final String kind;
+  final bool isFailed;
   final String? location;
   final int reactCount;
   final bool isReacted;
@@ -150,6 +160,11 @@ class FeedPostItem {
     Uint8List? originalImageBytes,
     String? postType,
     Campaign? campaign,
+    List<Map<String, dynamic>>? media,
+    String? district,
+    String? division,
+    String? kind,
+    bool? isFailed,
   }) {
     return FeedPostItem(
       id: id ?? this.id,
@@ -164,6 +179,11 @@ class FeedPostItem {
       achievementBadge: achievementBadge,
       imageUrl: imageUrl,
       imageBytes: imageBytes,
+      media: media ?? this.media,
+      district: district ?? this.district,
+      division: division ?? this.division,
+      kind: kind ?? this.kind,
+      isFailed: isFailed ?? this.isFailed,
       location: location,
       reactCount: reactCount ?? this.reactCount,
       isReacted: isReacted ?? this.isReacted,
@@ -378,95 +398,181 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
   ];
 
   final ApiClient _apiClient = ApiClient();
+  String? _nextCursor;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  String _currentScope = 'near';
+  String? _currentKind;
 
-  Future<void> fetchPosts() async {
+  String? get nextCursor => _nextCursor;
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
+  String get currentScope => _currentScope;
+
+  Future<void> fetchPosts({String? scope, String? kind, bool reset = true}) async {
+    if (reset) {
+      _nextCursor = null;
+      _hasMore = true;
+    }
+    if (scope != null) _currentScope = scope;
+    if (kind != null) _currentKind = kind == 'all' ? null : kind;
+
     try {
-      final response = await _apiClient.get('posts/');
+      final queryParams = <String, String>{
+        'scope': _currentScope,
+        if (_currentKind != null && _currentKind!.isNotEmpty) 'kind': _currentKind!,
+        if (!reset && _nextCursor != null) 'cursor': _nextCursor!,
+      };
+      final queryString = Uri(queryParameters: queryParams).query;
+      final response = await _apiClient.get('feed/?$queryString');
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final Map<String, dynamic> decoded = jsonDecode(response.body);
         final List<dynamic> list = decoded.containsKey('results') ? decoded['results'] : decoded;
-        if (list.isNotEmpty) {
-          final fetched = list.map((item) {
-            final commentsList = (item['comments'] as List<dynamic>?)?.map((c) => FeedComment(
-              id: c['id'].toString(),
-              authorName: c['author']?.toString() ?? 'Community Member',
-              authorAvatar: c['author_photo']?.toString() ?? c['google_photo_url']?.toString(),
-              text: c['text']?.toString() ?? '',
-              timestamp: 'Recent',
-            )).toList() ?? <FeedComment>[];
+        _nextCursor = decoded['next_cursor'] as String?;
+        _hasMore = decoded['has_more'] as bool? ?? false;
 
-            final String? repostedBy = item['reposted_by']?.toString();
-            final String? originalAuthor = item['original_author_name']?.toString();
-            return FeedPostItem(
-              id: item['id'].toString(),
-              authorName: item['author_name']?.toString() ?? 'Blood Donor',
-              authorAvatar: item['author_photo']?.toString() ?? item['google_photo_url']?.toString(),
-              authorRole: AuthorRole.donor,
-              roleBadgeText: item['original_post'] != null ? 'Reposted Story' : 'Donor Story',
-              timestamp: 'Recent',
-              content: item['text_content']?.toString() ?? '',
-              reactCount: item['likes_count'] as int? ?? (item['reactions_count'] as int? ?? 0),
-              commentCount: item['comments_count'] as int? ?? commentsList.length,
-              comments: commentsList,
-              repostCount: 0,
-              repostedBy: repostedBy,
-              originalAuthor: originalAuthor,
-              originalContent: repostedBy != null ? (item['text_content']?.toString() ?? '') : null,
-            );
-          }).toList();
-          state = [...fetched, ..._initialPosts];
+        final fetched = list.map((item) {
+          final commentsList = (item['comments'] as List<dynamic>?)?.map((c) => FeedComment(
+            id: c['id'].toString(),
+            authorName: c['author']?.toString() ?? 'Community Member',
+            authorAvatar: c['author_photo']?.toString() ?? c['google_photo_url']?.toString(),
+            text: c['text']?.toString() ?? '',
+            timestamp: 'Recent',
+          )).toList() ?? <FeedComment>[];
+
+          final rawMedia = (item['media'] as List<dynamic>?)?.map((m) => Map<String, dynamic>.from(m as Map)).toList() ?? <Map<String, dynamic>>[];
+          final String? firstMediaUrl = rawMedia.isNotEmpty ? rawMedia.first['url']?.toString() : null;
+
+          final String? repostedBy = item['reposted_by']?.toString();
+          final String? originalAuthor = item['original_author_name']?.toString();
+
+          return FeedPostItem(
+            id: item['id'].toString(),
+            authorName: item['author_name']?.toString() ?? 'Blood Donor',
+            authorAvatar: item['author_photo']?.toString() ?? item['google_photo_url']?.toString(),
+            authorRole: AuthorRole.donor,
+            roleBadgeText: item['original_post'] != null ? 'Reposted Story' : (item['kind'] == 'emergency' ? 'EMERGENCY' : 'Donor Story'),
+            timestamp: 'Recent',
+            content: item['text_content']?.toString() ?? '',
+            media: rawMedia,
+            imageUrl: firstMediaUrl,
+            district: item['district_name']?.toString(),
+            division: item['division_name']?.toString(),
+            kind: item['kind']?.toString() ?? 'general',
+            urgentNeedBadge: item['kind'] == 'emergency' ? 'URGENT NEED' : null,
+            reactCount: item['likes_count'] as int? ?? (item['reactions_count'] as int? ?? 0),
+            commentCount: item['comments_count'] as int? ?? commentsList.length,
+            comments: commentsList,
+            repostCount: 0,
+            repostedBy: repostedBy,
+            originalAuthor: originalAuthor,
+            originalContent: repostedBy != null ? (item['text_content']?.toString() ?? '') : null,
+          );
+        }).toList();
+
+        if (reset) {
+          state = [...fetched, if (fetched.isEmpty) ..._initialPosts];
+        } else {
+          state = [...state, ...fetched];
         }
       }
     } catch (e) {
-      debugPrint('[FeedNotifier] Error fetching posts: $e');
+      debugPrint('[FeedNotifier] Error fetching feed: $e');
+      if (reset && state.isEmpty) {
+        state = _initialPosts;
+      }
     }
+  }
+
+  Future<void> loadMore() async {
+    if (!_hasMore || _isLoadingMore || _nextCursor == null) return;
+    _isLoadingMore = true;
+    await fetchPosts(reset: false);
+    _isLoadingMore = false;
   }
 
   Future<bool> addPost({
     required String authorName,
     required String content,
+    List<Map<String, dynamic>> media = const [],
     Uint8List? imageBytes,
     String? imageUrl,
     String? location,
     String? urgentNeedBadge,
     String? bloodGroupBadge,
+    String kind = 'general',
     void Function(String error)? onError,
   }) async {
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final optimisticPost = FeedPostItem(
+      id: tempId,
+      authorName: authorName,
+      authorRole: AuthorRole.donor,
+      roleBadgeText: kind == 'emergency' ? 'EMERGENCY' : 'Donor Story',
+      timestamp: 'Just now',
+      content: content,
+      media: media,
+      imageBytes: imageBytes,
+      imageUrl: imageUrl ?? (media.isNotEmpty ? media.first['url']?.toString() : null),
+      location: location,
+      urgentNeedBadge: urgentNeedBadge,
+      bloodGroupBadge: bloodGroupBadge,
+      kind: kind,
+      reactCount: 0,
+      commentCount: 0,
+      repostCount: 0,
+    );
+
+    // Optimistically insert to feed
+    state = [optimisticPost, ...state];
+
     try {
-      final response = await _apiClient.post('posts/', body: {
+      final response = await _apiClient.post('feed/', body: {
         'text_content': content,
+        'kind': kind,
+        'media': media,
+        if (location != null && location.isNotEmpty) 'location': location,
       });
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body);
-        final newPost = FeedPostItem(
-          id: data['id']?.toString() ?? 'post_${DateTime.now().millisecondsSinceEpoch}',
-          authorName: data['author_name']?.toString() ?? authorName,
-          authorRole: AuthorRole.donor,
-          roleBadgeText: 'Donor Story',
-          timestamp: 'Just now',
-          content: content,
-          imageBytes: imageBytes,
-          imageUrl: imageUrl,
-          location: location,
-          urgentNeedBadge: urgentNeedBadge,
-          bloodGroupBadge: bloodGroupBadge,
-          reactCount: 0,
-          commentCount: 0,
-          repostCount: 0,
-        );
-        state = [newPost, ...state];
+        final realId = data['id']?.toString() ?? tempId;
+        state = [
+          for (final p in state)
+            if (p.id == tempId)
+              p.copyWith(
+                id: realId,
+                district: data['district_name']?.toString(),
+                division: data['division_name']?.toString(),
+              )
+            else
+              p,
+        ];
         return true;
       } else {
         final err = 'Failed to post [${response.statusCode}]: ${response.body}';
+        // Mark post as failed so user can tap to retry
+        state = [
+          for (final p in state)
+            if (p.id == tempId) p.copyWith(isFailed: true) else p,
+        ];
         onError?.call(err);
         return false;
       }
     } catch (e) {
       final err = 'Error creating post: $e';
+      state = [
+        for (final p in state)
+          if (p.id == tempId) p.copyWith(isFailed: true) else p,
+      ];
       onError?.call(err);
       return false;
     }
+  }
+
+  void removeFailedPost(String id) {
+    state = state.where((p) => p.id != id).toList();
   }
 
   Future<bool> toggleReact(String postId, {void Function(String error)? onError}) async {

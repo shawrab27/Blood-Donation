@@ -190,15 +190,44 @@ class SocialPostSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     reposted_by = serializers.SerializerMethodField()
     original_author_name = serializers.SerializerMethodField()
-    
+    district_name = serializers.SerializerMethodField()
+    division_name = serializers.SerializerMethodField()
+
     class Meta:
         model = SocialPost
         fields = [
             'id', 'author_name', 'author_photo', 'google_photo_url', 'author_blood_group', 'text_content', 
-            'created_at', 'likes_count', 'reactions_count', 'comments_count', 
-            'comments', 'original_post', 'reposted_by', 'original_author_name'
+            'created_at', 'likes_count', 'like_count', 'reactions_count', 'comments_count', 'comment_count',
+            'comments', 'original_post', 'reposted_by', 'original_author_name',
+            'media', 'kind', 'district', 'district_name', 'division', 'division_name'
         ]
-        read_only_fields = ['id', 'created_at', 'likes_count', 'reactions_count', 'comments_count', 'comments', 'reposted_by', 'original_author_name', 'author_photo', 'google_photo_url']
+        read_only_fields = [
+            'id', 'created_at', 'likes_count', 'like_count', 'reactions_count', 'comments_count', 
+            'comment_count', 'comments', 'reposted_by', 'original_author_name', 'author_photo', 
+            'google_photo_url', 'district_name', 'division_name'
+        ]
+
+    def get_district_name(self, obj):
+        return obj.district.name if obj.district else None
+
+    def get_division_name(self, obj):
+        return obj.division.name if obj.division else None
+
+    def validate_text_content(self, value):
+        text = (value or '').strip()
+        if len(text) > 500:
+            raise serializers.ValidationError("Post text cannot exceed 500 characters.")
+        return text
+
+    def validate_media(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Media must be a list of media objects.")
+        if len(value) > 4:
+            raise serializers.ValidationError("A post can contain at most 4 images.")
+        for item in value:
+            if not isinstance(item, dict) or 'url' not in item:
+                raise serializers.ValidationError("Each media item must be an object with a 'url' property.")
+        return value
 
     def get_author_name(self, obj):
         if obj.author and obj.author.user:
@@ -228,6 +257,7 @@ class SocialPostSerializer(serializers.ModelSerializer):
             fn = obj.original_post.author.user.get_full_name().strip()
             return fn if fn else obj.original_post.author.user.username
         return None
+
 
 
 class FakeAccountFlagSerializer(serializers.ModelSerializer):

@@ -1167,14 +1167,58 @@ class SocialPost(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     likes_count = models.IntegerField(default=0)
+    like_count = models.PositiveIntegerField(default=0)
+    comment_count = models.PositiveIntegerField(default=0)
 
     original_post = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='reposts')
 
-    
+    media = models.JSONField(default=list, blank=True)
+    kind = models.CharField(max_length=20, default='general', db_index=True)
+    division = models.ForeignKey('Division', on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    district = models.ForeignKey('District', on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['district', '-created_at', '-id'], name='idx_post_dist_created_id'),
+            models.Index(fields=['division', '-created_at'], name='idx_post_div_created'),
+            models.Index(fields=['kind', '-created_at'], name='idx_post_kind_created'),
+            models.Index(fields=['-created_at', '-id'], name='idx_post_created_id'),
+        ]
 
     def __str__(self):
 
         return f"Post by {self.author.user.username}"
+
+
+class MediaUploadRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_media')
+    public_id = models.CharField(max_length=255, unique=True)
+    url = models.URLField(max_length=500)
+    width = models.IntegerField(default=0)
+    height = models.IntegerField(default=0)
+    post = models.ForeignKey(SocialPost, on_delete=models.SET_NULL, null=True, blank=True, related_name='media_records')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Media {self.public_id} by {self.user.username}"
+
+
+class UserLocationState(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='location_state')
+    current_district = models.ForeignKey('District', on_delete=models.SET_NULL, null=True, blank=True)
+    current_division = models.ForeignKey('Division', on_delete=models.SET_NULL, null=True, blank=True)
+    source = models.CharField(max_length=20, default='profile', choices=[('gps', 'GPS'), ('profile', 'Profile'), ('manual', 'Manual')])
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        dist = self.current_district.name if self.current_district else 'None'
+        return f"Location for {self.user.username}: {dist} ({self.source})"
+
 
 
 

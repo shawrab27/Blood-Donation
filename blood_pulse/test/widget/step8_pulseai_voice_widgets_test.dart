@@ -220,7 +220,10 @@ class _FakeAssistantNotifier extends StateNotifier<AssistantState>
 
   @override
   Future<void> sendMessage(String text, String locale,
-      {String? screenContext}) async {}
+      {bool isRetry = false, String? screenContext}) async {}
+
+  @override
+  Future<void> retryLastMessage(String locale, {String? screenContext}) async {}
 
   @override
   Future<void> sendFeedback(AssistantMessage message, String rating,

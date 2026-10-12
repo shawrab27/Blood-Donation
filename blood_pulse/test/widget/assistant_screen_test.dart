@@ -24,8 +24,15 @@ class _FakeAssistantNotifier extends StateNotifier<AssistantState>
 
   @override
   Future<void> sendMessage(String text, String locale,
-      {String? screenContext}) async {
+      {bool isRetry = false, String? screenContext}) async {
     lastSentMessage = text;
+  }
+
+  @override
+  Future<void> retryLastMessage(String locale, {String? screenContext}) async {
+    if (lastSentMessage != null) {
+      await sendMessage(lastSentMessage!, locale, isRetry: true, screenContext: screenContext);
+    }
   }
 
   @override
@@ -55,7 +62,7 @@ class _ErrorThrowingNotifier extends _FakeAssistantNotifier {
 
   @override
   Future<void> sendMessage(String text, String locale,
-      {String? screenContext}) async {
+      {bool isRetry = false, String? screenContext}) async {
     throw errorToThrow;
   }
 }

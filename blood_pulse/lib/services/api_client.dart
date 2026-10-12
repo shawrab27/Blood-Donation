@@ -404,6 +404,46 @@ class ApiClient {
     );
   }
 
+  /// Uploads raw file bytes via multipart/form-data with authentication.
+  Future<Map<String, dynamic>> uploadMultipart(
+    String path, {
+    required List<int> fileBytes,
+    required String filename,
+    String fieldName = 'file',
+    Map<String, String>? additionalFields,
+  }) async {
+    final token = await getAccessToken();
+    final uri = Uri.parse(_normalizeUrl(path));
+    final request = http.MultipartRequest('POST', uri);
+
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    if (additionalFields != null) {
+      request.fields.addAll(additionalFields);
+    }
+
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        fieldName,
+        fileBytes,
+        filename: filename,
+      ),
+    );
+
+    final streamedResponse = await request.send().timeout(connectTimeout);
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      final msg = _extractErrorMessage(response.body, statusCode: response.statusCode);
+      throw ApiException(msg, statusCode: response.statusCode, rawError: response.body);
+    }
+  }
+
+
   /// Executes an HTTP PUT request with automatic token header and 401 refresh retry.
   Future<http.Response> put(
     String path, {
