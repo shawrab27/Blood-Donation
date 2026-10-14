@@ -1283,9 +1283,12 @@ class DonorReview(models.Model):
             raise ValidationError("Only the blood requester can review the donor.")
 
         if self.blood_request:
-            is_fulfilled = self.blood_request.status in ['FULFILLED', 'COMPLETED', 'CLOSED'] or (
+            is_fulfilled = self.blood_request.status in ['DONATED', 'FULFILLED', 'COMPLETED', 'CLOSED'] or (
                 hasattr(self.blood_request, 'acceptances') and
-                self.blood_request.acceptances.filter(donor=self.donor, status='COMPLETED').exists()
+                self.blood_request.acceptances.filter(donor=self.donor, status__in=['COMPLETED', 'DONATED']).exists()
+            ) or (
+                hasattr(self.blood_request, 'donation_matches') and
+                self.blood_request.donation_matches.filter(donor=self.donor, status='DONATED').exists()
             ) or (
                 DonationHistory.objects.filter(donor=self.donor, linked_request=self.blood_request).exists()
             )

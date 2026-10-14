@@ -116,7 +116,18 @@ Working style: **one task at a time**, short steps, evidence required.
     - `XPEvent`: append-only ledger with `UNIQUE(user, event_type, ref_type, ref_id)`. `XP_LEVEL_THRESHOLDS` (Levels 1–10: 0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500). 100 XP awarded ONLY for verified donations.
     - Model test suite `api/tests/test_profile_phase1a_models.py` (7/7 passed).
   - Additive Migrations: `0053_bloodgroupchangerequest_donorreview_xpevent_and_more.py` and data backfill `0054_backfill_donation_history.py` applied cleanly on SQLite and Neon Rehearsal (`ep-noisy-poetry-b3c07a8m`).
-- [ ] Part 1B — Endpoints (GET/PATCH `/profile/me/`, `/last-donation/` with 90-day rejection rule, `/top-donors/`, `/global-rank/`, `/me/stories/`, `/me/activity/`, `/me/donations/`, `/blood-group-change/`, `/reviews/`).
+- [x] Part 1B — Endpoints (Fully functional and verified with 17/17 tests passing):
+  - `GET /api/profile/me/`: Hero stats, verified bags, 90-day cooldown calculation in Asia/Dhaka, XP and Level progress, registration gate (403 REGISTRATION_INCOMPLETE for incomplete profiles).
+  - `PATCH /api/profile/me/`: Bio validation (max 120), weight validation, availability, snooze 1 month, show_in_rankings; rejects blood group mutation with 400.
+  - `PATCH /api/profile/me/last-donation/`: Anti-cheat (future date rejected, 90-day cooldown boundary enforced, max 3 attempts/day rate-limit, audit log written).
+  - `GET /api/profile/top-donors/`: Top 4 by verified bags (tie-break: earliest donation, id), excludes unverified and show_in_rankings=False; 60s cache.
+  - `GET /api/profile/global-rank/`: Paginated leaderboard by verified bags with caller's own rank row; 60s cache.
+  - `GET /api/profile/<id>/`: Sanitized public profile, returns 404 for soft-deleted or suspended users.
+  - `GET /api/profile/me/stories/`, `GET /api/profile/me/activity/`, `GET /api/profile/me/donations/`: Paginated and ordered by (-created_at, -id); auto_verified badge shown only if server flag is true.
+  - `POST /api/profile/blood-group-change/` & `GET /status/`: One open request rule, consent check, encrypted BinaryField report upload with magic bytes validation (PDF/JPEG/PNG).
+  - `POST /api/reviews/` & `GET /api/profile/<id>/reviews/`: Rate-limited, requester-only, completed-only, anti-self-review checks, updates rating_avg and rating_count.
+  - Django admin: `BloodGroupChangeRequestAdmin` with secure report download and bulk approve/reject actions.
+  - Query benchmarks: 0 N+1 queries across top-donors, activity, and donations endpoints.
 - [ ] Part 1C — Digital Certificate PDF (`reportlab` + `qrcode`) & Public Verification Endpoint.
 
 ## Phase 8 — Final Gate

@@ -218,12 +218,73 @@ class ProductAdmin(admin.ModelAdmin):
         super().delete_model(request, obj)
 
 
+from django.urls import path
+from django.http import HttpResponse, Http404
+from django.utils.html import format_html
+
 @admin.register(BloodGroupChangeRequest)
 class BloodGroupChangeRequestAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'current_group', 'requested_group', 'status', 'created_at', 'reviewed_by')
+    list_display = (
+        'id', 'user', 'current_group', 'requested_group',
+        'status', 'created_at', 'reviewed_by', 'has_report_file', 'download_report_link'
+    )
     list_filter = ('status', 'requested_group')
     search_fields = ('user__username', 'reason', 'lab_name')
-    readonly_fields = ('created_at', 'reviewed_at')
+    readonly_fields = ('created_at', 'reviewed_at', 'report_file_name', 'report_file_content_type', 'report_file_size')
+    actions = ['approve_selected_requests', 'reject_selected_requests']
+
+    def has_report_file(self, obj):
+        return bool(obj.report_file_data)
+    has_report_file.boolean = True
+    has_report_file.short_description = "Report Attached"
+
+    def download_report_link(self, obj):
+        if obj.report_file_data:
+            return format_html(
+                '<a class="button" href="{}download-report/" target="_blank">Download Report</a>',
+                f"{obj.id}/"
+            )
+        return "-"
+    download_report_link.short_description = "Download Lab Report"
+
+    def approve_selected_requests(self, request, queryset):
+        count = 0
+        for req in queryset.filter(status__in=['pending', 'under_review']):
+            req.approve(admin_user=request.user, notes="Approved via Django admin")
+            count += 1
+        self.message_user(request, f"Approved {count} blood group change request(s).")
+    approve_selected_requests.short_description = "Approve selected change requests (updates user profile)"
+
+    def reject_selected_requests(self, request, queryset):
+        count = 0
+        for req in queryset.filter(status__in=['pending', 'under_review']):
+            req.reject(admin_user=request.user, notes="Rejected via Django admin")
+            count += 1
+        self.message_user(request, f"Rejected {count} blood group change request(s).")
+    reject_selected_requests.short_description = "Reject selected change requests"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('<int:object_id>/download-report/', self.admin_site.admin_view(self.download_report_view), name='bloodgroupchange-download-report'),
+        ]
+        return custom_urls + urls
+
+    def download_report_view(self, request, object_id):
+        if not request.user.is_staff:
+            raise Http404("Unauthorized")
+        obj = self.get_object(request, object_id)
+        if not obj or not obj.report_file_data:
+            raise Http404("No report document found or document was cleared following decision.")
+
+        filename = obj.report_file_name or f"lab_report_{obj.id}.pdf"
+        response = HttpResponse(
+            obj.report_file_data,
+            content_type=obj.report_file_content_type or 'application/octet-stream'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['X-Content-Type-Options'] = 'nosniff'
+        return response
 
 
 @admin.register(DonorReview)

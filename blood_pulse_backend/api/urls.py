@@ -6,6 +6,18 @@ from .views_certificates import CertificateIssueAPIView, CertificateVerifyAPIVie
 from .views_feed_media import MediaUploadView, UserLocationSyncView
 from .views_feed import FeedListCreateAPIView, FeedPostDetailAPIView, FeedPostReportAPIView
 from .views_products import ProductViewSet
+from .views_profile import (
+    ProfileMeView,
+    ProfileLastDonationView,
+    TopDonorsView,
+    GlobalRankView,
+    PublicProfileDetailView,
+    ProfileStoriesView,
+    ProfileActivityView,
+    ProfileDonationsView,
+    BloodGroupChangeRequestView,
+    DonorReviewView,
+)
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -219,8 +231,21 @@ urlpatterns = [
     path('health-hub/analyze-report/', GeminiReportAnalyzeView.as_view(), name='analyze-report'),
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     path('auth/firebase/', FirebaseAuthView.as_view(), name='firebase-auth'),
-    path('profile/me/', DonorProfileViewSet.as_view({'get': 'me', 'put': 'me', 'patch': 'me', 'delete': 'me'}), name='profile-me'),
-    path('profile/<int:pk>/', DonorProfileViewSet.as_view({'get': 'retrieve'}), name='profile-detail'),
+
+    # Profile & Stitch Alignment Endpoints (Stage 1B)
+    path('profile/me/', ProfileMeView.as_view(), name='profile-me'),
+    path('profile/me/last-donation/', ProfileLastDonationView.as_view(), name='profile-me-last-donation'),
+    path('profile/top-donors/', TopDonorsView.as_view(), name='profile-top-donors'),
+    path('profile/global-rank/', GlobalRankView.as_view(), name='profile-global-rank'),
+    path('profile/me/stories/', ProfileStoriesView.as_view(), name='profile-me-stories'),
+    path('profile/me/activity/', ProfileActivityView.as_view(), name='profile-me-activity'),
+    path('profile/me/donations/', ProfileDonationsView.as_view(), name='profile-me-donations'),
+    path('profile/blood-group-change/', BloodGroupChangeRequestView.as_view(), name='profile-blood-group-change'),
+    path('profile/blood-group-change/status/', BloodGroupChangeRequestView.as_view(), name='profile-blood-group-change-status'),
+    path('profile/<int:pk>/', PublicProfileDetailView.as_view(), name='profile-detail'),
+    path('profile/<int:donor_id>/reviews/', DonorReviewView.as_view(), name='profile-donor-reviews'),
+    path('reviews/', DonorReviewView.as_view(), name='donor-reviews'),
+
     path('profile/me/snooze/', donor_snooze_view, name='profile-me-snooze'),
     path('users/me/snooze/', donor_snooze_view, name='users-me-snooze'),
     path('donors/me/snooze/', donor_snooze_view, name='donors-me-snooze'),

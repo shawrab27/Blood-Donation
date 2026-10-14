@@ -53,13 +53,23 @@ def _finalize_two_sided_match(req: BloodRequest, match: DonationMatch, now, note
     hosp_name = req.hospital_name_other or (
         req.hospital.name if req.hospital else 'Hospital'
     )
-    DonationHistory.objects.create(
+    dh = DonationHistory.objects.create(
         donor=match.donor,
         date=now.date(),
+        donated_at=now.date(),
         location=hosp_name,
+        hospital=hosp_name,
+        city=req.district or match.donor.district or '',
+        bags=units,
         bags_donated=units,
+        source='verified',
+        verified=True,
+        linked_request=req,
         notes=note or "Blood donation confirmed by both donor and requester.",
     )
+    from api.models import award_verified_donation_xp
+    award_verified_donation_xp(dh)
+
     match.donor.total_bags_donated += units
     match.donor.last_donation_date = now.date()
     match.donor.save(update_fields=['total_bags_donated', 'last_donation_date'])
