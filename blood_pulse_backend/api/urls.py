@@ -17,6 +17,8 @@ from .views_profile import (
     ProfileDonationsView,
     BloodGroupChangeRequestView,
     DonorReviewView,
+    ProfileCertificateDownloadView,
+    ProfileCertificateVerifyView,
 )
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -242,6 +244,8 @@ urlpatterns = [
     path('profile/me/donations/', ProfileDonationsView.as_view(), name='profile-me-donations'),
     path('profile/blood-group-change/', BloodGroupChangeRequestView.as_view(), name='profile-blood-group-change'),
     path('profile/blood-group-change/status/', BloodGroupChangeRequestView.as_view(), name='profile-blood-group-change-status'),
+    path('profile/me/certificate/', ProfileCertificateDownloadView.as_view(), name='profile-me-certificate'),
+    path('profile/certificate/verify/', ProfileCertificateVerifyView.as_view(), name='profile-certificate-verify'),
     path('profile/<int:pk>/', PublicProfileDetailView.as_view(), name='profile-detail'),
     path('profile/<int:donor_id>/reviews/', DonorReviewView.as_view(), name='profile-donor-reviews'),
     path('reviews/', DonorReviewView.as_view(), name='donor-reviews'),

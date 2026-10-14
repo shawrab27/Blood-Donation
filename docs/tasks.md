@@ -128,7 +128,15 @@ Working style: **one task at a time**, short steps, evidence required.
   - `POST /api/reviews/` & `GET /api/profile/<id>/reviews/`: Rate-limited, requester-only, completed-only, anti-self-review checks, updates rating_avg and rating_count.
   - Django admin: `BloodGroupChangeRequestAdmin` with secure report download and bulk approve/reject actions.
   - Query benchmarks: 0 N+1 queries across top-donors, activity, and donations endpoints.
-- [ ] Part 1C — Digital Certificate PDF (`reportlab` + `qrcode`) & Public Verification Endpoint.
+- [x] Part 1C — Digital Certificate PDF (`reportlab` + `qrcode`) & Public Verification Endpoint:
+  - Official SIL Open Font License Noto Sans Bengali font bundled (`fonts/NotoSansBengali-Regular.ttf` & `Bold.ttf`) for full Bengali script support.
+  - A4 Landscape layout with primary red `#C30121` double frame, diagonal "BloodPulse" watermark, verified badge, donor ID (`BP-D{id:06d}`), and verified bags count.
+  - Signed tamper-proof token using `TimestampSigner(salt='bloodpulse-certificate-v1')`.
+  - Dynamic red QR code pointing to public verification endpoint.
+  - `GET /api/profile/me/certificate/`: downloads generated PDF; returns 400 `{"code": "NO_VERIFIED_DONATION"}` if verified bags == 0.
+  - `GET /api/profile/certificate/verify/`: rate-limited (30/min) public verification endpoint returning minimal public facts (name, blood group, bags, issue date, valid).
+  - Test suite: 5/5 passing in `test_profile_certificate.py`; 32/32 full profile test suite passing.
+
 
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved

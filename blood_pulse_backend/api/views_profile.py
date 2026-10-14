@@ -11,6 +11,7 @@ from django.db import transaction
 from django.db.models import Count, Sum, Min, Q, F, Window
 from django.db.models.functions import Coalesce, Rank
 from django.utils import timezone
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -147,6 +148,7 @@ class ProfileMeView(APIView):
             "district": profile.district,
             "upazila": profile.upazila_linked.name if profile.upazila_linked else "",
             "upazila_id": profile.upazila_linked_id,
+            "address": profile.address or "",
             "is_available": profile.is_available,
             "deferral_until": profile.deferral_until.isoformat() if profile.deferral_until else None,
             "show_in_rankings": profile.show_in_rankings,
@@ -824,3 +826,72 @@ class DonorReviewView(APIView):
             "rating_count": profile.rating_count,
             "results": data,
         })
+
+
+class CertificateVerifyThrottle(AnonRateThrottle):
+    rate = '30/minute'
+
+
+class ProfileCertificateDownloadView(APIView):
+    """
+    GET /api/profile/me/certificate/
+    Generates and downloads the verified donor certificate as PDF.
+    Requires at least one verified donation. If none, returns 400 Bad Request with:
+    {"code": "NO_VERIFIED_DONATION", "detail": "Certificate is only available for donors with at least one verified donation."}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        profile = DonorProfile.objects.filter(user=user).first()
+        if not profile or not profile.user.is_active or profile.is_suspended:
+            return Response({"detail": "Active donor profile required."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not profile.is_profile_complete:
+            return Response({"detail": "Profile registration incomplete.", "code": "REGISTRATION_INCOMPLETE"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Count verified bags from DonationHistory
+        verified_bags = DonationHistory.objects.filter(
+            donor=profile,
+            verified=True
+        ).aggregate(total=Coalesce(Sum('bags'), 0))['total']
+
+        if verified_bags <= 0:
+            return Response({
+                "code": "NO_VERIFIED_DONATION",
+                "detail": "Certificate is only available for donors with at least one verified donation."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        from api.services.certificate_service import generate_donor_certificate_pdf
+        pdf_bytes = generate_donor_certificate_pdf(profile, verified_bags=verified_bags)
+
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f"BloodPulse_Certificate_BP-D{profile.id:06d}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+
+class ProfileCertificateVerifyView(APIView):
+    """
+    GET /api/profile/certificate/verify/?token=<signed_token>
+    Public verification endpoint to verify the authenticity of a certificate.
+    Rate limited, returns minimal public facts (name, blood group, bags, issue date, valid).
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = [CertificateVerifyThrottle]
+
+    def get(self, request):
+        token = request.query_params.get('token', '').strip()
+        if not token:
+            return Response({
+                "valid": False,
+                "detail": "Token parameter is required."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        from api.services.certificate_service import verify_certificate_token
+        result = verify_certificate_token(token)
+        if not result.get('valid'):
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result, status=status.HTTP_200_OK)
+
