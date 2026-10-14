@@ -26,15 +26,18 @@ class ProfileDrawerMenuList extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          // 1. Donate to BloodPulse
           _buildItem(
-            icon: Icons.favorite_rounded,
+            icon: Icons.favorite_border_rounded,
             title: 'Donate to BloodPulse',
             subtitle: 'Support voluntary operations & supplies',
             onTap: () => DrawerDonateSheet.show(context),
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+
+          // 2. Inbox & Notifications
           _buildItem(
-            icon: Icons.notifications_none_rounded,
+            icon: Icons.mail_outline_rounded,
             title: 'Inbox & Notifications',
             subtitle: 'Direct hospital requests & matches',
             onTap: () {
@@ -43,8 +46,10 @@ class ProfileDrawerMenuList extends ConsumerWidget {
             },
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+
+          // 3. FAQ & Donor Guide
           _buildItem(
-            icon: Icons.help_outline_rounded,
+            icon: Icons.history_rounded,
             title: 'FAQ & Donor Guide',
             subtitle: 'Preparation, recovery, & safety rules',
             onTap: () {
@@ -53,58 +58,104 @@ class ProfileDrawerMenuList extends ConsumerWidget {
             },
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
-          // PulseAI Floating Assistant Toggle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                const Icon(Icons.smart_toy_outlined, color: AppColors.primary, size: 22),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'PulseAI Assistant',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF24191A),
-                        ),
-                      ),
-                      Text(
-                        'Floating shortcut on main screen',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          color: Color(0xFF5C3F3D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch.adaptive(
-                  value: isPulseAiVisible,
-                  activeColor: AppColors.primary,
-                  onChanged: (val) {
-                    ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
-                  },
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
-          _buildItem(
-            icon: Icons.support_agent_rounded,
-            title: 'Chat with PulseAI',
-            subtitle: 'Get instant clinical answers',
+
+          // 4. PulseAI (with AI badge and toggle switch)
+          InkWell(
             onTap: () {
               Navigator.of(context).pop();
               context.push('/assistant');
             },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFF0F1),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(5),
+                    child: Image.asset(
+                      'assets/images/pulseai_icon.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.water_drop_rounded,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'PulseAI',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF24191A),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFDAD6),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'AI',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF93000A),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 1),
+                        const Text(
+                          'Clinical chatbot & donor guidance',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 10,
+                            color: Color(0xFF5C3F3D),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: isPulseAiVisible,
+                      activeColor: Colors.white,
+                      activeTrackColor: AppColors.primary,
+                      inactiveThumbColor: Colors.white,
+                      inactiveTrackColor: const Color(0xFFE4E2E1),
+                      onChanged: (val) {
+                        ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+
+          // 5. Settings & Security
           _buildItem(
             icon: Icons.settings_outlined,
             title: 'Settings & Security',
@@ -115,13 +166,17 @@ class ProfileDrawerMenuList extends ConsumerWidget {
             },
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+
+          // 6. Learn More
           _buildItem(
-            icon: Icons.menu_book_rounded,
+            icon: Icons.menu_book_outlined,
             title: 'Learn More',
             subtitle: 'Eligibility, process & blood facts',
             onTap: () => DrawerLearnMoreSheet.show(context),
           ),
           const Divider(height: 1, indent: 48, color: Color(0xFFF3DDE0)),
+
+          // 7. Share App
           _buildItem(
             icon: Icons.share_outlined,
             title: 'Share App',
@@ -152,17 +207,17 @@ class ProfileDrawerMenuList extends ConsumerWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
         child: Row(
           children: [
             Container(
-              width: 30,
-              height: 30,
+              width: 32,
+              height: 32,
               decoration: const BoxDecoration(
-                color: Color(0xFFFDF3F3),
+                color: Color(0xFFFFF0F1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppColors.primary, size: 15),
+              child: Icon(icon, color: AppColors.primary, size: 16),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -173,24 +228,25 @@ class ProfileDrawerMenuList extends ConsumerWidget {
                     title,
                     style: const TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 12,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
+                      color: Color(0xFF24191A),
                     ),
                   ),
+                  const SizedBox(height: 1),
                   Text(
                     subtitle,
                     style: const TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 9.5,
-                      color: Color(0xFF64748B),
+                      fontSize: 10,
+                      color: Color(0xFF5C3F3D),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 16, color: Color(0xFF94A3B8)),
+            const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFC8C6C5)),
           ],
         ),
       ),

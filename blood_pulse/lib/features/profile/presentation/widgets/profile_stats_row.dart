@@ -1,215 +1,310 @@
-import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
-/// Stitch Screen 1: Profile Stats Row
-/// Features Total Bags Donated card alongside Next Donation circular progress ring.
+/// Stitch Screen 1: Profile Donation Stats (3 Equal Tiles, 120px High)
+/// 1:1 match to Stitch:
+/// - Tile 1: Bags Donated (caption: 'donations completed')
+/// - Tile 2: Next Eligible (64px circular canvas progress ring showing days left)
+/// - Tile 3: Last Donation (pencil edit icon, formatted date, hospital name)
 class ProfileStatsRow extends StatelessWidget {
   final int totalBags;
   final int daysRemaining;
-  final double progressPercent;
+  final double? progressPercent;
   final bool showCountdown;
+  final String? lastDonationDateFormatted;
+  final String? hospitalName;
+  final VoidCallback? onEditLastDonation;
 
   const ProfileStatsRow({
     super.key,
     required this.totalBags,
     required this.daysRemaining,
-    required this.progressPercent,
+    this.progressPercent,
     this.showCountdown = true,
+    this.lastDonationDateFormatted,
+    this.hospitalName,
+    this.onEditLastDonation,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool isEligible = daysRemaining <= 0;
-
-    return Row(
-      children: [
-        // ── Total Bags Donated Card ──
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'TOTAL BAGS\nDONATED',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    color: Color(0xFF64748B),
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
+            // ── Tile 1: Bags Donated ──
+            Expanded(
+              child: _buildTile(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '$totalBags',
-                      style: const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF24191A),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '$totalBags',
+                        style: const TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFC30121),
+                          height: 1.0,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Bags',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF64748B),
+                    Column(
+                      children: const [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Bags Donated',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF24191A),
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'donations completed',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 11,
+                              color: Color(0xFF5F5E5E),
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // ── Tile 2: Next Eligible Ring (64px CustomPainter) ──
+            Expanded(
+              child: _buildTile(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CustomPaint(
+                        painter: _CircularCountdownPainter(
+                          daysRemaining: daysRemaining,
+                          cooldownDays: 90,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  daysRemaining > 0 ? '$daysRemaining' : '✓',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: daysRemaining > 0 ? 18 : 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: daysRemaining > 0
+                                        ? const Color(0xFF24191A)
+                                        : const Color(0xFF1B8A4E),
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ),
+                              if (daysRemaining > 0)
+                                const Text(
+                                  'days',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF5F5E5E),
+                                    height: 1.0,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        daysRemaining > 0 ? 'until next donation' : 'Eligible today',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: daysRemaining <= 0 ? FontWeight.w600 : FontWeight.normal,
+                          color: daysRemaining <= 0 ? const Color(0xFF1B8A4E) : const Color(0xFF5F5E5E),
+                          height: 1.1,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+            const SizedBox(width: 8),
 
-        if (showCountdown) ...[
-          const SizedBox(width: 12),
-
-          // ── Next Donation Countdown Card ──
-          Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  'NEXT DONATION',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: 58,
-                  height: 58,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CustomPaint(
-                        size: const Size(58, 58),
-                        painter: _CountdownRingPainter(
-                          progress: isEligible ? 1.0 : progressPercent.clamp(0.05, 1.0),
-                          progressColor: isEligible ? AppColors.success : AppColors.primary,
-                          backgroundColor: const Color(0xFFFEE9EB),
-                          strokeWidth: 5.5,
+            // ── Tile 3: Last Donation ──
+            Expanded(
+              child: _buildTile(
+                child: Stack(
+                  children: [
+                    // Edit pencil icon in top-right
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: onEditLastDonation,
+                        behavior: HitTestBehavior.opaque,
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(Icons.edit_outlined, size: 16, color: Color(0xFFC30121)),
                         ),
                       ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            isEligible ? 'Eligible\nnow' : '${daysRemaining}d',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Georgia',
-                              fontSize: isEligible ? 10 : 15,
-                              fontWeight: FontWeight.bold,
-                              color: isEligible ? AppColors.success : AppColors.primary,
-                              height: 1.1,
+                          const SizedBox(height: 2),
+                          const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Last Donation',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF5F5E5E),
+                                height: 1.1,
+                              ),
                             ),
                           ),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              lastDonationDateFormatted ?? 'None',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF24191A),
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              hospitalName?.isNotEmpty == true ? hospitalName! : 'Direct / Clinic',
+                              maxLines: 1,
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 11,
+                                color: Color(0xFF5F5E5E),
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTile({required Widget child}) {
+    return Container(
+      height: 120,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0E5E5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.025),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-        ),
-      ],
-    ],
-  );
+        ],
+      ),
+      child: child,
+    );
   }
 }
 
-class _CountdownRingPainter extends CustomPainter {
-  final double progress;
-  final Color progressColor;
-  final Color backgroundColor;
-  final double strokeWidth;
+/// Custom painter for the 64px circular countdown progress ring
+class _CircularCountdownPainter extends CustomPainter {
+  final int daysRemaining;
+  final int cooldownDays;
 
-  const _CountdownRingPainter({
-    required this.progress,
-    required this.progressColor,
-    required this.backgroundColor,
-    required this.strokeWidth,
+  _CircularCountdownPainter({
+    required this.daysRemaining,
+    required this.cooldownDays,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
+    final radius = (size.width / 2) - 4;
 
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-    canvas.drawCircle(center, radius, bgPaint);
+    // Background track
+    final trackPaint = Paint()
+      ..color = const Color(0xFFFEE2E2)
+      ..strokeWidth = 5.5
+      ..style = PaintingStyle.stroke;
 
-    final fgPaint = Paint()
-      ..color = progressColor
-      ..style = PaintingStyle.stroke
+    canvas.drawCircle(center, radius, trackPaint);
+
+    // Progress arc
+    final double elapsedDays = (cooldownDays - daysRemaining).clamp(0, cooldownDays).toDouble();
+    final double sweepFraction = elapsedDays / cooldownDays;
+    final double sweepAngle = 2 * math.pi * sweepFraction;
+
+    final progressPaint = Paint()
+      ..color = daysRemaining <= 0 ? const Color(0xFF1B8A4E) : const Color(0xFFC30121)
+      ..strokeWidth = 5.5
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = strokeWidth;
+      ..style = PaintingStyle.stroke;
 
-    const startAngle = -3.141592653589793 / 2;
-    final sweepAngle = 2 * 3.141592653589793 * progress;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      startAngle,
+      -math.pi / 2, // Start at top
       sweepAngle,
       false,
-      fgPaint,
+      progressPaint,
     );
   }
 
   @override
-  bool shouldRepaint(covariant _CountdownRingPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.progressColor != progressColor ||
-        oldDelegate.backgroundColor != backgroundColor;
+  bool shouldRepaint(covariant _CircularCountdownPainter oldDelegate) {
+    return oldDelegate.daysRemaining != daysRemaining ||
+        oldDelegate.cooldownDays != cooldownDays;
   }
 }

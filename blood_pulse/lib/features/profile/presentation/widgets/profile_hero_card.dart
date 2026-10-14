@@ -2,19 +2,26 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/avatar_helper.dart';
 
-/// Stitch Screen 1: User Profile Hero Card
-/// Features avatar with camera badge, Platinum donor badge, editable bio,
-/// blood group pill, and Admin-locked blood group disclosure banner.
+/// Stitch Screen 1: Profile Hero Section
+/// 1:1 match to Stitch design:
+/// - 176px circle photo with 5px solid red border (#C30121)
+/// - Frosted glass blood group pill inside bottom (8px from bottom)
+/// - Rank capsule at upper-right (-top-1, -right-2)
+/// - Georgia name (22px bold), Inter italic bio (max 120 chars)
+/// - 180x44px pill 'Edit Profile' button
+/// - Admin-locked blood group disclosure
 class ProfileHeroCard extends StatelessWidget {
   final String displayName;
   final String bio;
   final String bloodGroup;
   final int totalDonations;
+  final int rank;
   final Uint8List? avatarBytes;
   final String? photoUrl;
   final String? googlePhotoUrl;
@@ -27,6 +34,7 @@ class ProfileHeroCard extends StatelessWidget {
     required this.bio,
     required this.bloodGroup,
     required this.totalDonations,
+    this.rank = 0,
     this.avatarBytes,
     this.photoUrl,
     this.googlePhotoUrl,
@@ -34,111 +42,193 @@ class ProfileHeroCard extends StatelessWidget {
     required this.onEditBio,
   });
 
-  String get _tierName {
-    if (totalDonations >= 10) return 'Platinum Donor';
-    if (totalDonations >= 5) return 'Gold Donor';
-    if (totalDonations >= 2) return 'Silver Donor';
-    return 'Active Donor';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final rankText = rank > 0 ? 'Rank #$rank' : 'Active';
+
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: const Color(0xFFF0E5E5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Avatar Stack with Badges & Edit Button
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // Main Avatar
-              GestureDetector(
-                onTap: onPickPhoto,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.primary, width: 2.5),
-                  ),
-                  child: Stack(
-                    children: [
-                      AvatarHelper(
-                        radius: 46,
-                        fallbackName: displayName,
-                        uploadedPhoto: avatarBytes,
-                        serverPhotoUrl: photoUrl,
-                        googlePhotoUrl: googlePhotoUrl,
+          // ── 176px Avatar Circle Stack ──
+          SizedBox(
+            width: 176,
+            height: 176,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // 5px Solid Red Ring + Cover Photo
+                GestureDetector(
+                  onTap: onPickPhoto,
+                  child: Container(
+                    width: 176,
+                    height: 176,
+                    padding: const EdgeInsets.all(5),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFC30121),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x33C30121),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFFFF0F1),
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          AvatarHelper(
+                            radius: 80,
+                            fallbackName: displayName,
+                            uploadedPhoto: avatarBytes,
+                            serverPhotoUrl: photoUrl,
+                            googlePhotoUrl: googlePhotoUrl,
                           ),
-                          child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
+                          // Subtle camera overlay at bottom
+                          Positioned(
+                            bottom: 36,
+                            right: 0,
+                            left: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Rank Capsule at 1:30 position (upper-right)
+                Positioned(
+                  top: -2,
+                  right: -4,
+                  child: Container(
+                    width: 76,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC30121),
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      rankText,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Frosted Glass Blood Group Pill (inside circle, 8px from bottom)
+                Positioned(
+                  bottom: 8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(50),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        width: 72,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFC30121).withValues(alpha: 0.75),
+                          borderRadius: BorderRadius.circular(50),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          bloodGroup,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                            height: 1.0,
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-
-              // Top Right Edit Profile Button
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFFEE9EB),
-                    padding: const EdgeInsets.all(8),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  onPressed: () => context.push('/edit-profile'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 14),
 
-          // User Name
+          // ── Name & Bio ──
           Text(
             displayName,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Color(0xFF24191A),
+              height: 1.2,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
 
-          // Bio Quote with Tap to Edit
           GestureDetector(
             onTap: onEditBio,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                '"$bio"',
+                bio.isNotEmpty ? '"$bio"' : '"Committed voluntary donor across Bangladesh."',
                 textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontFamily: 'Inter',
-                  fontSize: 12.5,
+                  fontSize: 13.5,
                   fontStyle: FontStyle.italic,
                   color: Color(0xFF5F5E5E),
                   height: 1.35,
@@ -148,66 +238,43 @@ class ProfileHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Badge Chips Row
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1E4FF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.workspace_premium_rounded, size: 14, color: Color(0xFF001D35)),
-                    const SizedBox(width: 4),
-                    Text(
-                      _tierName,
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF001D35),
-                      ),
-                    ),
-                  ],
+          // ── Edit Profile Button ──
+          SizedBox(
+            width: 180,
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: () => context.push('/edit-profile'),
+              icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFC30121)),
+              label: const Text(
+                'Edit Profile',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFC30121),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE9EB),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '$bloodGroup Blood',
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFC30121), width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                backgroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
 
-          // Admin-Locked Blood Group Note
+          // ── Admin-Locked Blood Group Note (Safety Guarantee) ──
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF4E5),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFFFD8A8)),
             ),
             child: Row(
               children: const [
-                Icon(Icons.lock_outline_rounded, size: 15, color: Color(0xFFD97706)),
+                Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFFD97706)),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -217,6 +284,7 @@ class ProfileHeroCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF92400E),
+                      height: 1.3,
                     ),
                   ),
                 ),

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blood_pulse/features/profile/presentation/screens/user_profile_screen.dart';
 import 'package:blood_pulse/features/profile/domain/providers/profile_provider.dart';
 import 'package:blood_pulse/features/profile/domain/models/profile_models.dart';
+import 'package:blood_pulse/features/auth/presentation/providers/auth_notifier.dart';
 
 void main() {
   testWidgets('UserProfileScreen renders 30-day snooze switch tile directly after basic info', (tester) async {
@@ -94,7 +95,7 @@ class _FakeProfileNotifier extends ProfileNotifier {
   }
 
   @override
-  Future<bool> setSnooze({required bool enable}) async {
+  Future<bool> setSnooze({required bool enable, UserProfile? fallbackUser}) async {
     if (_initial != null) {
       final updated = ProfileModel(
         id: _initial.id,

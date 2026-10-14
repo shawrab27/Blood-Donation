@@ -35,7 +35,6 @@ void main() {
       // Options Card
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Notification Received'), findsOneWidget);
-      expect(find.text('Show PulseAI Assistant'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
       expect(find.text('Rate Us'), findsOneWidget);
       expect(find.text('Share App'), findsOneWidget);
@@ -92,7 +91,7 @@ void main() {
       expect(find.text('Yes, Delete'), findsOneWidget);
       expect(find.text('Donations'), findsOneWidget);
       expect(find.text('Requests'), findsOneWidget);
-      expect(find.text('Posts'), findsOneWidget);
+      expect(find.text('Blood Pool'), findsOneWidget);
     });
 
     testWidgets('LogoutConfirmationModal renders safe session alert and actions', (tester) async {
@@ -109,7 +108,7 @@ void main() {
 
       expect(find.text('Logout'), findsNWidgets(2));
       expect(find.textContaining('Are you sure you want to logout?'), findsOneWidget);
-      expect(find.text('Verified Safe Session'), findsOneWidget);
+      expect(find.text('VitalFlow Safe Session'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });
 
@@ -141,7 +140,8 @@ void main() {
       expect(find.text('Donate to BloodPulse'), findsOneWidget);
       expect(find.text('Inbox & Notifications'), findsOneWidget);
       expect(find.text('FAQ & Donor Guide'), findsOneWidget);
-      expect(find.text('PulseAI Assistant'), findsOneWidget);
+      expect(find.text('PulseAI'), findsOneWidget);
+      expect(find.text('AI'), findsOneWidget);
       expect(find.text('Settings & Security'), findsOneWidget);
       expect(find.text('Log Out'), findsOneWidget);
     });

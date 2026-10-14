@@ -109,10 +109,11 @@ class ProfileDrawerThemeSelector extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
+            border: isSelected ? Border.all(color: const Color(0xFFF3DDE0)) : null,
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -125,7 +126,7 @@ class ProfileDrawerThemeSelector extends ConsumerWidget {
               Icon(
                 icon,
                 size: 13,
-                color: isSelected ? AppColors.primary : const Color(0xFF64748B),
+                color: isSelected ? AppColors.primary : const Color(0xFF5F5E5E),
               ),
               const SizedBox(width: 4),
               Text(
@@ -134,7 +135,7 @@ class ProfileDrawerThemeSelector extends ConsumerWidget {
                   fontFamily: 'Inter',
                   fontSize: 10.5,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? AppColors.primary : const Color(0xFF64748B),
+                  color: isSelected ? AppColors.primary : const Color(0xFF5F5E5E),
                 ),
               ),
             ],

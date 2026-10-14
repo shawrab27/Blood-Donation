@@ -475,8 +475,9 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                   opacity: 0.06,
                   child: Center(
                     child: Image.asset(
-                      'assets/images/blood_pulse_logo.png',
+                      'assets/images/launcher_icon_transparent.png',
                       width: 180,
+                      fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.favorite_rounded,
                         size: 160,

@@ -1,35 +1,34 @@
-import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:typed_data';
+import 'package:blood_pulse/core/widgets/app_loader.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import '../../../../constants/app_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
+import '../../../../providers/profile_countdown_provider.dart';
 import '../../../../services/api_client.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/providers/profile_provider.dart';
-import '../../../../constants/app_config.dart';
-import '../../../../providers/profile_countdown_provider.dart';
-import '../widgets/profile_hero_card.dart';
-import '../widgets/profile_stats_row.dart';
-import '../widgets/profile_actions_row.dart';
-import '../widgets/profile_top_donors_section.dart';
-import '../widgets/profile_tabs_section.dart';
-import '../widgets/profile_requests_list.dart';
-import '../widgets/profile_recent_logs.dart';
 import '../widgets/modals/digital_certificate_sheet.dart';
 import '../widgets/modals/edit_bio_sheet.dart';
+import '../widgets/profile_hero_card.dart';
+import '../widgets/profile_rating_xp_card.dart';
+import '../widgets/profile_stats_row.dart';
+import '../widgets/profile_tabs_section.dart';
+import '../widgets/profile_top_donors_section.dart';
 
 /// Stitch Screen 1: User Profile Screen
 /// 1:1 Parity with approved Stitch designs, 0 fake claims, 100% dynamic wiring.
 class UserProfileScreen extends ConsumerStatefulWidget {
-  const UserProfileScreen({super.key});
+  final bool showAppBar;
+  const UserProfileScreen({super.key, this.showAppBar = false});
 
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -38,7 +37,6 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   String _bio = 'Committed to saving lives, one drop at a time.';
   bool _isUpdatingSnooze = false;
-
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -132,7 +130,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              // 3 top icons in a row: Attach from File, Open Camera, Open Library
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -243,11 +240,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     if (picked != null) {
       ref.read(profileCountdownProvider.notifier).recordDonation(picked);
       try {
-        await ApiClient().patch('profile/me/', body: {
+        await ApiClient().patch('profile/me/last-donation/', body: {
           'last_donation_date': DateFormat('yyyy-MM-dd').format(picked),
         });
       } catch (_) {}
       if (mounted) {
+        ref.invalidate(profileProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✓ Last donation date updated. Next eligibility recalculated!'),
@@ -269,8 +267,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         : 'Blood Donor';
     String bloodGroup = authUser?.bloodGroup.isNotEmpty == true ? authUser!.bloodGroup : 'O-';
     int totalDonations = authUser?.totalBagsDonated ?? 0;
+    int rank = 0;
+    double ratingAvg = 5.0;
+    int ratingCount = 0;
+    int xp = 0;
+    int level = 1;
+    double levelProgress = 0.0;
+    String tier = 'Active Donor';
 
     String? profileLastDonationDate;
+    String? hospitalName;
 
     profileAsync.whenData((p) {
       if (p != null) {
@@ -279,6 +285,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         if (p.bloodGroup != null && p.bloodGroup!.isNotEmpty) bloodGroup = p.bloodGroup!;
         if (p.totalBagsDonated > 0) totalDonations = p.totalBagsDonated;
         profileLastDonationDate = p.lastDonationDate;
+        rank = p.rank > 0 ? p.rank : p.globalRank;
+        ratingAvg = p.ratingAvg;
+        ratingCount = p.ratingCount;
+        xp = p.xp;
+        level = p.level;
+        levelProgress = p.levelProgress;
+        tier = p.tier;
+        if (p.bio != null && p.bio!.isNotEmpty) _bio = p.bio!;
+        if (p.donationHistory.isNotEmpty) {
+          hospitalName = p.donationHistory.first.hospital;
+        }
       }
     });
 
@@ -305,7 +322,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
-      appBar: const BloodPulseAppBar(),
+      appBar: widget.showAppBar ? const BloodPulseAppBar(showBackButton: true) : null,
       body: ResponsiveCenterWrapper(
         maxWidth: 540,
         child: ListView(
@@ -318,6 +335,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               bio: _bio,
               bloodGroup: bloodGroup,
               totalDonations: totalDonations,
+              rank: rank,
               avatarBytes: authUser?.avatarBytes,
               photoUrl: authUser?.photoUrl,
               googlePhotoUrl: authUser?.googlePhotoUrl,
@@ -326,13 +344,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 EditBioSheet.show(
                   context: context,
                   initialBio: _bio,
-                  onSave: (val) => setState(() => _bio = val),
+                  onSave: (val) {
+                    setState(() => _bio = val);
+                    ref.read(profileProvider.notifier).updateProfile({'bio': val});
+                  },
                 );
               },
             ),
             const SizedBox(height: 14),
 
-            // ── 30-Day Emergency Snooze Toggle (Directly after Basic Info Card) ──
+            // ── 30-Day Emergency Snooze Toggle ──
             Builder(
               builder: (ctx) {
                 final currentProfile = profileAsync.valueOrNull;
@@ -354,7 +375,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSnoozed ? AppColors.primary.withValues(alpha: 0.3) : Colors.grey.shade200,
+                      color: isSnoozed ? AppColors.primary.withValues(alpha: 0.3) : const Color(0xFFF0E5E5),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -418,7 +439,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           activeColor: AppColors.primary,
                           onChanged: (val) async {
                             setState(() => _isUpdatingSnooze = true);
-                            final success = await ref.read(profileProvider.notifier).setSnooze(enable: val);
+                            final success = await ref.read(profileProvider.notifier).setSnooze(
+                              enable: val,
+                              fallbackUser: authUser,
+                            );
                             if (mounted) {
                               setState(() => _isUpdatingSnooze = false);
                             }
@@ -442,7 +466,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                             }
                           },
                         ),
-
                     ],
                   ),
                 );
@@ -450,51 +473,81 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ),
             const SizedBox(height: 14),
 
-
-            // ── Total Bags & Countdown Stats Row ──
+            // ── Total Bags & Countdown Stats Row (3 Equal Tiles) ──
             ProfileStatsRow(
               totalBags: totalDonations,
               daysRemaining: daysRemaining,
               progressPercent: progressPercent,
               showCountdown: authUser?.userIntent != 'ONLY_REQUEST',
+              lastDonationDateFormatted: profileLastDonationDate != null
+                  ? DateFormat('d MMM yyyy').format(DateTime.tryParse(profileLastDonationDate!) ?? DateTime.now())
+                  : (authUser?.lastDonationDate != null ? DateFormat('d MMM yyyy').format(authUser!.lastDonationDate!) : null),
+              hospitalName: hospitalName,
+              onEditLastDonation: _selectLastDonationDate,
             ),
             const SizedBox(height: 14),
 
-            // ── Action Pills ──
-            ProfileActionsRow(
-              onUpdateDate: _selectLastDonationDate,
-              onDownloadCertificate: () {
-                DigitalCertificateSheet.show(
-                  context: context,
-                  donorName: displayName,
-                  bloodGroup: bloodGroup,
-                  totalDonations: totalDonations,
-                );
-              },
+            // ── Rating & XP Row (2 Equal Tiles) ──
+            ProfileRatingXpCard(
+              ratingAvg: ratingAvg,
+              ratingCount: ratingCount,
+              xp: xp,
+              level: level,
+              levelProgress: levelProgress,
+              tier: tier,
             ),
             const SizedBox(height: 16),
 
-            // ── Top Donors Leaderboard ──
+            // ── Top Donors Leaderboard (5-Column Layout) ──
             const ProfileTopDonorsSection(),
             const SizedBox(height: 16),
 
-            // ── Segmented Tabs & Community Feed ──
-            ProfileTabsSection(
-              onAddPost: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Opening Community Post Creator...')),
-                );
-              },
+            // ── Segmented Tabs with HeartbeatTabIndicator (Your Stories, Activity, History) ──
+            const ProfileTabsSection(),
+            const SizedBox(height: 24),
+
+            // ── Footer: Download Verified Certificate Capsule Button (56px) ──
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  if (totalDonations <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Official certificate requires at least 1 verified blood donation.'),
+                        backgroundColor: Color(0xFF2B2B2B),
+                      ),
+                    );
+                    return;
+                  }
+                  DigitalCertificateSheet.show(
+                    context: context,
+                    donorName: displayName,
+                    bloodGroup: bloodGroup,
+                    totalDonations: totalDonations,
+                  );
+                },
+                icon: const Icon(Icons.verified_outlined, size: 20, color: Colors.white),
+                label: const Text(
+                  'Download Verified Certificate',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC30121),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                  shadowColor: const Color(0x40C30121),
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-
-            // ── Request List ──
-            const ProfileRequestsList(),
-            const SizedBox(height: 16),
-
-            // ── Recent Logs ──
-            const ProfileRecentLogs(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
           ],
         ),
       ),

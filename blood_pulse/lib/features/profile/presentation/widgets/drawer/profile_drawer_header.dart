@@ -23,10 +23,10 @@ class ProfileDrawerHeader extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.asset(
-                  'assets/images/Blood Pulse logo.jpg',
+                  'assets/images/launcher_icon_transparent.png',
                   height: 28,
                   width: 28,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const Icon(
                     Icons.water_drop_rounded,
                     color: AppColors.primary,

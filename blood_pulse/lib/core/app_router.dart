@@ -69,9 +69,11 @@ import '../features/communities/presentation/widgets/local_club_profile_view.dar
 import '../features/communities/presentation/widgets/division_detail_screen.dart';
 import '../features/communities/domain/models/community_models.dart';
 
-// Profile & Settings Screens
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/profile/presentation/screens/user_profile_screen.dart';
+import '../features/profile/presentation/screens/blood_group_change_screen.dart';
+import '../features/profile/presentation/screens/global_rank_screen.dart';
+import '../features/profile/presentation/screens/public_donor_profile_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/settings/presentation/screens/privacy_policy_screen.dart';
 
@@ -84,7 +86,7 @@ class _StandaloneProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const UserProfileScreen();
+    return const UserProfileScreen(showAppBar: true);
   }
 }
 
@@ -220,7 +222,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         body: const EmergencyHubScreen(),
       ),
     ),
-    // /emergency/national — Disaster Overview (Prompt 4)
+    // /emergency/national — National Emergency & Live Disaster Mode (Stitch 6127894861a64d03bfca24d4a1e86ea5)
     GoRoute(
       path: '/emergency/national',
       builder: (context, state) => const NationalEmergencyScreen(),
@@ -637,6 +639,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     GoRoute(
       path: '/profile',
       builder: (context, state) => const _StandaloneProfileScreen(),
+    ),
+    GoRoute(
+      path: '/profile/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'] ?? '0';
+        final donorId = int.tryParse(idStr) ?? 0;
+        return PublicDonorProfileScreen(donorId: donorId);
+      },
+    ),
+    GoRoute(
+      path: '/blood-group-change',
+      builder: (context, state) => const BloodGroupChangeScreen(),
+    ),
+    GoRoute(
+      path: '/global-rank',
+      builder: (context, state) => const GlobalRankScreen(),
     ),
     // /settings — Settings & Security Screen
     GoRoute(

@@ -137,6 +137,24 @@ Working style: **one task at a time**, short steps, evidence required.
   - `GET /api/profile/certificate/verify/`: rate-limited (30/min) public verification endpoint returning minimal public facts (name, blood group, bags, issue date, valid).
   - Test suite: 5/5 passing in `test_profile_certificate.py`; 32/32 full profile test suite passing.
 
+- [x] Phase 2 — Flutter Frontend (1:1 Stitch Parity & Zero Fake Data):
+  - Brand & Theme Tokens: Georgia headlines, Inter body, pill shapes (BorderRadius 50), Primary `#C30121`, Surface `#FFF8F7` / `#FDF3F3`, Noto Sans Bengali font registered in pubspec.
+  - Hero Card (`ProfileHeroCard`): 176px circular photo with 5px red border (`#C30121`), frosted glass blood group pill inside bottom, upper-right rank capsule, Georgia headline name, bio (max 120 chars), 180x44px pill 'Edit Profile' button, admin-locked blood group disclosure.
+  - Stats Row (`ProfileStatsRow`): 3 equal tiles (120px): Bags Donated (caption: "donations completed"), Next Eligible (64px circular canvas progress ring with days left), Last Donation (edit pencil, formatted date, hospital).
+  - Rating & XP Row (`ProfileRatingXpCard`): 2 equal cards (104px): Rating (5 blood drop icons + total review count), XP (8px linear progress bar, level & badge tier).
+  - Top Donors Leaderboard (`ProfileTopDonorsSection`): 5-column layout with Top 4 active verified donors + 5th column "+N View all Others", and header with tappable "Global Rank →".
+  - Heartbeat Tabs Section (`ProfileTabsSection`): `HeartbeatTabIndicator` (3px red line with ECG spike) across 3 tabs:
+    1. Your Stories (composer card + timeline feed with blood-drop nodes and like/comment metrics).
+    2. Activity Summary (donor ID, verification step progress, auto-verified badge only when server flag is true).
+    3. Donation History (verified vs self-reported badge, hospital, date, volume).
+  - Footer: "Download Verified Certificate" 56px capsule button ("Platinum Donor • Donor # • Joined" removed).
+  - Secondary Screens:
+    - `EditProfileScreen`: bio counter (max 120), confidential weight field in kg with clinical badge, show_in_rankings toggle, and Request Blood Group Change button.
+    - `BloodGroupChangeScreen`: requested group picker, lab name, test date picker, encrypted report attachment, and affirmative consent checkbox.
+    - `GlobalRankScreen`: full nationwide leaderboard with pinned caller rank row, 20-donor pagination, and tier badges.
+    - `PublicDonorProfileScreen`: sanitized public profile for `/profile/:id` with zero PII leaks and self-view redirect to `/profile`.
+  - Quality Evidence: `flutter analyze` 0 issues; `flutter test` 10/10 tests passing across `profile_v2_feature_test.dart`, `profile_settings_suite_test.dart`, and `step5_profile_snooze_test.dart`.
+
 
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved

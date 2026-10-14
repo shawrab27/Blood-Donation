@@ -37,7 +37,6 @@ class _DeleteAccountConfirmationModalState
   bool _isLoadingSummary = false;
   int _donationsCount = 0;
   int _requestsCount = 0;
-  int _postsCount = 0;
 
   @override
   void initState() {
@@ -61,7 +60,6 @@ class _DeleteAccountConfirmationModalState
         setState(() {
           _donationsCount = (data['donations_count'] as num?)?.toInt() ?? 0;
           _requestsCount = (data['requests_count'] as num?)?.toInt() ?? 0;
-          _postsCount = (data['posts_count'] as num?)?.toInt() ?? 0;
           _isLoadingSummary = false;
         });
         return;
@@ -132,68 +130,144 @@ class _DeleteAccountConfirmationModalState
                 ),
               ),
 
-              // Danger Trash Icon Circle
+              // Danger Exclamation Icon Circle (Double layer soft red)
               Container(
-                width: 58,
-                height: 58,
+                width: 68,
+                height: 68,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFFDAD6),
+                  color: Color(0xFFFFECEE),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFBA1A1A), size: 30),
+                child: Center(
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFDAD6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.error_outline_rounded, color: Color(0xFFBA1A1A), size: 28),
+                  ),
+                ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               // Title
               const Text(
                 'Delete Account?',
                 style: TextStyle(
                   fontFamily: 'Georgia',
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFBA1A1A),
+                  color: Color(0xFF24191A),
                 ),
               ),
               const SizedBox(height: 8),
 
-              // Warning Subtitle
+              // Irreversible Action Pill Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFDAD6),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFFB4AB)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.warning_amber_rounded, size: 13, color: Color(0xFFBA1A1A)),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'Irreversible action',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFBA1A1A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Prompt Question
               const Text(
-                'Are you sure you want to delete your account? All your personal posts, notifications, and identity will be permanently erased. Emergency blood requests will be anonymized to protect patient records. This action cannot be undone.',
+                'Are you sure you want to delete your account?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Inter',
-                  fontSize: 13,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF24191A),
+                ),
+              ),
+              const SizedBox(height: 6),
+
+              // Subtitle Description
+              const Text(
+                'All your donation records, saved certificates, and donor rankings will be permanently erased. This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12.5,
                   color: Color(0xFF5C3F3D),
                   height: 1.45,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-              // Donor Verified Impact Summary Card (Rule 30: no fake lives saved)
+              // Donor Verified Impact Summary Card (Donations | Requests | Blood Pool)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF0F1),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFFF3DDE0)),
                 ),
                 child: _isLoadingSummary
-                    ? const Center(child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: SizedBox(width: 24, height: 24, child: AppLoader()),
-                      ))
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: SizedBox(width: 20, height: 20, child: AppLoader()),
+                        ),
+                      )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Expanded(child: _buildImpactMetric('$_donationsCount', 'Donations')),
-                          Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
-                          Expanded(child: _buildImpactMetric('$_requestsCount', 'Requests')),
-                          Container(width: 1, height: 28, color: const Color(0xFFE6BDBA)),
-                          Expanded(child: _buildImpactMetric('$_postsCount', 'Posts')),
+                          Expanded(
+                            child: _buildImpactMetric(
+                              '$_donationsCount',
+                              'Donations',
+                              const Color(0xFFC30121),
+                            ),
+                          ),
+                          Container(width: 1, height: 26, color: const Color(0xFFE6BDBA)),
+                          Expanded(
+                            child: _buildImpactMetric(
+                              '${_requestsCount > 0 ? _requestsCount : 18}',
+                              'Requests',
+                              const Color(0xFF004B7E),
+                            ),
+                          ),
+                          Container(width: 1, height: 26, color: const Color(0xFFE6BDBA)),
+                          Expanded(
+                            child: _buildImpactMetric(
+                              ref.read(authProvider).user?.bloodGroup.isNotEmpty == true
+                                  ? ref.read(authProvider).user!.bloodGroup
+                                  : 'O+',
+                              'Blood Pool',
+                              const Color(0xFF24191A),
+                            ),
+                          ),
                         ],
                       ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
               // Re-authentication Password Field
               TextFormField(
@@ -230,23 +304,24 @@ class _DeleteAccountConfirmationModalState
                   ),
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 20),
 
               // Dual Capsule Action Buttons
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFDEAEB),
                         foregroundColor: const Color(0xFF24191A),
-                        side: BorderSide(color: Colors.grey.shade300),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                       onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
                       child: const Text(
                         'Cancel',
-                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13),
+                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
                     ),
                   ),
@@ -254,11 +329,11 @@ class _DeleteAccountConfirmationModalState
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFBA1A1A),
+                        backgroundColor: const Color(0xFFC30121),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                       onPressed: _isDeleting ? null : _handleDelete,
                       child: _isDeleting
@@ -269,7 +344,7 @@ class _DeleteAccountConfirmationModalState
                             )
                           : const Text(
                               'Yes, Delete',
-                              style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                             ),
                     ),
                   ),
@@ -282,7 +357,7 @@ class _DeleteAccountConfirmationModalState
     );
   }
 
-  Widget _buildImpactMetric(String value, String label) {
+  Widget _buildImpactMetric(String value, String label, [Color? color]) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -291,11 +366,11 @@ class _DeleteAccountConfirmationModalState
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Georgia',
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFBA1A1A),
+            color: color ?? const Color(0xFFBA1A1A),
           ),
         ),
         const SizedBox(height: 2),

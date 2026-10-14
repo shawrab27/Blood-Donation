@@ -52,33 +52,56 @@ class LogoutConfirmationModal extends StatelessWidget {
               ),
             ),
 
-            // Red Icon Circle
+            // Red Icon Circle (Double layer soft red)
             Container(
-              width: 58,
-              height: 58,
+              width: 68,
+              height: 68,
               decoration: const BoxDecoration(
-                color: Color(0xFFFFDAD7),
+                color: Color(0xFFFFECEE),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.logout_rounded, color: AppColors.primary, size: 28),
+              child: Center(
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFDAD7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.logout_rounded, color: Color(0xFFC30121), size: 24),
+                ),
+              ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // Title
             const Text(
               'Logout',
               style: TextStyle(
                 fontFamily: 'Georgia',
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF24191A),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
+
+            // Prompt Question
+            const Text(
+              'Are you sure you want to logout?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14.5,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF24191A),
+              ),
+            ),
+            const SizedBox(height: 6),
 
             // Subtitle Description
             const Text(
-              'Are you sure you want to logout? You can sign back in anytime to respond to urgent blood donation alerts in your neighborhood.',
+              'You can sign back in anytime to respond to urgent blood donation alerts in your neighborhood.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Inter',
@@ -93,17 +116,18 @@ class LogoutConfirmationModal extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFDEAEB),
                       foregroundColor: const Color(0xFF24191A),
-                      side: BorderSide(color: Colors.grey.shade300),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13),
+                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                     ),
                   ),
                 ),
@@ -111,16 +135,16 @@ class LogoutConfirmationModal extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: const Color(0xFF8B0015),
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
                     onPressed: onConfirm,
                     child: const Text(
                       'Logout',
-                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
+                      style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                     ),
                   ),
                 ),
@@ -128,17 +152,17 @@ class LogoutConfirmationModal extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Verified Safe Session Badge
+            // Safe Session Badge
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
-                Icon(Icons.shield_outlined, size: 13, color: Color(0xFF8E7D7F)),
-                SizedBox(width: 4),
+                Icon(Icons.shield_outlined, size: 13.5, color: Color(0xFF8E7D7F)),
+                SizedBox(width: 5),
                 Text(
-                  'Verified Safe Session',
+                  'VitalFlow Safe Session',
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11,
+                    fontSize: 11.5,
                     color: Color(0xFF8E7D7F),
                   ),
                 ),
