@@ -104,6 +104,21 @@ Working style: **one task at a time**, short steps, evidence required.
 - [ ] Run pilot; collect baseline vs Blood Pulse data
 - [ ] Handle issues; record outcomes
 
+## Phase 1 — Profile Evolution & Stitch Alignment (Phase 1)
+- [x] Part 1A — Security Hotfix, Models & Additive Migrations:
+  - Security Hotfix (Gap #13): Sanitized public profile endpoint `/api/profile/<id>/` with `PublicDonorProfileSerializer`. Stripped `phone_number`, `nid_hash`, `latitude`, `longitude`, `weight_kg`, `address`, `email`, `fcm_token`, `public_lat`, `public_lng`, and `password` for all non-owner and anonymous callers. Added unit test suite `api/tests/test_public_profile_security.py` (3/3 passed).
+  - Storage Audit (Part 1A.b): Evaluated Render ephemeral disk vs Cloudinary vs Cloudflare R2 / Firebase Storage. Report upload held pending user choice of private storage provider.
+  - Gaps 1–7 Models & Methods (`api/models.py`):
+    - `DonorProfile`: `bio` (validated max 120 chars), `weight_kg` (private health data, nullable), `show_in_rankings` (boolean, default True), admin-locked `blood_group`.
+    - `DonationHistory`: added `hospital`, `city`, `donation_type` (WHOLE/PLATELET), `how` (VOLUNTARY/EMERGENCY/DRIVE), `bags` (default 1), `volume_ml` (default 450), `linked_request` (FK nullable), `source` (self_reported/verified), `verified` (boolean), `donated_at` (nullable DateField), `created_at`. Bidirectional sync between `bags` and `bags_donated`.
+    - `BloodGroupChangeRequest`: user, current_group, requested_group, reason, lab_name, test_date, notes, consent, status, reviewed_by, reviewed_at. Unique open request constraint. Approval atomically updates `DonorProfile.blood_group`.
+    - `DonorReview`: reviewer, donor, blood_request, stars (1–5), optional tag, comment (max 200). Strict constraints: unique review per blood request, completed donation check, requester-only check, reviewer != donor check. Maintains `donor.rating_avg` and `donor.rating_count`.
+    - `XPEvent`: append-only ledger with `UNIQUE(user, event_type, ref_type, ref_id)`. `XP_LEVEL_THRESHOLDS` (Levels 1–10: 0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500). 100 XP awarded ONLY for verified donations.
+    - Model test suite `api/tests/test_profile_phase1a_models.py` (7/7 passed).
+  - Additive Migrations: `0053_bloodgroupchangerequest_donorreview_xpevent_and_more.py` and data backfill `0054_backfill_donation_history.py` applied cleanly on SQLite and Neon Rehearsal (`ep-noisy-poetry-b3c07a8m`).
+- [ ] Part 1B — Endpoints (GET/PATCH `/profile/me/`, `/last-donation/` with 90-day rejection rule, `/top-donors/`, `/global-rank/`, `/me/stories/`, `/me/activity/`, `/me/donations/`, `/blood-group-change/`, `/reviews/`).
+- [ ] Part 1C — Digital Certificate PDF (`reportlab` + `qrcode`) & Public Verification Endpoint.
+
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved
 - [ ] No mock data, no secrets in git, permissions audited

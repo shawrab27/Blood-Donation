@@ -3,7 +3,7 @@
 
 import json
 from datetime import timedelta
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from django.core import mail
 from django.utils import timezone
@@ -16,6 +16,7 @@ from api.services.email import hash_otp
 
 from django.core.cache import cache
 
+@override_settings(EMAIL_PROVIDER='locmem')
 class RequestOTPAndSubmitTokenTests(TestCase):
     def setUp(self):
         cache.clear()

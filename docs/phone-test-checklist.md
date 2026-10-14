@@ -15,7 +15,7 @@
 | **2** | JIT Request OTP & Email Provider Adapter | Brevo free adds "Sent with Brevo" footer unless upgraded; Resend requires verified DNS domain. System lacked pluggable sender abstraction. | `api/services/email_sender.py`, `api/views_request_otp.py`, `api/models.py` | `test_request_otp_token.py` (all 9 tests pass), LocMem test isolation | **Fixed** *(Dual Brevo/Resend adapters implemented; LocMem outbox passing in tests)* |
 | **3** | Feed Image Upload & Multi-Image Gallery | Render free ephemeral disk loses local uploaded images; UI lacked multi-image picker and storage abstraction. | `lib/features/feed/`, `api/models_feed.py`, `api/views_feed.py` | `step10d_feed_test.dart` (3/3 pass), `test_step10d_feed.py` | **Fixed** *(Cloudinary / MediaStorage integration, multi-image feed cards)* |
 | **4** | Location-Aware Feed & District Filtering | Feed lacked location coordinates and district indexing, causing statewide posts to appear unordered. | `lib/features/feed/presentation/`, `api/views_feed.py` | `step10d_feed_test.dart`, `test_step10d_feed.py` (district filtering & keyset pagination pass) | **Fixed** *(Filter by 64 districts + All Bangladesh toggle)* |
-| **5** | BloodPulse Logo Integrity | Original branding asset was replaced by altered icons. | `lib/core/widgets/app_bar.dart`, `assets/images/Blood Pulse logo.jpg` | `.agents/AGENTS.md` Rule 1 enforced, `test/core/overflow_sweep_test.dart` | **Fixed** *(Original heart with B & P logo + Georgia #C30121 title locked)* |
+| **5** | BloodPulse Logo Integrity | Original branding asset was replaced by altered icons. | `lib/core/widgets/app_bar.dart`, `assets/images/launcher_icon_transparent.png` | `.agents/AGENTS.md` Rule 1 enforced, `test/core/overflow_sweep_test.dart` | **Fixed** *(Original heart with B & P logo + Georgia #C30121 title locked)* |
 | **6** | Splash Intro Video & Graceful Fallback | Missing or unsupported platform video codecs caused video player initialization crash or blank screen. | `lib/features/auth/presentation/screens/splash_screen.dart` | `unauthenticated_route_redirect_test.dart`, `SplashVideoScreen` fallback | **Fixed** *(Code-drawn animated canvas fallback if video controller fails)* |
 | **7** | PulseAI Floating Entry FAB Animation | Entire FAB button moved jarringly instead of a subtle inner ECG pulse. | `lib/core/widgets/pulseai_floating_button.dart` | `step8_pulseai_voice_widgets_test.dart`, `assistant_screen_test.dart` | **Fixed** *(Static #C30121 capsule with animated heartbeat line)* |
 | **8** | PulseAI Floating Menu Transition | Tapping FAB opened raw bottom sheet instead of smooth animated radial speed-dial. | `lib/core/widgets/pulseai_speed_dial.dart` | `step8_pulseai_voice_widgets_test.dart` | **Fixed** *(Speed-dial with Quick Action pills and smooth curved animation)* |
@@ -50,7 +50,7 @@
 1. Install release APK (`blood_pulse/build/app/outputs/flutter-apk/app-release.apk`) on an Android phone.
 2. Launch the app.
 3. **Verify:** Splash screen displays the official logo and smoothly transitions to language selection / onboarding.
-4. **Verify:** Top bar displays the official heart logo (`assets/images/Blood Pulse logo.jpg`) and Georgia `"BloodPulse"` title in `#C30121`.
+4. **Verify:** Top bar displays the official heart logo (`assets/images/launcher_icon_transparent.png`) and Georgia `"BloodPulse"` title in `#C30121`.
 5. **Verify:** Persistent bottom navigation bar renders 5 tabs: **Feed, Blood Hub, Communities, Health Hub, Profile**.
 
 ### Test Run 2: Guest Mode & Soft-Wall Security (Items 1, 21, 22)

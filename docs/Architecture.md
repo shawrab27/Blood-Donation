@@ -51,7 +51,13 @@ auth/onboarding · feed · blood_hub (search, emergency, campaigns, tracking) ·
 
 ## 4. Backend Architecture
 ### Core Models (from `api/models.py`)
-Hospital · DonorProfile (unique `nid_hash`, unique phone, rank/badge properties) · BloodRequest · DonationMatch · DonationReport · ThankYouLetter · FollowUp · EmailOTP · DonationHistory · RecentLog · SocialPost · FakeAccountFlag · AdminAction · Division · District · Upazila · NationalCommunity · MedicalPartner · LocalClub · ExecutiveMember · BloodScienceArticle · CompatibilityRule · DonationGuideSection · EmergencyContact · RecoveryTimelineStep · NationalEmergencyEvent (2-admin approval)
+Hospital · DonorProfile (unique `nid_hash`, unique phone, bio max 120, private weight_kg, show_in_rankings, admin-locked blood_group, rank/badge properties) · BloodGroupChangeRequest (admin approval required) · DonorReview (stars 1-5, completed donation only, anti-abuse checks) · XPEvent (append-only ledger, unique per event/ref, 100 XP verified only) · BloodRequest · DonationMatch · DonationReport · ThankYouLetter · FollowUp · EmailOTP · DonationHistory (source: self_reported/verified, bags, hospital, city, donation_type, how, volume_ml, linked_request) · RecentLog · SocialPost · FakeAccountFlag · AdminAction · Division · District · Upazila · NationalCommunity · MedicalPartner · LocalClub · ExecutiveMember · BloodScienceArticle · CompatibilityRule · DonationGuideSection · EmergencyContact · RecoveryTimelineStep · NationalEmergencyEvent (2-admin approval)
+
+### Profile Architecture & Sanitization Layer
+- **Public Profile Security Boundary**: `PublicDonorProfileSerializer` ensures public views (`/api/profile/<id>/` and `/api/donors/`) expose only sanitized public fields (`id`, `name`, `photo`, `bio`, `blood_group`, `tier`, `rank`, `bags`, `rating_avg`, `rating_count`). Full PII (`phone_number`, `nid_hash`, `latitude`, `longitude`, `weight_kg`, `address`, `email`, `fcm_token`) is accessible only to the profile owner via `DonorProfileSerializer`.
+- **XP & Level Ledger**: Server-computed via `calculate_user_xp_and_level` over append-only `XPEvent` table. Unique constraint `(user, event_type, ref_type, ref_id)` guarantees idempotency. Only verified donations (`verified=True`) award 100 XP.
+- **Admin-Gated Blood Group Changes**: Users cannot directly mutate `blood_group`. Mutation requires an open `BloodGroupChangeRequest`, reviewed and approved by staff/admin.
+- **Private Storage Requirement**: Medical reports associated with blood group changes require authenticated, private object storage (evaluating Cloudflare R2 / Firebase Storage / Cloudinary private delivery) rather than ephemeral Render disk.
 
 ### Blood Hub v2 Request Lifecycle & Service Layer
 - **State Machine**: Single entry point `transition(request, new_state, actor)` enforcing:

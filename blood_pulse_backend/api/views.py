@@ -21,7 +21,7 @@ from .models import (
     UserNotificationState, EmailVerificationCode
 )
 from .serializers import (
-    DonorProfileSerializer, BloodRequestSerializer, SocialPostSerializer, CommentSerializer,
+    DonorProfileSerializer, PublicDonorProfileSerializer, BloodRequestSerializer, SocialPostSerializer, CommentSerializer,
     HospitalSerializer, FakeAccountFlagSerializer, AdminActionSerializer,
     DivisionSerializer, DistrictSerializer, UpazilaSerializer,
     NationalCommunitySerializer, MedicalPartnerSerializer, LocalClubSerializer, 
@@ -44,9 +44,33 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
     serializer_class = DonorProfileSerializer
 
     def get_permissions(self):
-        if self.action in ['create']:
+        if self.action in ['create', 'retrieve', 'list']:
             return [AllowAny()]
         return [IsAuthenticated()]
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        is_owner = (
+            request.user and
+            request.user.is_authenticated and
+            (request.user.is_staff or request.user.id == instance.user_id)
+        )
+        if is_owner:
+            serializer = DonorProfileSerializer(instance, context=self.get_serializer_context())
+        else:
+            serializer = PublicDonorProfileSerializer(instance, context=self.get_serializer_context())
+        return Response(serializer.data)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        is_staff = request.user and request.user.is_authenticated and request.user.is_staff
+        serializer_class = DonorProfileSerializer if is_staff else PublicDonorProfileSerializer
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = serializer_class(page, many=True, context=self.get_serializer_context())
+            return self.get_paginated_response(serializer.data)
+        serializer = serializer_class(queryset, many=True, context=self.get_serializer_context())
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         """
@@ -129,13 +153,29 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(existing, data=data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save(user=user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            resp_data = dict(serializer.data)
+            try:
+                from rest_framework_simplejwt.tokens import RefreshToken
+                refresh = RefreshToken.for_user(user)
+                resp_data['access'] = str(refresh.access_token)
+                resp_data['refresh'] = str(refresh)
+            except Exception:
+                pass
+            return Response(resp_data, status=status.HTTP_200_OK)
 
         # No profile yet → create
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        resp_data = dict(serializer.data)
+        try:
+            from rest_framework_simplejwt.tokens import RefreshToken
+            refresh = RefreshToken.for_user(user)
+            resp_data['access'] = str(refresh.access_token)
+            resp_data['refresh'] = str(refresh)
+        except Exception:
+            pass
+        return Response(resp_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

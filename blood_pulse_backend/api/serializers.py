@@ -87,8 +87,20 @@ class DonorProfileSerializer(serializers.ModelSerializer):
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
             'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
             'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until',
-            'public_profile', 'show_contact', 'notifications_enabled', 'emergency_alerts_enabled'
+            'public_profile', 'show_contact', 'notifications_enabled', 'emergency_alerts_enabled',
+            'weight_kg', 'show_in_rankings'
         ]
+
+    def validate_bio(self, value):
+        if value and len(value) > 120:
+            raise serializers.ValidationError("Bio must be 120 characters or fewer.")
+        return value
+
+    def validate_weight_kg(self, value):
+        if value is not None:
+            if value < 30 or value > 300:
+                raise serializers.ValidationError("Weight must be between 30kg and 300kg.")
+        return value
 
     def validate_last_donation_date(self, value):
         if value:
@@ -142,12 +154,59 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         is_owner = request and request.user and request.user.is_authenticated and (request.user.id == instance.user_id or request.user.is_staff)
         if not is_owner:
-            # Mask exact coordinates in non-owner serialized representations
-            ret.pop('latitude', None)
-            ret.pop('longitude', None)
-            ret['public_lat'] = instance.public_lat
-            ret['public_lng'] = instance.public_lng
+            # Defensive sanitization for any non-owner representation:
+            # Strictly remove PII, exact/fuzzed coordinates, weight, email, and internal tokens
+            for field in [
+                'phone_number', 'nid_hash', 'latitude', 'longitude', 'weight_kg', 
+                'address', 'email', 'fcm_token', 'public_lat', 'public_lng', 'password'
+            ]:
+                ret.pop(field, None)
         return ret
+
+
+class PublicDonorProfileSerializer(serializers.ModelSerializer):
+    """
+    Sanitized public donor profile serializer (Gap #13 Security Hotfix).
+    Exposes ONLY safe public attributes: id, name, photo, bio, blood_group, tier, rank, bags, rating_avg, rating_count.
+    Strictly removes and never serializes phone_number, nid_hash, latitude, longitude,
+    public_lat, public_lng, weight_kg, email, address, or medical data for non-owners.
+    """
+    name = serializers.SerializerMethodField()
+    photo = serializers.SerializerMethodField()
+    tier = serializers.CharField(source='badge', read_only=True)
+    rank = serializers.IntegerField(source='global_rank', read_only=True)
+    bags = serializers.IntegerField(source='total_bags_donated', read_only=True)
+    rating_avg = serializers.FloatField(read_only=True)
+    rating_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = DonorProfile
+        fields = [
+            'id',
+            'name',
+            'photo',
+            'bio',
+            'blood_group',
+            'tier',
+            'rank',
+            'bags',
+            'rating_avg',
+            'rating_count',
+        ]
+
+    def get_name(self, obj):
+        full_name = f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+        return full_name or obj.user.username
+
+    def get_photo(self, obj):
+        if obj.profile_picture:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_picture.url)
+            return obj.profile_picture.url
+        if obj.google_photo_url:
+            return obj.google_photo_url
+        return None
 
 class BloodRequestSerializer(serializers.ModelSerializer):
     class Meta:

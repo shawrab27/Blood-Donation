@@ -18,7 +18,7 @@ from blood_pulse_backend.settings import *
 # Identify production database host from .env
 _prod_env_path = BASE_DIR / '.env'
 _prod_env_vals = dotenv_values(_prod_env_path) if _prod_env_path.exists() else {}
-_prod_db_url = _prod_env_vals.get('DATABASE_URL', '') or os.environ.get('PROD_DATABASE_URL', '')
+_prod_db_url = _prod_env_vals.get('PROD_DATABASE_URL', '') or _prod_env_vals.get('DATABASE_URL', '') or os.environ.get('PROD_DATABASE_URL', '')
 _prod_host = urlparse(_prod_db_url).hostname if _prod_db_url else None
 
 

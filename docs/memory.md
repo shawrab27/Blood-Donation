@@ -21,7 +21,9 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 - Verification: campus Student/Teacher ID for pilot; hospital verification/referral removed from scope.
 - OTP: Just-In-Time only; none at login/registration.
 - 90 days is the only cooldown (from one constant only). Wording "Donations completed" / "Requests supported".
-- Gender: Male/Female only. Blood group admin-locked after save.
+- Gender: Male/Female only. Blood group admin-locked after save; modifications require admin-approved `BloodGroupChangeRequest`.
+- Profile Leaderboard: Top Donors + Global Rank exist per Stitch design with minimal fields (`id`, `name`, `photo`, `bags`, `rank`). Users can opt out via `show_in_rankings` (default ON) which excludes them from public boards while retaining private rank access.
+- XP Engine: Level thresholds 1–10 (0 to 4500 XP). 100 XP awarded ONLY for verified donations (`verified=True`). Self-reported donations never award XP or count toward leaderboard bags.
 - Navbar: Feed, Blood Hub, Communities, Health Hub, Profile.
 - Admin panel = web dashboard (not Django admin theme, not Flutter Web).
 - Deployment of any web build, if ever: Cloudflare Pages (supersedes earlier Vercel idea).
@@ -76,3 +78,4 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 ## 10. Update Log
 - Keep this section short. Add a dated one-liner after each verified milestone.
 - 2026-10-10: Two-device Blood Hub integration (S1-S8) verified 100% on feature/blood-hub-integration; 146/147 backend tests pass, 107/107 Flutter tests pass, 0 analyzer issues, Firestore rules hardened and emulator-verified.
+- 2026-10-15: Profile Evolution Phase 1 Part 1A verified: Gap #13 security hotfix (sanitized public profile), Gaps 1–7 models (`BloodGroupChangeRequest`, `DonorReview`, `XPEvent`, `DonationHistory` sync, `DonorProfile` bio/weight/rankings flag), additive migrations 0053 & 0054 applied to SQLite and Neon Rehearsal, 10/10 new tests pass, storage audit completed.

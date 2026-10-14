@@ -5,7 +5,8 @@ from django.contrib import admin
 from .models import (
     Hospital, DonorProfile, BloodRequest, SocialPost, FakeAccountFlag, AdminAction,
     Division, District, Upazila, NationalCommunity, MedicalPartner, LocalClub, ExecutiveMember,
-    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep, HealthAccessory
+    BloodScienceArticle, CompatibilityRule, DonationGuideSection, EmergencyContact, RecoveryTimelineStep, HealthAccessory,
+    BloodGroupChangeRequest, DonorReview, XPEvent
 )
 
 class HospitalAdmin(admin.ModelAdmin):
@@ -215,5 +216,29 @@ class ProductAdmin(admin.ModelAdmin):
                 except Exception:
                     pass
         super().delete_model(request, obj)
+
+
+@admin.register(BloodGroupChangeRequest)
+class BloodGroupChangeRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'current_group', 'requested_group', 'status', 'created_at', 'reviewed_by')
+    list_filter = ('status', 'requested_group')
+    search_fields = ('user__username', 'reason', 'lab_name')
+    readonly_fields = ('created_at', 'reviewed_at')
+
+
+@admin.register(DonorReview)
+class DonorReviewAdmin(admin.ModelAdmin):
+    list_display = ('id', 'reviewer', 'donor', 'stars', 'tag', 'created_at')
+    list_filter = ('stars',)
+    search_fields = ('reviewer__username', 'donor__user__username', 'comment')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(XPEvent)
+class XPEventAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'event_type', 'points', 'ref_type', 'ref_id', 'created_at')
+    list_filter = ('event_type',)
+    search_fields = ('user__username', 'ref_id')
+    readonly_fields = ('created_at',)
 
 

@@ -1,7 +1,10 @@
 from django.db import models
 import uuid
+import django.utils.timezone
+from django.core.validators import MaxLengthValidator, MinValueValidator, MaxValueValidator
 
 from django.contrib.auth.models import User
+from api.fields import EncryptedBinaryField
 
 
 
@@ -71,7 +74,25 @@ class DonorProfile(models.Model):
 
     # Profile Extensions
 
-    bio = models.TextField(blank=True, null=True, help_text="User's biography or story.")
+    bio = models.TextField(
+        max_length=120,
+        blank=True,
+        null=True,
+        validators=[MaxLengthValidator(120)],
+        help_text="User's biography or story (max 120 chars)."
+    )
+
+    weight_kg = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Donor weight in kg (confidential health data, never public)"
+    )
+
+    show_in_rankings = models.BooleanField(
+        default=True,
+        db_default=True,
+        help_text="Consent to display in Top Donors and Global Rank leaderboards"
+    )
 
     institute = models.CharField(max_length=200, blank=True, null=True)
 
@@ -1090,22 +1111,292 @@ class FollowUp(models.Model):
 
 
 class DonationHistory(models.Model):
+    DONATION_TYPE_CHOICES = (
+        ('WHOLE', 'Whole Blood'),
+        ('PLATELET', 'Platelet'),
+        ('PLASMA', 'Plasma'),
+        ('RBC', 'Red Blood Cells'),
+    )
+    DONATION_HOW_CHOICES = (
+        ('VOLUNTARY', 'Voluntary'),
+        ('EMERGENCY', 'Emergency'),
+        ('BLOOD_DRIVE', 'Blood Drive'),
+    )
+    DONATION_SOURCE_CHOICES = (
+        ('self_reported', 'Self Reported'),
+        ('verified', 'Verified'),
+    )
 
     donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='donation_history')
-
-    date = models.DateField()
-
+    date = models.DateField(help_text="Donation date (kept for backward compatibility)")
+    donated_at = models.DateField(null=True, blank=True, help_text="Standardized donation date")
     location = models.CharField(max_length=200)
-
-    bags_donated = models.IntegerField(default=1)
-
+    hospital = models.CharField(max_length=255, blank=True, default='')
+    city = models.CharField(max_length=100, blank=True, default='')
+    donation_type = models.CharField(max_length=30, choices=DONATION_TYPE_CHOICES, default='WHOLE')
+    how = models.CharField(max_length=30, choices=DONATION_HOW_CHOICES, default='VOLUNTARY')
+    bags = models.PositiveIntegerField(default=1)
+    bags_donated = models.IntegerField(default=1, help_text="Bags count (kept for backward compatibility)")
+    volume_ml = models.PositiveIntegerField(default=450)
+    linked_request = models.ForeignKey('BloodRequest', on_delete=models.SET_NULL, null=True, blank=True, related_name='donation_histories')
+    source = models.CharField(max_length=30, choices=DONATION_SOURCE_CHOICES, default='self_reported')
+    verified = models.BooleanField(default=False)
     notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=django.utils.timezone.now)
 
-    
+    class Meta:
+        ordering = ['-donated_at', '-date', '-id']
+        indexes = [
+            models.Index(fields=['donor', 'donated_at'], name='idx_dh_donor_donated_at'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.donated_at and self.date:
+            self.donated_at = self.date
+        elif not self.date and self.donated_at:
+            self.date = self.donated_at
+        if self.bags and self.bags != 1 and self.bags_donated == 1:
+            self.bags_donated = self.bags
+        elif self.bags_donated and self.bags_donated != 1 and self.bags == 1:
+            self.bags = self.bags_donated
+        elif not self.bags_donated and self.bags:
+            self.bags_donated = self.bags
+        elif not self.bags and self.bags_donated:
+            self.bags = self.bags_donated
+        super().save(*args, **kwargs)
 
     def __str__(self):
+        return f"{self.donor.user.username} - {self.bags} bag(s) on {self.donated_at or self.date}"
 
-        return f"{self.donor.user.username} - {self.bags_donated} bag(s) on {self.date}"
+
+class BloodGroupChangeRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('under_review', 'Under Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blood_group_change_requests')
+    current_group = models.CharField(max_length=10)
+    requested_group = models.CharField(max_length=10)
+    reason = models.TextField(blank=True, default='')
+    lab_name = models.CharField(max_length=200, blank=True, default='')
+    test_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True, default='')
+    consent = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_blood_group_changes')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Encrypted private lab report storage (BinaryField via Fernet symmetric cipher)
+    report_file_data = EncryptedBinaryField(null=True, blank=True)
+    report_file_name = models.CharField(max_length=255, blank=True, default='')
+    report_file_content_type = models.CharField(max_length=100, blank=True, default='')
+    report_file_size = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user'],
+                condition=models.Q(status__in=['pending', 'under_review']),
+                name='unique_open_blood_group_request'
+            )
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.status in ['pending', 'under_review']:
+            existing = BloodGroupChangeRequest.objects.filter(
+                user=self.user,
+                status__in=['pending', 'under_review']
+            )
+            if self.pk:
+                existing = existing.exclude(pk=self.pk)
+            if existing.exists():
+                raise ValidationError("You already have an open blood group change request under review.")
+
+    def approve(self, admin_user, notes=""):
+        from django.utils import timezone
+        self.status = 'approved'
+        self.reviewed_by = admin_user
+        self.reviewed_at = timezone.now()
+        if notes:
+            self.notes = f"{self.notes}\nAdmin: {notes}".strip()
+        # Storage privacy: delete report bytes after admin decision
+        self.report_file_data = None
+        self.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'notes', 'report_file_data'])
+
+        donor_profile = getattr(self.user, 'donorprofile', None)
+        if donor_profile:
+            donor_profile.blood_group = self.requested_group
+            donor_profile.save(update_fields=['blood_group'])
+
+    def reject(self, admin_user, notes=""):
+        from django.utils import timezone
+        self.status = 'rejected'
+        self.reviewed_by = admin_user
+        self.reviewed_at = timezone.now()
+        if notes:
+            self.notes = f"{self.notes}\nAdmin: {notes}".strip()
+        # Storage privacy: delete report bytes after admin decision
+        self.report_file_data = None
+        self.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'notes', 'report_file_data'])
+
+    def __str__(self):
+        return f"ChangeRequest #{self.id} for {self.user.username}: {self.current_group} -> {self.requested_group} [{self.status}]"
+
+
+class DonorReview(models.Model):
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submitted_donor_reviews')
+    donor = models.ForeignKey(DonorProfile, on_delete=models.CASCADE, related_name='donor_reviews')
+    blood_request = models.ForeignKey('BloodRequest', on_delete=models.CASCADE, related_name='donor_reviews')
+    stars = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Rating 1 to 5 stars"
+    )
+    tag = models.CharField(max_length=50, blank=True, default='', help_text="Optional review tag (e.g. Punctual, Supportive)")
+    comment = models.TextField(
+        max_length=200,
+        blank=True,
+        default='',
+        validators=[MaxLengthValidator(200)],
+        help_text="Optional comment max 200 characters"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['blood_request'], name='unique_review_per_blood_request'),
+            models.CheckConstraint(check=models.Q(stars__gte=1, stars__lte=5), name='check_donor_review_stars_1_to_5'),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.donor and self.donor.user_id == self.reviewer_id:
+            raise ValidationError("You cannot review your own donation.")
+        
+        if self.blood_request and self.blood_request.requester_id != self.reviewer_id:
+            raise ValidationError("Only the blood requester can review the donor.")
+
+        if self.blood_request:
+            is_fulfilled = self.blood_request.status in ['FULFILLED', 'COMPLETED', 'CLOSED'] or (
+                hasattr(self.blood_request, 'acceptances') and
+                self.blood_request.acceptances.filter(donor=self.donor, status='COMPLETED').exists()
+            ) or (
+                DonationHistory.objects.filter(donor=self.donor, linked_request=self.blood_request).exists()
+            )
+            if not is_fulfilled:
+                raise ValidationError("Review can only be submitted after a completed donation linked to this request.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+        self.update_donor_rating_aggregates()
+
+    def update_donor_rating_aggregates(self):
+        from django.db.models import Avg, Count
+        aggs = DonorReview.objects.filter(donor=self.donor).aggregate(avg=Avg('stars'), count=Count('id'))
+        self.donor.rating_avg = round(float(aggs['avg'] or 0.0), 2)
+        self.donor.rating_count = aggs['count'] or 0
+        self.donor.save(update_fields=['rating_avg', 'rating_count'])
+
+    def __str__(self):
+        return f"Review by {self.reviewer.username} for donor {self.donor.user.username} ({self.stars} stars)"
+
+
+XP_LEVEL_THRESHOLDS = [
+    (1, 0),
+    (2, 100),
+    (3, 300),
+    (4, 600),
+    (5, 1000),
+    (6, 1500),
+    (7, 2100),
+    (8, 2800),
+    (9, 3600),
+    (10, 4500),
+]
+
+
+class XPEvent(models.Model):
+    EVENT_TYPES = (
+        ('donation', 'Blood Donation'),
+        ('share_app', 'Share App'),
+        ('read_guide', 'Read Guide'),
+        ('update_profile', 'Update Profile'),
+        ('send_message', 'Send Message'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='xp_events')
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPES)
+    points = models.IntegerField()
+    ref_type = models.CharField(max_length=50, blank=True, default='')
+    ref_id = models.CharField(max_length=100, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'event_type', 'ref_type', 'ref_id'],
+                name='unique_user_xp_event'
+            )
+        ]
+
+    def __str__(self):
+        return f"XPEvent: {self.user.username} +{self.points} ({self.event_type})"
+
+
+def calculate_user_xp_and_level(user):
+    from django.db.models import Sum
+    total_xp = XPEvent.objects.filter(user=user).aggregate(total=Sum('points'))['total'] or 0
+    total_xp = max(0, total_xp)
+
+    current_level = 1
+    next_level_xp = XP_LEVEL_THRESHOLDS[1][1]
+    current_level_min_xp = 0
+
+    for lvl, threshold in XP_LEVEL_THRESHOLDS:
+        if total_xp >= threshold:
+            current_level = lvl
+            current_level_min_xp = threshold
+        else:
+            next_level_xp = threshold
+            break
+    else:
+        next_level_xp = XP_LEVEL_THRESHOLDS[-1][1]
+
+    if current_level >= XP_LEVEL_THRESHOLDS[-1][0]:
+        progress = 1.0
+    else:
+        span = next_level_xp - current_level_min_xp
+        progress = round(min(1.0, max(0.0, (total_xp - current_level_min_xp) / span)), 4) if span > 0 else 1.0
+
+    return {
+        'xp': total_xp,
+        'level': current_level,
+        'next_level_xp': next_level_xp,
+        'progress': progress,
+    }
+
+
+def award_verified_donation_xp(donation_history):
+    if not donation_history.verified:
+        return None
+    user = donation_history.donor.user
+    ref_id = str(donation_history.id)
+    xp_event, created = XPEvent.objects.get_or_create(
+        user=user,
+        event_type='donation',
+        ref_type='DonationHistory',
+        ref_id=ref_id,
+        defaults={'points': 100}
+    )
+    return xp_event
 
 
 

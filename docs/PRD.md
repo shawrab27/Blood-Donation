@@ -82,7 +82,14 @@ Three options: **Search for Donor**, **Emergency Blood**, **Blood Campaigns**.
 Dashboard + 7 segments: AI Report Analyzer, BMI/Weight Tracker, Blood Science education, Blood Compatibility matrix, Donation Guide/FAQs, Resources Hub (hospitals/hotlines), Recovery/Aftercare tracker.
 
 ### 5.7 Profile
-Avatar with tier badge (Golden/Silver/Bronze), bio, admin-locked blood group, edit-profile (blood group excluded), last-donation update, 90-day countdown, requests chart, user posts, donation history; passive-donor XP + tier badge, no leaderboard.
+- Top Hero: Avatar with tier badge (Hero Circle 176px), blood-group pill, rank capsule, bio (max 120 chars), admin-locked blood group (user modifications require admin-reviewed `BloodGroupChangeRequest`).
+- Stats Row: Bags Donated (caption: "donations completed"), Next Eligible ring (CustomPainter showing days left in 90-day cooldown), Last Donation tile (date sheet with 90-day rule).
+- Top Donors & Global Rank: Top 4 by verified bags (tie-break: earliest first donation) plus count of others; paginated global rank with caller's own rank row. Minimal fields only (`id`, `name`, `photo`, `bags`, `rank`).
+- Leaderboard Privacy Setting: "Show me in Top Donors / Global Rank" (`DonorProfile.show_in_rankings`, default ON). Users who turn it OFF are excluded from public leaderboards but still view their own rank privately.
+- XP & Levels: Level thresholds 1–10 (0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500). 100 XP awarded ONLY for verified donations (`verified=True`). Self-reported donations never award XP and never count toward leaderboard bags.
+- Reviews & Ratings: 1–5 stars with average and count; submitted only by requesters of completed donations.
+- Sticky Tabs: Your Stories, Activity Summary, Donation History.
+- Digital Certificate: Download verified certificate PDF with diagonal "BloodPulse" watermark, donor details, and QR verification link.
 
 ### 5.8 Chat and Notifications
 - WhatsApp-style chat, E2EE (RSA keypair + AES-256 session), read receipts, Firestore for MVP.

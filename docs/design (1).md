@@ -4,7 +4,7 @@
 - **Name:** Blood Pulse (header text: "BloodPulse")
 - **Slogan (locked):** "You give today , They live today."
 - **Logo (locked):** Heart split into letter **B** (light blue/silver, left half) and letter **P** (deep red `#C30121`, right half) with an ECG/heartbeat line through the center; "Blood Pulse" text below in light blue/silver.
-- **Logo asset:** `assets/images/Blood Pulse logo.jpg`
+- **Logo asset:** `assets/images/launcher_icon_transparent.png`
 - **Logo size:** uniform across all screens (32 px header height).
 
 ## 2. Color Palette (locked)

@@ -6,9 +6,9 @@ Blood Pulse handles sensitive data: phone numbers, location, blood group, medica
 | Class | Examples | Handling |
 |---|---|---|
 | Critical | Passwords, JWT secrets, API keys, service-account JSON, DB URLs, OTPs | Never in git/logs/chat; env vars only |
-| Sensitive PII | NID/ID images, phone, email, exact location, medical report text | Redact before AI; minimal retention; encrypted where applicable |
+| Sensitive PII & Health Data | NID/ID images, phone, email, exact location, weight_kg, medical reports | Redact before AI; minimal retention; never in public serializers or logs; private authenticated storage only |
 | Internal | Trust scores, admin actions, flags | Admin only |
-| Public | Slogan, health education content | No restriction |
+| Public | Slogan, health education content, public donor card (sanitized) | No restriction; minimal fields only |
 
 ## 2. Secrets Management
 - `.env` and `firebase-service-account.json` are gitignored — keep it that way.
@@ -40,6 +40,12 @@ Blood Pulse handles sensitive data: phone numbers, location, blood group, medica
   - Public QR Landing & Poster Data: Strictly strips patient PII (masks patient name, fuzzed coordinates, hides private contacts, removes unverified claims).
   - Dual-Admin National Emergency Activation: Requires two distinct admin signatures (`approved_by_admin_1 != approved_by_admin_2`) before disaster mode can be activated or public broadcasts triggered.
   - Internal Schedulers: Hourly follow-up cron endpoint (`/api/internal/followups/run/`) protected by `X-Internal-Token` header.
+- **Profile Object-Level Security & Sanitization (Gap #13 Hotfix):**
+  - Public profile (`GET /api/profile/<id>/` and `/api/donors/`) uses `PublicDonorProfileSerializer`, exposing strictly: `id`, `name`, `photo`, `bio`, `blood_group`, `tier`, `rank`, `bags`, `rating_avg`, `rating_count`.
+  - Non-owner & anonymous callers are strictly blocked from seeing: `phone_number`, `nid_hash`, `latitude`, `longitude`, `weight_kg`, `address`, `email`, `fcm_token`, `public_lat`, `public_lng`, and `password`.
+  - Admin-only Blood Group Modification: `DonorProfile.blood_group` is read-only for normal users. User requests require `BloodGroupChangeRequest`, which only staff/admin can approve.
+  - DonorReview Anti-Abuse: Reviews are permitted only for completed donations linked to the request (`status='DONATED'`), requester only, reviewer != donor, exactly one review per request.
+  - XPEvent Integrity: Append-only ledger with `UNIQUE(user, event_type, ref_type, ref_id)`. 100 XP awarded only on verified donations.
 - Write a permission test for every endpoint (anonymous, normal user, other user, admin).
 
 ## 5. API and Transport Security

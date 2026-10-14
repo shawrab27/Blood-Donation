@@ -56,3 +56,40 @@ class EncryptedCharField(models.CharField):
             return value
         return get_cipher().encrypt(value.encode('utf-8')).decode('utf-8')
 
+
+class EncryptedBinaryField(models.BinaryField):
+    """
+    Encrypts raw bytes using Fernet symmetric encryption before storing in the database.
+    Decrypts automatically when loaded from the database.
+    """
+    description = 'Encrypted binary data using Fernet symmetric encryption'
+
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return None
+        if isinstance(value, memoryview):
+            value = value.tobytes()
+        try:
+            return get_cipher().decrypt(value)
+        except Exception:
+            return value
+
+    def to_python(self, value):
+        if value is None:
+            return None
+        if isinstance(value, memoryview):
+            return value.tobytes()
+        return value
+
+    def get_prep_value(self, value):
+        if value is None:
+            return None
+        if isinstance(value, memoryview):
+            value = value.tobytes()
+        if isinstance(value, bytes):
+            if value.startswith(b'gAAAAA'):
+                return value
+            return get_cipher().encrypt(value)
+        return value
+
+

@@ -220,6 +220,7 @@ urlpatterns = [
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     path('auth/firebase/', FirebaseAuthView.as_view(), name='firebase-auth'),
     path('profile/me/', DonorProfileViewSet.as_view({'get': 'me', 'put': 'me', 'patch': 'me', 'delete': 'me'}), name='profile-me'),
+    path('profile/<int:pk>/', DonorProfileViewSet.as_view({'get': 'retrieve'}), name='profile-detail'),
     path('profile/me/snooze/', donor_snooze_view, name='profile-me-snooze'),
     path('users/me/snooze/', donor_snooze_view, name='users-me-snooze'),
     path('donors/me/snooze/', donor_snooze_view, name='donors-me-snooze'),
