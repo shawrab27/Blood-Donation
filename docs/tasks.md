@@ -155,6 +155,13 @@ Working style: **one task at a time**, short steps, evidence required.
     - `PublicDonorProfileScreen`: sanitized public profile for `/profile/:id` with zero PII leaks and self-view redirect to `/profile`.
   - Quality Evidence: `flutter analyze` 0 issues; `flutter test` 10/10 tests passing across `profile_v2_feature_test.dart`, `profile_settings_suite_test.dart`, and `step5_profile_snooze_test.dart`.
 
+- [x] Phase 3 — Verification, Quality & Documentation Gate:
+  - Django backend system check: `python manage.py check` (0 issues identified, 0 silenced).
+  - Django test suite: 32/32 tests passing across `test_profile_phase1a_models.py`, `test_profile_phase1b_endpoints.py`, `test_profile_certificate.py`, and `test_public_profile_security.py`.
+  - Flutter static analysis: `flutter analyze` 0 issues found across all profile modules and test suites.
+  - Flutter widget tests: 10/10 widget tests passing (`profile_v2_feature_test.dart`, `profile_settings_suite_test.dart`, `step5_profile_snooze_test.dart`).
+  - Documentation updated: `PRD.md`, `Architecture.md`, `security.md`, `memory.md`, and `tasks.md`.
+
 
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved
