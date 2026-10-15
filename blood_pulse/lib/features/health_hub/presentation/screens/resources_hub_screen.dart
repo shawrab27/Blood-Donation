@@ -10,7 +10,6 @@ import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../../../core/widgets/shimmer_loading_widget.dart';
 import '../../../../core/constants/constants.dart';
-import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../../blood_hub/data/blood_hub_api_service.dart';
 
@@ -63,9 +62,6 @@ class ResourcesHubScreen extends ConsumerWidget {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
-            // Top Subnav
-            const HealthHubSubnavBar(activeRoute: '/health-hub/resources'),
-
             // ── 1. Header ──────────────────────────────────────────────
             const Text(
               'Verified Resources & Hotlines',

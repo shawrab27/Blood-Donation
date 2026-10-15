@@ -6,15 +6,18 @@ import 'package:flutter/material.dart';
 /// Custom TabBar Indicator that draws a 3px red line with an ECG heartbeat spike.
 /// 1:1 match to Stitch design specification:
 /// Active indicator: heartbeat / ECG pulse line 3px thick #c30121 with center pulse spike.
+/// Driven by TabController.animation without per-frame setState.
 class HeartbeatTabIndicator extends Decoration {
   final Color color;
   final double strokeWidth;
   final double spikeHeight;
+  final Animation<double>? animation;
 
   const HeartbeatTabIndicator({
     this.color = const Color(0xFFC30121),
     this.strokeWidth = 3.0,
     this.spikeHeight = 10.0,
+    this.animation,
   });
 
   @override
@@ -88,4 +91,60 @@ class TabBaselinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Standalone ECG Heartbeat Painter driven directly by TabController.animation.
+/// Zero per-frame setState calls.
+class HeartbeatAnimationIndicatorPainter extends CustomPainter {
+  final Animation<double> animation;
+  final int tabCount;
+  final Color color;
+  final double strokeWidth;
+  final double spikeHeight;
+
+  HeartbeatAnimationIndicatorPainter({
+    required this.animation,
+    this.tabCount = 3,
+    this.color = const Color(0xFFC30121),
+    this.strokeWidth = 2.5,
+    this.spikeHeight = 8.0,
+  }) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (tabCount <= 0) return;
+    final tabWidth = size.width / tabCount;
+    final animVal = animation.value;
+    final currentOffset = animVal * tabWidth;
+    final baselineY = size.height - 2.0;
+    final centerX = currentOffset + (tabWidth / 2);
+
+    final Paint paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final Path path = Path();
+    path.moveTo(currentOffset + 4, baselineY);
+    path.lineTo(centerX - 16, baselineY);
+    path.lineTo(centerX - 12, baselineY - 2);
+    path.lineTo(centerX - 8, baselineY);
+    path.lineTo(centerX - 5, baselineY + 2);
+    path.lineTo(centerX - 2, baselineY - spikeHeight);
+    path.lineTo(centerX + 2, baselineY + 4);
+    path.lineTo(centerX + 6, baselineY - 3);
+    path.lineTo(centerX + 10, baselineY);
+    path.lineTo(currentOffset + tabWidth - 4, baselineY);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant HeartbeatAnimationIndicatorPainter oldDelegate) {
+    return oldDelegate.animation != animation ||
+        oldDelegate.tabCount != tabCount ||
+        oldDelegate.color != color;
+  }
 }

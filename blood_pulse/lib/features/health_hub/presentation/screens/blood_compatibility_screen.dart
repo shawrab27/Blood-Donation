@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-
-import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 
 class BloodCompatibilityScreen extends ConsumerStatefulWidget {
@@ -104,9 +102,6 @@ class _BloodCompatibilityScreenState extends ConsumerState<BloodCompatibilityScr
     return ListView(
       physics: const BouncingScrollPhysics(),
       children: [
-        // Top Subnav
-        const HealthHubSubnavBar(activeRoute: '/health-hub/compatibility'),
-
         // ── 1. Header ────────────────────────────────────────────────
         const Text(
           'Blood Compatibility Matrix',

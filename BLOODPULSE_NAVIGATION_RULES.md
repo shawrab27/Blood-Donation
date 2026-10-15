@@ -10,7 +10,7 @@ This document outlines the strict UI, Top Header, Bottom Navigation, and Color/L
 Must be rendered consistently across almost ALL app screens using `BloodPulseAppBar`.
 
 - **Top-Left (Branding)**:
-  - **Logo Asset**: `assets/images/Blood Pulse logo.jpg` (Fixed uniform height: 32px, proper aspect ratio, circular clip).
+  - **Logo Asset**: `assets/images/launcher_icon_transparent.png` (Fixed uniform height: 32px, transparent, proper aspect ratio).
   - **Title**: `"BloodPulse"` (Georgia font, bold, Primary Deep Red `#C30121`).
 - **Top-Right (Actions)**:
   - **Notification Bell Icon**: `Icons.notifications_outlined` with active unread red badge (`#C30121`).

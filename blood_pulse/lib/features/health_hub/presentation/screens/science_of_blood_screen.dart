@@ -9,8 +9,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../widgets/blood_circulation_diagram_widget.dart';
-
-import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 
 class ScienceOfBloodScreen extends ConsumerWidget {
@@ -81,9 +79,6 @@ class ScienceOfBloodScreen extends ConsumerWidget {
           child: ListView(
             physics: const BouncingScrollPhysics(),
             children: [
-              // Top Subnav
-              const HealthHubSubnavBar(activeRoute: '/health-hub/science-of-blood'),
-
               // ── 1. Hero Banner ──────────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(20),

@@ -25,9 +25,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('🔒 Note: Blood Group can ONLY be edited by an Admin', skipOffstage: false), findsOneWidget);
-    expect(find.text('Requests Chart', skipOffstage: false), findsOneWidget);
-    expect(find.text('User Posts Log', skipOffstage: false), findsOneWidget);
-    expect(find.text('Donation History', skipOffstage: false), findsOneWidget);
+    expect(find.text('Pause Emergency Alerts', skipOffstage: false), findsOneWidget);
+    expect(find.text('Download Verified Certificate', skipOffstage: false), findsOneWidget);
   });
 }

@@ -12,7 +12,6 @@ import '../../domain/providers/health_hub_provider.dart';
 import '../widgets/ai_report/ai_report_error_banner.dart';
 import '../widgets/ai_report/ai_report_results_view.dart';
 import '../widgets/ai_report/ai_report_upload_card.dart';
-import '../widgets/common/health_hub_subnav_bar.dart';
 
 class AiReportAnalysisScreen extends StatefulWidget {
   const AiReportAnalysisScreen({super.key});
@@ -104,9 +103,6 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
-            // Top Navigation Bar
-            const HealthHubSubnavBar(activeRoute: '/health-hub/ai-report'),
-
             // ── Section 1: Intro Card ──────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(18),

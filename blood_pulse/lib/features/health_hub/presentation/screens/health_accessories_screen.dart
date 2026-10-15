@@ -14,7 +14,6 @@ import '../../domain/providers/health_hub_provider.dart';
 import '../widgets/accessories/accessory_header_filter.dart';
 import '../widgets/accessories/product_card.dart';
 import '../widgets/accessories/product_detail_sheet.dart';
-import '../widgets/common/health_hub_subnav_bar.dart';
 
 class HealthAccessoriesScreen extends ConsumerStatefulWidget {
   const HealthAccessoriesScreen({super.key});
@@ -125,13 +124,6 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Top Subnav
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: HealthHubSubnavBar(activeRoute: '/health-hub/accessories'),
-                ),
-              ),
 
               // Header Filter (Search + Tier Choice Chips)
               SliverToBoxAdapter(
@@ -229,11 +221,11 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
                   final textScale = MediaQuery.textScalerOf(context).scale(1.0);
                   final double baseHeight;
                   if (crossAxisCount == 1) {
-                    baseHeight = 360.0;
+                    baseHeight = 430.0;
                   } else if (crossAxisCount == 2) {
-                    baseHeight = 440.0;
+                    baseHeight = 480.0;
                   } else {
-                    baseHeight = 420.0;
+                    baseHeight = 440.0;
                   }
                   final itemHeight = baseHeight * (textScale > 1.0 ? textScale : 1.0);
 

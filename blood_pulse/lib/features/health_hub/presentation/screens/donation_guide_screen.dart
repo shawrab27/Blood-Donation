@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-
-import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../domain/models/health_hub_models.dart';
 
@@ -76,9 +74,6 @@ class DonationGuideScreen extends ConsumerWidget {
     return ListView(
       physics: const BouncingScrollPhysics(),
       children: [
-        // Top Subnav
-        const HealthHubSubnavBar(activeRoute: '/health-hub/donation-guide'),
-
         // ── 1. Hero Card ──────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(20),

@@ -58,7 +58,7 @@ Roles: Senior Lead QA, Full-Stack Engineer, DevOps / Cloud Architect
 ### Group 3: Branding, Floating AI & Motion Design
 7. **BloodPulse Logo Accidental Mutation**
    - **Root Cause**: Asset path overridden or replaced with wrong icon variant.
-   - **Fix**: Lock asset to `assets/images/Blood Pulse logo.jpg` in circular clip with 32px height across all headers.
+   - **Fix**: Lock asset to `assets/images/launcher_icon_transparent.png` in circular clip with 32px height across all headers.
 
 8. **Splash Screen Video Not Playing**
    - **Root Cause**: `video_player` controller not properly initialized in splash screen lifecycle or missing asset bundle declaration in `pubspec.yaml`.

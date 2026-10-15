@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
 import 'poster_blank_template.dart';
 import 'poster_photo_template.dart';
+import 'poster_style_selectors.dart';
 import 'poster_text_template.dart';
 
 /// Reusable widget rendering the chosen BloodPulse emergency poster template.
@@ -17,12 +18,16 @@ class PosterGeneratorWidget extends StatefulWidget {
     super.key,
     required this.data,
     required this.templateType,
+    this.aspectRatio = PosterAspectRatio.square,
+    this.colorTheme = PosterColorTheme.crimson,
     this.repaintKey,
     this.isBangla = false,
   });
 
   final PosterData data;
   final PosterTemplateType templateType;
+  final PosterAspectRatio aspectRatio;
+  final PosterColorTheme colorTheme;
   final GlobalKey? repaintKey;
   final bool isBangla;
 
@@ -79,16 +84,22 @@ class PosterGeneratorWidgetState extends State<PosterGeneratorWidget> {
       case PosterTemplateType.withPhoto:
         return PosterPhotoTemplate(
           data: widget.data,
+          aspectRatio: widget.aspectRatio,
+          colorTheme: widget.colorTheme,
           isBangla: widget.isBangla,
         );
       case PosterTemplateType.textOnly:
         return PosterTextTemplate(
           data: widget.data,
+          aspectRatio: widget.aspectRatio,
+          colorTheme: widget.colorTheme,
           isBangla: widget.isBangla,
         );
       case PosterTemplateType.blank:
         return PosterBlankTemplate(
           data: widget.data,
+          aspectRatio: widget.aspectRatio,
+          colorTheme: widget.colorTheme,
           isBangla: widget.isBangla,
         );
     }

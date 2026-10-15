@@ -7,15 +7,20 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import '../../../auth/presentation/providers/locale_provider.dart';
 import '../../../profile/domain/providers/profile_provider.dart';
-import '../../../profile/domain/providers/leaderboard_provider.dart';
 import 'language_picker_sheet.dart';
 import 'contact_us_sheet.dart';
 
-/// Primary Settings Options Card matching Stitch Screen 5.
-/// 100% dynamically wired to backend privacy, notifications, and clinical settings.
+/// Primary Settings Options Card matching Stitch Screen 5 (Settings).
+/// Strictly contains the exact 7 options from the design:
+/// 1. Language
+/// 2. Notification Received (Urgent requests & updates toggle)
+/// 3. Privacy Policy
+/// 4. Rate Us
+/// 5. Share App
+/// 6. Learn More
+/// 7. Contact Us
 class SettingsOptionsCard extends ConsumerStatefulWidget {
   const SettingsOptionsCard({super.key});
 
@@ -44,9 +49,6 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
   Future<void> _updateField(String key, dynamic value) async {
     setState(() => _isUpdating = true);
     final success = await ref.read(profileProvider.notifier).updateProfile({key: value});
-    if (key == 'public_profile') {
-      ref.invalidate(leaderboardProvider);
-    }
     if (mounted) {
       setState(() => _isUpdating = false);
       if (!success) {
@@ -64,18 +66,14 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
   Widget build(BuildContext context) {
     final currentLocale = ref.watch(localeProvider);
     final isBangla = currentLocale.languageCode == 'bn';
-    final isPulseAiVisible = ref.watch(pulseAiVisibilityProvider);
     final profile = ref.watch(profileProvider).valueOrNull;
-
     final notificationsEnabled = profile?.notificationsEnabled ?? true;
-    final emergencyAlertsEnabled = profile?.emergencyAlertsEnabled ?? true;
-    final showContact = profile?.showContact ?? false;
-    final publicProfile = profile?.publicProfile ?? false;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF3DDE0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -95,97 +93,47 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
             subtitle: isBangla ? 'বাংলা (BD)' : 'English (US)',
             onTap: () => LanguagePickerSheet.show(context),
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // 2. Notifications Enabled
+          // 2. Notification Received (Urgent requests & updates)
           _buildSwitchTile(
             icon: Icons.notifications_rounded,
-            iconBgColor: const Color(0xFFEEF2FF),
-            iconColor: const Color(0xFF004B7E),
+            iconBgColor: const Color(0xFFE0F2FE),
+            iconColor: const Color(0xFF0284C7),
             title: 'Notification Received',
-            subtitle: 'Urgent requests & donor reminders',
+            subtitle: 'Urgent requests & updates',
             value: notificationsEnabled,
             onChanged: _isUpdating ? null : (val) => _updateField('notifications_enabled', val),
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // 3. Emergency Alerts Enabled
-          _buildSwitchTile(
-            icon: Icons.notification_important_rounded,
-            iconBgColor: const Color(0xFFFFEAEA),
-            iconColor: AppColors.primary,
-            title: 'Emergency Alerts',
-            subtitle: 'Critical patient alerts in your district',
-            value: emergencyAlertsEnabled,
-            onChanged: _isUpdating ? null : (val) => _updateField('emergency_alerts_enabled', val),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
-
-          // 4. Show Contact Phone
-          _buildSwitchTile(
-            icon: Icons.phone_enabled_rounded,
-            iconBgColor: const Color(0xFFE8F5E9),
-            iconColor: const Color(0xFF2E7D32),
-            title: 'Show Contact Phone',
-            subtitle: 'Allow verified patients to call you directly',
-            value: showContact,
-            onChanged: _isUpdating ? null : (val) => _updateField('show_contact', val),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
-
-          // 5. Public Profile / Leaderboard Consent
-          _buildSwitchTile(
-            icon: Icons.leaderboard_rounded,
-            iconBgColor: const Color(0xFFFFF3E0),
-            iconColor: const Color(0xFFE65100),
-            title: 'Public Profile & Leaderboard',
-            subtitle: 'Show your name on top donor rankings',
-            value: publicProfile,
-            onChanged: _isUpdating ? null : (val) => _updateField('public_profile', val),
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
-
-          // 6. PulseAI Assistant Toggle
-          _buildSwitchTile(
-            icon: Icons.support_agent_rounded,
-            iconBgColor: const Color(0xFFFEE9EB),
-            iconColor: AppColors.primary,
-            title: 'Show PulseAI Assistant',
-            subtitle: 'Floating clinical AI companion',
-            value: isPulseAiVisible,
-            onChanged: (val) {
-              ref.read(pulseAiVisibilityProvider.notifier).setVisible(val);
-            },
-          ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
-
-          // 7. Privacy Policy
+          // 3. Privacy Policy (Terms, security & blood safety)
           _buildTile(
-            icon: Icons.verified_user_rounded,
+            icon: Icons.shield_outlined,
             iconBgColor: const Color(0xFFFFDAD7),
-            iconColor: AppColors.primary,
+            iconColor: const Color(0xFFC30121),
             title: 'Privacy Policy',
             subtitle: 'Terms, security & blood safety',
             onTap: () => context.push('/privacy-policy'),
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // 8. Rate Us
+          // 4. Rate Us (Share your experience on App Store)
           _buildTile(
-            icon: Icons.star_rounded,
-            iconBgColor: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF004B7E),
+            icon: Icons.star_outline_rounded,
+            iconBgColor: const Color(0xFFE0F2FE),
+            iconColor: const Color(0xFF0284C7),
             title: 'Rate Us',
             subtitle: 'Share your experience on App Store',
             onTap: () => _launchUrl('https://play.google.com/store/apps/details?id=com.bloodpulse.app'),
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // 9. Share App
+          // 5. Share App (Spread the word, save lives)
           _buildTile(
-            icon: Icons.send_rounded,
+            icon: Icons.near_me_outlined,
             iconBgColor: const Color(0xFFF3E8FF),
-            iconColor: const Color(0xFF7E22CE),
+            iconColor: const Color(0xFF7C3AED),
             title: 'Share App',
             subtitle: 'Spread the word, save lives',
             onTap: () {
@@ -199,22 +147,22 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
               );
             },
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // 10. Learn More
+          // 6. Learn More (About BloodPulse & missions)
           _buildTile(
-            icon: Icons.info_rounded,
-            iconBgColor: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF004B7E),
+            icon: Icons.info_outline_rounded,
+            iconBgColor: const Color(0xFFE0F2FE),
+            iconColor: const Color(0xFF0284C7),
             title: 'Learn More',
             subtitle: 'About BloodPulse & missions',
             onTap: () => context.push('/health-hub/science-of-blood'),
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // 11. Contact Us
+          // 7. Contact Us (24/7 Support & emergency helpline)
           _buildTile(
-            icon: Icons.support_agent_rounded,
+            icon: Icons.headset_mic_outlined,
             iconBgColor: const Color(0xFFFEF3C7),
             iconColor: const Color(0xFFD97706),
             title: 'Contact Us',
@@ -240,10 +188,10 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -254,17 +202,18 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
                   title,
                   style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF24191A),
                   ),
                 ),
+                const SizedBox(height: 1),
                 Text(
                   subtitle,
                   style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 11,
-                    color: Color(0xFF5C3F3D),
+                    fontSize: 13,
+                    color: Color(0xFF757575),
                   ),
                 ),
               ],
@@ -273,7 +222,7 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           Switch.adaptive(
             value: value,
             activeThumbColor: Colors.white,
-            activeTrackColor: AppColors.primary,
+            activeTrackColor: const Color(0xFFC30121),
             inactiveTrackColor: const Color(0xFFE4E2E1),
             onChanged: onChanged,
           ),
@@ -294,14 +243,14 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
-              child: Icon(icon, color: iconColor, size: 18),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -312,7 +261,7 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
                     title,
                     style: const TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF24191A),
                     ),
@@ -323,15 +272,15 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
                       subtitle,
                       style: const TextStyle(
                         fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: Color(0xFF5C3F3D),
+                        fontSize: 13,
+                        color: Color(0xFF757575),
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF916F6C)),
+            const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFC8C6C5)),
           ],
         ),
       ),

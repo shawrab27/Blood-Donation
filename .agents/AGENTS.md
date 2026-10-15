@@ -3,7 +3,7 @@
 Before executing any prompt or command, strictly enforce these mandatory BloodPulse UI alignment rules (which fix and override Stitch UI mistakes):
 
 ### 1. TOP HEADER PATTERN (TOP BAR RULE)
-- **Top-Left**: Logo asset `assets/images/Blood Pulse logo.jpg` (height: 32px, circular clip) + `"BloodPulse"` title (Georgia font, deep red `#C30121`).
+- **Top-Left**: Logo asset `assets/images/launcher_icon_transparent.png` (height: 32px) + `"BloodPulse"` title (Georgia font, deep red `#C30121`).
 - **Top-Right**:
   1. Notification Bell icon (`Icons.notifications_outlined`) with active red unread badge (`#C30121`).
   2. **Profile Avatar** — a `CircleAvatar` (36px, circular, red border `#C30121`) showing the logged-in user's profile picture, a first-letter fallback, or a guest icon (`Icons.person_rounded`). Tapping navigates to the Profile screen (`/profile`). **Do NOT use a 3-dot PopupMenuButton.**

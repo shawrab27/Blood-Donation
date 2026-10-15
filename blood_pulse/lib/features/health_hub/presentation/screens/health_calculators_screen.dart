@@ -16,7 +16,6 @@ import '../widgets/calculators/cooldown_countdown_card.dart';
 import '../widgets/calculators/hydration_tracker_card.dart';
 import '../widgets/calculators/eligibility_prescreen_card.dart';
 import '../widgets/calculators/calculation_history_card.dart';
-import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 
 class HealthCalculatorsScreen extends ConsumerStatefulWidget {
@@ -101,9 +100,6 @@ class _HealthCalculatorsScreenState extends ConsumerState<HealthCalculatorsScree
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
-            // Top Subnav
-            const HealthHubSubnavBar(activeRoute: '/health-hub/calculators'),
-
             // ── Priority Header Card ─────────────────────────────────────────
             _buildPriorityHeader(healthState),
             const SizedBox(height: 14),

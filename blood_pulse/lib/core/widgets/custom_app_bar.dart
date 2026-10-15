@@ -263,6 +263,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               // ── 2. Profile Avatar ──
               if (showProfile)
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     AccessGuard.checkAndHandle(
                       context: context,
@@ -278,7 +279,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     );
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     child: _TopBarProfileAvatar(
                       avatarUrl: avatarUrl,
                       avatarBytes: avatarBytes,

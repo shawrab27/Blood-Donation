@@ -33,8 +33,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
   }
 
   Future<void> _initializeAndPlayVideo() async {
-    // Safety max timer (3.0s strict fallback as per Task 10A spec)
-    _fallbackTimer = Timer(const Duration(milliseconds: 3000), () {
+    // Safety fallback timer (3.8s ensures 3.0s video completes with margin for initialization)
+    _fallbackTimer = Timer(const Duration(milliseconds: 3800), () {
       if (mounted && !_hasNavigated) {
         _navigateToNext();
       }
@@ -47,8 +47,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
       );
       _controller = controller;
 
-      // Timeout initialization to 1.8s so slow decoders do not hang the app
-      await controller.initialize().timeout(const Duration(milliseconds: 1800));
+      // Timeout initialization to 2200ms so slow decoders do not hang the app
+      await controller.initialize().timeout(const Duration(milliseconds: 2200));
       if (!mounted) return;
 
       controller.addListener(_videoListener);
@@ -61,7 +61,7 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
       if (mounted) {
         // Fallback gracefully to static logo splash without hanging
         _fallbackTimer?.cancel();
-        _fallbackTimer = Timer(const Duration(milliseconds: 1200), _navigateToNext);
+        _fallbackTimer = Timer(const Duration(milliseconds: 1400), _navigateToNext);
       }
     }
   }
@@ -116,94 +116,115 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const darkThemeBg = Color(0xFF271816);
+    // Exact background color of assets/vedio/splash.mp4: #F9EEEA
+    const splashBgColor = Color(0xFFF9EEEA);
     final controller = _controller;
     final isInitialized = controller != null && controller.value.isInitialized;
 
     return Scaffold(
-      backgroundColor: darkThemeBg,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _navigateToNext, // Tap anywhere to skip
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ── Fallback / Loading Brand Logo (shown immediately so no blank wait) ──
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/images/Blood Pulse logo.jpg',
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'BloodPulse',
-                    style: TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Every Drop Counts',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      color: Color(0xFFE0E0E0),
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      backgroundColor: splashBgColor,
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.dark,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _navigateToNext, // Tap anywhere to skip
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ── Seamless Background Color Canvas ────────────────────────
+              const ColoredBox(color: splashBgColor),
 
-            // ── Full-Screen Video Player (smoothly overlays once ready) ──────
-            if (isInitialized)
-              SizedBox.expand(
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: controller.value.size.width,
-                    height: controller.value.size.height,
+              // ── Fallback / Loading Brand Logo (shown immediately so no blank wait) ──
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/images/launcher_icon_transparent.png',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'BloodPulse',
+                        style: TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFC30121),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Every Drop Counts',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF5C3F3D),
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Responsive Video Player (centered, zero cropping on ANY screen) ──
+              if (isInitialized)
+                Center(
+                  child: AspectRatio(
+                    aspectRatio: controller.value.aspectRatio > 0
+                        ? controller.value.aspectRatio
+                        : (720 / 1280),
                     child: VideoPlayer(controller),
                   ),
                 ),
-              ),
 
-            // Skip button in top-right corner
-            Positioned(
-              top: MediaQuery.paddingOf(context).top + 16,
-              right: 16,
-              child: TextButton(
-                onPressed: _navigateToNext,
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.black.withAlpha(90),
-                  shape: const StadiumBorder(),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: const Text(
-                  'Skip',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              // ── Skip Button in Top-Right Corner ──────────────────────────
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 12,
+                right: 16,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _navigateToNext,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF24191A).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFF24191A).withValues(alpha: 0.12),
+                          width: 1,
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      child: const Text(
+                        'Skip',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF24191A),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

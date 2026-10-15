@@ -15,6 +15,7 @@ class PosterCanvas extends StatelessWidget {
     required this.data,
     required this.templateType,
     required this.aspectRatio,
+    this.colorTheme = PosterColorTheme.crimson,
     this.isBangla = false,
   });
 
@@ -22,6 +23,7 @@ class PosterCanvas extends StatelessWidget {
   final PosterData data;
   final PosterTemplateType templateType;
   final PosterAspectRatio aspectRatio;
+  final PosterColorTheme colorTheme;
   final bool isBangla;
 
   @override
@@ -38,6 +40,8 @@ class PosterCanvas extends StatelessWidget {
               key: generatorKey,
               data: data,
               templateType: templateType,
+              aspectRatio: aspectRatio,
+              colorTheme: colorTheme,
               isBangla: isBangla,
             ),
           ),

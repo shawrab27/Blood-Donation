@@ -51,7 +51,11 @@ class ProfileTopDonorsSection extends ConsumerWidget {
                 ),
               ),
               GestureDetector(
-                onTap: () => context.push('/global-rank'),
+                onTap: () {
+                  try {
+                    context.push('/global-rank');
+                  } catch (_) {}
+                },
                 behavior: HitTestBehavior.opaque,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -117,13 +121,30 @@ class ProfileTopDonorsSection extends ConsumerWidget {
               final top4 = donors.take(4).toList();
               final int othersCount = response.otherDonorsCount;
 
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...top4.map((donor) => _buildDonorColumn(context, donor)),
-                  _buildOthersColumn(context, othersCount),
-                ],
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ...top4.map((donor) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: _buildDonorColumn(context, donor, ref),
+                          )),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: _buildOthersColumn(context, othersCount),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -132,7 +153,7 @@ class ProfileTopDonorsSection extends ConsumerWidget {
     );
   }
 
-  Widget _buildDonorColumn(BuildContext context, dynamic donor) {
+  Widget _buildDonorColumn(BuildContext context, dynamic donor, WidgetRef ref) {
     final int rank = donor.rank;
     final String name = donor.name;
     final int bags = donor.bags;
@@ -147,9 +168,20 @@ class ProfileTopDonorsSection extends ConsumerWidget {
                 : const Color(0xFFC30121);
 
     final String initial = name.isNotEmpty ? name[0].toUpperCase() : 'H';
+    final currentProfile = ref.watch(profileProvider).valueOrNull;
+    final bool isSelf = donor.isCurrentUser == true ||
+        (currentProfile != null && currentProfile.id == donor.id);
 
     return GestureDetector(
-      onTap: () => context.push('/profile/${donor.id}'),
+      onTap: () {
+        try {
+          if (isSelf) {
+            context.push('/profile');
+          } else {
+            context.push('/profile/${donor.id}');
+          }
+        } catch (_) {}
+      },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 58,
@@ -235,7 +267,11 @@ class ProfileTopDonorsSection extends ConsumerWidget {
     final String label = othersCount > 0 ? '+$othersCount' : 'More';
 
     return GestureDetector(
-      onTap: () => context.push('/global-rank'),
+      onTap: () {
+        try {
+          context.push('/global-rank');
+        } catch (_) {}
+      },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 58,

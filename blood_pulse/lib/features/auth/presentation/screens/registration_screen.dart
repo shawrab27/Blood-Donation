@@ -663,6 +663,24 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     );
   }
 
+  void _quickFillTestDonor() {
+    setState(() {
+      _nameCtrl.text = 'Test Donor';
+      _emailCtrl.text = 'donor@bloodpulse.org';
+      _phoneCtrl.text = '01712345678';
+      _ageCtrl.text = '25';
+      _pwCtrl.text = 'Pulse@123';
+      _confirmPwCtrl.text = 'Pulse@123';
+      _gender = _Gender.male;
+      _bloodGroup = 'O+';
+      _confirmBloodGroup = 'O+';
+      _category = _UserCategory.civilian;
+      _selectedDivision = 'Dhaka';
+      _selectedZila = 'Dhaka';
+      _neverDonated = true;
+    });
+  }
+
   PreferredSizeWidget _buildMobileAppBar() {
     return BloodPulseAppBar(
       showBackButton: true,
@@ -670,8 +688,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       subtitle: 'Register',
       showNotification: false,
       showProfile: false,
-      
-      actions: const [],
+      actions: [
+        if (kDebugMode)
+          IconButton(
+            key: const ValueKey('debug_quick_fill_btn'),
+            icon: const Icon(Icons.flash_on, color: Color(0xFFC30121)),
+            tooltip: 'Quick Fill Test Donor',
+            onPressed: _quickFillTestDonor,
+          ),
+      ],
     );
   }
 

@@ -101,4 +101,60 @@ void main() {
       }
     }
   });
+
+  testWidgets('PulseAiOverlay opens 4 capsule pills in Guest Mode without bottom sheet modal', (WidgetTester tester) async {
+    final router = GoRouter(
+      initialLocation: '/guest-welcome',
+      routes: [
+        GoRoute(
+          path: '/guest-welcome',
+          builder: (context, state) => const Scaffold(body: Text('Guest Welcome')),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          pulseAiVisibilityProvider.overrideWith((ref) => PulseAiVisibilityNotifier()),
+          appRouterProvider.overrideWithValue(router),
+          authProvider.overrideWith(() => AuthNotifier(initialState: const AuthState())),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          builder: (context, child) => PulseAiOverlay(child: child ?? const SizedBox()),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // FAB is visible in guest mode
+    final fabFinder = find.byKey(const Key('pulseai_fab_button'));
+    expect(fabFinder, findsOneWidget);
+
+    // Tap to open speed-dial
+    await tester.tap(fabFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Verify the EXACT 4 pills matching Image 2 are present
+    expect(find.text('Chat with PulseAI'), findsOneWidget);
+    expect(find.text('Analyse blood report'), findsOneWidget);
+    expect(find.text('Find donors nearby'), findsOneWidget);
+    expect(find.text('Hide PulseAI'), findsOneWidget);
+
+    // Assert NO BottomSheet modal was opened (Image 1 is completely eliminated)
+    expect(find.byType(BottomSheet), findsNothing);
+
+    // Tap 'Hide PulseAI' pill
+    await tester.tap(find.text('Hide PulseAI'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // FAB is now hidden
+    expect(find.byKey(const Key('pulseai_fab_button')), findsNothing);
+  });
 }
+

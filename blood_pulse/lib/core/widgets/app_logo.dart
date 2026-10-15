@@ -5,15 +5,15 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 /// Path to the official logo assets.
-const String kBloodPulseJpgAsset = 'assets/images/Blood Pulse logo.jpg';
-const String kBloodPulseIconAsset = 'assets/images/Blood Pulse logo.jpg';
-const String kBloodPulsePngIconAsset = 'assets/images/blood_pulse_icon.png';
-const String kBloodPulseLogoAsset = 'assets/images/blood_pulse_logo.png';
+const String kBloodPulseLogoAsset = 'assets/images/launcher_icon_transparent.png';
+const String kBloodPulseJpgAsset = 'assets/images/launcher_icon_transparent.png';
+const String kBloodPulseIconAsset = 'assets/images/launcher_icon_transparent.png';
+const String kBloodPulsePngIconAsset = 'assets/images/launcher_icon_transparent.png';
 
 /// The official BloodPulse mark widget.
 ///
-/// Loads the official circular clipped logo asset [kBloodPulseJpgAsset]
-/// featuring Deep Red (#C30121) branding.
+/// Loads the official accurate logo asset [kBloodPulseLogoAsset]
+/// featuring Deep Red (#C30121) branding with transparency.
 class BloodPulseMark extends StatelessWidget {
   final double size;
   final Color? backgroundColor;
@@ -29,39 +29,29 @@ class BloodPulseMark extends StatelessWidget {
     this.primaryColor = AppColors.primary,
     this.secondaryColor = AppColors.burgundy,
     this.showShadow = false,
-    this.assetPath = kBloodPulseJpgAsset,
+    this.assetPath = kBloodPulseLogoAsset,
   });
 
   @override
   Widget build(BuildContext context) {
-    final image = ClipOval(
-      child: Image.asset(
-        assetPath,
+    final image = Image.asset(
+      assetPath,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, error, stackTrace) => Container(
         width: size,
         height: size,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.medium,
-        errorBuilder: (context, error, stackTrace) => ClipOval(
-          child: Image.asset(
-            kBloodPulsePngIconAsset,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: backgroundColor ?? secondaryColor.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.favorite_rounded,
-                  color: primaryColor,
-                  size: size * 0.62,
-                ),
-              ),
-            ),
+        decoration: BoxDecoration(
+          color: backgroundColor ?? secondaryColor.withValues(alpha: 0.08),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(
+            Icons.favorite_rounded,
+            color: primaryColor,
+            size: size * 0.62,
           ),
         ),
       ),

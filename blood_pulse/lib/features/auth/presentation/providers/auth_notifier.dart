@@ -539,6 +539,19 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final response = await _apiClient.post('donors/', body: payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map<String, dynamic> && data['access'] != null) {
+            await _apiClient.saveTokens(
+              access: data['access'].toString(),
+              refresh: data['refresh']?.toString() ?? '',
+            );
+          } else if (password != null && password.isNotEmpty) {
+            await _apiClient.login(completeProfile.primaryPhone, password);
+          }
+        } catch (e) {
+          debugPrint('[registerUser] Token capture warning: $e');
+        }
         ref.read(isGuestProvider.notifier).state = false;
         state = state.copyWith(
           status: AuthStatus.authenticated,

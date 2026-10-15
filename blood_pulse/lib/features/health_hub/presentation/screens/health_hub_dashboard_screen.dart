@@ -1,87 +1,71 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-import '../widgets/common/health_accessory_contextual_card.dart';
-import '../widgets/dashboard/health_hub_status_card.dart';
 import '../widgets/dashboard/health_hub_tools_grid.dart';
-import '../widgets/dashboard/health_hub_articles_section.dart';
 
+/// Clean Health Hub Dashboard Screen matching Stitch Screen 8b78385103a7437189984b21b2fd2ce3.
+/// Features a clean, uncluttered layout:
+/// - Header: "Health Hub" & "Your wellness overview and clinical insights."
+/// - Section: "Tools & Insights"
+/// - 8-Card Interactive Tools Grid with smooth active:scale-95 press transition effect.
 class HealthHubDashboardScreen extends StatelessWidget {
   const HealthHubDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF8F7),
+      body: SafeArea(
+        top: false,
+        child: ResponsiveCenterWrapper(
+          maxWidth: 900,
+          child: ListView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            children: const [
+              SizedBox(height: 8),
 
-    return Material(
-      type: MaterialType.transparency,
-      child: ResponsiveCenterWrapper(
-        child: ListView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          children: [
-          const SizedBox(height: 8),
+              // ── Header Section ───────────────────────────────────────────
+              Text(
+                'Health Hub',
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF24191A),
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Your wellness overview and clinical insights.',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 15,
+                  color: Color(0xFF5C3F3D),
+                ),
+              ),
+              SizedBox(height: 28),
 
-          // ── Title & Intro ──────────────────────────────────────────────────
-          Text(
-            l10n?.healthTitle ?? 'Health Hub',
-            style: const TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: AppColors.secondary,
-            ),
+              // ── Tools & Insights Section ─────────────────────────────────
+              Text(
+                'Tools & Insights',
+                style: TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF24191A),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // ── Clean 8-Card Tools Grid ──────────────────────────────────
+              HealthHubToolsGrid(),
+
+              SizedBox(height: 40),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            l10n?.healthSubtitle ?? 'Your personal health & donation intelligence center.',
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              color: AppColors.neutral,
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // ── 1. Summary Status Card ─────────────────────────────────────────
-          const HealthHubStatusCard(),
-
-          const SizedBox(height: 16),
-
-          // ── 2. Mandatory 2nd Position: Health & Blood Accessories Feature ─
-          const HealthAccessoryContextualCard(
-            title: 'Health & Blood Accessories Catalog',
-            subtitle: 'Verified diagnostic kits, sphygmomanometers, lancets, and voluntary donor restoration gear.',
-            customButtonText: 'Browse 7+ Accessories',
-          ),
-
-          const SizedBox(height: 20),
-
-          // ── 3. Tools & Analytics Grid (Accessories in 2nd slot) ───────────
-          Text(
-            l10n?.healthToolsTitle ?? 'Tools & Analytics',
-            style: const TextStyle(
-              fontFamily: 'Georgia',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.secondary,
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          const HealthHubToolsGrid(),
-
-          const SizedBox(height: 28),
-
-          // ── 4. Daily Wellness Tip & Articles ──────────────────────────────
-          const HealthHubArticlesSection(),
-
-          const SizedBox(height: 40),
-          ],
         ),
       ),
     );

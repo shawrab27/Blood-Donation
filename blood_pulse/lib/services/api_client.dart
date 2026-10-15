@@ -192,46 +192,70 @@ class ApiClient {
 
   /// Calls `/api/token/` with phone as username and password, storing tokens on success.
   Future<Map<String, dynamic>> login(String phone, String password) async {
-    try {
-      final uri = Uri.parse(_normalizeUrl('token/'));
-      final response = await _client
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'username': phone,
-              'password': password,
-            }),
-          )
-          .timeout(connectTimeout);
+    final activeBase = ApiConfig.baseUrl;
+    final orderedCandidates = <String>[
+      activeBase,
+      ...ApiConfig.candidateUrls.where((c) => c != activeBase),
+    ];
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final access = data['access'] as String?;
-        final refresh = data['refresh'] as String?;
+    ApiException? lastError;
 
-        if (access != null && refresh != null) {
-          await saveTokens(access: access, refresh: refresh);
+    for (final candidateBase in orderedCandidates) {
+      try {
+        final cleanPath = 'token/';
+        final fullUrl = '$candidateBase/api/$cleanPath';
+        final uri = Uri.parse(fullUrl);
+        final response = await _client
+            .post(
+              uri,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'username': phone,
+                'password': password,
+              }),
+            )
+            .timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          ApiConfig.overrideBaseUrl(candidateBase);
+          baseUrl = candidateBase;
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final access = data['access'] as String?;
+          final refresh = data['refresh'] as String?;
+
+          if (access != null && refresh != null) {
+            await saveTokens(access: access, refresh: refresh);
+          }
+          return data;
+        } else {
+          throw ApiException(
+            'Login failed [${response.statusCode}]: ${_extractErrorMessage(response.body)}',
+            statusCode: response.statusCode,
+            rawError: response.body,
+          );
         }
-        return data;
-      } else {
-        throw ApiException(
-          'Login failed [${response.statusCode}]: ${_extractErrorMessage(response.body)}',
-          statusCode: response.statusCode,
-          rawError: response.body,
-        );
+      } on ApiException {
+        rethrow;
+      } on SocketException catch (e) {
+        debugPrint('[ApiClient] Login SocketException on $candidateBase: $e');
+        lastError = ApiException('Network unreachable. Please check your internet connection.', rawError: e);
+        continue;
+      } on TimeoutException catch (e) {
+        debugPrint('[ApiClient] Login TimeoutException on $candidateBase');
+        lastError = ApiException('Connection timed out. Server took too long to respond.', rawError: e);
+        continue;
+      } on http.ClientException catch (e) {
+        debugPrint('[ApiClient] Login ClientException on $candidateBase: $e');
+        lastError = ApiException('Network unreachable. Please check your internet connection.', rawError: e);
+        continue;
+      } catch (e) {
+        debugPrint('[ApiClient] Login unexpected error on $candidateBase: $e');
+        lastError = ApiException('Unexpected authentication error: $e', rawError: e);
+        continue;
       }
-    } on ApiException {
-      rethrow;
-    } on SocketException catch (e) {
-      throw ApiException('Network unreachable. Please check your internet connection.', rawError: e);
-    } on TimeoutException catch (e) {
-      throw ApiException('Connection timed out. Server took too long to respond.', rawError: e);
-    } on FormatException catch (e) {
-      throw ApiException('Malformed response received from server.', rawError: e);
-    } catch (e) {
-      throw ApiException('Unexpected authentication error: $e', rawError: e);
     }
+
+    throw lastError ?? const ApiException('Network unreachable. Please check your internet connection.');
   }
 
   /// Exchanges Firebase ID token with backend POST /api/auth/firebase/, returning JWT tokens and saving them to secure storage.
@@ -711,8 +735,15 @@ class ApiClient {
 
   Future<http.Response> _sendWithRetry(
     Future<http.Response> Function(Map<String, String> authHeaders) requestFn, {
-    int maxAttempts = 2,
+    int maxAttempts = 3,
   }) async {
+    final activeBase = ApiConfig.baseUrl;
+    final orderedCandidates = <String>[
+      activeBase,
+      ...ApiConfig.candidateUrls.where((c) => c != activeBase),
+    ];
+    int candidateIdx = 0;
+
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         final authHeaders = await _getAuthHeaders();
@@ -750,10 +781,23 @@ class ApiClient {
           );
         }
 
+        if (candidateIdx > 0 && response.statusCode >= 200 && response.statusCode < 400) {
+          final winningHost = orderedCandidates[candidateIdx];
+          ApiConfig.overrideBaseUrl(winningHost);
+          baseUrl = winningHost;
+        }
+
         return response;
       } on ApiException {
         rethrow;
       } on SocketException catch (e) {
+        if (candidateIdx < orderedCandidates.length - 1) {
+          candidateIdx++;
+          final nextHost = orderedCandidates[candidateIdx];
+          debugPrint('[ApiClient] SocketException. Trying next candidate endpoint $nextHost...');
+          baseUrl = nextHost;
+          continue;
+        }
         if (attempt < maxAttempts) {
           debugPrint('[ApiClient] SocketException on attempt $attempt. Retrying in 2.5s...');
           await Future.delayed(const Duration(milliseconds: 2500));
@@ -761,6 +805,13 @@ class ApiClient {
         }
         throw ApiException('Network connection failed. Please check your network.', rawError: e);
       } on TimeoutException catch (e) {
+        if (candidateIdx < orderedCandidates.length - 1) {
+          candidateIdx++;
+          final nextHost = orderedCandidates[candidateIdx];
+          debugPrint('[ApiClient] TimeoutException. Trying next candidate endpoint $nextHost...');
+          baseUrl = nextHost;
+          continue;
+        }
         if (attempt < maxAttempts) {
           debugPrint('[ApiClient] TimeoutException on attempt $attempt. Retrying in 2.5s...');
           await Future.delayed(const Duration(milliseconds: 2500));
@@ -770,6 +821,13 @@ class ApiClient {
       } on FormatException catch (e) {
         throw ApiException('Malformed response format received.', rawError: e);
       } on http.ClientException catch (e) {
+        if (candidateIdx < orderedCandidates.length - 1) {
+          candidateIdx++;
+          final nextHost = orderedCandidates[candidateIdx];
+          debugPrint('[ApiClient] ClientException. Trying next candidate endpoint $nextHost...');
+          baseUrl = nextHost;
+          continue;
+        }
         if (attempt < maxAttempts) {
           debugPrint('[ApiClient] ClientException on attempt $attempt. Retrying in 2.5s...');
           await Future.delayed(const Duration(milliseconds: 2500));
@@ -780,7 +838,7 @@ class ApiClient {
         throw ApiException('Network request error: $e', rawError: e);
       }
     }
-    throw const ApiException('Network connection failed. Please check your network.');
+    throw const ApiException('Network connection failed after retries.');
   }
 
   /// Fetches public statistics with a strict 3-second timeout.
@@ -791,7 +849,7 @@ class ApiClient {
     const String cacheKeyDistricts = 'bp_public_stats_districts_covered';
 
     try {
-      final uri = Uri.parse('$baseUrl/api/public/stats/');
+      final uri = Uri.parse(_normalizeUrl('public/stats/'));
       final response = await _client
           .get(uri, headers: {'Accept': 'application/json'})
           .timeout(const Duration(seconds: 3));

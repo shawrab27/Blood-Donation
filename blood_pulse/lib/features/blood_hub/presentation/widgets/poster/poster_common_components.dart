@@ -124,6 +124,8 @@ class PosterInfoRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.isBold = false,
+    this.valueColor,
+    this.labelColor,
   });
 
   final IconData icon;
@@ -131,6 +133,8 @@ class PosterInfoRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isBold;
+  final Color? valueColor;
+  final Color? labelColor;
 
   @override
   Widget build(BuildContext context) {
@@ -140,10 +144,10 @@ class PosterInfoRow extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 11,
-            color: Color(0xFF757575),
+            color: labelColor ?? const Color(0xFF757575),
           ),
         ),
         const SizedBox(width: 6),
@@ -157,7 +161,7 @@ class PosterInfoRow extends StatelessWidget {
               fontFamily: 'Inter',
               fontSize: 11,
               fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-              color: isBold ? AppColors.primary : AppColors.secondary,
+              color: valueColor ?? (isBold ? AppColors.primary : AppColors.secondary),
             ),
           ),
         ),

@@ -233,7 +233,13 @@ class _GlobalRankScreenState extends ConsumerState<GlobalRankScreen> {
                 : const Color(0xFF8C8A8A);
 
     return InkWell(
-      onTap: () => context.push('/profile/${donor.id}'),
+      onTap: () {
+        if (donor.isCaller) {
+          context.push('/profile');
+        } else {
+          context.push('/profile/${donor.id}');
+        }
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

@@ -250,7 +250,39 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                   child: AppLoader(),
                 ),
               ),
-              error: (err, _) => Center(child: Text('Error loading networks: $err')),
+              error: (err, _) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF3DDE0)),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded, color: Color(0xFFC30121), size: 28),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Unable to load national organizations',
+                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Please check your connection and tap to retry.',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => ref.refresh(nationalCommunitiesProvider),
+                        icon: const Icon(Icons.refresh, size: 16, color: Color(0xFFC30121)),
+                        label: const Text('Retry', style: TextStyle(color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               data: (networks) {
                 final filtered = networks.where((n) {
                   return n.name.toLowerCase().contains(_searchQuery) ||
@@ -315,7 +347,39 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                   child: AppLoader(),
                 ),
               ),
-              error: (err, _) => Center(child: Text('Error loading partners: $err')),
+              error: (err, _) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFF3DDE0)),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_hospital_outlined, color: Color(0xFFC30121), size: 28),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Unable to load medical partners',
+                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Please check your connection and tap to retry.',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => ref.refresh(medicalPartnersProvider),
+                        icon: const Icon(Icons.refresh, size: 16, color: Color(0xFFC30121)),
+                        label: const Text('Retry', style: TextStyle(color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               data: (partners) {
                 return Column(
                   children: partners.map((p) => _MedicalPartnerCard(partner: p)).toList(),

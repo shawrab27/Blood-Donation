@@ -79,7 +79,6 @@ class RouterNotifier extends ChangeNotifier {
                          path == '/register' || 
                          path == '/forgot-password' ||
                          path == '/verify-otp' ||
-                         path == '/' || 
                          path == '/onboarding' || 
                          path == '/splash' ||
                          path == '/guest-welcome';

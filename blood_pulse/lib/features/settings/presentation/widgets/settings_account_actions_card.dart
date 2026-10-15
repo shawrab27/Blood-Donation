@@ -20,6 +20,7 @@ class SettingsAccountActionsCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF3DDE0)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -30,10 +31,10 @@ class SettingsAccountActionsCard extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Create New Account
+          // 1. Create New Account
           _buildActionTile(
-            icon: Icons.person_add_rounded,
-            iconBgColor: const Color(0xFFF8E3E5),
+            icon: Icons.person_add_outlined,
+            iconBgColor: const Color(0xFFFDEAEB),
             iconColor: AppColors.primary,
             title: 'Create New Account',
             subtitle: 'Register another donor profile or organization',
@@ -63,25 +64,25 @@ class SettingsAccountActionsCard extends ConsumerWidget {
               );
             },
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // Delete Account (Stitch Screen 7)
+          // 2. Delete Account (Stitch Screen 7)
           _buildActionTile(
             icon: Icons.delete_outline_rounded,
-            iconBgColor: const Color(0xFFFFDAD6),
+            iconBgColor: const Color(0xFFFDEAEB),
             iconColor: const Color(0xFFBA1A1A),
             title: 'Delete Account',
             titleColor: const Color(0xFFBA1A1A),
             subtitle: null,
             onTap: () => DeleteAccountConfirmationModal.show(context),
           ),
-          const Divider(height: 1, indent: 56, color: Color(0xFFF8E3E5)),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
-          // Logout (Stitch Screen 8)
+          // 3. Logout (Stitch Screen 8)
           _buildActionTile(
             icon: Icons.logout_rounded,
-            iconBgColor: const Color(0xFFF8E3E5),
-            iconColor: AppColors.primary,
+            iconBgColor: const Color(0xFFFDEAEB),
+            iconColor: const Color(0xFF24191A),
             title: 'Logout',
             subtitle: null,
             onTap: () => LogoutConfirmationModal.show(context, ref),
@@ -104,14 +105,14 @@ class SettingsAccountActionsCard extends ConsumerWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
-              child: Icon(icon, color: iconColor, size: 18),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -122,7 +123,7 @@ class SettingsAccountActionsCard extends ConsumerWidget {
                     title,
                     style: TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: titleColor ?? const Color(0xFF24191A),
                     ),
@@ -133,15 +134,15 @@ class SettingsAccountActionsCard extends ConsumerWidget {
                       subtitle,
                       style: const TextStyle(
                         fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: Color(0xFF5C3F3D),
+                        fontSize: 13,
+                        color: Color(0xFF757575),
                       ),
                     ),
                   ],
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF916F6C)),
+            const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFC8C6C5)),
           ],
         ),
       ),

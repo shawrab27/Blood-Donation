@@ -18,6 +18,7 @@ import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/providers/profile_provider.dart';
 import '../widgets/modals/digital_certificate_sheet.dart';
 import '../widgets/modals/edit_bio_sheet.dart';
+import '../widgets/modals/last_donation_date_sheet.dart';
 import '../widgets/profile_hero_card.dart';
 import '../widgets/profile_rating_xp_card.dart';
 import '../widgets/profile_stats_row.dart';
@@ -222,38 +223,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   Future<void> _selectLastDonationDate() async {
     final countdown = ref.read(profileCountdownProvider);
     final initial = countdown.lastDonationDate ?? DateTime.now();
-    final picked = await showDatePicker(
+    await LastDonationDateSheet.show(
       context: context,
-      initialDate: initial.isAfter(DateTime.now()) ? DateTime.now() : initial,
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: AppColors.primary),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: initial,
     );
-
-    if (picked != null) {
-      ref.read(profileCountdownProvider.notifier).recordDonation(picked);
-      try {
-        await ApiClient().patch('profile/me/last-donation/', body: {
-          'last_donation_date': DateFormat('yyyy-MM-dd').format(picked),
-        });
-      } catch (_) {}
-      if (mounted) {
-        ref.invalidate(profileProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✓ Last donation date updated. Next eligibility recalculated!'),
-            backgroundColor: Color(0xFF1B8A4E),
-          ),
-        );
-      }
-    }
   }
 
   @override

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../models/profile_models.dart';
+import '../models/donor_review_model.dart';
 import '../../../../services/api_client.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 
@@ -140,6 +141,11 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       ));
     }
   }
+
+  /// Clears profile cache on logout or account switch
+  void clear() {
+    state = const AsyncValue.data(null);
+  }
 }
 
 /// Provider for Top Donors (5 columns on Profile screen)
@@ -248,3 +254,18 @@ final profileActivityProvider = FutureProvider<List<ProfileActivityItem>>((ref) 
   }
   return [];
 });
+
+/// Provider for Donor Ratings & Reviews (GET /api/profile/`<id>`/reviews/)
+final donorReviewsProvider = FutureProvider.family<DonorReviewsResponse, int>((ref, donorId) async {
+  try {
+    final res = await ApiClient().get('profile/$donorId/reviews/');
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return DonorReviewsResponse.fromJson(data);
+    }
+  } catch (e) {
+    if (kDebugMode) print('[donorReviewsProvider] error: $e');
+  }
+  return DonorReviewsResponse(ratingAvg: 5.0, ratingCount: 0, reviews: []);
+});
+

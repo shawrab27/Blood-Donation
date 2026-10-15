@@ -331,24 +331,28 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey),
-                          onPressed: () {},
-                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey, size: 20),
+                          tooltip: 'Scan Blood Report',
+                          onPressed: () => context.push('/health-hub/ai-report'),
+                          padding: const EdgeInsets.all(4),
                           constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 4),
                         IconButton(
-                          icon: const Icon(Icons.location_on_outlined, color: Colors.grey),
-                          onPressed: () {},
-                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.location_on_outlined, color: Colors.grey, size: 20),
+                          tooltip: 'Search Nearby Donors',
+                          onPressed: () => context.push('/blood-hub/search'),
+                          padding: const EdgeInsets.all(4),
                           constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: _textController,
@@ -362,13 +366,13 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                               border: InputBorder.none,
                               counterText: "",
                               isDense: true,
-                              contentPadding: EdgeInsets.symmetric(vertical: 12),
+                              contentPadding: EdgeInsets.symmetric(vertical: 10),
                             ),
                             onSubmitted: _sendMessage,
                           ),
                         ),
                         if (!kIsWeb) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             decoration: BoxDecoration(
@@ -379,15 +383,17 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                               icon: Icon(
                                 _isListening ? Icons.mic : Icons.mic_none_outlined,
                                 color: _isListening ? const Color(0xFFC30121) : Colors.grey,
+                                size: 20,
                               ),
                               tooltip: _isListening ? "Listening... Tap to stop" : "Speak in Bangla or English",
                               onPressed: _toggleVoiceInput,
-                              padding: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(6),
                               constraints: const BoxConstraints(),
+                              visualDensity: VisualDensity.compact,
                             ),
                           ),
                         ],
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         ValueListenableBuilder<TextEditingValue>(
                           valueListenable: _textController,
                           builder: (context, value, child) {
@@ -397,12 +403,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                                 color: canSend ? const Color(0xFFC30121) : Colors.grey.shade300,
                                 shape: BoxShape.circle,
                               ),
-                              margin: const EdgeInsets.only(bottom: 2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 18),
                                 onPressed: canSend ? () => _sendMessage(_textController.text) : null,
                                 padding: const EdgeInsets.all(8),
                                 constraints: const BoxConstraints(),
+                                visualDensity: VisualDensity.compact,
                               ),
                             );
                           },

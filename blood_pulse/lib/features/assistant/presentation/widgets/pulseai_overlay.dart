@@ -3,9 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import '../../../../core/app_router.dart';
-import '../../../auth/presentation/providers/auth_notifier.dart';
-import 'heartbeat_icon.dart';
-import '../../../../core/widgets/brand_mark.dart';
 import '../../../../main.dart'; // To access rootScaffoldMessengerKey if defined there.
 
 class PulseAiOverlay extends ConsumerStatefulWidget {
@@ -128,7 +125,19 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
       '/privacy-policy',
       '/assistant',
     ];
-    return !hiddenRoutes.contains(_currentRoute);
+    return !hiddenRoutes.any((r) => _currentRoute == r || _currentRoute.startsWith('$r/'));
+  }
+
+  bool _hasBottomNav() {
+    const shellTabRoutes = [
+      '/feed',
+      '/blood-hub',
+      '/communities',
+      '/health-hub',
+      '/profile',
+      '/dashboard',
+    ];
+    return shellTabRoutes.contains(_currentRoute);
   }
 
   Widget _buildStaggeredPill({
@@ -224,11 +233,10 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
   @override
   Widget build(BuildContext context) {
     final isVisible = ref.watch(pulseAiVisibilityProvider);
-    final isAuthenticated = ref.watch(authProvider).isAuthenticated;
     final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final routeAllowed = _isRouteAllowed();
 
-    final showOverlay = isVisible && isAuthenticated && routeAllowed && !isKeyboardOpen;
+    final showOverlay = isVisible && routeAllowed && !isKeyboardOpen;
 
     return PopScope(
       canPop: _animController.value == 0.0,
@@ -260,7 +268,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
             // Floating Action Speed-Dial Container
             Positioned(
               right: 16,
-              bottom: 80 + MediaQuery.paddingOf(context).bottom,
+              bottom: (_hasBottomNav() ? 80.0 : 20.0) + MediaQuery.paddingOf(context).bottom,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -307,7 +315,7 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
                     ],
                   ),
                   const SizedBox(height: 4),
-                  // FAB that morphs between BrandMark and Close 'X'
+                  // FAB that morphs between Stitch PulseAI Icon and Close 'X'
                   GestureDetector(
                     key: const Key('pulseai_fab_button'),
                     behavior: HitTestBehavior.opaque,
@@ -316,32 +324,23 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
                       animation: _iconMorph,
                       builder: (context, _) {
                         final morphVal = _iconMorph.value;
-                        return Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFC30121).withValues(alpha: 0.25),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                        return SizedBox(
+                          width: 58,
+                          height: 58,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // BrandMark (fades and scales down when expanded)
+                              // PulseAI Minimalist Blood Drop with Pulse Icon (from Stitch screen 429fd13037924bbe9fcdd6aef8a61fb5)
                               if (morphVal < 0.95)
                                 Transform.scale(
                                   scale: (1.0 - morphVal).clamp(0.0, 1.0),
                                   child: Opacity(
                                     opacity: (1.0 - morphVal).clamp(0.0, 1.0),
-                                    child: const BrandMark(
-                                      size: 56,
-                                      animateHeartbeat: true,
+                                    child: Image.asset(
+                                      'assets/images/pulseai_icon.png',
+                                      width: 58,
+                                      height: 58,
+                                      fit: BoxFit.contain,
                                     ),
                                   ),
                                 ),
@@ -353,10 +352,31 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
                                     scale: morphVal.clamp(0.0, 1.0),
                                     child: Opacity(
                                       opacity: morphVal.clamp(0.0, 1.0),
-                                      child: const Icon(
-                                        Icons.close_rounded,
-                                        color: Color(0xFFC30121),
-                                        size: 28,
+                                      child: Container(
+                                        width: 54,
+                                        height: 54,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white,
+                                          border: Border.all(
+                                            color: const Color(0xFFF0DCDC),
+                                            width: 1.2,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFFC30121).withValues(alpha: 0.25),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.close_rounded,
+                                            color: Color(0xFFC30121),
+                                            size: 28,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),

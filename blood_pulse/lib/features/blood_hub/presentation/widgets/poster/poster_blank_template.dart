@@ -1,9 +1,7 @@
-// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
-// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
-
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
+import 'poster_style_selectors.dart';
 
 /// Template 3: Story Alert (Full-Bleed Crimson Gradient / Blank Customizable).
 /// Aligned with Stitch Screen: BloodPulse Emergency Social Media Posters.
@@ -11,24 +9,44 @@ class PosterBlankTemplate extends StatelessWidget {
   const PosterBlankTemplate({
     super.key,
     required this.data,
+    this.aspectRatio = PosterAspectRatio.square,
+    this.colorTheme = PosterColorTheme.crimson,
     this.isBangla = false,
   });
 
   final PosterData data;
+  final PosterAspectRatio aspectRatio;
+  final PosterColorTheme colorTheme;
   final bool isBangla;
 
   @override
   Widget build(BuildContext context) {
+    final List<Color> gradientColors;
+    switch (colorTheme) {
+      case PosterColorTheme.crimson:
+        gradientColors = const [Color(0xFFC30121), Color(0xFF6B000E), Color(0xFF1A0306)];
+        break;
+      case PosterColorTheme.darkRed:
+        gradientColors = const [Color(0xFF8B0000), Color(0xFF4A000A), Color(0xFF1E0004)];
+        break;
+      case PosterColorTheme.midnight:
+        gradientColors = const [Color(0xFF1E1E38), Color(0xFF111124), Color(0xFF0A0A14)];
+        break;
+      case PosterColorTheme.light:
+        gradientColors = const [Color(0xFFC30121), Color(0xFFE53935), Color(0xFFD32F2F)];
+        break;
+    }
+
     return Container(
       width: 380,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFC30121), Color(0xFF6B000E), Color(0xFF1A0306)],
+          colors: gradientColors,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.red.withAlpha(90), width: 3),
+        border: Border.all(color: Colors.white.withAlpha(60), width: 2.5),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
@@ -64,7 +82,7 @@ class PosterBlankTemplate extends StatelessWidget {
             child: Row(
               children: [
                 ClipOval(
-                  child: Image.asset('assets/images/Blood Pulse logo.jpg', width: 26, height: 26, fit: BoxFit.cover, errorBuilder: (_, _, _) => const Icon(Icons.water_drop, color: Colors.white, size: 20)),
+                  child: Image.asset('assets/images/launcher_icon_transparent.png', width: 26, height: 26, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Icon(Icons.water_drop, color: Colors.white, size: 20)),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

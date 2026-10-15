@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
-
-import '../widgets/common/health_hub_subnav_bar.dart';
 import '../../domain/providers/health_hub_provider.dart';
 import '../../domain/models/health_hub_models.dart';
 import '../providers/hydration_provider.dart';
@@ -67,9 +65,6 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           children: [
-            // Top Subnav
-            const HealthHubSubnavBar(activeRoute: '/health-hub/recovery'),
-
             // ── 1. Header ──────────────────────────────────────────────
             const Text(
               'Post-Donation Recovery Tracker',

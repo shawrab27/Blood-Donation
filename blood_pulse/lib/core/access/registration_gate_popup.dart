@@ -228,19 +228,23 @@ class RegistrationGatePopup extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     Navigator.of(context).pop();
                     context.push('/login');
                   },
-                  child: const Text(
-                    'Log in',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppColors.primary,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                    child: Text(
+                      'Log in',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),

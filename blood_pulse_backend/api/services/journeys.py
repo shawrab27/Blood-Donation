@@ -66,13 +66,27 @@ def finalize_donation(acceptance, auto=False):
         donor.is_available = False
         donor.save(update_fields=['fulfilled_count', 'total_bags_donated', 'last_donation_date', 'is_available'])
 
-        DonationHistory.objects.create(
+        hosp = blood_req.hospital_location or (blood_req.hospital.name if blood_req.hospital else 'Hospital')
+        dh = DonationHistory.objects.create(
             donor=donor,
             date=now.date(),
-            location=blood_req.hospital_location or (blood_req.hospital.name if blood_req.hospital else 'Hospital'),
+            donated_at=now.date(),
+            location=hosp,
+            hospital=hosp,
+            city=blood_req.district or donor.district or '',
+            bags=units,
             bags_donated=units,
+            source='verified' if not auto else 'self_reported',
+            verified=not auto,
+            linked_request=blood_req,
             notes=f"Emergency requisition #{blood_req.id} fulfilled. Auto-confirmed: {auto}",
         )
+        if not auto:
+            from api.models import award_verified_donation_xp
+            award_verified_donation_xp(dh)
+            from django.core.cache import cache
+            cache.delete('top_donors_v2')
+            cache.delete('global_rank_v2')
 
         acceptance.status = locked_acc.status
         acceptance.completed_at = locked_acc.completed_at

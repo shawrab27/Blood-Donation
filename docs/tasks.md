@@ -79,11 +79,20 @@ Working style: **one task at a time**, short steps, evidence required.
   - Backend migration `0039_donorprofile_user_intent.py` additive with DB default; verified with `sqlmigrate`.
   - Backend tests: 5/5 intent tests pass (`api.tests.test_auth_roles_intent`), 21/21 assistant tests pass (`assistant`).
   - Flutter analyze: 0 issues; Flutter auth tests: 17/17 tests passing.
+- [x] Step 2: Profile Evolution v2 (`feat/profile-v2` & `hotfix/public-profile-leak`):
+  - Hotfix: `PublicDonorProfileSerializer` scrubs sensitive PII (`phone_number`, `nid_hash`, `lat`, `lng`, `weight_kg`, `address`, `email`, `fcm_token`) for anonymous and third-party callers. Branch `hotfix/public-profile-leak` holding commit `ee3b0f219f4033e042a5640dce58c08d73ca3042` un-deployed.
+  - Models: `DonorProfile` bio (max 120 chars), `weight_kg` (confidential), `show_in_rankings` (default ON), `BloodGroupChangeRequest` (admin-only modification), `DonorReview`, `XPEvent` (100 XP verified only).
+  - Additive migrations 0053-0055 backward-compatible with legacy production schema.
+  - Endpoints: GET/PATCH `/api/profile/me/`, `/api/profile/me/last-donation/` (90-day cooldown anti-cheat), `/api/profile/top-donors/`, `/api/profile/global-rank/`, `/api/profile/me/stories/`, `/api/profile/me/activity/`, `/api/profile/me/donations/`, `/api/profile/certificate/`.
+  - Portrait A4 Certificate generation with Noto Sans Bengali font, dynamic red QR, and signed verification token endpoint.
+  - Flutter Frontend: 1:1 match to Stitch (Hero card, 3 stats tiles with 'donations completed', 2 rating/xp cards, Top Donors 5-column row, HeartbeatTabIndicator ECG spike, Stories timeline, Activity Summary, Donation History with detail sheet, Last Donation date sheet with future disable, Ratings & Reviews with review modal, XP level screen with zero doctor-discounts).
+  - Zero overflow verified across 5 device viewports (320x640, 360x780, 390x844, 412x915, 600x1024) at 1.0x and 1.3x text scale.
+  - Tests: 20/20 Flutter widget tests passing, 12/12 profile backend tests passing, `flutter analyze` 0 issues, `manage.py check` 0 issues.
 - [ ] Donor deferral (auto-exclude + auto re-match) using the 90-day rule
 - [ ] Blood Hub restructure (merge search + request into one flow)
 - [ ] Live donor tracking map: position is SIMULATED by a timer (donor_tracking_map.dart). Needs real GPS -> Firestore (500 m fuzz) -> requester listener
 - [~] Google user incomplete-profile gate (Feed/Health/Communities open; Blood Hub and Profile locked with 'complete your registration')
-- [~] Passive-donor XP + tier badge (no leaderboard)
+- [x] Passive-donor XP + tier badge & Top Donors leaderboard (opt-out toggle `show_in_rankings` added)
 - [x] National Emergency Mode Backend (2-admin authorization, active status gate, disaster pledge tracking)
 - [ ] Cloudinary image migration
 

@@ -42,5 +42,44 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('Responsive sweep across tiny, standard, and large screens with textScale 1.0 and 1.3', (tester) async {
+      final viewports = [
+        const Size(320, 480), // Tiny phone
+        const Size(320, 568), // iPhone SE 1st gen
+        const Size(360, 800), // Standard Android
+        const Size(390, 844), // iPhone 12/13/14
+        const Size(412, 915), // Flagship Android
+        const Size(768, 1024), // Tablet / iPad
+      ];
+
+      for (final size in viewports) {
+        for (final scale in [1.0, 1.3]) {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+
+          await tester.pumpWidget(
+            ProviderScope(
+              child: MaterialApp(
+                home: MediaQuery(
+                  data: MediaQueryData(
+                    size: size,
+                    textScaler: TextScaler.linear(scale),
+                  ),
+                  child: const SplashVideoScreen(),
+                ),
+              ),
+            ),
+          );
+
+          expect(tester.takeException(), isNull);
+          expect(find.text('BloodPulse'), findsOneWidget);
+          expect(find.text('Every Drop Counts'), findsOneWidget);
+          expect(find.text('Skip'), findsOneWidget);
+        }
+      }
+    });
   });
 }

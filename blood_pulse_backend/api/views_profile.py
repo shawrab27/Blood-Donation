@@ -203,6 +203,23 @@ class ProfileMeView(APIView):
             else:
                 profile.weight_kg = None
 
+        # Last donation date validation
+        if 'last_donation_date' in request.data:
+            ldd_val = request.data['last_donation_date']
+            if ldd_val:
+                try:
+                    if isinstance(ldd_val, str):
+                        from datetime import date
+                        parsed_date = date.fromisoformat(ldd_val)
+                    else:
+                        parsed_date = ldd_val
+                    dhaka_today = get_dhaka_today()
+                    if parsed_date > dhaka_today:
+                        return Response({"last_donation_date": ["Cannot select a future date."]}, status=status.HTTP_400_BAD_REQUEST)
+                    profile.last_donation_date = parsed_date
+                except (ValueError, TypeError):
+                    return Response({"last_donation_date": ["Invalid date format."]}, status=status.HTTP_400_BAD_REQUEST)
+
         # Location
         if 'district' in request.data:
             profile.district = request.data['district']
@@ -532,15 +549,18 @@ class ProfileStoriesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        posts = SocialPost.objects.filter(user=request.user).order_by('-created_at', '-id')
+        profile = DonorProfile.objects.filter(user=request.user).first()
+        if not profile:
+            return Response({"results": []})
+        posts = SocialPost.objects.filter(author=profile, deleted_at__isnull=True).order_by('-created_at', '-id')
         data = []
         for p in posts[:30]:
             data.append({
                 "id": p.id,
-                "content": p.content,
+                "content": p.text_content,
                 "created_at": p.created_at.isoformat(),
-                "reactions_count": p.reactions_count,
-                "comments_count": p.comments_count,
+                "reactions_count": p.like_count or p.likes_count,
+                "comments_count": p.comment_count,
             })
         return Response({"results": data})
 
@@ -576,7 +596,7 @@ class ProfileActivityView(APIView):
                     "on_the_way": m.status in ['ON_THE_WAY', 'ARRIVED', 'DONATED'],
                     "donated": m.status == 'DONATED',
                 },
-                "auto_verified": bool(m.auto_confirmed),
+                "auto_verified": bool(getattr(m, 'auto_confirmed', False)),
                 "created_at": m.created_at.isoformat(),
             })
         return Response({"results": results})

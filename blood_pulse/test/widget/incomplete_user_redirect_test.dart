@@ -31,6 +31,9 @@ class FakeAuthNotifier extends AuthNotifier {
       ),
     );
   }
+
+  @override
+  Future<void> restoreSession() async {}
 }
 
 void main() {
@@ -50,8 +53,8 @@ void main() {
       ),
     );
 
-    // pump for HeartbeatIcon
-    await tester.pump(const Duration(milliseconds: 300));
+    // pump for SplashVideoScreen fallback timer (1400ms)
+    await tester.pump(const Duration(milliseconds: 1500));
     await tester.pump(const Duration(milliseconds: 300));
 
     final router = container.read(appRouterProvider);

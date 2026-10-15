@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/profile_models.dart';
 import '../../domain/providers/profile_provider.dart';
 import 'heartbeat_tab_indicator.dart';
+import 'modals/donation_detail_sheet.dart';
 
 /// Stitch Screen 1: Profile Tabs Section
 /// 3 Tabs:
@@ -30,6 +31,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
   late final TabController _tabController;
   final TextEditingController _storyCtrl = TextEditingController();
   bool _isPostingStory = false;
+  double _dragDistance = 0;
 
   @override
   void initState() {
@@ -75,12 +77,14 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
               ),
               TabBar(
                 controller: _tabController,
-                indicator: const HeartbeatTabIndicator(
-                  color: Color(0xFFC30121),
+                indicator: HeartbeatTabIndicator(
+                  color: const Color(0xFFC30121),
                   strokeWidth: 2.5,
                   spikeHeight: 8.0,
+                  animation: _tabController.animation,
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                 labelColor: const Color(0xFFC30121),
                 unselectedLabelColor: const Color(0xFF5F5E5E),
                 labelStyle: const TextStyle(
@@ -94,9 +98,9 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                   fontWeight: FontWeight.w500,
                 ),
                 tabs: const [
-                  Tab(text: 'Your Stories'),
-                  Tab(text: 'Activity Summary'),
-                  Tab(text: 'Donation History'),
+                  Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Your Stories'))),
+                  Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Activity Summary'))),
+                  Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Donation History'))),
                 ],
               ),
             ],
@@ -104,20 +108,35 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
 
           Padding(
             padding: const EdgeInsets.all(16),
-            child: AnimatedBuilder(
-              animation: _tabController,
-              builder: (context, _) {
-                switch (_tabController.index) {
-                  case 0:
-                    return _buildStoriesTab();
-                  case 1:
-                    return _buildActivityTab();
-                  case 2:
-                    return _buildDonationHistoryTab();
-                  default:
-                    return const SizedBox.shrink();
-                }
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragUpdate: (details) {
+                _dragDistance += details.primaryDelta ?? 0;
               },
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if ((velocity < -200 || _dragDistance < -40) && _tabController.index < 2) {
+                  _tabController.animateTo(_tabController.index + 1);
+                } else if ((velocity > 200 || _dragDistance > 40) && _tabController.index > 0) {
+                  _tabController.animateTo(_tabController.index - 1);
+                }
+                _dragDistance = 0;
+              },
+              child: AnimatedBuilder(
+                animation: _tabController,
+                builder: (context, _) {
+                  switch (_tabController.index) {
+                    case 0:
+                      return _buildStoriesTab();
+                    case 1:
+                      return _buildActivityTab();
+                    case 2:
+                      return _buildDonationHistoryTab();
+                    default:
+                      return const SizedBox.shrink();
+                  }
+                },
+              ),
             ),
           ),
         ],
@@ -582,15 +601,29 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
       }
     } catch (_) {}
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF0E5E5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final profile = ref.watch(profileProvider).valueOrNull;
+    final donorName = profile?.fullName ?? 'Donor';
+    final bloodGroup = profile?.bloodGroup ?? 'O+';
+
+    return InkWell(
+      onTap: () {
+        DonationDetailSheet.show(
+          context: context,
+          donation: item,
+          donorName: donorName,
+          bloodGroup: bloodGroup,
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF0E5E5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -682,6 +715,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

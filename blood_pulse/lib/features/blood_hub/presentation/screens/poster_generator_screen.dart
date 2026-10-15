@@ -54,10 +54,12 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
       if (png == null) throw Exception('Could not capture poster.');
       final savedPath = await ref.read(posterRepositoryProvider).exportToGallery(png);
       if (mounted) {
-        _snack(isBangla
-            ? 'গ্যালারিতে সেভ: ${savedPath.split('/').last}'
-            : 'Saved: ${savedPath.split('/').last}',
-            AppColors.success);
+        _snack(
+          isBangla
+              ? 'পোস্টারটি সফলভাবে গ্যালারিতে সংরক্ষিত হয়েছে!'
+              : '✓ Poster successfully saved to Gallery!',
+          AppColors.success,
+        );
       }
     } catch (e) {
       if (mounted) _snack('${isBangla ? 'ব্যর্থ' : 'Failed'}: $e', AppColors.error);
@@ -106,43 +108,44 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
       ),
       body: ResponsiveLayout(
         maxWidth: 600,
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  children: [
-                    PosterTemplateTabBar(
-                      selected: _templateType,
-                      isBangla: isBangla,
-                      onChanged: (t) => setState(() => _templateType = t),
-                    ),
-                    const SizedBox(height: 16),
-                    PosterCanvas(
-                      generatorKey: _generatorKey,
-                      data: _posterData,
-                      templateType: _templateType,
-                      aspectRatio: _aspectRatio,
-                      isBangla: isBangla,
-                    ),
-                    const SizedBox(height: 20),
-                    PosterEditorControls(
-                      initialData: _posterData,
-                      isBangla: isBangla,
-                      selectedAspectRatio: _aspectRatio,
-                      selectedColorTheme: _colorTheme,
-                      onDataChanged: (d) => setState(() => _posterData = d),
-                      onAspectRatioChanged: (r) => setState(() => _aspectRatio = r),
-                      onColorThemeChanged: (t) => setState(() => _colorTheme = t),
-                    ),
-                    const SizedBox(height: 80),
-                  ],
-                ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            children: [
+              PosterTemplateTabBar(
+                selected: _templateType,
+                isBangla: isBangla,
+                onChanged: (t) => setState(() => _templateType = t),
               ),
-            ),
-            _bottomBar(isBangla),
-          ],
+              const SizedBox(height: 16),
+              PosterCanvas(
+                generatorKey: _generatorKey,
+                data: _posterData,
+                templateType: _templateType,
+                aspectRatio: _aspectRatio,
+                colorTheme: _colorTheme,
+                isBangla: isBangla,
+              ),
+              const SizedBox(height: 20),
+              PosterEditorControls(
+                initialData: _posterData,
+                isBangla: isBangla,
+                selectedAspectRatio: _aspectRatio,
+                selectedColorTheme: _colorTheme,
+                onDataChanged: (d) => setState(() => _posterData = d),
+                onAspectRatioChanged: (r) => setState(() => _aspectRatio = r),
+                onColorThemeChanged: (t) => setState(() => _colorTheme = t),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: SafeArea(
+          top: false,
+          child: _bottomBar(isBangla),
         ),
       ),
     );

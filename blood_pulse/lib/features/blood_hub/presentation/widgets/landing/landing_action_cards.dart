@@ -2,6 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// Primary action cards for Blood Hub Landing:
 /// Segment 1: "Search for Donor"
@@ -399,7 +400,7 @@ class LandingActionCards extends StatelessWidget {
                   buttonText: isBangla ? 'দুর্যোগ কেন্দ্র দেখুন ➔' : 'View Disaster Hub ➔',
                   onTap: () {
                     Navigator.pop(ctx);
-                    onEmergencyTap();
+                    context.push('/emergency/national');
                   },
                 ),
               ],

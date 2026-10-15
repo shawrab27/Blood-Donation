@@ -279,9 +279,21 @@ class _JourneyBody extends ConsumerWidget {
           SliverToBoxAdapter(child: _ProgressStepper(journey: journey)),
           // Role-specific info cards
           if (journey.isRequester)
-            SliverToBoxAdapter(child: _RequesterInfoCard(journey: journey, onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id))))
+            SliverToBoxAdapter(
+              child: _RequesterInfoCard(
+                journey: journey,
+                onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id)),
+                onReport: onReport,
+              ),
+            )
           else if (journey.isDonor)
-            SliverToBoxAdapter(child: _DonorInfoCard(journey: journey, onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id))))
+            SliverToBoxAdapter(
+              child: _DonorInfoCard(
+                journey: journey,
+                onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id)),
+                onCancel: onCancel,
+              ),
+            )
           else
             SliverToBoxAdapter(child: _GenericInfoCard(journey: journey)),
           SliverToBoxAdapter(
@@ -627,87 +639,93 @@ class _ProgressStepper extends StatelessWidget {
 
 /// Requester sees: donor details + request summary
 class _RequesterInfoCard extends ConsumerWidget {
-  const _RequesterInfoCard({required this.journey, required this.onRefresh});
+  const _RequesterInfoCard({
+    required this.journey,
+    required this.onRefresh,
+    required this.onReport,
+  });
   final JourneyDetail journey;
   final VoidCallback onRefresh;
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
         _InfoCard(
-      title: 'Your Donor',
-      titleIcon: Icons.volunteer_activism_rounded,
-      titleColor: _kTertiary,
-      rows: [
-        _InfoRow('Donor', journey.donorName),
-        _InfoRow(
-          'Contact',
-          journey.donorContact.isNotEmpty
-              ? journey.donorContact
-              : 'Revealed after donor arrives',
-          highlight: journey.donorContact.isNotEmpty,
+          title: 'Your Donor',
+          titleIcon: Icons.volunteer_activism_rounded,
+          titleColor: _kTertiary,
+          rows: [
+            _InfoRow('Donor', journey.donorName),
+            _InfoRow(
+              'Contact',
+              journey.donorContact.isNotEmpty
+                  ? journey.donorContact
+                  : 'Revealed after donor arrives',
+              highlight: journey.donorContact.isNotEmpty,
+            ),
+            const _InfoDivider(),
+            _InfoRow('Patient', journey.patientName),
+            _InfoRow('Hospital', journey.hospitalName),
+            _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
+            _InfoRow('Units', '${journey.unitsNeeded}'),
+            _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
+          ],
         ),
-        const _InfoDivider(),
-        _InfoRow('Patient', journey.patientName),
-        _InfoRow('Hospital', journey.hospitalName),
-        _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
-        _InfoRow('Units', '${journey.unitsNeeded}'),
-        _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
+        JourneyRequesterActions(
+          journeyId: journey.id,
+          status: journey.status,
+          onRefresh: onRefresh,
+          onIssueReport: onReport,
+        ),
       ],
-    ),
-    JourneyDonorActions(
-      journeyId: journey.id,
-      status: journey.status,
-      onRefresh: onRefresh,
-      onCancel: () {
-          // TODO cancel
-      },
-    ),
-    ],
     );
   }
 }
 
 /// Donor sees: patient + hospital details + requester contact
 class _DonorInfoCard extends ConsumerWidget {
-  const _DonorInfoCard({required this.journey, required this.onRefresh});
+  const _DonorInfoCard({
+    required this.journey,
+    required this.onRefresh,
+    required this.onCancel,
+  });
   final JourneyDetail journey;
   final VoidCallback onRefresh;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
         _InfoCard(
-      title: 'Your Mission',
-      titleIcon: Icons.bloodtype_rounded,
-      titleColor: _kPrimary,
-      rows: [
-        _InfoRow('Patient', journey.patientName),
-        _InfoRow('Hospital', journey.hospitalName),
-        _InfoRow(
-          'Requester',
-          journey.requesterContact.isNotEmpty
-              ? journey.requesterContact
-              : 'Revealed after you accept',
-          highlight: journey.requesterContact.isNotEmpty,
+          title: 'Your Mission',
+          titleIcon: Icons.bloodtype_rounded,
+          titleColor: _kPrimary,
+          rows: [
+            _InfoRow('Patient', journey.patientName),
+            _InfoRow('Hospital', journey.hospitalName),
+            _InfoRow(
+              'Requester',
+              journey.requesterContact.isNotEmpty
+                  ? journey.requesterContact
+                  : 'Revealed after you accept',
+              highlight: journey.requesterContact.isNotEmpty,
+            ),
+            const _InfoDivider(),
+            _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
+            _InfoRow('Units', '${journey.unitsNeeded}'),
+            _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
+          ],
         ),
-        const _InfoDivider(),
-        _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
-        _InfoRow('Units', '${journey.unitsNeeded}'),
-        _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
+        JourneyDonorActions(
+          journeyId: journey.id,
+          status: journey.status,
+          onRefresh: onRefresh,
+          onCancel: onCancel,
+        ),
       ],
-    ),
-    JourneyDonorActions(
-      journeyId: journey.id,
-      status: journey.status,
-      onRefresh: onRefresh,
-      onCancel: () {
-          // TODO cancel
-      },
-    ),
-    ],
     );
   }
 }

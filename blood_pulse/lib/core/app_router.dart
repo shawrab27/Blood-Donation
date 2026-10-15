@@ -74,6 +74,8 @@ import '../features/profile/presentation/screens/user_profile_screen.dart';
 import '../features/profile/presentation/screens/blood_group_change_screen.dart';
 import '../features/profile/presentation/screens/global_rank_screen.dart';
 import '../features/profile/presentation/screens/public_donor_profile_screen.dart';
+import '../features/profile/presentation/screens/ratings_reviews_screen.dart';
+import '../features/profile/presentation/screens/xp_level_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/settings/presentation/screens/privacy_policy_screen.dart';
 
@@ -639,6 +641,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     GoRoute(
       path: '/profile',
       builder: (context, state) => const _StandaloneProfileScreen(),
+    ),
+    GoRoute(
+      path: '/profile/reviews',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return RatingsReviewsScreen(
+          donorId: extra?['donor_id'] as int?,
+          donorName: extra?['donor_name'] as String?,
+          bloodRequestId: extra?['blood_request_id'] as int?,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/profile/xp',
+      builder: (context, state) => const XpLevelScreen(),
+    ),
+    GoRoute(
+      path: '/profile/:id/reviews',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'] ?? '0';
+        final donorId = int.tryParse(idStr) ?? 0;
+        final extra = state.extra as Map<String, dynamic>?;
+        return RatingsReviewsScreen(
+          donorId: donorId,
+          donorName: extra?['donor_name'] as String?,
+          bloodRequestId: extra?['blood_request_id'] as int?,
+        );
+      },
     ),
     GoRoute(
       path: '/profile/:id',

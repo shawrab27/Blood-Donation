@@ -17,10 +17,10 @@ class BrandLogo extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: Image.asset(
-        'assets/images/bloodpulse_logo.png',
-        fit: BoxFit.cover,
+        'assets/images/launcher_icon_transparent.png',
+        fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          log('Warning: bloodpulse_logo.png failed to load. Ensure it is added to assets.', error: error, stackTrace: stackTrace);
+          log('Warning: launcher_icon_transparent.png failed to load.', error: error, stackTrace: stackTrace);
           return const Icon(Icons.broken_image, color: Colors.red);
         },
       ),

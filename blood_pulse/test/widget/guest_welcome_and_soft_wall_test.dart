@@ -73,10 +73,8 @@ void main() {
       expect(find.text('PulseAI'), findsOneWidget);
       expect(find.text('Try PulseAI'), findsOneWidget);
 
-      // 5. Locked Features Card
-      expect(find.text('Blood Hub, Chat & Profile'), findsOneWidget);
-      expect(find.text('Register now / রেজিস্ট্রেশন করুন'), findsOneWidget);
-      expect(find.text('Log in'), findsOneWidget);
+      // 5. Locked Features Card (Permanently removed per user specification)
+      expect(find.text('Blood Hub, Chat & Profile'), findsNothing);
 
       await tester.pump(const Duration(milliseconds: 300));
     });
@@ -188,8 +186,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(RegistrationGatePopup), findsNothing);
 
-      // 4. Tap Locked Row: Blood Hub, Chat & Profile -> opens RegistrationGatePopup
-      await tester.tap(find.text('Blood Hub, Chat & Profile'));
+      // 4. Tap Nearby Donors Map Card -> opens RegistrationGatePopup
+      await tester.tap(find.text('Nearby Donors'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(RegistrationGatePopup), findsOneWidget);
@@ -200,8 +198,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(RegistrationGatePopup), findsNothing);
 
-      // 5. Tap Register now button on locked card -> opens RegistrationGatePopup
-      await tester.tap(find.text('Register now / রেজিস্ট্রেশন করুন'));
+      // 5. Tap Explore button in Quick Actions -> opens RegistrationGatePopup
+      await tester.tap(find.text('Explore'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.byType(RegistrationGatePopup), findsOneWidget);

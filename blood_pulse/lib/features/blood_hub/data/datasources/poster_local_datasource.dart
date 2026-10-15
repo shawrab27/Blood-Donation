@@ -3,6 +3,7 @@
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,6 +27,20 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
 
   @override
   Future<String> exportToGallery(Uint8List pngBytes, {String? filename}) async {
+    final name = filename ?? 'BloodPulse_Poster_${DateTime.now().millisecondsSinceEpoch}';
+
+    // 1. Save directly to native Gallery via Gal
+    try {
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        await Gal.requestAccess();
+      }
+      await Gal.putImageBytes(pngBytes, name: name);
+    } catch (_) {
+      // Fallback if Gal is unavailable in the environment (e.g. desktop/unit test)
+    }
+
+    // 2. Write to persistent local directory as reliable file path return
     Directory? baseDir;
     try {
       baseDir = await getExternalStorageDirectory();
@@ -39,8 +54,7 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
       await posterDir.create(recursive: true);
     }
 
-    final name = filename ?? 'poster_${DateTime.now().millisecondsSinceEpoch}.png';
-    final targetPath = '${posterDir.path}/$name';
+    final targetPath = '${posterDir.path}/$name.png';
     await File(targetPath).writeAsBytes(pngBytes);
     return targetPath;
   }

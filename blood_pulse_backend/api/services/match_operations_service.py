@@ -74,6 +74,10 @@ def _finalize_two_sided_match(req: BloodRequest, match: DonationMatch, now, note
     match.donor.last_donation_date = now.date()
     match.donor.save(update_fields=['total_bags_donated', 'last_donation_date'])
 
+    from django.core.cache import cache
+    cache.delete('top_donors_v2')
+    cache.delete('global_rank_v2')
+
     FollowUp.objects.get_or_create(
         match=match,
         defaults={

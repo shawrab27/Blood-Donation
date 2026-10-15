@@ -5,35 +5,16 @@ import 'package:blood_pulse/features/health_hub/presentation/screens/health_hub_
 import 'package:blood_pulse/features/health_hub/presentation/screens/health_calculators_screen.dart';
 import 'package:blood_pulse/features/health_hub/presentation/widgets/common/health_accessory_contextual_card.dart';
 import 'package:blood_pulse/features/health_hub/presentation/widgets/dashboard/health_hub_status_card.dart';
-import 'package:blood_pulse/features/profile/domain/models/profile_models.dart';
-import 'package:blood_pulse/features/profile/domain/providers/profile_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _FakeProfileNotifier extends ProfileNotifier {
-  _FakeProfileNotifier(ProfileModel? initial) : super() {
-    state = AsyncValue.data(initial);
-  }
-}
-
 void main() {
   group('Step 10E: Health Hub & Accessories Tab Isolation', () {
-    testWidgets('Dashboard renders StatusCard and exactly ONE HealthAccessoryContextualCard in slot 2', (tester) async {
-      final fakeProfile = ProfileModel(
-        id: 1,
-        firstName: 'Rahim',
-        lastName: 'Ahmed',
-        totalBagsDonated: 0,
-        lastDonationDate: null,
-      );
-
+    testWidgets('Dashboard renders clean Stitch layout with 8 tools and zero clutter cards', (tester) async {
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            profileProvider.overrideWith((ref) => _FakeProfileNotifier(fakeProfile)),
-          ],
-          child: const MaterialApp(
+        const ProviderScope(
+          child: MaterialApp(
             home: Scaffold(
               body: HealthHubDashboardScreen(),
             ),
@@ -42,15 +23,24 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Status card must render
-      expect(find.byType(HealthHubStatusCard), findsOneWidget);
+      // Header and subtitle
+      expect(find.text('Health Hub'), findsOneWidget);
+      expect(find.text('Your wellness overview and clinical insights.'), findsOneWidget);
+      expect(find.text('Tools & Insights'), findsOneWidget);
 
-      // Status card should display Eligible Now, never hardcoded 42 days
-      expect(find.textContaining('Eligible Now'), findsOneWidget);
-      expect(find.textContaining('42 days'), findsNothing);
+      // Verify all 8 tool cards from Stitch screen
+      expect(find.text('AI Analysis'), findsOneWidget);
+      expect(find.text('Health & Blood Accessories'), findsOneWidget);
+      expect(find.text('Blood Science'), findsOneWidget);
+      expect(find.text('Compatibility'), findsOneWidget);
+      expect(find.text('Donation Guide'), findsOneWidget);
+      expect(find.text('Resources'), findsOneWidget);
+      expect(find.text('Recovery & Aftercare'), findsOneWidget);
+      expect(find.text('Calculators'), findsOneWidget);
 
-      // In Dashboard, exactly one HealthAccessoryContextualCard in slot 2
-      expect(find.byType(HealthAccessoryContextualCard), findsOneWidget);
+      // Verify clutter has been completely removed
+      expect(find.byType(HealthHubStatusCard), findsNothing);
+      expect(find.byType(HealthAccessoryContextualCard), findsNothing);
     });
 
     testWidgets('Calculators sub-screen has ZERO HealthAccessoryContextualCard (tab isolation)', (tester) async {

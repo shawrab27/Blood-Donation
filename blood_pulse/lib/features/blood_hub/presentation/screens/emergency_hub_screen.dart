@@ -95,8 +95,11 @@ class _NationalEmergencyCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE0DCDC)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+      child: InkWell(
+        onTap: () => context.push('/emergency/national'),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -179,7 +182,7 @@ class _NationalEmergencyCard extends StatelessWidget {
                 ),
                 onPressed: () => context.push('/emergency/national'),
                 child: const Text(
-                  'View National Overview →',
+                  'View National Disaster Mode →',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
@@ -191,6 +194,7 @@ class _NationalEmergencyCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

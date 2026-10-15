@@ -116,9 +116,9 @@ def generate_donor_certificate_pdf(donor_profile, verified_bags: int, issue_date
     qr_img.save(qr_buffer, format='PNG')
     qr_buffer.seek(0)
 
-    # Setup Landscape A4 Canvas
+    # Setup Portrait A4 Canvas (matching Stitch mobile certificate design)
     pdf_buffer = io.BytesIO()
-    page_width, page_height = landscape(A4)
+    page_width, page_height = A4
     c = canvas.Canvas(pdf_buffer, pagesize=(page_width, page_height))
     c.setTitle(f"BloodPulse Verified Certificate - {donor_profile.id}")
 
@@ -136,102 +136,102 @@ def generate_donor_certificate_pdf(donor_profile, verified_bags: int, issue_date
     c.setFont(BOLD_FONT_NAME, 80)
     c.setFillColor(WATERMARK_RED)
     c.translate(page_width / 2, page_height / 2)
-    c.rotate(30)
+    c.rotate(35)
     c.drawCentredString(0, -20, "BloodPulse")
     c.restoreState()
 
     # 3. Header
     c.setFillColor(PRIMARY_RED)
-    c.setFont(BOLD_FONT_NAME, 32)
-    c.drawCentredString(page_width / 2, page_height - 80, "BloodPulse")
+    c.setFont(BOLD_FONT_NAME, 36)
+    c.drawCentredString(page_width / 2, page_height - 100, "BloodPulse")
 
     c.setFillColor(DARK_CHARCOAL)
-    c.setFont(BOLD_FONT_NAME, 16)
-    c.drawCentredString(page_width / 2, page_height - 110, "CERTIFICATE OF VERIFIED DONATION")
+    c.setFont(BOLD_FONT_NAME, 18)
+    c.drawCentredString(page_width / 2, page_height - 135, "CERTIFICATE OF VERIFIED DONATION")
 
     c.setFillColor(MUTED_GRAY)
     c.setFont(FONT_NAME, 10)
-    c.drawCentredString(page_width / 2, page_height - 128, "NATIONAL BLOOD DONOR RECOGNITION NETWORK • BANGLADESH")
+    c.drawCentredString(page_width / 2, page_height - 158, "NATIONAL BLOOD DONOR RECOGNITION NETWORK • BANGLADESH")
 
     # Divider line
     c.setStrokeColor(PRIMARY_RED)
     c.setLineWidth(1.5)
-    c.line(page_width / 2 - 120, page_height - 140, page_width / 2 + 120, page_height - 140)
+    c.line(page_width / 2 - 140, page_height - 175, page_width / 2 + 140, page_height - 175)
 
     # 4. Certification Body
     c.setFillColor(DARK_CHARCOAL)
-    c.setFont(FONT_NAME, 13)
-    c.drawCentredString(page_width / 2, page_height - 180, "This is to officially recognize and honor")
+    c.setFont(FONT_NAME, 14)
+    c.drawCentredString(page_width / 2, page_height - 240, "This is to officially recognize and honor")
 
     # Donor Name in Large Bold
     donor_name = f"{donor_profile.user.first_name} {donor_profile.user.last_name}".strip() or donor_profile.user.username
     c.setFillColor(PRIMARY_RED)
-    c.setFont(BOLD_FONT_NAME, 26)
-    c.drawCentredString(page_width / 2, page_height - 220, donor_name)
+    c.setFont(BOLD_FONT_NAME, 30)
+    c.drawCentredString(page_width / 2, page_height - 290, donor_name)
 
     # Underline under name
     c.setStrokeColor(colors.HexColor("#E0E0E0"))
     c.setLineWidth(1)
-    name_width = min(350, max(200, len(donor_name) * 14))
-    c.line(page_width / 2 - name_width / 2, page_height - 230, page_width / 2 + name_width / 2, page_height - 230)
+    name_width = min(380, max(220, len(donor_name) * 15))
+    c.line(page_width / 2 - name_width / 2, page_height - 305, page_width / 2 + name_width / 2, page_height - 305)
 
     # Achievement narrative
     c.setFillColor(DARK_CHARCOAL)
-    c.setFont(FONT_NAME, 12)
+    c.setFont(FONT_NAME, 13)
     c.drawCentredString(
-        page_width / 2, page_height - 260,
-        f"for outstanding commitment to humanity and saving lives as a registered verified donor."
+        page_width / 2, page_height - 350,
+        "for outstanding commitment to humanity and saving lives as a registered verified donor."
     )
 
-    c.setFont(BOLD_FONT_NAME, 14)
+    c.setFont(BOLD_FONT_NAME, 15)
     c.drawCentredString(
-        page_width / 2, page_height - 285,
-        f"Blood Group: {donor_profile.blood_group}    •    Verified Donations Completed: {verified_bags} Bag(s)"
+        page_width / 2, page_height - 390,
+        f"Blood Group: {donor_profile.blood_group}    •    Verified Donations: {verified_bags} Bag(s)"
     )
 
     # Donor ID and Location
     c.setFillColor(MUTED_GRAY)
-    c.setFont(FONT_NAME, 10)
+    c.setFont(FONT_NAME, 11)
     district_info = f" • Region: {donor_profile.district}" if donor_profile.district else ""
     c.drawCentredString(
-        page_width / 2, page_height - 310,
+        page_width / 2, page_height - 425,
         f"Donor ID: BP-D{donor_profile.id:06d}{district_info}"
     )
-
-    # 5. Bottom Section: Signatures & QR Code
-    # Issue date and signature
-    c.setFillColor(DARK_CHARCOAL)
-    c.setFont(FONT_NAME, 10)
-    c.drawString(60, 95, f"Date of Issue: {issue_date.strftime('%d %B %Y')}")
-
-    c.setStrokeColor(DARK_CHARCOAL)
-    c.setLineWidth(1)
-    c.line(60, 65, 220, 65)
-    c.drawString(60, 50, "Verification Officer")
-    c.setFont(FONT_NAME, 8)
-    c.setFillColor(MUTED_GRAY)
-    c.drawString(60, 38, "BloodPulse Trust & Safety Division")
 
     # Center Gold Badge / Seal
     c.setStrokeColor(GOLD_ACCENT)
     c.setFillColor(LIGHT_SURFACE)
-    c.circle(page_width / 2, 70, 32, fill=1, stroke=1)
+    c.circle(page_width / 2, page_height - 510, 42, fill=1, stroke=1)
     c.setFillColor(PRIMARY_RED)
-    c.setFont(BOLD_FONT_NAME, 9)
-    c.drawCentredString(page_width / 2, 75, "VERIFIED")
-    c.drawCentredString(page_width / 2, 63, "DONOR")
+    c.setFont(BOLD_FONT_NAME, 11)
+    c.drawCentredString(page_width / 2, page_height - 505, "VERIFIED")
+    c.drawCentredString(page_width / 2, page_height - 520, "DONOR")
+
+    # 5. Bottom Section: Signatures & QR Code
+    # Issue date and signature
+    c.setFillColor(DARK_CHARCOAL)
+    c.setFont(FONT_NAME, 11)
+    c.drawString(60, 130, f"Date of Issue: {issue_date.strftime('%d %B %Y')}")
+
+    c.setStrokeColor(DARK_CHARCOAL)
+    c.setLineWidth(1)
+    c.line(60, 95, 230, 95)
+    c.drawString(60, 78, "Verification Officer")
+    c.setFont(FONT_NAME, 9)
+    c.setFillColor(MUTED_GRAY)
+    c.drawString(60, 62, "BloodPulse Trust & Safety Division")
 
     # QR Code on Right
     from reportlab.lib.utils import ImageReader
     qr_reader = ImageReader(qr_buffer)
-    qr_size = 76
+    qr_size = 85
     qr_x = page_width - 60 - qr_size
-    qr_y = 48
+    qr_y = 65
     c.drawImage(qr_reader, qr_x, qr_y, width=qr_size, height=qr_size)
 
     c.setFillColor(MUTED_GRAY)
-    c.setFont(FONT_NAME, 7)
-    c.drawCentredString(qr_x + qr_size / 2, qr_y - 10, "Scan to Verify Authenticity")
+    c.setFont(FONT_NAME, 8)
+    c.drawCentredString(qr_x + qr_size / 2, qr_y - 12, "Scan to Verify Authenticity")
 
     c.showPage()
     c.save()
