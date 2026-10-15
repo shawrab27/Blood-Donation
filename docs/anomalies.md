@@ -1,0 +1,56 @@
+# Blood Pulse — Anomaly & Defect Tracker
+
+This document tracks all 40 baseline anomalies and issues across the Blood Pulse mobile and backend systems. Every issue is cataloged for strict phase traceability and evidence-backed resolution.
+
+| ID | Description | Phase | Status | Evidence |
+|---|---|---|---|---|
+| 1 | Forgot-password OTP send -> 500 | Phase 1 | OPEN | |
+| 2 | Login by phone -> 401 "No active account" (login phone 01601239009 vs profile phone 01601239023: confirm same account) | Phase 1 | OPEN | |
+| 3 | Guest map offline/0 donors | Phase 1 | OPEN | |
+| 4 | Profile tab ECG indicator line awkward | Phase 1 | OPEN | |
+| 5 | Buttons clipped/hidden (Request Blood Group Change, Download Verified Certificate) | Phase 1 | OPEN | |
+| 6 | Pause Emergency Alerts broken; move below Impact; bigger button; days/months snooze | Phase 1 | OPEN | |
+| 7 | No donation => no rank/no Active Donor/Lvl; remove fake Verified/5.0/BP-D000000 | Phase 1 | OPEN | |
+| 8 | Your Stories load error | Phase 1 | OPEN | |
+| 9 | Accessories empty: demo data (Tier 1-4, price, link) admin-editable | Phase 1 | OPEN | |
+| 10 | Communities detail empty | Phase 1 | OPEN | |
+| 11 | Connect with Organization cut off and no real action | Phase 1 | OPEN | |
+| 12 | Donor list: small cards, 2 per row, tap -> popup | Phase 1 | OPEN | |
+| 13 | Replace Platinum badge with "position" (meaning TBD) | Phase 1 | OPEN | |
+| 14 | Blood Campaigns card: remove list (scope TBD) | Phase 1 | OPEN | |
+| 15 | PulseAI: remove location icon | Phase 3 | OPEN | |
+| 16 | PulseAI speech-to-text (error_speech_timeout) | Phase 3 | OPEN | |
+| 17 | blood report summary | Phase 3 | OPEN | |
+| 18 | slow heartbeat bg animation | Phase 1 | OPEN | |
+| 19 | eligibility from profile data | Phase 1 | OPEN | |
+| 20 | Bangla/Banglish/English | Phase 3 | OPEN | |
+| 21 | Bangla voice | Phase 3 | OPEN | |
+| 22 | distance + vehicle fare dataset | Phase 4 | OPEN | |
+| 23 | decorated input bar | Phase 1 | OPEN | |
+| 24 | phone back button | Phase 1 | OPEN | |
+| 25 | persistent login | Phase 1 | OPEN | |
+| 26 | OTP not sent | Phase 1 | OPEN | |
+| 27 | two-device test | Phase 1 | OPEN | |
+| 28 | free open-source map API | Phase 1 | OPEN | |
+| 29 | notification/tracking/standby untested | Phase 4 | OPEN | |
+| 30 | National Emergency page missing | Phase 4 | OPEN | |
+| 31 | tracking/standby real-world logic + backend + DB | Phase 4 | OPEN | |
+| 32 | scalability (Redis) | Phase 4 | OPEN | |
+| 33 | security checklist (19 points) | Phase 1 | OPEN | |
+| 34 | PulseAI jailbreak | Phase 3 | OPEN | |
+| 35 | session mgmt/device tracking/revocation | Phase 4 | OPEN | |
+| 36 | FCM never verified | Phase 1 | OPEN | |
+| 37 | realtime chat | Phase 4 | OPEN | |
+| 38 | location-based feed (scope TBD) | Phase 4 | OPEN | |
+| 39 | voice message/call (type TBD) | Phase 4 | OPEN | |
+| 40 | web app, PWA, admin panel, live link | Phase 4 | OPEN | |
+
+---
+
+## Decisions and Open Questions
+
+1. **Anomaly #2 (Account identity confirmation)**: Does `01601239009` belong to the same user record as `01601239023`, or are these two distinct accounts in the auth/profile tables? Need database verification without exposing PII.
+2. **Anomaly #13 (Meaning of "position")**: What is the precise definition and calculation of "position" intended to replace the Platinum badge? (e.g., district-level rank, national rank percentile, or queue seniority?)
+3. **Anomaly #14 (Blood Campaigns card scope)**: Should the campaign list card be removed entirely or converted to a static CTA/banner linking to an upcoming event schedule?
+4. **Anomaly #38 (Location-based feed scope)**: What are the geographic radius boundaries for feed posts (division vs. district vs. nationwide), and should guests see national-only feeds?
+5. **Anomaly #39 (Voice message / call)**: Is the intended feature direct PSTN calling (`url_launcher` with `tel:`) or in-app recorded voice clips via object storage?

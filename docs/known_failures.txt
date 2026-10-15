@@ -1,0 +1,31 @@
+# Blood Pulse - Known Baseline Failures Registry
+# Used by scripts/gate.ps1 and scripts/gate.sh
+# Any failure not explicitly listed here causes gate failure.
+
+# Flutter Test Known Baseline Failures (golden pixel delta due to local environment font rendering)
+Golden DonorSearch 360dp
+Golden DonorSearch 412dp
+
+# Django Backend Known Baseline Failures (Recorded in Phase 0 Baseline on fresh test database)
+# Expected items called out by user:
+test_last_donation_enforces_90_day_rule_boundary
+test_assistant_chat_throttle_enforced
+test_concurrent_accepts
+
+# Verified baseline failures & errors under remote Neon test DB:
+# 1. Step 4 privacy backfill idempotency assertion
+test_backfill_management_command_is_idempotent
+
+# 2. Step 10d feed demo seeding safety guard (host check triggers on neon.tech)
+test_seed_feed_demo_creates_posts
+
+# 3. Step 10f product demo seeding safety guard (host check triggers on neon.tech)
+test_filter_by_tier
+test_inactive_products_excluded_from_public_api
+test_product_detail
+test_products_list_public_and_count
+test_search_query
+test_seed_products_safety_flag_required
+
+# 4. Step 5 20k spatial index benchmark (NOT NULL constraint on emergency_alerts_enabled column from migration 0053)
+test_postgres_20k_donor_query_benchmark

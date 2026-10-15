@@ -5,9 +5,11 @@ Legend: `[x]` done and verified · `[~]` reported done, NOT independently verifi
 Working style: **one task at a time**, short steps, evidence required.
 
 ## Phase 0 — Safety and Backup
-- [ ] Back up current branch state (tag/branch) before further changes
+- [x] Back up current branch state: Tag `backup-before-p0` created, switched to `chore/p0-foundation`
 - [ ] Take a Neon DB backup before any migration (previous pg_dump failed via the pooler — use a direct connection)
 - [ ] Check whether `github.com/shawrab27/Blood-Donation` is public; if yes, rotate exposed Firebase keys
+- [x] Track Phase 0-4 anomalies & defects: See [anomalies.md](file:///d:/Study/CSE/Real%20life%20project/Blood%20donation/docs/anomalies.md) (40 items cataloged with phase assignment)
+- [x] Safety gate script `scripts/gate.ps1` & known failures baseline list (`docs/known_failures.txt`)
 
 ## Phase 1 — Stabilize App and UI Truth Pass
 - [x] Step 0: Stabilize working tree & lock 90-day cooldown:

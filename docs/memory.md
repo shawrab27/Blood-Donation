@@ -30,28 +30,30 @@ Purpose: give any fresh AI session the context it needs. Read together with PRD.
 - Architecture rules: Service Adapter Pattern, feature-first Clean Architecture, 200–300 line limit, no API calls in UI files.
 - Scope: Product scope is nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
 
-## 4. Current Status (as of early Oct 2026)
+## 4. Current Status (Phase 0 Baseline - 2026-10-16)
 
-- Backend live on Render; `/api/health/` 200; UptimeRobot monitor created.
-- Flutter app ran end-to-end on a real Android device; some slowness attributed to Render cold starts.
-- FCM verified on a real phone; Firestore verified.
-- Backend: 77/77 tests passing at last report; `manage.py check` 0 issues.
-- PulseAI RAG pipeline built; answer quality still being fixed.
-- Ownership/copyright pass done (LICENSE + headers).
-- Firebase config files untracked from git; `.example` templates exist.
-- commit 0a2671c on fix/ui-polish, features reported, NOT VERIFIED.
+- Working branch: `chore/p0-foundation` (created from `backup-before-p0`, commit `25eb822 "wip: before P0"`).
+- Flutter Analyze: 0 errors, 0 warnings, 0 infos (`No issues found!`).
+- Flutter Test: 450 passed, 2 failed (`Golden DonorSearch 360dp`, `Golden DonorSearch 412dp` pixel delta) out of 452 tests.
+- Django Check: `manage.py check` reports 0 issues identified.
+- Django Migrations: `makemigrations --check --dry-run` reports 0 changes detected. Highest migration in repo: `0055`.
+- Neon DB Migrations: LIVE READ-ONLY QUERY VERIFIED on production Neon (`django_migrations` table): all migrations 0001 through 0055 are 100% applied (highest: `0055_bloodgroupchangerequest_report_file_content_type_and_more` applied 2026-10-14 22:00:11 UTC). Stale doc claims of 0034-0037 unapplied are debunked and corrected.
+- Django Backend Tests: 344 passed, 1 failed, 8 errors (out of 353 tests) on fresh test DB `test_neondb`:
+  - 1 failure: `Step4PrivacyByDesignTests.test_backfill_management_command_is_idempotent` (coordinate fuzzing assertion)
+  - 8 errors: `Step10DFeedTests.test_seed_feed_demo_creates_posts` (neon.tech host check safety block), 6 product tests in `Step10FProductsTestCase` (neon.tech host check safety block), `PostgresSpatialIndexBenchmarkTest.test_postgres_20k_donor_query_benchmark` (NOT NULL constraint on `emergency_alerts_enabled` from migration 0053).
+  - Expected failures verified: Stale 120-vs-90 day eligibility passed (already 90d locked), chat throttle passed, concurrent-accepts passed.
+- Gate Script: `scripts/gate.ps1` and `scripts/gate.sh` operational with `docs/known_failures.txt` regression protection.
+- Anomaly Tracker: `docs/anomalies.md` tracking all 40 anomalies (#1-#40) with phases and decisions.
+- Render Deployed Commit: UNVERIFIED (no deployment configs in repository; needs manual dashboard verification).
 
 ## 5. Open Issues and Risks
-- Mock names still in some Dart files (remove).
-- `IsAdminUser` wrongly applied to `/api/users/update-fcm/` (regression).
-- Several `AllowAny` endpoints and one endpoint with no permission class (audit).
-- CORS allow-all overrides allowlist.
-- Render deployed commit unverified.
+- Render deployed commit unverified (no Render webhook/config in git).
+- 40 open anomalies tracked in `docs/anomalies.md` across Phases 1-6.
+- 9 baseline test failures/errors documented in `docs/known_failures.txt`.
+- Mock names still in some Dart files (remove in Phase 1+).
+- CORS allow-all overrides allowlist (Phase 6 security audit).
 - Exposed Firebase keys: check if repo is public; rotate if so (user deferred).
-- No device golden-path evidence; admin dashboard not built.
-- Model/DB drift left unfixed on purpose.
-- An earlier migration run dropped `auth_provider` and `google_photo_url` from `api_donorprofile` on Neon (test data only; no recovery needed).
-- 2026-10-08 proof: flutter test +70 -2; analyze 13 warnings; Render=main, DEBUG=True; Neon 0034-0037 unapplied; map simulated; 7 Argon2 users; Flutter Web deployed against locked decision (pending user decision).
+- Model/DB drift: None detected; repo migrations match Neon production at 0055.
 
 ## 6. Research Paper Notes
 - Working title: "BloodPulse: An AI-Verified, NID-Authenticated Federated Blood Donor Management Platform for National Deployment in Bangladesh". Targets: IEEE Access or JMIR.
