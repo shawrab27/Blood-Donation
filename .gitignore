@@ -88,3 +88,5 @@ failures/
 *.isolatedDiff.png
 *.maskedDiff.png
 *.testImage.png
+
+screenshots/
