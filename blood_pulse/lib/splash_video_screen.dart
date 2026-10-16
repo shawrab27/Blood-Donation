@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 import 'features/auth/presentation/providers/auth_notifier.dart';
+import 'core/access/access_guard.dart';
 
 /// Splash screen that plays the official intro video asset before routing into the app.
 class SplashVideoScreen extends ConsumerStatefulWidget {

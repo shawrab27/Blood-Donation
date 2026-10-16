@@ -11,14 +11,16 @@ class NotificationCountNotifier extends StateNotifier<int> {
   final ApiClient _apiClient;
   Timer? _pollingTimer;
 
-  NotificationCountNotifier({ApiClient? apiClient})
+  NotificationCountNotifier({ApiClient? apiClient, bool enablePolling = true})
       : _apiClient = apiClient ?? ApiClient(),
         super(0) {
-    fetchUnreadCount();
-    // Poll every 30 seconds for real-time unread badge updates
-    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+    if (enablePolling) {
       fetchUnreadCount();
-    });
+      // Poll every 30 seconds for real-time unread badge updates
+      _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        fetchUnreadCount();
+      });
+    }
   }
 
   Future<void> fetchUnreadCount() async {

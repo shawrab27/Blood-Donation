@@ -49,7 +49,9 @@ void main() {
               ),
             ),
             shellTabProvider.overrideWith((ref) => 1), // Start on Blood Hub (tab 1)
-            notificationCountProvider.overrideWith((ref) => 0),
+            notificationCountProvider.overrideWith(
+              (ref) => NotificationCountNotifier(enablePolling: false),
+            ),
           ],
           child: const MaterialApp(
             home: MainShellScreen(),
