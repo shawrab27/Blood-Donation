@@ -137,10 +137,14 @@ else
     while IFS= read -r line; do
         if [[ "$line" =~ ^(FAIL|ERROR):[[:space:]]*([^[:space:]]+)[[:space:]]*\((.+)\) ]]; then
             TEST_NAME="${BASH_REMATCH[2]}"
-            TEST_CLASS="${BASH_REMATCH[3]}"
-            EXACT_ID="${TEST_CLASS}.${TEST_NAME}"
+            INSIDE_PAREN="${BASH_REMATCH[3]}"
+            if [[ "$INSIDE_PAREN" == *".$TEST_NAME" || "$INSIDE_PAREN" == "$TEST_NAME" ]]; then
+                EXACT_ID="$INSIDE_PAREN"
+            else
+                EXACT_ID="${INSIDE_PAREN}.${TEST_NAME}"
+            fi
         else
-            EXACT_ID=$(echo "$line" | sed -E 's/^(FAIL|ERROR): //')
+            EXACT_ID=""
         fi
         if [ -n "$EXACT_ID" ]; then
             MATCHED=false

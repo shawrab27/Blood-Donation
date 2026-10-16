@@ -219,15 +219,16 @@ if (-not $SkipBackend) {
 if (-not $SkipBackend) {
     $extraArgs = if ($KeepDb) { "--keepdb" } else { "" }
     Write-Host "[5/5] Running: python manage.py test --noinput $extraArgs..." -ForegroundColor Yellow
-    $djangoTestOut = & {
+    $djangoTestLines = & {
         Set-Location $BackendDir
         if ($KeepDb) {
             & $VenvPython manage.py test --noinput --keepdb 2>&1
         } else {
             & $VenvPython manage.py test --noinput 2>&1
         }
-    } | Out-String
+    }
     $djangoTestExit = $LASTEXITCODE
+    $djangoTestOut = ($djangoTestLines -join "`n")
 
     Print-Tail $djangoTestOut 30
 
@@ -237,13 +238,16 @@ if (-not $SkipBackend) {
     } else {
         # Extract failures and errors as exact module.Class.test IDs
         $failingDjango = @()
-        foreach ($line in ($djangoTestOut -split "`r?`n")) {
+        foreach ($item in $djangoTestLines) {
+            $line = "$item".Trim()
             if ($line -match "^(FAIL|ERROR):\s*([^\s]+)\s*\((.+)\)$") {
                 $testName = $matches[2].Trim()
-                $testClass = $matches[3].Trim()
-                $failingDjango += "$testClass.$testName"
-            } elseif ($line -match "^(FAIL|ERROR):\s*(.+)$") {
-                $failingDjango += $matches[2].Trim()
+                $insideParen = $matches[3].Trim()
+                if ($insideParen.EndsWith(".$testName") -or $insideParen -eq $testName) {
+                    $failingDjango += $insideParen
+                } else {
+                    $failingDjango += "$insideParen.$testName"
+                }
             }
         }
 
