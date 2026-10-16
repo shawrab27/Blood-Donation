@@ -15,7 +15,7 @@ CONFIRM_URL = '/api/auth/password-reset/confirm/'
 
 # All tests that POST to request_otp must have DEBUG=True (or USE_SMTP_EMAIL=True)
 # so get_email_service() doesn't raise ImproperlyConfigured.
-REQUEST_SETTINGS = dict(DEBUG=True)
+REQUEST_SETTINGS = dict(DEBUG=True, EMAIL_PROVIDER='locmem')
 
 
 class PasswordResetTests(TestCase):
@@ -126,24 +126,43 @@ class PasswordResetTests(TestCase):
         self.assertTrue(google_user.check_password('NewSecurePass1!'))
 
     # ------------------------------------------------------------------
-    # Risk 5 – Email service: ConsoleEmailService blocked when DEBUG=False
+    # Risk 5 – Email provider abstraction and clean 503 handling
     # ------------------------------------------------------------------
 
-    @override_settings(DEBUG=False, USE_SMTP_EMAIL=False)
-    def test_console_email_blocked_in_production(self):
-        from django.core.exceptions import ImproperlyConfigured
-        with self.assertRaises(ImproperlyConfigured):
-            get_email_service()
+    @override_settings(DEBUG=False, USE_SMTP_EMAIL=False, EMAIL_PROVIDER='brevo_api', BREVO_API_KEY='', BREVO_SENDER_EMAIL='')
+    def test_missing_config_in_production_gives_503_not_500(self):
+        """When Brevo credentials are missing in production, returns clean 503 JSON, never 500."""
+        resp = self.client.post(REQUEST_URL, {'email': 'reset@example.com'})
+        self.assertEqual(resp.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        data = resp.json()
+        self.assertEqual(data.get('code'), 'EMAIL_UNAVAILABLE')
+        self.assertIn('unavailable', data.get('message', '').lower())
 
-    @override_settings(DEBUG=True, USE_SMTP_EMAIL=False)
-    def test_console_email_allowed_in_debug(self):
-        svc = get_email_service()
-        self.assertIsInstance(svc, ConsoleEmailService)
+    @override_settings(DEBUG=True)
+    @patch('api.views_auth_reset.get_email_service')
+    def test_provider_failure_gives_503_not_500(self, mock_get_svc):
+        """When the email provider throws an error during delivery, returns 503 JSON, not 500."""
+        from api.services.email_sender import EmailUnavailableError
+        mock_svc = MagicMock()
+        mock_svc.send_otp.side_effect = EmailUnavailableError("Network timeout connecting to Brevo API")
+        mock_get_svc.return_value = mock_svc
 
-    @override_settings(DEBUG=False, USE_SMTP_EMAIL=True)
-    def test_smtp_email_selected_in_production(self):
-        svc = get_email_service()
-        self.assertIsInstance(svc, SmtpEmailService)
+        resp = self.client.post(REQUEST_URL, {'email': 'reset@example.com'})
+        self.assertEqual(resp.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        data = resp.json()
+        self.assertEqual(data.get('code'), 'EMAIL_UNAVAILABLE')
+
+    @override_settings(DEBUG=True, USE_SMTP_EMAIL=False, EMAIL_PROVIDER='console')
+    def test_console_provider_allowed_in_debug(self):
+        from api.services.email_sender import get_email_provider, ConsoleProvider
+        provider = get_email_provider()
+        self.assertIsInstance(provider, ConsoleProvider)
+
+    def test_brevo_api_provider_validates_credentials(self):
+        from api.services.email_sender import BrevoApiProvider, EmailUnavailableError
+        provider = BrevoApiProvider(api_key='', sender_email='')
+        with self.assertRaises(EmailUnavailableError):
+            provider.send_email(to_email='user@example.com', subject='Test', text_content='Body')
 
     # ------------------------------------------------------------------
     # Existing tests (retained)

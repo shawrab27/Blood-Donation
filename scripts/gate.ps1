@@ -49,7 +49,7 @@ Write-Host ""
 $OverallSuccess = $true
 $Results = [ordered]@{}
 
-function Print-Tail($output, [int]$lines = 25) {
+function Print-Tail($output, [int]$lines = 15) {
     if (-not $output) { return }
     $arr = $output -split "`r?`n"
     $count = [Math]::Min($lines, $arr.Length)
@@ -68,15 +68,9 @@ function Check-KnownFailures($failuresList, $knownList) {
     foreach ($f in $failuresList) {
         $fTrim = $f.Trim()
         if (-not $fTrim) { continue }
-        $found = $false
-        foreach ($k in $knownList) {
-            if ($fTrim -like "*$k*") {
-                $found = $true
-                $matched += $fTrim
-                break
-            }
-        }
-        if (-not $found) {
+        if ($knownList -contains $fTrim) {
+            $matched += $fTrim
+        } else {
             $unexpected += $fTrim
         }
     }
@@ -138,7 +132,9 @@ if (-not $SkipFlutter) {
             }
             if ($inFailingSection) {
                 if ($line -match "^\s{2,}(.+)$") {
-                    $failingTests += $matches[1].Trim()
+                    $raw = $matches[1].Trim()
+                    $normalized = $raw -replace "^.*blood_pulse[/\\]", ""
+                    $failingTests += $normalized
                 } elseif ($line.Trim() -eq "") {
                     continue
                 } else {
@@ -239,10 +235,14 @@ if (-not $SkipBackend) {
         Write-Host "STEP 5: manage.py test -> PASS (All tests passed)" -ForegroundColor Green
         $Results["manage.py test"] = "PASS"
     } else {
-        # Extract failures and errors
+        # Extract failures and errors as exact module.Class.test IDs
         $failingDjango = @()
         foreach ($line in ($djangoTestOut -split "`r?`n")) {
-            if ($line -match "^(FAIL|ERROR):\s*(.+)$") {
+            if ($line -match "^(FAIL|ERROR):\s*([^\s]+)\s*\((.+)\)$") {
+                $testName = $matches[2].Trim()
+                $testClass = $matches[3].Trim()
+                $failingDjango += "$testClass.$testName"
+            } elseif ($line -match "^(FAIL|ERROR):\s*(.+)$") {
                 $failingDjango += $matches[2].Trim()
             }
         }

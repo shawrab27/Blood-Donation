@@ -13,7 +13,12 @@ from django.core.mail import send_mail
 logger = logging.getLogger(__name__)
 
 
-class EmailProviderError(Exception):
+class EmailUnavailableError(Exception):
+    """Raised when the email provider is unconfigured, disabled, or fails to deliver."""
+    pass
+
+
+class EmailProviderError(EmailUnavailableError):
     """Raised when the email provider fails with a network or 4xx/5xx error."""
     pass
 
@@ -173,16 +178,45 @@ class ResendApiEmailSender(EmailSender):
             raise EmailProviderError(f"Email service returned HTTP {resp.status_code}")
 
 
+# Aliases matching Phase 1 architecture naming
+BrevoApiProvider = BrevoApiEmailSender
+ConsoleProvider = ConsoleEmailSender
+LocMemProvider = LocMemEmailSender
+
+
+def get_email_provider() -> EmailSender:
+    """
+    Returns the appropriate EmailProvider:
+    - LocMemProvider if EMAIL_PROVIDER == 'locmem'
+    - ConsoleProvider when DEBUG=True and EMAIL_PROVIDER != 'brevo_api', or EMAIL_PROVIDER == 'console'
+    - BrevoApiProvider in production (validates config, raises EmailUnavailableError if missing)
+    """
+    provider_setting = getattr(settings, 'EMAIL_PROVIDER', '').strip().lower()
+    if provider_setting == 'locmem':
+        return LocMemProvider()
+    if provider_setting == 'console' or (settings.DEBUG and provider_setting != 'brevo_api'):
+        return ConsoleProvider()
+
+    provider = BrevoApiProvider()
+    if not provider.api_key or not provider.sender_email:
+        logger.error("Email service requested in production, but BREVO_API_KEY or BREVO_SENDER_EMAIL is not configured.")
+        raise EmailUnavailableError("Email service credentials not configured.")
+    return provider
+
+
 def get_email_sender() -> EmailSender:
     """Returns the configured EmailSender instance according to EMAIL_PROVIDER setting."""
-    provider = getattr(settings, 'EMAIL_PROVIDER', 'locmem')
-    if provider in ('brevo_api', 'brevo'):
-        return BrevoApiEmailSender()
-    elif provider in ('resend_api', 'resend'):
-        return ResendApiEmailSender()
-    elif provider == 'console':
-        return ConsoleEmailSender()
-    return LocMemEmailSender()
+    try:
+        return get_email_provider()
+    except EmailUnavailableError:
+        provider = getattr(settings, 'EMAIL_PROVIDER', 'locmem')
+        if provider in ('brevo_api', 'brevo'):
+            return BrevoApiEmailSender()
+        elif provider in ('resend_api', 'resend'):
+            return ResendApiEmailSender()
+        elif provider == 'console':
+            return ConsoleEmailSender()
+        return LocMemEmailSender()
 
 
 # ── Backward compatibility adapter for send_otp ───────────────────────────────
@@ -195,7 +229,7 @@ class EmailService(ABC):
 
 class UnifiedEmailService(EmailService):
     def send_otp(self, to_email: str, otp: str) -> bool:
-        sender = get_email_sender()
+        sender = get_email_provider()
         expiry = getattr(settings, 'OTP_EXPIRY_MINUTES', 10)
         subject = f"{otp} is your BloodPulse verification code"
         text_content = (
@@ -208,3 +242,4 @@ class UnifiedEmailService(EmailService):
 
 def get_email_service() -> EmailService:
     return UnifiedEmailService()
+

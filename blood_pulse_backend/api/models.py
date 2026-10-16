@@ -301,7 +301,8 @@ class DonorProfile(models.Model):
                     should_recompute_fuzzed_location(getattr(self, '_last_real_lat'), getattr(self, '_last_real_lng'), real_lat, real_lng)
                 )
                 if need_recompute:
-                    fuzz_lat, fuzz_lng = compute_deterministic_fuzzed_location(real_lat, real_lng, self.pk or self.user_id)
+                    seed_id = self.user_id or self.pk
+                    fuzz_lat, fuzz_lng = compute_deterministic_fuzzed_location(real_lat, real_lng, seed_id)
                     self.public_lat = fuzz_lat
                     self.public_lng = fuzz_lng
                     self.public_geo_updated_at = timezone.now()

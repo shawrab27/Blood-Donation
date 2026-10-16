@@ -55,13 +55,14 @@ else
     UNEXPECTED=false
     while IFS= read -r line; do
         TRIMMED=$(echo "$line" | sed 's/^[ \t]*//')
+        TRIMMED=$(echo "$TRIMMED" | sed 's|^.*blood_pulse/||')
         if [ -n "$TRIMMED" ]; then
             MATCHED=false
             while IFS= read -r k; do
                 k_clean=$(echo "$k" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
                 [ -z "$k_clean" ] && continue
                 [[ "$k_clean" =~ ^# ]] && continue
-                if [[ "$TRIMMED" == *"$k_clean"* ]]; then
+                if [ "$TRIMMED" = "$k_clean" ]; then
                     MATCHED=true
                     break
                 fi
@@ -134,23 +135,29 @@ else
     DJANGO_FAILURES=$(echo "$DJANGO_TEST_OUTPUT" | grep -E '^(FAIL|ERROR):' || true)
     UNEXPECTED_DJANGO=false
     while IFS= read -r line; do
-        TRIMMED=$(echo "$line" | sed -E 's/^(FAIL|ERROR): //')
-        if [ -n "$TRIMMED" ]; then
+        if [[ "$line" =~ ^(FAIL|ERROR):[[:space:]]*([^[:space:]]+)[[:space:]]*\((.+)\) ]]; then
+            TEST_NAME="${BASH_REMATCH[2]}"
+            TEST_CLASS="${BASH_REMATCH[3]}"
+            EXACT_ID="${TEST_CLASS}.${TEST_NAME}"
+        else
+            EXACT_ID=$(echo "$line" | sed -E 's/^(FAIL|ERROR): //')
+        fi
+        if [ -n "$EXACT_ID" ]; then
             MATCHED=false
             while IFS= read -r k; do
                 k_clean=$(echo "$k" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
                 [ -z "$k_clean" ] && continue
                 [[ "$k_clean" =~ ^# ]] && continue
-                if [[ "$TRIMMED" == *"$k_clean"* ]]; then
+                if [ "$EXACT_ID" = "$k_clean" ]; then
                     MATCHED=true
                     break
                 fi
             done < "$KNOWN_FAILURES_FILE"
 
             if [ "$MATCHED" = true ]; then
-                echo "  [KNOWN] $TRIMMED"
+                echo "  [KNOWN] $EXACT_ID"
             else
-                echo "  [UNEXPECTED] $TRIMMED"
+                echo "  [UNEXPECTED] $EXACT_ID"
                 UNEXPECTED_DJANGO=true
             fi
         fi

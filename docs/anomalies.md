@@ -50,7 +50,7 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 ## Decisions and Open Questions
 
 1. **Anomaly #2 (Account identity confirmation)**: Does `01601239009` belong to the same user record as `01601239023`, or are these two distinct accounts in the auth/profile tables? Need database verification without exposing PII.
-2. **Anomaly #13 (Meaning of "position")**: What is the precise definition and calculation of "position" intended to replace the Platinum badge? (e.g., district-level rank, national rank percentile, or queue seniority?)
+2. **Anomaly #13 (Meaning of "position")**: Resolved via `ANOMALIES_AUDIT_AND_MASTER_PLAN.md` Item 25. "Position" refers to the user's professional designation/occupation (e.g. "Software Engineer", "Doctor", "Student") to be displayed alongside donor name in profile header, feed posts, and certificates, replacing the hardcoded "Platinum" tier badge.
 3. **Anomaly #14 (Blood Campaigns card scope)**: Should the campaign list card be removed entirely or converted to a static CTA/banner linking to an upcoming event schedule?
 4. **Anomaly #38 (Location-based feed scope)**: What are the geographic radius boundaries for feed posts (division vs. district vs. nationwide), and should guests see national-only feeds?
 5. **Anomaly #39 (Voice message / call)**: Is the intended feature direct PSTN calling (`url_launcher` with `tel:`) or in-app recorded voice clips via object storage?

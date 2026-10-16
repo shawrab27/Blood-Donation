@@ -3,6 +3,7 @@
 
 import 'package:blood_pulse/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
@@ -29,6 +30,7 @@ class MainShellScreen extends ConsumerStatefulWidget {
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   late final PageController _pageController;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
@@ -136,15 +138,46 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
     return PopScope(
       key: const ValueKey('main_shell_pop_scope'),
-      canPop: activeTabIndex == 0,
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && activeTabIndex != 0) {
-          // Return to Feed tab on Android back button before exiting app
+        if (didPop) return;
+
+        // 1. If not on Feed tab (index 0), navigate to Feed tab first
+        if (activeTabIndex != 0) {
           ref.read(shellTabProvider.notifier).state = 0;
-          _pageController.animateToPage(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
+          if (_pageController.hasClients) {
+            _pageController.animateToPage(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+          return;
+        }
+
+        // 2. On Feed tab (root): double-back within 2 seconds to exit with hint
+        final now = DateTime.now();
+        if (_lastBackPressTime != null &&
+            now.difference(_lastBackPressTime!) < const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+        } else {
+          _lastBackPressTime = now;
+          final isBangla = Localizations.localeOf(context).languageCode == 'bn';
+          final exitHint = isBangla ? 'প্রস্থান করতে আবার ব্যাক চাপুন' : 'Press back again to exit';
+
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                exitHint,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13),
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: const StadiumBorder(),
+              width: 240,
+            ),
           );
         }
       },

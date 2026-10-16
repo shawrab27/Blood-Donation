@@ -31,6 +31,12 @@ class OtpWrongException extends ApiException {
   const OtpWrongException(super.message) : super(statusCode: 400);
 }
 
+/// Thrown when email provider is not configured or temporarily unavailable.
+class EmailUnavailableException extends ApiException {
+  const EmailUnavailableException([String message = 'Email delivery service is currently unavailable. Please try again shortly.'])
+      : super(message, statusCode: 503);
+}
+
 /// Thrown when requesting or verifying request submit OTP fails.
 class RequestOtpException extends ApiException {
   final int? cooldownSeconds;
@@ -94,20 +100,23 @@ class ApiClient {
     _cachedAccessToken = access;
     _cachedRefreshToken = refresh;
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kAccessToken, access);
-      await prefs.setString(_kRefreshToken, refresh);
-    } catch (e) {
-      debugPrint('[ApiClient] SharedPreferences save error: $e');
-    }
+    _cachedAccessToken = access;
+    _cachedRefreshToken = refresh;
 
+    // Phase 1: Store access and refresh tokens in flutter_secure_storage only
     try {
       await _secureStorage.write(key: _kAccessToken, value: access);
       await _secureStorage.write(key: _kRefreshToken, value: refresh);
     } catch (e) {
       debugPrint('[ApiClient] SecureStorage save error: $e');
     }
+
+    // Clean up any legacy tokens stored in SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kAccessToken);
+      await prefs.remove(_kRefreshToken);
+    } catch (_) {}
   }
 
   Future<String?> getAccessToken() async {
@@ -115,19 +124,7 @@ class ApiClient {
       return _cachedAccessToken;
     }
 
-    // 1. SharedPreferences (reliable on Web & instant fallback on mobile)
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(_kAccessToken);
-      if (token != null && token.isNotEmpty) {
-        _cachedAccessToken = token;
-        return token;
-      }
-    } catch (e) {
-      debugPrint('[ApiClient] SharedPreferences read error: $e');
-    }
-
-    // 2. SecureStorage fallback
+    // Read exclusively from FlutterSecureStorage
     try {
       final token = await _secureStorage.read(key: _kAccessToken);
       if (token != null && token.isNotEmpty) {
@@ -145,17 +142,7 @@ class ApiClient {
       return _cachedRefreshToken;
     }
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString(_kRefreshToken);
-      if (token != null && token.isNotEmpty) {
-        _cachedRefreshToken = token;
-        return token;
-      }
-    } catch (e) {
-      debugPrint('[ApiClient] SharedPreferences read error: $e');
-    }
-
+    // Read exclusively from FlutterSecureStorage
     try {
       final token = await _secureStorage.read(key: _kRefreshToken);
       if (token != null && token.isNotEmpty) {
@@ -173,19 +160,19 @@ class ApiClient {
     _cachedRefreshToken = null;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kAccessToken);
-      await prefs.remove(_kRefreshToken);
-    } catch (e) {
-      debugPrint('[ApiClient] SharedPreferences clear error: $e');
-    }
-
-    try {
       await _secureStorage.delete(key: _kAccessToken);
       await _secureStorage.delete(key: _kRefreshToken);
+      await _secureStorage.delete(key: 'bp_cached_user_profile');
     } catch (e) {
       debugPrint('[ApiClient] SecureStorage clear error: $e');
     }
+
+    // Clean up any legacy SharedPreferences keys
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kAccessToken);
+      await prefs.remove(_kRefreshToken);
+    } catch (_) {}
   }
 
   // ── Authentication ──
@@ -359,11 +346,27 @@ class ApiClient {
     }
   }
 
+  Completer<String?>? _refreshCompleter;
+
   /// Attempts to refresh the access token using the stored refresh token.
+  /// Uses a single-flight lock so concurrent 401s wait for the exact same refresh request.
+  /// Only clears session/logs out if the server returns 401 (refresh token expired/invalid).
+  /// Network errors, timeouts, or 5xx server issues will NEVER clear tokens or log out.
   Future<String?> refreshToken() async {
+    // Single-flight lock: if a refresh is already in-flight, await the same future
+    if (_refreshCompleter != null) {
+      return _refreshCompleter!.future;
+    }
+
+    final completer = Completer<String?>();
+    _refreshCompleter = completer;
+
     try {
       final refresh = await getRefreshToken();
-      if (refresh == null || refresh.isEmpty) return null;
+      if (refresh == null || refresh.isEmpty) {
+        completer.complete(null);
+        return null;
+      }
 
       final uri = Uri.parse(_normalizeUrl('token/refresh/'));
       final response = await _client
@@ -381,16 +384,40 @@ class ApiClient {
 
         if (newAccess != null && newAccess.isNotEmpty) {
           await saveTokens(access: newAccess, refresh: newRefresh);
+          completer.complete(newAccess);
           return newAccess;
         }
+      } else if (response.statusCode == 401) {
+        // Refresh token itself is invalid or expired → clear session
+        debugPrint('[ApiClient] Refresh token invalid/expired (401). Clearing session.');
+        await clearTokens();
+        completer.complete(null);
+        return null;
+      } else {
+        // 5xx server gateway or 429 rate limit: do NOT log out!
+        debugPrint('[ApiClient] Token refresh returned status ${response.statusCode}. Preserving session.');
+        completer.complete(null);
+        return null;
       }
 
-      await clearTokens();
+      completer.complete(null);
+      return null;
+    } on SocketException catch (e) {
+      // Network error must NOT log the user out!
+      debugPrint('[ApiClient] Network error during token refresh: $e. Preserving session.');
+      completer.complete(null);
+      return null;
+    } on TimeoutException catch (e) {
+      // Timeout must NOT log the user out!
+      debugPrint('[ApiClient] Timeout during token refresh: $e. Preserving session.');
+      completer.complete(null);
       return null;
     } catch (e) {
-      debugPrint('[ApiClient] Token refresh failed: $e');
-      await clearTokens();
+      debugPrint('[ApiClient] Token refresh error: $e. Preserving session.');
+      completer.complete(null);
       return null;
+    } finally {
+      _refreshCompleter = null;
     }
   }
 
@@ -609,7 +636,11 @@ class ApiClient {
     if (response.statusCode >= 400) {
       try {
         final body = jsonDecode(response.body);
-        final msg = body['detail'] ?? body['error'] ?? 'Failed to request OTP';
+        final code = body['code'];
+        final msg = body['message'] ?? body['detail'] ?? body['error'] ?? 'Failed to request OTP';
+        if (response.statusCode == 503 || code == 'EMAIL_UNAVAILABLE') {
+          throw EmailUnavailableException(msg);
+        }
         throw ApiException(msg, statusCode: response.statusCode);
       } catch (e) {
         if (e is ApiException) rethrow;

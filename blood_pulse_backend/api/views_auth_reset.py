@@ -129,15 +129,32 @@ def request_otp(request):
     otp_code = str(secrets.randbelow(900000) + 100000)
     expiry_minutes = int(os.environ.get('OTP_EXPIRY_MINUTES', 10))
 
-    from api.services.email_sender import EmailProviderError
-    email_service = get_email_service()
+    from api.services.email_sender import EmailUnavailableError
     try:
+        email_service = get_email_service()
         sent = email_service.send_otp(user.email, otp_code)
         if not sent:
-            raise EmailProviderError("Email delivery returned False")
-    except EmailProviderError:
+            raise EmailUnavailableError("Email delivery returned False")
+    except EmailUnavailableError as exc:
+        import logging
+        logging.getLogger(__name__).error("Email service unavailable during OTP dispatch: %s", exc)
         return Response(
-            {'detail': 'Email delivery service is temporarily unavailable. Please try again in a moment.'},
+            {
+                'code': 'EMAIL_UNAVAILABLE',
+                'message': 'Email delivery service is currently unavailable. Please try again shortly.',
+                'detail': 'Email delivery service is currently unavailable. Please try again shortly.',
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Unexpected error dispatching email OTP: %s", exc)
+        return Response(
+            {
+                'code': 'EMAIL_UNAVAILABLE',
+                'message': 'Email delivery service is currently unavailable. Please try again shortly.',
+                'detail': 'Email delivery service is currently unavailable. Please try again shortly.',
+            },
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 

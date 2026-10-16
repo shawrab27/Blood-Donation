@@ -51,7 +51,7 @@ class Command(BaseCommand):
                 continue
 
             fuzz_lat, fuzz_lng = compute_deterministic_fuzzed_location(
-                real_lat, real_lng, donor.pk or donor.user_id
+                real_lat, real_lng, donor.user_id or donor.pk
             )
 
             donor.public_lat = fuzz_lat

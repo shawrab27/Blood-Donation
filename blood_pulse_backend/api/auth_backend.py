@@ -27,17 +27,8 @@ class MultiFieldModelBackend(ModelBackend):
         clean_user = username.strip()
 
         # Phone digits extraction and normalization
-        phone_digits = ''.join(filter(str.isdigit, clean_user))
-        phone_variants = set()
-        if len(phone_digits) >= 10:
-            core_10 = phone_digits[-10:]
-            phone_variants.add(core_10)
-            phone_variants.add('0' + core_10)
-            phone_variants.add('880' + core_10)
-            phone_variants.add('+880' + core_10)
-            phone_variants.add(phone_digits)
-            if not phone_digits.startswith('+'):
-                phone_variants.add('+' + phone_digits)
+        from api.phone_utils import get_phone_variants
+        phone_variants = get_phone_variants(clean_user)
 
         # Query filter building
         q = (

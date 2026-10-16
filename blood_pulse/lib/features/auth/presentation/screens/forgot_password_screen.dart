@@ -30,10 +30,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       await ApiClient().requestOtp(_emailCtrl.text.trim());
       if (!mounted) return;
       context.go('/verify-otp', extra: _emailCtrl.text.trim());
-    } catch (e) {
+    } on EmailUnavailableException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString(), style: const TextStyle(fontFamily: 'Inter')),
+        content: Text(e.message, style: const TextStyle(fontFamily: 'Inter')),
+        backgroundColor: Colors.orange.shade800,
+        behavior: SnackBarBehavior.floating,
+        shape: const StadiumBorder(),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is ApiException ? e.message : 'Unable to request code. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg, style: const TextStyle(fontFamily: 'Inter')),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: const StadiumBorder(),

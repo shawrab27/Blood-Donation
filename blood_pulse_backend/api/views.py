@@ -99,6 +99,11 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
                 data['upazila_linked'] = None
 
         phone = data.get('phone_number') or data.get('username')
+        from api.phone_utils import normalize_phone_number, get_phone_variants, is_valid_phone
+        canonical_phone = normalize_phone_number(phone) if is_valid_phone(phone) else phone
+        if canonical_phone:
+            data['phone_number'] = canonical_phone
+
         full_name = data.get('full_name', '')
         first_name = full_name.split(' ')[0] if full_name else data.get('first_name', '')
         last_name = ' '.join(full_name.split(' ')[1:]) if full_name and len(full_name.split(' ')) > 1 else data.get('last_name', '')
@@ -106,15 +111,16 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
 
         # Resolve or create the Django user for unauthenticated registrations
         if not user:
-            clean_phone = str(phone or 'donor_guest').replace('+', '').replace(' ', '')
-            username = clean_phone
+            username = canonical_phone or str(phone or 'donor_guest').replace('+', '').replace(' ', '')
             
-            # Check if this phone number is already registered to an existing profile
-            if phone and DonorProfile.objects.filter(phone_number=phone).exists():
-                return Response(
-                    {'phone_number': ['An account with this phone number is already registered.']},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # Check if this phone number is already registered to an existing profile (any variant)
+            if canonical_phone:
+                variants = get_phone_variants(canonical_phone)
+                if DonorProfile.objects.filter(phone_number__in=variants).exists():
+                    return Response(
+                        {'phone_number': ['An account with this phone number is already registered.']},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
             # Check if user with this username exists
             user = User.objects.filter(username=username).first()

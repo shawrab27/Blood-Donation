@@ -222,20 +222,84 @@ class AuthNotifier extends Notifier<AuthState> {
           ref.invalidate(profileProvider);
         } catch (_) {}
 
+        // Cache last known profile to secure storage for offline resilience
+        try {
+          const storage = FlutterSecureStorage();
+          await storage.write(key: 'bp_cached_user_profile', value: jsonEncode(pData));
+        } catch (_) {}
+
         state = state.copyWith(
           status: statusEnum,
           user: user,
           errorMessage: null,
         );
-      } else {
+      } else if (response.statusCode == 401) {
+        // Token is genuinely invalid and refresh failed with 401 → clear session
         await _apiClient.clearTokens();
         state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      } else {
+        // 5xx server gateway or temporary error: preserve session, do NOT clear tokens!
+        debugPrint('[AuthNotifier] restoreSession non-200 non-401 status: ${response.statusCode}. Retaining session.');
+        await _loadOfflineCachedProfile();
       }
     } catch (e) {
-      debugPrint('[AuthNotifier] restoreSession error: $e');
-      try {
-        await _apiClient.clearTokens();
-      } catch (_) {}
+      debugPrint('[AuthNotifier] restoreSession network/offline error: $e');
+      // Network errors, SocketException, TimeoutException must NEVER log the user out!
+      // Attempt to load cached offline profile or retain authenticated state
+      await _loadOfflineCachedProfile();
+    }
+  }
+
+  /// Restores cached user profile from FlutterSecureStorage when offline
+  Future<void> _loadOfflineCachedProfile() async {
+    try {
+      const storage = FlutterSecureStorage();
+      final cachedJson = await storage.read(key: 'bp_cached_user_profile');
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final pData = jsonDecode(cachedJson) as Map<String, dynamic>;
+        final bool isComp = pData['is_profile_complete'] == true ||
+            pData['registration_complete'] == true ||
+            pData['registration_complete'] == 'true';
+        final fullName = ((pData['first_name'] ?? '') + ' ' + (pData['last_name'] ?? '')).trim();
+        final user = UserProfile(
+          fullName: fullName.isEmpty ? 'Donor User' : fullName,
+          email: pData['email'] ?? '',
+          primaryPhone: pData['phone_number'] ?? '',
+          age: int.tryParse(pData['age']?.toString() ?? '') ?? 25,
+          gender: pData['gender'] ?? 'Not specified',
+          bloodGroup: pData['blood_group'] ?? '',
+          category: pData['category'] ?? 'civilian',
+          categoryDetails: {
+            if (pData['district'] != null) 'district': pData['district'].toString(),
+            if (pData['address'] != null) 'address': pData['address'].toString(),
+          },
+          neverDonated: pData['never_donated'] ?? true,
+          totalBagsDonated: pData['total_bags_donated'] ?? 0,
+          isOtpVerified: true,
+          isProfileComplete: isComp,
+          missingFields: const [],
+          photoUrl: pData['profile_picture'],
+          googlePhotoUrl: pData['google_photo_url'],
+          authProvider: pData['auth_provider'],
+          userIntent: pData['user_intent'] ?? 'DONATE_AND_REQUEST',
+        );
+        state = state.copyWith(
+          status: isComp ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete,
+          user: user,
+          errorMessage: null,
+        );
+        return;
+      }
+    } catch (_) {}
+
+    // If no cached JSON is available but a token exists, retain authenticated session
+    final token = await _apiClient.getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        errorMessage: null,
+      );
+    } else {
       state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
     }
   }

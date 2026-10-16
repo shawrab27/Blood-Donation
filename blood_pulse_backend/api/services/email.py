@@ -67,28 +67,22 @@ from api.services.email_sender import (
     ConsoleEmailSender,
     BrevoApiEmailSender,
     EmailProviderError,
+    EmailUnavailableError,
+    BrevoApiProvider,
+    ConsoleProvider,
+    LocMemProvider,
     UnifiedEmailService,
     get_email_sender,
+    get_email_provider,
 )
 
 
 def get_email_service() -> EmailService:
     """
-    Returns the EmailService adapter, routing all OTP emails through UnifiedEmailService
-    (EMAIL_PROVIDER = brevo_api | console | locmem) while enforcing production safety checks.
+    Returns the EmailService adapter, routing all OTP emails through UnifiedEmailService.
+    If email delivery is unavailable, raises EmailUnavailableError rather than an unhandled 500.
     """
     if getattr(settings, 'USE_SMTP_EMAIL', False):
         return SmtpEmailService()
 
-    if settings.DEBUG:
-        return ConsoleEmailService()
-
-    if getattr(settings, 'EMAIL_PROVIDER', '') == 'brevo_api':
-        return UnifiedEmailService()
-
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "Email service is not configured for production. "
-        "Set EMAIL_PROVIDER=brevo_api (or USE_SMTP_EMAIL=True) in production, "
-        "or set DEBUG=True for local dev."
-    )
+    return UnifiedEmailService()

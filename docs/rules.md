@@ -52,14 +52,17 @@ Read this file before every task. These rules override convenience.
 31. Gender: Male / Female only.
 32. Blood group locked after save; admin-only edit.
 33. 5-tab navbar order: **Feed, Blood Hub, Communities, Health Hub, Profile**.
-34. Login has no OTP. OTP is Just-In-Time only.
-35. Brand: use locked palette, fonts, logo and slogan (see design.md). No substitutions.
-36. Do not make medical claims. Health content must come from verified sources.
+34. Top Header Pattern: Logo `assets/images/launcher_icon_transparent.png` (height 32px) + `"BloodPulse"` title (Georgia, `#C30121`). Top-right: Notification Bell with active red unread badge (`#C30121`) + Profile Avatar (`CircleAvatar` 36px, circular red border `#C30121`, tap navigates to `/profile`). Do NOT use a 3-dot PopupMenuButton.
+35. Notification Screen Tabs: Clicking Notification Bell opens Notification Center with 4 tabs: Feed, Request, Messages, Profile.
+36. Design Tokens & Shapes: Primary `#C30121`, Secondary `#2B2B2B`, Tertiary `#0D68AA`, Surface `#FDF3F3` / `#FFF8F7`. Headlines in Georgia; Body/Inputs/Buttons in Inter. Full capsule / pill shape (`BorderRadius.circular(50)`) for buttons and input fields. Wrap all screens in `ResponsiveLayout`.
+37. Login has no OTP. OTP is Just-In-Time only.
+38. Brand: use locked palette, fonts, logo and slogan (see design.md). No substitutions.
+39. Do not make medical claims. Health content must come from verified sources.
 
 ## G. Git Discipline
-37. Work on the feature branch, small commits, clear messages.
-38. Back up (branch/tag) before risky changes.
-39. Report `git status` and the commit hash after each task.
+40. Work on the feature branch, small commits, clear messages.
+41. Back up (branch/tag) before risky changes.
+42. Report `git status` and the commit hash after each task.
 
 ## H. Communication Format for Reports
 ```

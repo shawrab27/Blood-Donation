@@ -96,12 +96,18 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
     final currentPath = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
     if (currentPath != '/' && currentPath != '/splash') return;
 
+    final isGuest = ref.read(isGuestProvider);
+    if (isGuest) {
+      context.go('/guest-welcome');
+      return;
+    }
+
     final authStatus = ref.read(authProvider).status;
     if (authStatus == AuthStatus.authenticated ||
         authStatus == AuthStatus.authenticatedIncomplete) {
       context.go('/feed');
     } else {
-      context.go('/onboarding');
+      context.go('/login');
     }
   }
 
