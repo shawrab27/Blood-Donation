@@ -36,6 +36,7 @@ void main() {
       expect(find.text('Language'), findsOneWidget);
       expect(find.text('Notification Received'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
+      expect(find.text('Devices & Sessions'), findsOneWidget);
       expect(find.text('Rate Us'), findsOneWidget);
       expect(find.text('Share App'), findsOneWidget);
       expect(find.text('Learn More'), findsOneWidget);

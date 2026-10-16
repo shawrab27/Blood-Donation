@@ -62,6 +62,21 @@ class DonorSearchThrottle(AnonRateThrottle):
     rate = '60/min'
 
 
+class LoginRateThrottle(AnonRateThrottle):
+    scope = 'login'
+    rate = '10/min'
+
+
+class RegisterRateThrottle(AnonRateThrottle):
+    scope = 'register'
+    rate = '10/min'
+
+
+class PasswordResetRateThrottle(AnonRateThrottle):
+    scope = 'password_reset'
+    rate = '5/hour'
+
+
 def custom_exception_handler(exc, context):
     """
     Custom DRF exception handler ensuring HTTP 429 responses always include

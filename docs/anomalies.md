@@ -36,9 +36,9 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 | 30 | National Emergency page missing | Phase 4 | OPEN | |
 | 31 | tracking/standby real-world logic + backend + DB | Phase 4 | OPEN | |
 | 32 | scalability (Redis) | Phase 4 | OPEN | |
-| 33 | security checklist (19 points) | Phase 1 | OPEN | |
+| 33 | security checklist (19 points) | Batch 2 | RESOLVED | Hardened settings, CSP/headers middleware, media upload whitelist, admin path/throttle, PII logs masked, DRF rate throttles, auth tests |
 | 34 | PulseAI jailbreak | Phase 3 | OPEN | |
-| 35 | session mgmt/device tracking/revocation | Phase 4 | OPEN | |
+| 35 | session mgmt/device tracking/revocation | Batch 2 | RESOLVED | UserDevice model (migration 0056), JWT token blacklist, device list/revoke/logout-all APIs, Flutter Devices & Sessions screen |
 | 36 | FCM never verified | Phase 1 | OPEN | |
 | 37 | realtime chat | Phase 4 | OPEN | |
 | 38 | location-based feed (scope TBD) | Phase 4 | OPEN | |

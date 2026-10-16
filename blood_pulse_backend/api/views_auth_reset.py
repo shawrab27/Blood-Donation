@@ -255,6 +255,9 @@ def confirm_reset(request):
         for token in tokens:
             BlacklistedToken.objects.get_or_create(token=token)
 
+        from .models import UserDevice
+        UserDevice.objects.filter(user=user).update(is_revoked=True)
+
     return Response({'detail': 'Password reset successful.'}, status=status.HTTP_200_OK)
 
 

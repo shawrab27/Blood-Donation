@@ -66,11 +66,85 @@ class BloodPulseTokenObtainPairSerializer(TokenObtainPairSerializer):
             pass
 
         data['is_profile_complete'] = is_complete
+
+        # Device Tracking & Session Management (Item 35)
+        request = self.context.get('request')
+        if request and hasattr(self, 'user') and self.user.is_authenticated:
+            device_id = (
+                request.data.get('device_id') or
+                request.headers.get('X-Device-ID') or
+                request.META.get('HTTP_X_DEVICE_ID')
+            )
+            device_name = (
+                request.data.get('device_name') or
+                request.headers.get('X-Device-Name') or
+                request.META.get('HTTP_X_DEVICE_NAME', '')
+            )
+            platform = (
+                request.data.get('platform') or
+                request.headers.get('X-Platform') or
+                'android'
+            )
+            raw_ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip()
+            client_ip = ''
+            if raw_ip:
+                if '.' in raw_ip:
+                    parts = raw_ip.split('.')
+                    client_ip = '.'.join(parts[:3]) + '.***'
+                elif ':' in raw_ip:
+                    parts = raw_ip.split(':')
+                    client_ip = ':'.join(parts[:3]) + ':****'
+                else:
+                    client_ip = raw_ip
+
+            if device_id:
+                from api.models import UserDevice, Notification
+                from django.utils import timezone
+                device = UserDevice.objects.filter(user=self.user, device_id=device_id).first()
+                if device and device.is_revoked:
+                    raise exceptions.PermissionDenied(
+                        'This device session has been revoked. Please contact support or login from an authorized device.'
+                    )
+
+                if not device:
+                    device = UserDevice.objects.create(
+                        user=self.user,
+                        device_id=device_id,
+                        device_name=device_name or 'Mobile Device',
+                        platform=platform,
+                        last_ip_masked=client_ip,
+                        is_revoked=False,
+                        is_new=True,
+                    )
+                    # Create in-app notification for new device login
+                    Notification.objects.create(
+                        user=self.user,
+                        title="New Device Login",
+                        body=f"A new device ({device.device_name}) logged in to your account from {client_ip or 'unknown network'}.",
+                        type="SECURITY",
+                        is_read=False,
+                        created_at=timezone.now(),
+                    )
+                else:
+                    device.last_seen = timezone.now()
+                    if client_ip:
+                        device.last_ip_masked = client_ip
+                    if device_name:
+                        device.device_name = device_name
+                    device.is_new = False
+                    device.save(update_fields=['last_seen', 'last_ip_masked', 'device_name', 'is_new'])
+
+                data['device_id'] = device_id
+
         return data
 
 
+from api.throttles import LoginRateThrottle
+
 class BloodPulseTokenObtainPairView(TokenObtainPairView):
     """
-    Universal JWT login endpoint returning JSON only.
+    Universal JWT login endpoint returning JSON only with rate limiting.
     """
     serializer_class = BloodPulseTokenObtainPairSerializer
+    throttle_classes = [LoginRateThrottle]
+

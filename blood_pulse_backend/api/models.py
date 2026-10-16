@@ -2795,21 +2795,33 @@ class SupportTicket(models.Model):
 
     user = models.ForeignKey(User, models.CASCADE, related_name='api_support_tickets')
 
+    class Meta:
+        managed = False
+        db_table = 'api_supportticket'
 
 
-
-
-
+class UserDevice(models.Model):
+    """
+    Tracks registered active and historical user devices for session management,
+    instant revocation, and suspicious login notifications (#35).
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='devices')
+    device_id = models.CharField(max_length=255, db_index=True)
+    device_name = models.CharField(max_length=255, blank=True, default='')
+    platform = models.CharField(max_length=50, blank=True, default='android')
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
+    last_ip_masked = models.CharField(max_length=50, blank=True, default='')
+    last_city_approx = models.CharField(max_length=100, blank=True, default='')
+    is_revoked = models.BooleanField(default=False)
+    is_new = models.BooleanField(default=True)
 
     class Meta:
+        ordering = ['-last_seen']
+        unique_together = ('user', 'device_id')
 
-
-
-        managed = False
-
-
-
-        db_table = 'api_supportticket'
+    def __str__(self):
+        return f"{self.user.username} - {self.device_name or self.device_id[:8]} ({self.platform})"
 
 
 

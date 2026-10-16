@@ -33,10 +33,32 @@ class MediaUploadView(APIView):
         if file_obj.size > 5 * 1024 * 1024:
             return Response({'error': 'File size exceeds maximum allowed limit of 5MB.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Validate file extension
+        filename = getattr(file_obj, 'name', 'upload.jpg')
+        import os
+        ext = os.path.splitext(filename)[1].lower()
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
+        if ext not in allowed_extensions:
+            return Response({'error': f'Invalid file extension {ext}. Allowed: jpg, jpeg, png, webp.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate MIME type
+        content_type = getattr(file_obj, 'content_type', '').lower()
+        allowed_mimes = {'image/jpeg', 'image/png', 'image/webp'}
+        if content_type and content_type not in allowed_mimes:
+            return Response({'error': f'Invalid content type {content_type}. Allowed: image/jpeg, image/png, image/webp.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify image integrity via PIL
+        try:
+            from PIL import Image
+            img = Image.open(file_obj)
+            img.verify()
+            file_obj.seek(0)
+        except Exception:
+            return Response({'error': 'Corrupted or invalid image file.'}, status=status.HTTP_400_BAD_REQUEST)
+
         # Strip EXIF / GPS metadata
         clean_file = strip_image_exif(file_obj)
         clean_bytes = clean_file.read() if hasattr(clean_file, 'read') else file_obj.read()
-        filename = getattr(file_obj, 'name', 'upload.jpg')
 
         storage = get_media_storage()
         try:

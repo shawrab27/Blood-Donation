@@ -35,3 +35,21 @@ class StrictCORSMiddleware(MiddlewareMixin):
             return HttpResponseForbidden("Origin not allowed")
         
         return None
+
+
+class SecurityHeadersCSPMiddleware(MiddlewareMixin):
+    """
+    Applies Content-Security-Policy (CSP) headers, particularly for Django admin
+    and browser-rendered HTML surfaces, preventing unauthorized script execution.
+    """
+    def process_response(self, request, response):
+        if 'Content-Security-Policy' not in response:
+            response['Content-Security-Policy'] = (
+                "default-src 'self'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data: https://fonts.gstatic.com; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "script-src 'self' 'unsafe-inline'; "
+                "connect-src 'self' https:;"
+            )
+        return response

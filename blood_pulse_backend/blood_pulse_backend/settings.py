@@ -27,17 +27,45 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
+# Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+DJANGO_ENV = os.environ.get('DJANGO_ENV', '').strip().lower()
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#3s5ydx%hd1x$%(lj2+ai6mfzn9jbtw%4f7eif%9o#z_m07z_^')
+_INSECURE_SECRET_KEY = 'django-insecure-#3s5ydx%hd1x$%(lj2+ai6mfzn9jbtw%4f7eif%9o#z_m07z_^'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+
+# DEBUG env-controlled, False by default
+if 'DJANGO_DEBUG' in os.environ:
+    DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() in ('true', '1')
+elif DJANGO_ENV == 'dev':
+    DEBUG = True
+else:
+    DEBUG = False
+
+if not DEBUG and DJANGO_ENV == 'production' and (not SECRET_KEY or SECRET_KEY == _INSECURE_SECRET_KEY):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY environment variable must be set to a secure value in production.")
+
+if not SECRET_KEY:
+    SECRET_KEY = _INSECURE_SECRET_KEY
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
-
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
+_allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS', '').strip()
+if _allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
+elif DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'testserver']
+else:
+    ALLOWED_HOSTS = [
+        'bloodpulse-backend.onrender.com',
+        'localhost',
+        '127.0.0.1',
+        '[::1]',
+        'testserver',
+    ]
 
 
 # Application definition
@@ -78,10 +106,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'api.middleware.SecurityHeadersCSPMiddleware',
 ]
 
-# CORS Configuration
-# Defaults to False so strict origin whitelisting secures the API in production.
+# CORS & CSRF Configuration
 CORS_ALLOW_ALL_ORIGINS = False
 
 _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
@@ -107,6 +135,18 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 # Append any additional origins from the CORS_ALLOWED_ORIGINS env variable (comma-separated).
 if _cors_origins_env:
     CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in _cors_origins_env.split(',') if origin.strip()])
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://blood-donation-liard.vercel.app',
+    'https://bloodpulse-backend.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+_csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if _csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in _csrf_origins_env.split(',') if origin.strip()])
 
 
 ROOT_URLCONF = 'blood_pulse_backend.urls'
@@ -250,7 +290,13 @@ else:
 
 
 
-FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc=')
+_FALLBACK_FIELD_KEY = 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc='
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
+if not DEBUG and DJANGO_ENV == 'production' and (not FIELD_ENCRYPTION_KEY or FIELD_ENCRYPTION_KEY == _FALLBACK_FIELD_KEY):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("FIELD_ENCRYPTION_KEY environment variable must be set to a secure private key in production.")
+if not FIELD_ENCRYPTION_KEY:
+    FIELD_ENCRYPTION_KEY = _FALLBACK_FIELD_KEY
 
 
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'api.throttles.custom_exception_handler'
@@ -261,6 +307,10 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'anon': '100/hour',
     'user': '1000/hour',
+    'login': '10/min',
+    'register': '10/min',
+    'admin_login': '5/min',
+    'password_reset': '5/hour',
     'otp_anon': '10/hour',
     'otp_user': '20/hour',
     'request_otp': '5/hour',
@@ -280,13 +330,31 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 }
 
 
-if os.environ.get('DJANGO_ENV') == 'production':
+# Security Headers & Cookies
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+if not DEBUG and DJANGO_ENV == 'production':
     SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
 
 
 from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
 }
 
 

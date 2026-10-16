@@ -118,6 +118,17 @@ class _SettingsOptionsCardState extends ConsumerState<SettingsOptionsCard> {
           ),
           Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
 
+          // 4. Devices & Sessions (Manage active logins & devices)
+          _buildTile(
+            icon: Icons.devices_rounded,
+            iconBgColor: const Color(0xFFFDEAEB),
+            iconColor: const Color(0xFFC30121),
+            title: 'Devices & Sessions',
+            subtitle: 'Manage active logins & devices',
+            onTap: () => context.push('/settings/devices'),
+          ),
+          Divider(height: 1, indent: 64, color: const Color(0xFFF3DDE0).withValues(alpha: 0.6)),
+
           // 4. Rate Us (Share your experience on App Store)
           _buildTile(
             icon: Icons.star_outline_rounded,

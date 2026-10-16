@@ -23,6 +23,18 @@ class EmailProviderError(EmailUnavailableError):
     pass
 
 
+def mask_email(email: str) -> str:
+    """Mask email for safe logging without PII leakage: j***e@example.com"""
+    if not email or '@' not in email:
+        return '***'
+    user, domain = email.split('@', 1)
+    if len(user) <= 2:
+        masked_user = user[0] + '*'
+    else:
+        masked_user = user[0] + '***' + user[-1]
+    return f"{masked_user}@{domain}"
+
+
 class EmailSender(ABC):
     @abstractmethod
     def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
@@ -52,9 +64,9 @@ class LocMemEmailSender(EmailSender):
 
 
 class ConsoleEmailSender(EmailSender):
-    """Dev-only sender. Prints destination and subject. Never logs OTP codes."""
+    """Dev-only sender. Prints destination and subject. Never logs OTP codes or raw PII."""
     def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
-        logger.info("[ConsoleEmailSender] To: %s | Subject: %s", to_email, subject)
+        logger.info("[ConsoleEmailSender] To: %s | Subject: %s", mask_email(to_email), subject)
         return True
 
 
@@ -75,11 +87,12 @@ class BrevoApiEmailSender(EmailSender):
         self.sender_name = sender_name if sender_name is not None else (getattr(settings, 'BREVO_SENDER_NAME', '') or os.getenv('BREVO_SENDER_NAME', 'BloodPulse'))
 
     def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
+        masked = mask_email(to_email)
         if not self.api_key:
-            logger.error("BREVO_API_KEY missing. Cannot dispatch email to %s", to_email)
+            logger.error("BREVO_API_KEY missing. Cannot dispatch email to %s", masked)
             raise EmailProviderError("BREVO_API_KEY missing")
         if not self.sender_email:
-            logger.error("BREVO_SENDER_EMAIL missing. Cannot dispatch email to %s", to_email)
+            logger.error("BREVO_SENDER_EMAIL missing. Cannot dispatch email to %s", masked)
             raise EmailProviderError("BREVO_SENDER_EMAIL missing")
 
         headers = {
@@ -110,16 +123,16 @@ class BrevoApiEmailSender(EmailSender):
                 timeout=self.TIMEOUT_SECONDS,
             )
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as exc:
-            logger.error("Brevo API request failed for recipient %s: %s", to_email, exc.__class__.__name__)
+            logger.error("Brevo API request failed for recipient %s: %s", masked, exc.__class__.__name__)
             raise EmailProviderError(f"Email delivery timed out or network error: {exc.__class__.__name__}") from exc
 
         if resp.status_code in (200, 201, 202):
             return True
         elif resp.status_code == 429:
-            logger.warning("Brevo API rate limited (429) for recipient %s", to_email)
+            logger.warning("Brevo API rate limited (429) for recipient %s", masked)
             raise EmailProviderError("Email service rate limit reached. Please try again shortly.")
         else:
-            logger.error("Brevo API error %s for recipient %s", resp.status_code, to_email)
+            logger.error("Brevo API error %s for recipient %s", resp.status_code, masked)
             raise EmailProviderError(f"Email service returned HTTP {resp.status_code}")
 
 
@@ -139,8 +152,9 @@ class ResendApiEmailSender(EmailSender):
         self.sender_email = sender_email if sender_email is not None else (getattr(settings, 'RESEND_SENDER_EMAIL', '') or os.getenv('RESEND_SENDER_EMAIL', 'onboarding@resend.dev'))
 
     def send_email(self, to_email: str, subject: str, text_content: str, html_content: Optional[str] = None) -> bool:
+        masked = mask_email(to_email)
         if not self.api_key:
-            logger.error("RESEND_API_KEY missing. Cannot dispatch email to %s", to_email)
+            logger.error("RESEND_API_KEY missing. Cannot dispatch email to %s", masked)
             raise EmailProviderError("RESEND_API_KEY missing")
 
         headers = {
@@ -165,16 +179,16 @@ class ResendApiEmailSender(EmailSender):
                 timeout=self.TIMEOUT_SECONDS,
             )
         except (requests.exceptions.Timeout, requests.exceptions.RequestException) as exc:
-            logger.error("Resend API request failed for recipient %s: %s", to_email, exc.__class__.__name__)
+            logger.error("Resend API request failed for recipient %s: %s", masked, exc.__class__.__name__)
             raise EmailProviderError(f"Email delivery timed out or network error: {exc.__class__.__name__}") from exc
 
         if resp.status_code in (200, 201):
             return True
         elif resp.status_code == 429:
-            logger.warning("Resend API rate limited (429) for recipient %s", to_email)
+            logger.warning("Resend API rate limited (429) for recipient %s", masked)
             raise EmailProviderError("Email service rate limit reached. Please try again shortly.")
         else:
-            logger.error("Resend API error %s for recipient %s", resp.status_code, to_email)
+            logger.error("Resend API error %s for recipient %s", resp.status_code, masked)
             raise EmailProviderError(f"Email service returned HTTP {resp.status_code}")
 
 

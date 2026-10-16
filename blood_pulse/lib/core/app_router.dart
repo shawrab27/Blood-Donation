@@ -77,6 +77,7 @@ import '../features/profile/presentation/screens/public_donor_profile_screen.dar
 import '../features/profile/presentation/screens/ratings_reviews_screen.dart';
 import '../features/profile/presentation/screens/xp_level_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
+import '../features/settings/presentation/screens/devices_sessions_screen.dart';
 import '../features/settings/presentation/screens/privacy_policy_screen.dart';
 
 import 'widgets/blood_pulse_app_bar.dart';
@@ -690,6 +691,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    // /settings/devices — Devices & Sessions Screen
+    GoRoute(
+      path: '/settings/devices',
+      builder: (context, state) => const DevicesSessionsScreen(),
     ),
     // /privacy-policy — Privacy Policy Screen
     GoRoute(

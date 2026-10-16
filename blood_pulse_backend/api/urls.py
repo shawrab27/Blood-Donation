@@ -1,6 +1,12 @@
 from .views_admin_notifications import AdminNotificationComposeAPIView, AdminNotificationHistoryAPIView
 from .views_admin_staff import AdminStaffListAPIView, AdminStaffToggleAPIView
 from .views_account import LogoutAPIView, AccountSummaryAPIView, AccountDeleteAPIView
+from .views_devices import (
+    UserDeviceListAPIView,
+    UserDeviceRevokeAPIView,
+    UserLogoutAllDevicesAPIView,
+    PasswordChangeAPIView,
+)
 from .views_leaderboard import LeaderboardAPIView
 from .views_certificates import CertificateIssueAPIView, CertificateVerifyAPIView
 from .views_feed_media import MediaUploadView, UserLocationSyncView
@@ -158,9 +164,10 @@ urlpatterns = [
     path('institutions/search/', institution_search, name='institution-search'),
     path('locations/upazila-search/', upazila_search, name='upazila-search'),
 
-    # Auth Reset
+    # Auth Reset & Password Change
     path('auth/password-reset/request/', request_otp, name='password-reset-request'),
     path('auth/password-reset/confirm/', confirm_reset, name='password-reset-confirm'),
+    path('auth/password-change/', PasswordChangeAPIView.as_view(), name='password-change'),
 
     # Auth Logout (B4)
     path('auth/logout/', LogoutAPIView.as_view(), name='auth-logout'),
@@ -168,6 +175,11 @@ urlpatterns = [
     # Account Lifecycle (B5)
     path('account/summary/', AccountSummaryAPIView.as_view(), name='account-summary'),
     path('account/', AccountDeleteAPIView.as_view(), name='account-delete'),
+
+    # Device & Session Management (Item 35)
+    path('account/devices/', UserDeviceListAPIView.as_view(), name='account-devices-list'),
+    path('account/devices/<int:pk>/revoke/', UserDeviceRevokeAPIView.as_view(), name='account-devices-revoke'),
+    path('account/devices/logout-all/', UserLogoutAllDevicesAPIView.as_view(), name='account-devices-logout-all'),
 
     # Leaderboard (B6)
     path('leaderboard/', LeaderboardAPIView.as_view(), name='leaderboard'),

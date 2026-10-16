@@ -16,3 +16,4 @@ media/
 firebase-service-account.json
 *.json
 !fixtures/*.json
+*.html

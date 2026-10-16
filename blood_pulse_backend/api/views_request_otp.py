@@ -148,13 +148,15 @@ def request_otp_send_view(request):
     try:
         email_sender.send_email(to_email=email, subject=subject, text_content=message)
     except EmailProviderError as exc:
-        logger.error("Email provider error dispatching OTP to %s: %s", email, exc)
+        from api.services.email_sender import mask_email
+        logger.error("Email provider error dispatching OTP to %s: %s", mask_email(email), exc)
         return Response(
             {'error': 'Email delivery service temporarily unavailable. Please try again shortly.'},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
     except Exception as exc:
-        logger.error("Failed to send request OTP email to %s: %s", email, exc)
+        from api.services.email_sender import mask_email
+        logger.error("Failed to send request OTP email to %s: %s", mask_email(email), exc)
         return Response(
             {'error': 'Failed to send verification code. Please try again shortly.'},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,

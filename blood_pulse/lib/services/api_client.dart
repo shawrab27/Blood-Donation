@@ -74,6 +74,51 @@ class ApiClient {
     _cachedRefreshToken = refresh;
   }
 
+  static const String _kDeviceId = 'bp_device_id';
+  static String? _cachedDeviceId;
+
+  static Future<String> getDeviceId() async {
+    if (_cachedDeviceId != null && _cachedDeviceId!.isNotEmpty) {
+      return _cachedDeviceId!;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      var id = prefs.getString(_kDeviceId);
+      if (id == null || id.isEmpty) {
+        final rand = DateTime.now().microsecondsSinceEpoch.toString();
+        id = 'dev_${rand.substring(rand.length > 8 ? rand.length - 8 : 0)}';
+        await prefs.setString(_kDeviceId, id);
+      }
+      _cachedDeviceId = id;
+      return id;
+    } catch (_) {
+      return 'dev_mobile';
+    }
+  }
+
+  static String getPlatform() {
+    if (kIsWeb) return 'web';
+    try {
+      if (Platform.isAndroid) return 'android';
+      if (Platform.isIOS) return 'ios';
+      if (Platform.isWindows) return 'windows';
+      if (Platform.isMacOS) return 'macos';
+      if (Platform.isLinux) return 'linux';
+    } catch (_) {}
+    return 'mobile';
+  }
+
+  static String getDeviceName() {
+    if (kIsWeb) return 'Web Browser';
+    try {
+      if (Platform.isAndroid) return 'Android Device';
+      if (Platform.isIOS) return 'iOS Device';
+      if (Platform.isWindows) return 'Windows PC';
+      if (Platform.isMacOS) return 'Mac Computer';
+    } catch (_) {}
+    return 'Mobile Device';
+  }
+
   String baseUrl;
   final http.Client _client;
   final FlutterSecureStorage _secureStorage;
@@ -192,10 +237,16 @@ class ApiClient {
         final cleanPath = 'token/';
         final fullUrl = '$candidateBase/api/$cleanPath';
         final uri = Uri.parse(fullUrl);
+        final deviceId = await getDeviceId();
         final response = await _client
             .post(
               uri,
-              headers: {'Content-Type': 'application/json'},
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Device-ID': deviceId,
+                'X-Device-Name': getDeviceName(),
+                'X-Platform': getPlatform(),
+              },
               body: jsonEncode({
                 'username': phone,
                 'password': password,
@@ -761,6 +812,10 @@ class ApiClient {
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
+    final deviceId = await getDeviceId();
+    headers['X-Device-ID'] = deviceId;
+    headers['X-Device-Name'] = getDeviceName();
+    headers['X-Platform'] = getPlatform();
     return headers;
   }
 
@@ -918,6 +973,79 @@ class ApiClient {
     } catch (_) {}
 
     return null;
+  }
+
+  /// Fetches active devices and sessions from `/api/account/devices/`.
+  Future<List<Map<String, dynamic>>> getDevices() async {
+    final response = await get('account/devices/');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final list = (data['devices'] as List<dynamic>?) ?? [];
+      return list.cast<Map<String, dynamic>>();
+    }
+    throw ApiException(
+      _extractErrorMessage(response.body, statusCode: response.statusCode),
+      statusCode: response.statusCode,
+      rawError: response.body,
+    );
+  }
+
+  /// Revokes a device session by ID from `/api/account/devices/<id>/revoke/`.
+  Future<void> revokeDevice(int deviceId) async {
+    final refresh = await getRefreshToken();
+    final response = await post(
+      'account/devices/$deviceId/revoke/',
+      body: {'refresh': refresh},
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, statusCode: response.statusCode),
+        statusCode: response.statusCode,
+        rawError: response.body,
+      );
+    }
+  }
+
+  /// Revokes all other sessions from `/api/account/devices/logout-all/`.
+  Future<void> logoutAllDevices({bool includeCurrent = false}) async {
+    final refresh = await getRefreshToken();
+    final response = await post(
+      'account/devices/logout-all/?include_current=$includeCurrent',
+      body: {'refresh': refresh},
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, statusCode: response.statusCode),
+        statusCode: response.statusCode,
+        rawError: response.body,
+      );
+    }
+    if (includeCurrent) {
+      await clearTokens();
+    }
+  }
+
+  /// Changes the user's password and revokes other sessions.
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final refresh = await getRefreshToken();
+    final response = await post(
+      'auth/password-change/',
+      body: {
+        'old_password': oldPassword,
+        'new_password': newPassword,
+        if (refresh != null) 'refresh': refresh,
+      },
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+        _extractErrorMessage(response.body, statusCode: response.statusCode),
+        statusCode: response.statusCode,
+        rawError: response.body,
+      );
+    }
   }
 
   static String _extractErrorMessage(String responseBody, {int? statusCode}) {
