@@ -64,8 +64,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Dhaka University Annual Drive', skipOffstage: false), findsOneWidget);
-    expect(find.text('Red Crescent Emergency Camp', skipOffstage: false), findsOneWidget);
+    expect(find.text('Dhaka University Annual Drive', skipOffstage: false), findsNothing);
+    expect(find.text('Red Crescent Emergency Camp', skipOffstage: false), findsNothing);
+    expect(find.text('Blood Campaigns', skipOffstage: false), findsOneWidget);
     expect(find.text('View All Campaigns', skipOffstage: false), findsOneWidget);
   });
 }

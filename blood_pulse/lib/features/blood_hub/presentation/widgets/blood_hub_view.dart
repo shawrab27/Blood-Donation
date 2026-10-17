@@ -547,166 +547,88 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
   }
 
   Widget _buildActiveCampaignsSegment(bool isBangla) {
-    final campaignPosts = ref.watch(activeCampaignsProvider);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          ref.read(feedFilterProvider.notifier).state = 'campaign';
+          ref.read(shellTabProvider.notifier).state = 0;
+        },
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFD4E6F7)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(6),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE8F1F8),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.campaign_rounded, color: Color(0xFF0D68AA), size: 22),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isBangla ? 'রক্তদান ক্যাম্পেইন' : 'Active Blood Campaigns',
-                        style: const TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2B2B2B),
-                        ),
-                      ),
-                      Text(
-                        isBangla ? '${campaignPosts.length}টি ড্রাইভ চলছে' : '${campaignPosts.length} Drives Ongoing Near You',
-                        style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF0D68AA), fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              TextButton(
-                onPressed: () {
-                  ref.read(feedFilterProvider.notifier).state = 'campaign';
-                  ref.read(shellTabProvider.notifier).state = 0;
-                },
-                child: Text(
-                  isBangla ? 'সব দেখুন ➔' : 'View All ➔',
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
-                ),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFD4E6F7)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(6),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          for (final post in campaignPosts) ...[
-            if (post.campaign != null) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FBFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE0EBF2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            post.campaign!.title,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE8F1F8),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.campaign_rounded, color: Color(0xFF0D68AA), size: 22),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isBangla ? 'রক্তদান ক্যাম্পেইন' : 'Active Blood Campaigns',
                             style: const TextStyle(
                               fontFamily: 'Georgia',
-                              fontSize: 14,
+                              fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF2B2B2B),
                             ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEDF4FF),
-                            borderRadius: BorderRadius.circular(12),
+                          Text(
+                            isBangla ? 'কমিউনিটি ড্রাইভ লাইভ ফিডে দেখুন' : 'Explore Drives Live on Newsfeed',
+                            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF0D68AA), fontWeight: FontWeight.bold),
                           ),
-                          child: Text(
-                            '${post.campaign!.currentUnits} / ${post.campaign!.targetUnits} bags',
-                            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '📍 ${post.campaign!.venue} • 🗓️ ${post.campaign!.startDate}',
-                      style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF666666)),
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: (post.campaign!.currentUnits / post.campaign!.targetUnits).clamp(0.0, 1.0),
-                        minHeight: 6,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0D68AA)),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            ref.read(feedProvider.notifier).pledgeCampaign(post.id);
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Thank you! You pledged to donate at ${post.campaign!.title}. Units: ${post.campaign!.currentUnits + 1}/${post.campaign!.targetUnits}'),
-                                backgroundColor: const Color(0xFF0D68AA),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.volunteer_activism_rounded, size: 14, color: Colors.white),
-                          label: Text(
-                            isBangla ? 'রক্তদানের অঙ্গীকার 🩸' : 'Pledge Donation 🩸',
-                            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0D68AA),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            visualDensity: VisualDensity.compact,
-                            elevation: 0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
+                  Text(
+                    isBangla ? 'সব দেখুন ➔' : 'View All ➔',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0D68AA)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isBangla
+                    ? 'হাসপাতালের ক্যাম্প, বিশ্ববিদ্যালয়ের কর্মসূচি এবং রক্তদান সমাবেশগুলি সরাসরি নিউজফিডে অন্বেষণ করুন।'
+                    : 'Discover upcoming hospital camps, regional drives, and blood donation rallies directly in the Newsfeed.',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: Color(0xFF666666),
+                  height: 1.4,
                 ),
               ),
             ],
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }
