@@ -205,18 +205,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: const [
-                          Text(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          const Text(
                             'Weight (kg)',
                             style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E), fontWeight: FontWeight.bold),
                           ),
-                          SizedBox(width: 6),
-                          Icon(Icons.shield_outlined, size: 13, color: Color(0xFF0D68AA)),
-                          SizedBox(width: 2),
-                          Text(
-                            'Private Clinical Data',
-                            style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: Color(0xFF0D68AA), fontWeight: FontWeight.w600),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.shield_outlined, size: 13, color: Color(0xFF0D68AA)),
+                              SizedBox(width: 2),
+                              Text(
+                                'Private Clinical Data',
+                                style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: Color(0xFF0D68AA), fontWeight: FontWeight.w600),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -296,16 +303,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.lock_rounded, size: 16, color: Color(0xFFD97706)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Current Blood Group: ${profile?.bloodGroup ?? "O+"}',
-                                  style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
-                                ),
-                              ],
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.lock_rounded, size: 16, color: Color(0xFFD97706)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Current Blood Group: ${profile?.bloodGroup ?? "O+"}',
+                                      style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
@@ -322,15 +335,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF92400E)),
                         ),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          height: 38,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 44),
                           child: OutlinedButton.icon(
                             onPressed: () => context.push('/blood-group-change'),
                             icon: const Icon(Icons.biotech_rounded, size: 16, color: Color(0xFFC30121)),
-                            label: const Text('Request Blood Group Change'),
+                            label: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Request Blood Group Change'),
+                            ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
                               foregroundColor: const Color(0xFFC30121),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                               textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
                             ),

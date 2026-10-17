@@ -7,8 +7,8 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 | 1 | Forgot-password OTP send -> 500 | Phase 1 | OPEN | |
 | 2 | Login by phone -> 401 "No active account" (login phone 01601239009 vs profile phone 01601239023: confirm same account) | Phase 1 | OPEN | |
 | 3 | Guest map offline/0 donors | Phase 1 | DONE | Extended timeout from 6s to 55s for Render free-tier cold start; added auto-retry countdown banner with manual Retry connection button; removed 6 fake mock pins fallback (zero fake data policy); added blurred circular cluster overlays for coarse geohash precision-4 cells; verified via guest_map_cold_start_test.dart |
-| 4 | Profile tab ECG indicator line awkward | Phase 1 | OPEN | |
-| 5 | Buttons clipped/hidden (Request Blood Group Change, Download Verified Certificate) | Phase 1 | OPEN | |
+| 4 | Profile tab ECG indicator line awkward | Phase 1 | DONE | Redesigned HeartbeatTabIndicator with clamped spike height (2.0 to 6.5) and wave geometry to prevent vertical text overlap; wrapped TabBar in rounded container strip (#FFF8F7, radius 16, border #F3E5E5); verified via profile_ecg_and_button_fit_test.dart |
+| 5 | Buttons clipped/hidden (Request Blood Group Change, Download Verified Certificate) | Phase 1 | DONE | Replaced fixed 38px/56px heights with ConstrainedBox minHeight 44/52 and full-width constraints; wrapped title and badge in Wrap/Expanded with text ellipsis to prevent 154px/104px overflow under 360dp width and textScale 1.3; verified via profile_ecg_and_button_fit_test.dart |
 | 6 | Pause Emergency Alerts broken; move below Impact; bigger button; days/months snooze | Phase 1 | OPEN | |
 | 7 | No donation => no rank/no Active Donor/Lvl; remove fake Verified/5.0/BP-D000000 | Phase 1 | OPEN | |
 | 8 | Your Stories load error | Phase 1 | OPEN | |

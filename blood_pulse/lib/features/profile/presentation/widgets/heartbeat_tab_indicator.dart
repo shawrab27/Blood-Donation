@@ -39,6 +39,8 @@ class _HeartbeatBoxPainter extends BoxPainter {
     final height = size.height;
     final baselineY = offset.dy + height - 2.0;
     final centerX = offset.dx + (width / 2);
+    // Keep spike within safe 6px height so it never overlaps label text under varying text scale
+    final effectiveSpikeHeight = decoration.spikeHeight.clamp(2.0, 6.5);
 
     final Paint paint = Paint()
       ..color = decoration.color
@@ -49,19 +51,19 @@ class _HeartbeatBoxPainter extends BoxPainter {
 
     final Path path = Path();
     path.moveTo(offset.dx + 4, baselineY);
-    path.lineTo(centerX - 16, baselineY);
+    path.lineTo(centerX - 14, baselineY);
     // P wave (slight up)
-    path.lineTo(centerX - 12, baselineY - 2);
-    path.lineTo(centerX - 8, baselineY);
+    path.lineTo(centerX - 10, baselineY - 1.5);
+    path.lineTo(centerX - 7, baselineY);
     // Q dip (slight down)
-    path.lineTo(centerX - 5, baselineY + 2);
-    // R spike (high up)
-    path.lineTo(centerX - 2, baselineY - decoration.spikeHeight);
+    path.lineTo(centerX - 4, baselineY + 1.5);
+    // R spike (high up, bounded)
+    path.lineTo(centerX - 1.5, baselineY - effectiveSpikeHeight);
     // S dip (sharp down)
-    path.lineTo(centerX + 2, baselineY + 4);
+    path.lineTo(centerX + 1.5, baselineY + 2.5);
     // T wave (gentle recovery)
-    path.lineTo(centerX + 6, baselineY - 3);
-    path.lineTo(centerX + 10, baselineY);
+    path.lineTo(centerX + 5, baselineY - 2.0);
+    path.lineTo(centerX + 8, baselineY);
     path.lineTo(offset.dx + width - 4, baselineY);
 
     canvas.drawPath(path, paint);

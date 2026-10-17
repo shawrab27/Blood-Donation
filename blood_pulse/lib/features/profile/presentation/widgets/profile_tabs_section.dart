@@ -65,45 +65,54 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Tab Bar with Heartbeat Indicator ──
-          Stack(
-            children: [
-              const Positioned.fill(
-                child: CustomPaint(
-                  painter: TabBaselinePainter(
-                    color: Color(0xFFF3E5E5),
-                    strokeWidth: 1.0,
+          Container(
+            margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8F7),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFF3E5E5)),
+            ),
+            child: Stack(
+              children: [
+                const Positioned.fill(
+                  child: CustomPaint(
+                    painter: TabBaselinePainter(
+                      color: Color(0xFFF3E5E5),
+                      strokeWidth: 1.0,
+                    ),
                   ),
                 ),
-              ),
-              TabBar(
-                controller: _tabController,
-                indicator: HeartbeatTabIndicator(
-                  color: const Color(0xFFC30121),
-                  strokeWidth: 2.5,
-                  spikeHeight: 8.0,
-                  animation: _tabController.animation,
+                TabBar(
+                  controller: _tabController,
+                  indicator: HeartbeatTabIndicator(
+                    color: const Color(0xFFC30121),
+                    strokeWidth: 2.5,
+                    spikeHeight: 6.0,
+                    animation: _tabController.animation,
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  labelColor: const Color(0xFFC30121),
+                  unselectedLabelColor: const Color(0xFF5F5E5E),
+                  labelStyle: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: const [
+                    Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Your Stories'))),
+                    Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Activity Summary'))),
+                    Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Donation History'))),
+                  ],
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                labelColor: const Color(0xFFC30121),
-                unselectedLabelColor: const Color(0xFF5F5E5E),
-                labelStyle: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-                tabs: const [
-                  Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Your Stories'))),
-                  Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Activity Summary'))),
-                  Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Donation History'))),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
 
           Padding(

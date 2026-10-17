@@ -479,10 +479,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const ProfileTabsSection(),
             const SizedBox(height: 24),
 
-            // ── Footer: Download Verified Certificate Capsule Button (56px) ──
-            SizedBox(
-              width: double.infinity,
-              height: 56,
+            // ── Footer: Download Verified Certificate Capsule Button (52px+ flexible) ──
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52, minWidth: double.infinity),
               child: ElevatedButton.icon(
                 onPressed: () {
                   if (totalDonations <= 0) {
@@ -502,14 +501,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   );
                 },
                 icon: const Icon(Icons.verified_outlined, size: 20, color: Colors.white),
-                label: const Text(
-                  'Download Verified Certificate',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.2,
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Download Verified Certificate',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -517,6 +522,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                   shadowColor: const Color(0x40C30121),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
             ),
