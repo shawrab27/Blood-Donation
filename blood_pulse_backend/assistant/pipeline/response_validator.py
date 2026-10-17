@@ -146,7 +146,7 @@ def validate_and_format_response(
             "flags": ["OUT_OF_SCOPE"],
         }
 
-    # 3. Strip repetitive header disclaimers from Gemini
+    # 3. Strip repetitive header disclaimers and secrets from Gemini
     cleaned = raw_reply.strip()
     disclaimer_patterns = [
         r'AI-assisted guidance\s*—\s*not a medical diagnosis\.[^\n]*',
@@ -156,6 +156,16 @@ def validate_and_format_response(
     ]
     for dp in disclaimer_patterns:
         cleaned = re.sub(dp, '', cleaned, flags=re.IGNORECASE).strip()
+
+    # Secondary defense: scrub potential secret leaks from model output
+    secret_patterns = [
+        r'AIzaSy[A-Za-z0-9_-]{30,}',
+        r'\b(?:GEMINI_API_KEY|SECRET_KEY|DATABASE_URL|DJANGO_SECRET_KEY)\b[^\n]*',
+        r'postgres(?:ql)?://[^\s]+',
+    ]
+    for sp in secret_patterns:
+        if re.search(sp, cleaned, re.IGNORECASE):
+            cleaned = re.sub(sp, '[REDACTED_SECRET]', cleaned, flags=re.IGNORECASE)
 
     # 4. Enforce bullet limit (maximum 6 bullets)
     lines = cleaned.split('\n')

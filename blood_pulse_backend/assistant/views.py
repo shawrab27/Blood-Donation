@@ -106,13 +106,23 @@ def chat_view(request):
             )
             return _save_and_respond(conv, user, redacted_text, validated, flags=["EMERGENCY"], request_id=request_id)
 
-        # 3a. Deterministic CBC / Blood Report Analysis
+        # 3a. Prompt Injection, Jailbreak, and Medical Misuse Guard (Anomaly #34)
+        from assistant.pipeline.guards import detect_prompt_injection
+        injection_block = detect_prompt_injection(redacted_text, locale=locale)
+        if injection_block:
+            return _save_and_respond(
+                conv, user, redacted_text, injection_block,
+                flags=injection_block.get('flags', ["JAILBREAK_ATTEMPT_BLOCKED"]),
+                request_id=request_id
+            )
+
+        # 3b. Deterministic CBC / Blood Report Analysis
         from assistant.pipeline.report_analyzer import is_blood_report_query, parse_blood_report
         if is_blood_report_query(redacted_text):
             parsed_report = parse_blood_report(redacted_text, locale=locale)
             return _save_and_respond(conv, user, redacted_text, parsed_report, flags=["BLOOD_REPORT_ANALYSIS"], request_id=request_id)
 
-        # 3b. Deterministic classifier for personal questions & fare estimation (the server decides, not the LLM)
+        # 3c. Deterministic classifier for personal questions & fare estimation (the server decides, not the LLM)
         from assistant.pipeline.personal_classifier import (
             classify_personal_query,
             handle_personal_query,
