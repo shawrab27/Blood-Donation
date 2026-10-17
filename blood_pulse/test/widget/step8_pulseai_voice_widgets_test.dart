@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blood_pulse/features/assistant/presentation/screens/assistant_screen.dart';
 import 'package:blood_pulse/features/assistant/presentation/providers/assistant_provider.dart';
 import 'package:blood_pulse/features/assistant/domain/models/assistant_message_model.dart';
+import 'package:blood_pulse/features/assistant/data/pulseai_audio_service.dart';
 
 void main() {
   group('Step 8: PulseAI Voice & Speech Tests', () {
@@ -208,8 +209,50 @@ void main() {
       await tester.tap(micFinder);
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Assert no unhandled crash occurred on device without physical mic / mock environment
       expect(tester.takeException(), isNull);
+    });
+
+    test('Anomaly #16: PulseAIAudioService normalizes error_speech_timeout into friendly or null message', () {
+      // If words were spoken, timeout is normal finish: null
+      expect(PulseAIAudioService.normalizeSpeechError('error_speech_timeout', 'আমার রক্তের গ্রুপ কি'), isNull);
+      expect(PulseAIAudioService.normalizeSpeechError('error_speech_timeout', 'who can donate'), isNull);
+
+      // If no words spoken, returns polite prompt to try again
+      final noWordsMsg = PulseAIAudioService.normalizeSpeechError('error_speech_timeout', '');
+      expect(noWordsMsg, contains('No speech detected'));
+
+      // Technical no_match returns friendly message
+      final noMatchMsg = PulseAIAudioService.normalizeSpeechError('error_no_match', '');
+      expect(noMatchMsg, contains("Couldn't catch that"));
+    });
+
+    testWidgets('Anomaly #23: Input bar renders with decorated capsule shape and focusNode integration', (WidgetTester tester) async {
+      final fakeNotifier = _FakeAssistantNotifier(
+        AssistantState(messages: [], isFirstRun: false),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            assistantProvider.overrideWith((ref) => fakeNotifier),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: AssistantScreen(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final textFieldFinder = find.byType(TextField);
+      expect(textFieldFinder, findsOneWidget);
+      final TextField textField = tester.widget(textFieldFinder);
+      expect(textField.focusNode, isNotNull);
+
+      final animatedContainerFinder = find.byType(AnimatedContainer);
+      expect(animatedContainerFinder, findsWidgets);
     });
   });
 }

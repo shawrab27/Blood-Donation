@@ -42,7 +42,7 @@ class _Ecg3DBackgroundState extends State<Ecg3DBackground>
     WidgetsBinding.instance.addObserver(this);
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: const Duration(milliseconds: 2400),
     )..repeat();
   }
 
@@ -263,8 +263,8 @@ class _Ecg3DPainter extends CustomPainter {
     final horizonY = h * 0.36;
     final vanishingPoint = Offset(w * 0.5, horizonY);
 
-    // Dynamic tempo: ~60 bpm idle vs ~130 bpm thinking
-    final speedMultiplier = isThinking ? 3.0 : 1.2;
+    // Dynamic tempo: natural resting heart rhythm (~60 bpm) vs alert thinking (~130 bpm)
+    final speedMultiplier = isThinking ? 2.4 : 1.0;
     final effectivePhase = (phase * speedMultiplier) % 1.0;
     final pulseGlowMultiplier = isThinking ? 1.5 : 1.0;
 

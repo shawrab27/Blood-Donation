@@ -24,6 +24,31 @@ class PulseAIAudioService {
   String get lastWords => _lastRecognizedWords;
   String? get ttsErrorMessage => _ttsErrorMessage;
 
+  /// Normalizes low-level speech engine error codes into human-readable messages.
+  /// Returns null if user spoke words before timeout (normal speech completion).
+  static String? normalizeSpeechError(String rawError, String lastWords) {
+    final lower = rawError.toLowerCase();
+    if (lower.contains('timeout')) {
+      if (lastWords.trim().isNotEmpty) {
+        return null;
+      }
+      return 'No speech detected. Please tap the mic and try again.';
+    }
+    if (lower.contains('no_match') || lower.contains('nomatch')) {
+      return "Couldn't catch that. Please speak clearly into the microphone.";
+    }
+    if (lower.contains('network')) {
+      return 'Network issue with voice recognition. You can type your question directly.';
+    }
+    if (lower.contains('busy')) {
+      return 'Voice recognition is busy. Please try again.';
+    }
+    if (lower.contains('permission') || lower.contains('denied')) {
+      return 'Microphone permission is required for voice input.';
+    }
+    return 'Voice recognition encountered an issue. You can type your question directly.';
+  }
+
   /// Initializes speech-to-text safely without crashing if speech service is unavailable
   Future<bool> initSpeech({
     Function(String errorMsg)? onError,
@@ -36,7 +61,10 @@ class PulseAIAudioService {
       _isSpeechInitialized = await _speech.initialize(
         onError: (val) {
           _isListening = false;
-          if (onError != null) onError(val.errorMsg);
+          final friendly = normalizeSpeechError(val.errorMsg, _lastRecognizedWords);
+          if (onError != null && friendly != null) {
+            onError(friendly);
+          }
         },
         onStatus: (val) {
           if (val == 'done' || val == 'notListening') {
@@ -98,7 +126,8 @@ class PulseAIAudioService {
       );
     } catch (e) {
       _isListening = false;
-      onError("Failed to start voice listener.");
+      final friendly = normalizeSpeechError(e.toString(), _lastRecognizedWords);
+      if (friendly != null) onError(friendly);
     }
   }
 
@@ -125,25 +154,31 @@ class PulseAIAudioService {
       final languages = await _flutterTts.getLanguages;
       final langList = languages is List ? languages.map((e) => e.toString().toLowerCase()).toList() : <String>[];
 
-      bool supportsBn = langList.any((l) => l.contains('bn') || l.contains('ben'));
+      bool hasBnBd = langList.any((l) => l.contains('bn-bd') || l.contains('bn_bd'));
+      bool hasBnIn = langList.any((l) => l.contains('bn-in') || l.contains('bn_in'));
+      bool supportsBn = hasBnBd || hasBnIn || langList.any((l) => l.contains('bn') || l.contains('ben'));
 
-      if (lang == 'bn') {
+      final bool containsBengaliScript = RegExp(r'[\u0980-\u09FF]').hasMatch(text);
+
+      if (lang == 'bn' || containsBengaliScript) {
         if (supportsBn) {
-          await _flutterTts.setLanguage("bn-BD");
+          final targetLang = hasBnBd ? "bn-BD" : (hasBnIn ? "bn-IN" : "bn-BD");
+          await _flutterTts.setLanguage(targetLang);
           onVoiceCheck(null);
+          await _flutterTts.setPitch(1.0);
+          await _flutterTts.setSpeechRate(0.5);
+          await _flutterTts.speak(text);
         } else {
-          // Fallback to English or default
-          await _flutterTts.setLanguage("en-US");
-          onVoiceCheck("Bangla voice not installed on device. Install 'Bangla (Bangladesh)' TTS in device settings.");
+          // Bangla TTS voice missing: report clear actionable install guidance
+          onVoiceCheck("Bangla voice not installed on device. Install 'Bangla (Bangladesh)' TTS in Settings > Accessibility > Text-to-Speech.");
         }
       } else {
         await _flutterTts.setLanguage("en-US");
         onVoiceCheck(null);
+        await _flutterTts.setPitch(1.0);
+        await _flutterTts.setSpeechRate(0.5);
+        await _flutterTts.speak(text);
       }
-
-      await _flutterTts.setPitch(1.0);
-      await _flutterTts.setSpeechRate(0.5);
-      await _flutterTts.speak(text);
     } catch (e) {
       onVoiceCheck("Text-to-speech service error.");
     }

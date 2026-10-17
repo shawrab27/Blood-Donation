@@ -18,6 +18,7 @@ import '../../../../core/access/profile_completion_modal.dart';
 import 'package:flutter/foundation.dart';
 import '../../data/pulseai_audio_service.dart';
 import '../widgets/ecg_3d_background.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class AssistantScreen extends ConsumerStatefulWidget {
   final String? screenContext;
@@ -30,6 +31,7 @@ class AssistantScreen extends ConsumerStatefulWidget {
 class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
+  final _focusNode = FocusNode();
   bool _firstRunHandled = false;
   bool _isListening = false;
   String? _voiceNotice;
@@ -37,9 +39,20 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkFirstRun();
     });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _textController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _toggleVoiceInput() async {
@@ -79,9 +92,24 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
       onError: (error) {
         if (!mounted) return;
         setState(() => _isListening = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: const Color(0xFFC30121)),
-        );
+        if (error.trim().isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                error,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.white),
+              ),
+              backgroundColor: const Color(0xFF2B2B2B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              action: SnackBarAction(
+                label: 'Type',
+                textColor: const Color(0xFFFF5252),
+                onPressed: () => _focusNode.requestFocus(),
+              ),
+            ),
+          );
+        }
       },
     );
   }
@@ -318,15 +346,24 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                       ),
                     ),
                   const SizedBox(height: 6),
-                  // Input Field capsule
-                  Container(
+                  // Input Field capsule - Decorated Input Bar (Anomaly #23)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(50),
+                      border: Border.all(
+                        color: _isListening
+                            ? AppColors.primary
+                            : (_focusNode.hasFocus ? AppColors.primary : const Color(0xFFE2D6D6)),
+                        width: (_focusNode.hasFocus || _isListening) ? 1.5 : 1.0,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 10,
+                          color: (_focusNode.hasFocus || _isListening)
+                              ? AppColors.primary.withValues(alpha: 0.12)
+                              : Colors.black.withValues(alpha: 0.05),
+                          blurRadius: (_focusNode.hasFocus || _isListening) ? 12 : 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -336,7 +373,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey, size: 20),
+                          icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF5A6E85), size: 20),
                           tooltip: 'Scan Blood Report',
                           onPressed: () => context.push('/health-hub/ai-report'),
                           visualDensity: VisualDensity.compact,
@@ -345,13 +382,14 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                         Expanded(
                           child: TextField(
                             controller: _textController,
+                            focusNode: _focusNode,
                             maxLength: 500,
                             minLines: 1,
                             maxLines: 4,
                             enabled: !state.isSending,
                             decoration: const InputDecoration(
                               hintText: "Ask PulseAI or paste lab results...",
-                              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+                              hintStyle: TextStyle(color: Color(0xFF888888), fontSize: 13, fontFamily: 'Inter'),
                               border: InputBorder.none,
                               counterText: "",
                               isDense: true,
