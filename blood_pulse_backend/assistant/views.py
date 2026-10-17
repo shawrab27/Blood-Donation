@@ -142,7 +142,8 @@ def chat_view(request):
                 fare_res = estimate_fare_range(
                     lat1=user_lat, lon1=user_lng,
                     place_from=p_from, place_to=p_to,
-                    locale=locale
+                    locale=locale,
+                    query_text=redacted_text
                 )
                 validated = validate_and_format_response(
                     raw_reply=fare_res.get('reply', ''),

@@ -418,20 +418,70 @@ def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) ->
     return R * c
 
 
+DEFAULT_VEHICLE_RATES = {
+    'dhaka': {
+        'cng': {'min_base': 40, 'max_base': 50, 'min_km': 15, 'max_km': 20, 'speed': 20, 'name_en': 'CNG / Auto', 'name_bn': 'সিএনজি / অটো'},
+        'rickshaw': {'min_base': 25, 'max_base': 35, 'min_km': 15, 'max_km': 25, 'speed': 12, 'max_dist': 6.0, 'name_en': 'Rickshaw', 'name_bn': 'রিকশা'},
+        'bike': {'min_base': 30, 'max_base': 40, 'min_km': 12, 'max_km': 18, 'speed': 25, 'name_en': 'Bike Ride-share', 'name_bn': 'বাইক রাইড-শেয়ার'},
+        'car': {'min_base': 80, 'max_base': 120, 'min_km': 25, 'max_km': 35, 'speed': 18, 'name_en': 'Car / Taxi', 'name_bn': 'গাড়ি / ক্যাব'},
+        'bus': {'min_base': 15, 'max_base': 20, 'min_km': 2.5, 'max_km': 3.5, 'speed': 15, 'name_en': 'City Bus', 'name_bn': 'সিটি বাস'},
+        'ambulance': {'min_base': 1000, 'max_base': 1500, 'min_km': 35, 'max_km': 50, 'speed': 30, 'name_en': 'Ambulance (Emergency)', 'name_bn': 'জরুরি অ্যাম্বুলেন্স'},
+    },
+    'chattogram': {
+        'cng': {'min_base': 35, 'max_base': 45, 'min_km': 14, 'max_km': 18, 'speed': 22, 'name_en': 'CNG / Auto', 'name_bn': 'সিএনজি / অটো'},
+        'rickshaw': {'min_base': 20, 'max_base': 30, 'min_km': 15, 'max_km': 20, 'speed': 12, 'max_dist': 6.0, 'name_en': 'Rickshaw', 'name_bn': 'রিকশা'},
+        'bike': {'min_base': 25, 'max_base': 35, 'min_km': 10, 'max_km': 15, 'speed': 25, 'name_en': 'Bike Ride-share', 'name_bn': 'বাইক রাইড-শেয়ার'},
+        'car': {'min_base': 70, 'max_base': 100, 'min_km': 22, 'max_km': 30, 'speed': 20, 'name_en': 'Car / Taxi', 'name_bn': 'গাড়ি / ক্যাব'},
+        'bus': {'min_base': 12, 'max_base': 18, 'min_km': 2.2, 'max_km': 3.0, 'speed': 18, 'name_en': 'Local Bus', 'name_bn': 'লোকাল বাস'},
+        'ambulance': {'min_base': 900, 'max_base': 1400, 'min_km': 30, 'max_km': 45, 'speed': 30, 'name_en': 'Ambulance (Emergency)', 'name_bn': 'জরুরি অ্যাম্বুলেন্স'},
+    },
+    'other': {
+        'cng': {'min_base': 30, 'max_base': 40, 'min_km': 12, 'max_km': 16, 'speed': 25, 'name_en': 'CNG / Auto', 'name_bn': 'সিএনজি / অটো'},
+        'rickshaw': {'min_base': 15, 'max_base': 25, 'min_km': 10, 'max_km': 18, 'speed': 12, 'max_dist': 6.0, 'name_en': 'Rickshaw / Easybike', 'name_bn': 'রিকশা / ইজিবাইক'},
+        'bike': {'min_base': 20, 'max_base': 30, 'min_km': 10, 'max_km': 14, 'speed': 30, 'name_en': 'Bike', 'name_bn': 'বাইক'},
+        'car': {'min_base': 60, 'max_base': 90, 'min_km': 20, 'max_km': 28, 'speed': 30, 'name_en': 'Car / Microbus', 'name_bn': 'কার / মাইক্রোবাস'},
+        'bus': {'min_base': 10, 'max_base': 15, 'min_km': 2.0, 'max_km': 2.8, 'speed': 25, 'name_en': 'Bus', 'name_bn': 'বাস'},
+        'ambulance': {'min_base': 800, 'max_base': 1200, 'min_km': 25, 'max_km': 40, 'speed': 35, 'name_en': 'Ambulance (Emergency)', 'name_bn': 'জরুরি অ্যাম্বুলেন্স'},
+    },
+}
+
+DHAKA_KEYWORDS = {'dhaka', 'ঢাকা', 'gazipur', 'গাজীপুর', 'narayanganj', 'নারায়ণগঞ্জ', 'savar', 'সাভার', 'uttara', 'উত্তরা', 'mirpur', 'মিরপুর', 'dhanmondi', 'ধানমন্ডি', 'gulshan', 'গুলশান', 'banani', 'বনানী', 'motijheel', 'মতিঝিল'}
+CHATTOGRAM_KEYWORDS = {'chattogram', 'চট্টগ্রাম', 'chittagong', 'cox\'s bazar', 'কক্সবাজার', 'cumilla', 'কুমিল্লা', 'feni', 'ফেনী'}
+
+
+def detect_city_group(place_from: str | None = None, place_to: str | None = None, lat: float | None = None, lon: float | None = None) -> str:
+    """Detects city group (dhaka, chattogram, other) for vehicle rate estimation."""
+    for p in (place_from or '', place_to or ''):
+        p_clean = p.strip().lower()
+        if any(k in p_clean for k in DHAKA_KEYWORDS):
+            return 'dhaka'
+        if any(k in p_clean for k in CHATTOGRAM_KEYWORDS):
+            return 'chattogram'
+
+    if lat is not None and lon is not None:
+        if 23.4 <= lat <= 24.3 and 90.1 <= lon <= 90.8:
+            return 'dhaka'
+        if 21.8 <= lat <= 22.8 and 91.5 <= lon <= 92.3:
+            return 'chattogram'
+
+    return 'dhaka' if (not place_from and not place_to) else 'other'
+
+
 def estimate_fare_range(
     distance_km: float | None = None,
     lat1: float | None = None, lon1: float | None = None,
     lat2: float | None = None, lon2: float | None = None,
     place_from: str | None = None, place_to: str | None = None,
-    locale: str = 'bn'
+    locale: str = 'bn',
+    query_text: str = ''
 ) -> dict:
     """
-    Deterministic Fare Estimator:
-    - Origin/Destination Coordinates: Looked up from internal canonical District table or user GPS.
-      Zero external geocoding, zero external network calls, zero coordinate logging.
-    - Rate range and road factor: imported directly from api.conf.
-    - Always returns a RANGE with strict disclaimer.
-    - If unknown location or cannot compute, returns clear unknown place error message.
+    Deterministic Fare & Travel Time Estimator:
+    - Calculates distance using Haversine with road curvature factor (FARE_ROAD_FACTOR).
+    - City group aware (Dhaka, Chattogram, Other Districts).
+    - Reads admin-editable VehicleFareRate from database if available, falls back to in-memory dataset.
+    - Estimates fares and travel times for Rickshaw, CNG/Auto, Bike, Car, Bus, and Emergency Ambulance.
+    - Strict disclaimer: All figures are ESTIMATES and placeholders for review.
     """
     is_bn = (locale == 'bn')
 
@@ -482,28 +532,142 @@ def estimate_fare_range(
         distance_km = straight_dist * FARE_ROAD_FACTOR
 
     road_dist = round(distance_km, 1)
-    min_fare = int(math.ceil(road_dist * FARE_MIN_RATE_PER_KM))
-    max_fare = int(math.ceil(road_dist * FARE_MAX_RATE_PER_KM))
 
-    # Base minimum fare clamp from config
-    min_fare = max(min_fare, FARE_MIN_BASE_FARE)
-    max_fare = max(max_fare, FARE_MAX_BASE_FARE)
+    # Detect city group
+    city_group = detect_city_group(place_from, place_to, lat1, lon1)
 
-    disclaimer_bn = "আনুমানিক হিসাব (সিএনজি/অটো)। সময়, আবহাওয়া এবং যানবাহনের ধরনভেদে প্রকৃত ভাড়া কম-বেশি হতে পারে।"
-    disclaimer_en = "Approximate. Real fares vary by time, weather and vehicle."
+    # Query DB rates or use fallback
+    rates_dict = {}
+    try:
+        from assistant.models import VehicleFareRate
+        db_rates = VehicleFareRate.objects.filter(city_group=city_group, is_active=True)
+        for r in db_rates:
+            rates_dict[r.vehicle_type] = {
+                'min_base': float(r.base_fare_min),
+                'max_base': float(r.base_fare_max),
+                'min_km': float(r.per_km_min),
+                'max_km': float(r.per_km_max),
+                'speed': float(r.average_speed_kmh),
+                'max_dist': float(r.max_distance_km) if r.max_distance_km else None,
+                'name_en': r.get_vehicle_type_display(),
+                'name_bn': r.vehicle_name_bn or r.get_vehicle_type_display(),
+            }
+    except Exception:
+        rates_dict = {}
 
-    if is_bn:
-        reply = (
-            f"আনুমানিক দূরত্ব: প্রায় {road_dist} কিমি (সড়ক পথ)।\n"
-            f"ভাড়ার সম্ভাব্য পরিসীমা: ৳{min_fare} - ৳{max_fare} (সিএনজি / অটো রেট)।\n"
-            f"সতর্কতা: {disclaimer_bn}"
-        )
+    if not rates_dict:
+        rates_dict = DEFAULT_VEHICLE_RATES.get(city_group, DEFAULT_VEHICLE_RATES['dhaka'])
+
+    # Compute calculations per vehicle
+    vehicles_summary = {}
+    for v_type, r_data in rates_dict.items():
+        max_d = r_data.get('max_dist')
+        if max_d and road_dist > max_d:
+            vehicles_summary[v_type] = {
+                'available': False,
+                'reason_en': f'Distance too far for {r_data["name_en"]} (limit ~{max_d} km)',
+                'reason_bn': f'{r_data["name_bn"]}-এর জন্য অতিরিক্ত দূরত্ব (~{max_d} কিমির বেশি)',
+                'name_en': r_data['name_en'],
+                'name_bn': r_data['name_bn'],
+            }
+            continue
+
+        min_fare = int(math.ceil(max(r_data['min_base'], road_dist * r_data['min_km'])))
+        max_fare = int(math.ceil(max(r_data['max_base'], road_dist * r_data['max_km'])))
+        speed = max(r_data.get('speed', 20), 5)
+        est_minutes = int(math.ceil((road_dist / speed) * 60))
+
+        vehicles_summary[v_type] = {
+            'available': True,
+            'min_fare': min_fare,
+            'max_fare': max_fare,
+            'est_minutes': est_minutes,
+            'fare_str': f"৳{min_fare} - ৳{max_fare}",
+            'name_en': r_data['name_en'],
+            'name_bn': r_data['name_bn'],
+        }
+
+    # Primary / standard benchmark: CNG / Auto
+    cng_data = vehicles_summary.get('cng', {})
+    if cng_data.get('available'):
+        primary_min = cng_data['min_fare']
+        primary_max = cng_data['max_fare']
     else:
-        reply = (
-            f"Estimated road distance: approx {road_dist} km.\n"
-            f"Estimated fare range: ৳{min_fare} - ৳{max_fare} (approx local CNG/auto rate).\n"
-            f"Notice: {disclaimer_en}"
-        )
+        primary_min = int(math.ceil(max(FARE_MIN_BASE_FARE, road_dist * FARE_MIN_RATE_PER_KM)))
+        primary_max = int(math.ceil(max(FARE_MAX_BASE_FARE, road_dist * FARE_MAX_RATE_PER_KM)))
+
+    disclaimer_bn = (
+        "সকল ভাড়া আনুমানিক হিসাব (পর্যালোচনার জন্য খসড়া হার)। "
+        "সময়, আবহাওয়া, রাতের ট্রিপ (রাত ১০টা–সকাল ৬টা) এবং যানজটের কারণে ভাড়া ২৫%–৪০% বাড়তে পারে।"
+    )
+    disclaimer_en = (
+        "Approximate. Real fares vary by time, weather and vehicle. "
+        "Night trips (10 PM–6 AM), bad weather, and traffic congestion may increase fares by 25%–40%."
+    )
+
+    # Check vehicle mention in user query
+    q_lower = query_text.lower()
+    highlight_v = None
+    if any(k in q_lower for k in ['ambulance', 'অ্যাম্বুলেন্স']):
+        highlight_v = 'ambulance'
+    elif any(k in q_lower for k in ['rickshaw', 'রিকশা', 'ইজিবাইক']):
+        highlight_v = 'rickshaw'
+    elif any(k in q_lower for k in ['bike', 'বাইক', 'মোটরসাইকেল']):
+        highlight_v = 'bike'
+    elif any(k in q_lower for k in ['bus', 'বাস']):
+        highlight_v = 'bus'
+    elif any(k in q_lower for k in ['car', 'গাড়ি', 'ক্যাব', 'ট্যাক্সি']):
+        highlight_v = 'car'
+
+    # Build formatted text response
+    if is_bn:
+        lines = [
+            f"আনুমানিক দূরত্ব: প্রায় {road_dist} কিমি (সড়ক পথ)।",
+            f"ভাড়ার সম্ভাব্য পরিসীমা: ৳{primary_min} - ৳{primary_max} (সিএনজি / অটো রেট)।",
+            "",
+            "যানবাহনভিত্তিক আনুমানিক ভাড়া ও সময়:",
+        ]
+        order = ['cng', 'rickshaw', 'bike', 'bus', 'car', 'ambulance']
+        if highlight_v and highlight_v in order:
+            order.remove(highlight_v)
+            order.insert(0, highlight_v)
+
+        for vt in order:
+            v_info = vehicles_summary.get(vt)
+            if not v_info:
+                continue
+            if v_info.get('available'):
+                lines.append(f"• {v_info['name_bn']}: {v_info['fare_str']} (আনুমানিক {v_info['est_minutes']} মিনিট)")
+            else:
+                lines.append(f"• {v_info['name_bn']}: {v_info['reason_bn']}")
+
+        lines.append("")
+        lines.append(f"সতর্কতা: {disclaimer_bn}")
+        reply = "\n".join(lines)
+    else:
+        lines = [
+            f"Estimated road distance: approx {road_dist} km.",
+            f"Estimated fare range: ৳{primary_min} - ৳{primary_max} (approx local CNG/auto rate).",
+            "",
+            "Vehicle Fare & Travel Time Estimates:",
+        ]
+        order = ['cng', 'rickshaw', 'bike', 'bus', 'car', 'ambulance']
+        if highlight_v and highlight_v in order:
+            order.remove(highlight_v)
+            order.insert(0, highlight_v)
+
+        for vt in order:
+            v_info = vehicles_summary.get(vt)
+            if not v_info:
+                continue
+            if v_info.get('available'):
+                lines.append(f"• {v_info['name_en']}: {v_info['fare_str']} (approx {v_info['est_minutes']} mins)")
+            else:
+                lines.append(f"• {v_info['name_en']}: {v_info['reason_en']}")
+
+        lines.append("")
+        lines.append(f"Notice: {disclaimer_en}")
+        reply = "\n".join(lines)
 
     return {
         "reply": reply,
@@ -513,10 +677,15 @@ def estimate_fare_range(
         "language": "bn" if is_bn else "en",
         "emergency": False,
         "distance_km": road_dist,
-        "fare_range": f"{min_fare}-{max_fare} BDT",
-        "min_fare_bdt": min_fare,
-        "max_fare_bdt": max_fare,
+        "fare_range": f"{primary_min}-{primary_max} BDT",
+        "min_fare_bdt": primary_min,
+        "max_fare_bdt": primary_max,
+        "city_group": city_group,
+        "vehicles": vehicles_summary,
+        "is_estimate": True,
+        "is_placeholder": True,
         "disclaimer": disclaimer_en,
         "actions": [],
         "flags": ["FARE_ESTIMATE_RANGE"]
     }
+

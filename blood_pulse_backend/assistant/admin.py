@@ -4,7 +4,11 @@
 from django.contrib import admin
 from django.utils import timezone
 from django.db import models
-from assistant.models import KBEntry, AppGuideEntry, AssistantConversation, AssistantMessage, MessageFeedback, SupportTicket
+from assistant.models import (
+    KBEntry, AppGuideEntry, AssistantConversation,
+    AssistantMessage, MessageFeedback, SupportTicket,
+    VehicleFareRate
+)
 from django.urls import path
 from django.shortcuts import render
 from django.db.models import Count
@@ -71,9 +75,21 @@ class AssistantStatsAdmin(admin.ModelAdmin):
         )
         return render(request, "admin/assistant_stats.html", context)
 
+class VehicleFareRateAdmin(admin.ModelAdmin):
+    list_display = (
+        'vehicle_type', 'city_group', 'base_fare_min', 'base_fare_max',
+        'per_km_min', 'per_km_max', 'max_distance_km', 'average_speed_kmh',
+        'is_placeholder', 'is_active', 'updated_at'
+    )
+    list_filter = ('city_group', 'vehicle_type', 'is_placeholder', 'is_active')
+    search_fields = ('vehicle_type', 'city_group', 'notes')
+    ordering = ('city_group', 'vehicle_type')
+
+
 admin.site.register(KBEntry, KBEntryAdmin)
 admin.site.register(AppGuideEntry, AppGuideEntryAdmin)
 admin.site.register(AssistantConversation)
 admin.site.register(AssistantMessage)
 admin.site.register(MessageFeedback, MessageFeedbackAdmin)
 admin.site.register(SupportTicket, SupportTicketAdmin)
+admin.site.register(VehicleFareRate, VehicleFareRateAdmin)

@@ -308,3 +308,97 @@ class PulseAIRegression30QATests(TestCase):
                         cat = classify_personal_query(query)
                         self.assertEqual(cat, expected_category, f"Query '{query}' should be classified as {expected_category}")
 
+
+class VehicleFareDatasetAndEstimatorTests(TestCase):
+    """
+    Tests for Anomaly #22:
+    - Admin-editable VehicleFareRate dataset across city groups (Dhaka, Chattogram, Other).
+    - seed_vehicle_fares management command with dry-run protection and --confirm requirement.
+    - Multi-vehicle fare calculation (Rickshaw, CNG, Bike, Car, Bus, Ambulance) with road factor.
+    - Travel time estimation in minutes.
+    - Rickshaw distance limitation (> 6 km marked unavailable).
+    - Emergency vehicle preference and traffic/night rate disclaimers.
+    """
+
+    def test_seed_command_dry_run_requires_confirm(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from assistant.models import VehicleFareRate
+
+        out = StringIO()
+        call_command('seed_vehicle_fares', stdout=out)
+        output_str = out.getvalue()
+        self.assertIn("DRY RUN", output_str)
+        self.assertIn("Re-run with --confirm", output_str)
+        self.assertEqual(VehicleFareRate.objects.count(), 0)
+
+    def test_seed_command_confirm_populates_placeholders(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from assistant.models import VehicleFareRate
+
+        out = StringIO()
+        call_command('seed_vehicle_fares', confirm=True, stdout=out)
+        output_str = out.getvalue()
+        self.assertIn("Successfully seeded vehicle fare rates", output_str)
+        self.assertEqual(VehicleFareRate.objects.count(), 18)
+
+        # All must be marked as placeholders for review
+        self.assertTrue(all(r.is_placeholder for r in VehicleFareRate.objects.all()))
+
+        # Check Dhaka ambulance rate
+        dhaka_amb = VehicleFareRate.objects.get(city_group='dhaka', vehicle_type='ambulance')
+        self.assertEqual(dhaka_amb.base_fare_min, 1000)
+        self.assertEqual(dhaka_amb.per_km_min, 35)
+
+    def test_multi_vehicle_fare_and_travel_time_calculation(self):
+        # 5 km in Dhaka (short distance: rickshaw available)
+        res_5km = estimate_fare_range(distance_km=5.0, place_from="Dhaka", place_to="Mirpur", locale='en')
+        self.assertEqual(res_5km['distance_km'], 5.0)
+        self.assertIn('vehicles', res_5km)
+        vehicles = res_5km['vehicles']
+
+        # Rickshaw available for 5km
+        self.assertTrue(vehicles['rickshaw']['available'])
+        self.assertGreater(vehicles['rickshaw']['min_fare'], 0)
+        self.assertGreater(vehicles['rickshaw']['est_minutes'], 0)
+
+        # CNG available
+        self.assertTrue(vehicles['cng']['available'])
+        self.assertEqual(vehicles['cng']['min_fare'], 75) # 5 * 15 = 75
+        self.assertEqual(vehicles['cng']['max_fare'], 100) # 5 * 20 = 100
+
+        # Ambulance available
+        self.assertTrue(vehicles['ambulance']['available'])
+        self.assertGreaterEqual(vehicles['ambulance']['min_fare'], 1000)
+
+        # Disclaimers present
+        self.assertIn("Night trips (10 PM–6 AM)", res_5km['disclaimer'])
+        self.assertIn("Estimates", res_5km['reply'])
+        self.assertTrue(res_5km['is_estimate'])
+
+    def test_rickshaw_distance_limit_exceeded(self):
+        # 15 km in Dhaka (exceeds rickshaw 6km limit)
+        res_15km = estimate_fare_range(distance_km=15.0, place_from="Dhaka", place_to="Gazipur", locale='en')
+        vehicles = res_15km['vehicles']
+        self.assertFalse(vehicles['rickshaw']['available'])
+        self.assertIn("Distance too far", vehicles['rickshaw']['reason_en'])
+
+        # Bengali reply has distance limitation
+        res_bn = estimate_fare_range(distance_km=15.0, place_from="Dhaka", place_to="Gazipur", locale='bn')
+        self.assertIn("অতিরিক্ত দূরত্ব", res_bn['reply'])
+
+    def test_vehicle_mention_prioritization_in_reply(self):
+        # When ambulance is asked, ambulance is prioritized
+        res_amb = estimate_fare_range(
+            distance_km=8.0,
+            place_from="Dhaka",
+            place_to="Dhanmondi",
+            locale='en',
+            query_text="ambulance fare to hospital"
+        )
+        self.assertIn("Ambulance", res_amb['reply'])
+        # The reply first vehicle line after headers should mention Ambulance
+        lines = [line.strip() for line in res_amb['reply'].split('\n') if line.strip().startswith('•')]
+        self.assertTrue(lines[0].startswith('• Ambulance'))
+
