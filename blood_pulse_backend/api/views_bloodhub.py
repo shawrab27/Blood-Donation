@@ -828,7 +828,23 @@ def journey_location_view(request, pk):
 
         now = timezone.now()
         if acceptance.status not in ['ACCEPTED', 'ON_THE_WAY']:
-            return Response({'status': 'ignored', 'message': 'Journey not in active tracking window'}, status=status.HTTP_200_OK)
+            return Response({'status': 'ignored', 'message': f'Journey tracking stopped (status is {acceptance.status})'}, status=status.HTTP_200_OK)
+
+        # Server-side throttling: donor location updates throttled to at most once per DONOR_LOCATION_UPDATE_INTERVAL_SECONDS
+        from api.conf import DONOR_LOCATION_UPDATE_INTERVAL_SECONDS
+        if acceptance.last_location_update:
+            elapsed = (now - acceptance.last_location_update).total_seconds()
+            if elapsed < DONOR_LOCATION_UPDATE_INTERVAL_SECONDS:
+                return Response({
+                    'status': 'throttled',
+                    'message': f'Location update throttled. Minimum interval is {DONOR_LOCATION_UPDATE_INTERVAL_SECONDS} seconds.',
+                    'retry_after_seconds': round(DONOR_LOCATION_UPDATE_INTERVAL_SECONDS - elapsed, 1),
+                    'donor_lat': acceptance.donor_lat,
+                    'donor_lng': acceptance.donor_lng,
+                    'distance_km': acceptance.distance_km,
+                    'eta_minutes': acceptance.eta_minutes,
+                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
         acceptance.donor_lat = float(lat)
         acceptance.donor_lng = float(lng)
         acceptance.last_location_update = now
@@ -854,14 +870,19 @@ def journey_location_view(request, pk):
         }, status=status.HTTP_200_OK)
 
     # GET: return latest tracking state
+    # Privacy rule: requester sees donor live location only while journey is active (ACCEPTED or ON_THE_WAY)
+    is_active_journey = acceptance.status in ['ACCEPTED', 'ON_THE_WAY']
+    show_location = is_donor or is_active_journey
+
     return Response({
         'acceptance_id': acceptance.id,
         'status': acceptance.status,
-        'donor_lat': acceptance.donor_lat,
-        'donor_lng': acceptance.donor_lng,
-        'distance_km': acceptance.distance_km,
-        'eta_minutes': acceptance.eta_minutes,
-        'last_location_update': acceptance.last_location_update,
+        'is_tracking_active': is_active_journey,
+        'donor_lat': acceptance.donor_lat if show_location else None,
+        'donor_lng': acceptance.donor_lng if show_location else None,
+        'distance_km': acceptance.distance_km if show_location else None,
+        'eta_minutes': acceptance.eta_minutes if show_location else None,
+        'last_location_update': acceptance.last_location_update if show_location else None,
         'destination': {
             'hospital_name': acceptance.request.hospital.name if acceptance.request.hospital else acceptance.request.hospital_location,
             'lat': acceptance.request.lat or (acceptance.request.hospital.lat if acceptance.request.hospital else None),
@@ -989,9 +1010,15 @@ def journey_status_transition_view(request, pk):
             donor.cancel_count = (donor.cancel_count or 0) + 1
             donor.save(update_fields=['cancel_count'])
 
+            # Automatically promote next standby candidate when active journey is cancelled
+            from api.services.standby import trigger_standby_donor_offer
+            standby_offer = trigger_standby_donor_offer(blood_req, exclude_donor_ids=[donor.id])
+
         return Response({
             'message': 'Journey cancelled.',
             'status': 'CANCELLED',
+            'standby_triggered': bool(standby_offer),
+            'standby_offer_id': standby_offer.id if standby_offer else None,
         }, status=status.HTTP_200_OK)
 
     # ON_THE_WAY or ARRIVED
@@ -1143,27 +1170,70 @@ def standby_offer_respond_view(request, pk):
         return Response({'error': 'This standby offer has expired.'}, status=status.HTTP_400_BAD_REQUEST)
 
     if action == 'ACCEPT':
-        offer.status = 'ACCEPTED'
-        offer.responded_at = now
-        offer.save(update_fields=['status', 'responded_at'])
+        with transaction.atomic():
+            locked_offer = StandbyOffer.objects.select_for_update().select_related('request', 'donor').get(pk=offer.pk)
+            if locked_offer.status != 'PENDING':
+                return Response({'error': f'This standby offer is already {locked_offer.status.lower()}.'}, status=status.HTTP_409_CONFLICT)
 
-        # Create active RequestAcceptance as standby
-        acceptance = RequestAcceptance.objects.create(
-            request=offer.request,
-            donor=offer.donor,
-            status='ACCEPTED',
-            is_standby=True,
-        )
+            if locked_offer.expires_at and locked_offer.expires_at <= now:
+                locked_offer.status = 'EXPIRED'
+                locked_offer.save(update_fields=['status'])
+                return Response({'error': 'This standby offer has expired.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        donor = offer.donor
-        donor.response_count = (donor.response_count or 0) + 1
-        donor.save(update_fields=['response_count'])
+            locked_req = BloodRequest.objects.select_for_update().get(pk=locked_offer.request_id)
+            if locked_req.status not in ('ACTIVE', 'URGENT') or not locked_req.is_active:
+                locked_offer.status = 'EXPIRED'
+                locked_offer.save(update_fields=['status'])
+                return Response({'error': 'This blood requisition is no longer active.'}, status=status.HTTP_409_CONFLICT)
+
+            # Prevent double-booking for the donor: donor cannot be on another active journey
+            active_for_donor = RequestAcceptance.objects.filter(
+                donor=locked_offer.donor,
+                status__in=['ACCEPTED', 'ON_THE_WAY']
+            ).exclude(request=locked_req).exists()
+            if active_for_donor:
+                locked_offer.status = 'DECLINED'
+                locked_offer.save(update_fields=['status'])
+                return Response({'error': 'You already have another active journey in progress.'}, status=status.HTTP_409_CONFLICT)
+
+            locked_offer.status = 'ACCEPTED'
+            locked_offer.responded_at = now
+            locked_offer.save(update_fields=['status', 'responded_at'])
+
+            # Create or update active RequestAcceptance as standby
+            acceptance, _ = RequestAcceptance.objects.update_or_create(
+                request=locked_req,
+                donor=locked_offer.donor,
+                defaults={
+                    'status': 'ACCEPTED',
+                    'is_standby': True,
+                    'started_at': now,
+                }
+            )
+
+            donor = locked_offer.donor
+            donor.response_count = (donor.response_count or 0) + 1
+            donor.save(update_fields=['response_count'])
+
+            # Notify requester of standby donor connection
+            from api.models import Notification
+            try:
+                Notification.objects.create(
+                    user=locked_req.requester,
+                    title="Standby Donor Connected",
+                    body=f"Standby donor {donor.user.get_full_name() or donor.user.username} has accepted and joined your requisition.",
+                    type="STANDBY_ACCEPTED",
+                    is_read=False,
+                    created_at=now,
+                )
+            except Exception:
+                pass
 
         return Response({
             'message': 'Standby offer accepted. You are now the primary active donor.',
             'acceptance_id': acceptance.id,
-            'requester_phone': offer.request.contact_phone or offer.request.contact_number,
-            'ward_bed': offer.request.ward_bed,
+            'requester_phone': locked_req.contact_phone or locked_req.contact_number,
+            'ward_bed': locked_req.ward_bed,
         }, status=status.HTTP_200_OK)
 
     # DECLINE

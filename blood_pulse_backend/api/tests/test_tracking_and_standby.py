@@ -235,3 +235,131 @@ class LiveTrackingAndStandbyTests(TestCase):
         
         self.blood_req.refresh_from_db()
         self.assertEqual(self.blood_req.status, 'FULFILLED')
+
+    def test_location_update_throttled_server_side(self):
+        self.client.force_authenticate(user=self.donor_user)
+
+        # 1st update succeeds
+        resp1 = self.client.post(f'/api/journeys/{self.acceptance.id}/location/', {
+            'lat': 23.8105,
+            'lng': 90.4128,
+        })
+        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp1.json()['status'], 'updated')
+
+        # Immediate 2nd update within 10s is throttled
+        resp2 = self.client.post(f'/api/journeys/{self.acceptance.id}/location/', {
+            'lat': 23.8106,
+            'lng': 90.4129,
+        })
+        self.assertEqual(resp2.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(resp2.json()['status'], 'throttled')
+        self.assertIn('retry_after_seconds', resp2.json())
+
+        # Advance last_location_update by 15s -> 3rd update succeeds
+        self.acceptance.refresh_from_db()
+        self.acceptance.last_location_update = timezone.now() - timedelta(seconds=15)
+        self.acceptance.save(update_fields=['last_location_update'])
+
+        resp3 = self.client.post(f'/api/journeys/{self.acceptance.id}/location/', {
+            'lat': 23.8107,
+            'lng': 90.4130,
+        })
+        self.assertEqual(resp3.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp3.json()['status'], 'updated')
+
+    def test_location_stopped_on_inactive_journey_and_privacy_shielded(self):
+        # Requester sees location while journey is active
+        self.client.force_authenticate(user=self.donor_user)
+        self.client.post(f'/api/journeys/{self.acceptance.id}/location/', {
+            'lat': 23.8103,
+            'lng': 90.4125,
+        })
+
+        # Mark journey arrived -> inactive
+        self.acceptance.status = 'ARRIVED'
+        self.acceptance.save(update_fields=['status'])
+
+        # Posting location while stopped returns 200 with ignored status
+        post_resp = self.client.post(f'/api/journeys/{self.acceptance.id}/location/', {
+            'lat': 23.8103,
+            'lng': 90.4125,
+        })
+        self.assertEqual(post_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(post_resp.json()['status'], 'ignored')
+
+        # Requester cannot see coordinates once journey is inactive (privacy rule)
+        self.client.force_authenticate(user=self.requester)
+        get_resp = self.client.get(f'/api/journeys/{self.acceptance.id}/location/')
+        self.assertEqual(get_resp.status_code, status.HTTP_200_OK)
+        data = get_resp.json()
+        self.assertFalse(data['is_tracking_active'])
+        self.assertIsNone(data['donor_lat'])
+        self.assertIsNone(data['donor_lng'])
+
+    def test_standby_auto_triggered_when_donor_cancels_active_journey(self):
+        self.client.force_authenticate(user=self.donor_user)
+
+        cancel_resp = self.client.post(f'/api/journeys/{self.acceptance.id}/status/', {
+            'status': 'CANCELLED',
+            'reason': 'Flat tire on bike, unable to reach hospital in time',
+        })
+        self.assertEqual(cancel_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(cancel_resp.json()['status'], 'CANCELLED')
+        self.assertTrue(cancel_resp.json()['standby_triggered'])
+
+        # Standby offer created for ranked standby donor
+        offer = StandbyOffer.objects.filter(request=self.blood_req, donor=self.standby_profile).first()
+        self.assertIsNotNone(offer)
+        self.assertEqual(offer.status, 'PENDING')
+
+    def test_cleanup_stale_tracking_command_dry_run_and_execution(self):
+        from django.core.management import call_command
+        from io import StringIO
+
+        now = timezone.now()
+
+        # 1. Stale standby offer
+        stale_offer = StandbyOffer.objects.create(
+            request=self.blood_req,
+            donor=self.standby_profile,
+            status='PENDING',
+            expires_at=now - timedelta(minutes=5),
+        )
+
+        # 2. Inactive no-show journey
+        self.acceptance.status = 'ON_THE_WAY'
+        self.acceptance.started_at = now - timedelta(minutes=75)
+        self.acceptance.last_location_update = now - timedelta(minutes=70)
+        self.acceptance.save(update_fields=['status', 'started_at', 'last_location_update'])
+        stale_acc = self.acceptance
+
+        out = StringIO()
+        call_command('cleanup_stale_tracking', '--timeout-minutes', '60', '--dry-run', stdout=out)
+        output = out.getvalue()
+        self.assertIn('[DRY-RUN]', output)
+        self.assertIn('Expired Standby Offers: 1', output)
+        self.assertIn('Timed-out No-Show Journeys: 1', output)
+
+        # Dry-run must not mutate database
+        stale_offer.refresh_from_db()
+        self.assertEqual(stale_offer.status, 'PENDING')
+        stale_acc.refresh_from_db()
+        self.assertEqual(stale_acc.status, 'ON_THE_WAY')
+
+        # Real run mutates database
+        out_real = StringIO()
+        call_command('cleanup_stale_tracking', '--timeout-minutes', '60', stdout=out_real)
+        real_output = out_real.getvalue()
+        self.assertIn('Cleanup completed successfully.', real_output)
+
+        stale_offer.refresh_from_db()
+        self.assertEqual(stale_offer.status, 'EXPIRED')
+
+        stale_acc.refresh_from_db()
+        self.assertEqual(stale_acc.status, 'FAILED')
+        self.assertIn('Automated no-show timeout', stale_acc.cancellation_reason)
+
+        self.donor_profile.refresh_from_db()
+        self.assertGreater(self.donor_profile.no_show_count, 0)
+

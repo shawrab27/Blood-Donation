@@ -10,14 +10,13 @@ Activates backup donors when an active journey encounters a donation issue
 import logging
 from django.utils import timezone
 from datetime import timedelta
-from api.models import StandbyOffer, DonorProfile
+from api.models import StandbyOffer, DonorProfile, Notification
+from api.conf import STANDBY_TIMEOUT_MINUTES
 from api.services.compat import get_compatible_donor_groups
 from api.services.eligibility import evaluate_donor_eligibility
 from api.services.geo import haversine_distance
 
 logger = logging.getLogger(__name__)
-
-STANDBY_TIMEOUT_MINUTES = 10
 
 
 def trigger_standby_donor_offer(blood_request, exclude_donor_ids: list = None) -> StandbyOffer:
@@ -104,6 +103,18 @@ def trigger_standby_donor_offer(blood_request, exclude_donor_ids: list = None) -
         status='PENDING',
         expires_at=now + timedelta(minutes=STANDBY_TIMEOUT_MINUTES),
     )
+
+    try:
+        Notification.objects.create(
+            user=top_candidate.user,
+            title="Urgent: Standby Blood Donation Opportunity",
+            body=f"You have been ranked as a standby donor for urgent request #{blood_request.id} ({blood_request.blood_group}). Please respond within {STANDBY_TIMEOUT_MINUTES} minutes.",
+            type="STANDBY_OFFER",
+            is_read=False,
+            created_at=now,
+        )
+    except Exception as notif_err:
+        logger.warning(f"Could not create standby notification for user {top_candidate.user_id}: {notif_err}")
 
     logger.info(f"Standby offer #{offer.id} created for Donor #{top_candidate.id} on Request #{blood_request.id}")
     return offer

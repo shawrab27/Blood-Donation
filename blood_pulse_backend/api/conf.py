@@ -163,3 +163,9 @@ def get_donor_title(donations: int):
     else:
         return "Hero"
 
+
+# Step 11: Real-time Journey Tracking & Standby Configuration (#31)
+STANDBY_TIMEOUT_MINUTES = int(os.environ.get('STANDBY_TIMEOUT_MINUTES', '10'))
+DONOR_LOCATION_UPDATE_INTERVAL_SECONDS = int(os.environ.get('DONOR_LOCATION_UPDATE_INTERVAL_SECONDS', '10'))
+JOURNEY_NO_SHOW_TIMEOUT_MINUTES = int(os.environ.get('JOURNEY_NO_SHOW_TIMEOUT_MINUTES', '60'))
+
