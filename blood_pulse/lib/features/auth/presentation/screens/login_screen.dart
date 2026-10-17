@@ -75,12 +75,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       context.go('/feed');
     } else {
       final err = ref.read(authProvider).errorMessage ?? 'Login failed.';
+      final isCredentialFailure = err.toLowerCase().contains('credential') ||
+          err.toLowerCase().contains('no active account') ||
+          err.toLowerCase().contains('401') ||
+          err.toLowerCase().contains('invalid');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(err, style: const TextStyle(fontFamily: 'Inter')),
+          content: Text(
+            isCredentialFailure
+                ? 'Invalid credentials. Please check your phone number/username or password.'
+                : err,
+            style: const TextStyle(fontFamily: 'Inter'),
+          ),
+          action: isCredentialFailure
+              ? SnackBarAction(
+                  label: 'Reset',
+                  textColor: Colors.white,
+                  onPressed: () => context.push('/forgot-password'),
+                )
+              : null,
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
-          shape: const StadiumBorder(),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -208,7 +224,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     ? (l10n?.usernameOrPhone ?? 'Please enter your username or phone')
                                     : null,
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 6),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Text(
+                                  'Enter your 11-digit phone number (e.g., 01712345678) or username.',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    color: Color(0xFF6E6E6E),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                               // ── Password ────────────────────────────────
                               _SectionLabel(l10n?.authPassword ?? 'Password'),
                               const SizedBox(height: 8),

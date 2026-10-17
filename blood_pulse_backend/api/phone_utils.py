@@ -51,6 +51,10 @@ def normalize_phone_number(raw_phone: Optional[str]) -> str:
     return f"+880{core_10}"
 
 
+# Single canonical phone normalization alias for Bangladesh numbers (Anomaly #2)
+normalize_bd_phone = normalize_phone_number
+
+
 def is_valid_phone(raw_phone: Optional[str]) -> bool:
     """Returns True if the raw phone can be normalized to a valid BD mobile number."""
     if not raw_phone:

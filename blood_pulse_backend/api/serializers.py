@@ -114,12 +114,15 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     def validate_phone_number(self, value):
         if not value:
             return value
-        qs = DonorProfile.objects.filter(phone_number=value)
+        from api.phone_utils import normalize_phone_number, get_phone_variants, is_valid_phone
+        canonical = normalize_phone_number(value) if is_valid_phone(value) else str(value).strip()
+        variants = get_phone_variants(canonical) if is_valid_phone(value) else {canonical}
+        qs = DonorProfile.objects.filter(phone_number__in=variants)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
             raise serializers.ValidationError("An account with this phone number is already registered.")
-        return value
+        return canonical
 
     def validate_blood_group(self, value):
         if self.instance and self.instance.blood_group and self.instance.blood_group.strip():

@@ -162,3 +162,53 @@ class PhoneAuthenticationTests(TestCase):
         # In dry run, database must remain unchanged
         test_profile.refresh_from_db()
         self.assertEqual(test_profile.phone_number, raw_phone)
+
+    def test_diagnose_login_command_matching_and_masks_pii(self):
+        out = StringIO()
+        call_command('diagnose_login', phone='01712345678', stdout=out)
+        output = out.getvalue()
+
+        # Must contain masked suffix and active status
+        self.assertIn('***...678', output)
+        self.assertIn('is_active: True', output)
+        self.assertIn('usable_password: True', output)
+        # Must NEVER contain the full unmasked phone or email
+        self.assertNotIn('01712345678', output)
+        self.assertNotIn(self.email, output)
+
+    def test_diagnose_login_command_similar_numbers(self):
+        # Create user with similar prefix 01601239023
+        similar_phone = "+8801601239023"
+        sim_user = User.objects.create_user(
+            username=similar_phone,
+            password="testpassword",
+        )
+        DonorProfile.objects.create(
+            user=sim_user,
+            blood_group="AB+",
+            district="Dhaka",
+            phone_number=similar_phone,
+        )
+
+        out = StringIO()
+        call_command('diagnose_login', phone='01601239009', stdout=out)
+        output = out.getvalue()
+
+        # Should report no exact match for 009, but detect similar number 023
+        self.assertIn('No matching user account found', output)
+        self.assertIn('[SIMILAR]', output)
+        self.assertIn('***...023', output)
+        self.assertNotIn('01601239023', output)
+
+    def test_profile_patch_phone_normalization_and_uniqueness(self):
+        self.client.force_authenticate(user=self.user)
+        # 1. Successful update with local 01 format -> normalized to canonical +880
+        resp = self.client.patch('/api/profile/me/', {'phone_number': '01911223344'}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.phone_number, '+8801911223344')
+
+        # 2. Reject duplicate phone (already assigned to inactive_user)
+        resp2 = self.client.patch('/api/profile/me/', {'phone_number': '01812345678'}, format='json')
+        self.assertEqual(resp2.status_code, 400)
+        self.assertIn('phone_number', resp2.data)

@@ -182,6 +182,21 @@ class ProfileMeView(APIView):
                 user.last_name = request.data['last_name']
             user.save(update_fields=['first_name', 'last_name'])
 
+        # Phone number update with Bangladesh canonical normalization
+        if 'phone_number' in request.data:
+            from api.phone_utils import normalize_bd_phone, get_phone_variants, is_valid_phone
+            raw_phone = request.data['phone_number']
+            if raw_phone:
+                if not is_valid_phone(raw_phone):
+                    return Response({"phone_number": ["Invalid Bangladesh mobile phone number."]}, status=status.HTTP_400_BAD_REQUEST)
+                canonical_phone = normalize_bd_phone(raw_phone)
+                variants = get_phone_variants(canonical_phone)
+                if DonorProfile.objects.filter(phone_number__in=variants).exclude(pk=profile.pk).exists():
+                    return Response({"phone_number": ["An account with this phone number is already registered."]}, status=status.HTTP_400_BAD_REQUEST)
+                profile.phone_number = canonical_phone
+            else:
+                return Response({"phone_number": ["Phone number cannot be empty."]}, status=status.HTTP_400_BAD_REQUEST)
+
         # Bio validation (max 120 chars)
         if 'bio' in request.data:
             bio_val = str(request.data['bio']).strip()
