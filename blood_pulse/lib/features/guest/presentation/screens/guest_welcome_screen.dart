@@ -2,6 +2,7 @@ import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -50,6 +51,10 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
   double _currentZoom = 7.0;
   bool _isLoadingMap = true;
   bool _isOfflineOrError = false;
+  bool _isServerWakingUp = false;
+  int _retryCountdown = 5;
+  int _retryAttempts = 0;
+  Timer? _retryTimer;
   String _mapStatusMessage = 'Showing Bangladesh';
   int _totalNearbyDonors = 0;
   List<Map<String, dynamic>> _aggregatedCells = [];
@@ -58,6 +63,12 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
   void initState() {
     super.initState();
     _loadLocationAndGuestMap();
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
   }
 
   Future<({LatLng center, double zoom, String statusMessage})>
@@ -109,7 +120,8 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
   Future<Map<String, dynamic>> _defaultFetchGuestMap() async {
     // Client NEVER sends guest location or radius parameters
     final isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
-    final timeout = isTest ? const Duration(milliseconds: 100) : const Duration(seconds: 6);
+    // Render free-tier cold start may take 30-50s; 55s timeout ensures requests do not prematurely abort
+    final timeout = isTest ? const Duration(milliseconds: 100) : const Duration(seconds: 55);
     final response = await _apiClient
         .get('donors/guest-map/')
         .timeout(timeout);
@@ -117,6 +129,22 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
     throw Exception('Failed to load guest map (${response.statusCode})');
+  }
+
+  void _startAutoRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_retryCountdown > 1) {
+        setState(() => _retryCountdown--);
+      } else {
+        timer.cancel();
+        _loadLocationAndGuestMap();
+      }
+    });
   }
 
   Future<void> _loadLocationAndGuestMap() async {
@@ -146,12 +174,16 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
       final rawCells = (data['cells'] as List<dynamic>?) ?? [];
 
       if (mounted) {
+        _retryTimer?.cancel();
         setState(() {
           _totalNearbyDonors = count;
           _aggregatedCells = rawCells
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
           _isLoadingMap = false;
+          _isOfflineOrError = false;
+          _isServerWakingUp = false;
+          _retryAttempts = 0;
         });
         try {
           _mapController.move(_currentCenter, _currentZoom);
@@ -160,13 +192,21 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
       return;
     } catch (_) {
       if (mounted) {
+        _retryAttempts++;
+        final canAutoRetry = _retryAttempts <= 3;
         setState(() {
           _isOfflineOrError = true;
+          _isServerWakingUp = canAutoRetry;
           _isLoadingMap = false;
+          _retryCountdown = 5;
         });
         try {
           _mapController.move(_currentCenter, _currentZoom);
         } catch (_) {}
+
+        if (canAutoRetry) {
+          _startAutoRetry();
+        }
       }
       return;
     }
@@ -204,17 +244,8 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
         };
       }).toList();
     }
-    // Authentic Stitch design nearby donor pins around user center
-    final lat = _currentCenter.latitude;
-    final lng = _currentCenter.longitude;
-    return [
-      {'point': LatLng(lat + 0.012, lng - 0.012), 'bloodGroup': 'O+', 'distance': '• 4m'},
-      {'point': LatLng(lat + 0.009, lng + 0.015), 'bloodGroup': 'A+', 'distance': '• 8m'},
-      {'point': LatLng(lat - 0.011, lng - 0.014), 'bloodGroup': 'B+', 'distance': '• 12m'},
-      {'point': LatLng(lat - 0.008, lng + 0.016), 'bloodGroup': 'AB+', 'distance': '• 15m'},
-      {'point': LatLng(lat + 0.003, lng - 0.018), 'bloodGroup': 'O-', 'distance': '• Univ'},
-      {'point': LatLng(lat + 0.018, lng + 0.005), 'bloodGroup': 'A-', 'distance': '• Near'},
-    ];
+    // Zero-fake-data policy: never generate mock donor pins
+    return [];
   }
 
   @override
@@ -435,6 +466,19 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                               borderColor: Colors.white,
                               borderStrokeWidth: 2.0,
                             ),
+                            // Coarse blurred cluster circles for aggregated cells
+                            ..._aggregatedCells.map((cell) {
+                              final lat = (cell['latitude'] as num?)?.toDouble() ?? _currentCenter.latitude;
+                              final lng = (cell['longitude'] as num?)?.toDouble() ?? _currentCenter.longitude;
+                              return CircleMarker(
+                                point: LatLng(lat, lng),
+                                radius: 22,
+                                useRadiusInMeter: false,
+                                color: const Color(0xFFC30121).withValues(alpha: 0.18),
+                                borderColor: const Color(0xFFC30121).withValues(alpha: 0.45),
+                                borderStrokeWidth: 1.5,
+                              );
+                            }),
                           ],
                         ),
                         // Stitch Pin Markers with arrows
@@ -647,13 +691,17 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                       )
                     else if (_isOfflineOrError)
                       Container(
-                        color: const Color(0xFFFDF3F3).withValues(alpha: 0.9),
+                        color: const Color(0xFFFDF3F3).withValues(alpha: 0.95),
                         padding: const EdgeInsets.all(16),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.wifi_off_rounded, color: AppColors.primary, size: 28),
+                              Icon(
+                                _isServerWakingUp ? Icons.cloud_sync_rounded : Icons.wifi_off_rounded,
+                                color: AppColors.primary,
+                                size: 28,
+                              ),
                               const SizedBox(height: 6),
                               const Text(
                                 'Offline mode — map tiles cached locally',
@@ -661,13 +709,30 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                                 style: TextStyle(
                                   fontFamily: 'Inter',
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                   color: Color(0xFF555555),
                                 ),
                               ),
+                              if (_isServerWakingUp) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Server waking up... Auto-retrying in ${_retryCountdown}s (attempt $_retryAttempts/3)',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 11,
+                                    color: Color(0xFF666666),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: _loadLocationAndGuestMap,
-                                child: const Text('Retry connection', style: TextStyle(fontFamily: 'Inter')),
+                              TextButton.icon(
+                                onPressed: () {
+                                  _retryTimer?.cancel();
+                                  _loadLocationAndGuestMap();
+                                },
+                                icon: const Icon(Icons.refresh_rounded, size: 14),
+                                label: const Text('Retry connection', style: TextStyle(fontFamily: 'Inter')),
                               ),
                             ],
                           ),

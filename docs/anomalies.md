@@ -6,7 +6,7 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 |---|---|---|---|---|
 | 1 | Forgot-password OTP send -> 500 | Phase 1 | OPEN | |
 | 2 | Login by phone -> 401 "No active account" (login phone 01601239009 vs profile phone 01601239023: confirm same account) | Phase 1 | OPEN | |
-| 3 | Guest map offline/0 donors | Phase 1 | OPEN | |
+| 3 | Guest map offline/0 donors | Phase 1 | DONE | Extended timeout from 6s to 55s for Render free-tier cold start; added auto-retry countdown banner with manual Retry connection button; removed 6 fake mock pins fallback (zero fake data policy); added blurred circular cluster overlays for coarse geohash precision-4 cells; verified via guest_map_cold_start_test.dart |
 | 4 | Profile tab ECG indicator line awkward | Phase 1 | OPEN | |
 | 5 | Buttons clipped/hidden (Request Blood Group Change, Download Verified Certificate) | Phase 1 | OPEN | |
 | 6 | Pause Emergency Alerts broken; move below Impact; bigger button; days/months snooze | Phase 1 | OPEN | |
