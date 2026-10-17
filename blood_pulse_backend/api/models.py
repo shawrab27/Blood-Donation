@@ -2849,6 +2849,8 @@ class UserDevice(models.Model):
     device_id = models.CharField(max_length=255, db_index=True)
     device_name = models.CharField(max_length=255, blank=True, default='')
     platform = models.CharField(max_length=50, blank=True, default='android')
+    fcm_token = models.CharField(max_length=512, blank=True, null=True, db_index=True)
+    fcm_updated_at = models.DateTimeField(null=True, blank=True)
     first_seen = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(auto_now=True)
     last_ip_masked = models.CharField(max_length=50, blank=True, default='')

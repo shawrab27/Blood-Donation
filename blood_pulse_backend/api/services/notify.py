@@ -12,46 +12,34 @@ import os
 from django.conf import settings
 from django.utils import timezone
 from api.conf import FCM_BATCH_SIZE
-from api.models import EmergencyNotification, UserNotificationState, WaveNotificationLog, DonorProfile
+from api.models import EmergencyNotification, UserNotificationState, WaveNotificationLog, DonorProfile, UserDevice
 
 logger = logging.getLogger(__name__)
-
 
 
 def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, data_payload: dict = None) -> dict:
     """
     Sends FCM pushes in batches of max FCM_BATCH_SIZE (default 500).
-    Catches invalid/unregistered tokens and deactivates them (clears fcm_token)
-    without failing the batch or the whole operation.
-    Never logs recipient coordinates.
-    Returns:
-    {
-        'sent': int,
-        'failed': int,
-        'invalid_tokens_cleared': int,
-    }
+    Uses Firebase service account from environment (FIREBASE_SERVICE_ACCOUNT*).
+    Catches invalid/unregistered tokens and deactivates them from UserDevice and DonorProfile.
+    Never logs recipient coordinates or prints secrets.
     """
     if not tokens_with_donors:
         return {'sent': 0, 'failed': 0, 'invalid_tokens_cleared': 0}
 
     try:
         import firebase_admin
-        from firebase_admin import messaging, credentials
+        from firebase_admin import messaging
+        from api.services.firebase_service import get_or_initialize_firebase_admin
     except ImportError:
         logger.warning("firebase-admin not installed. Skipping FCM push.")
         return {'sent': len(tokens_with_donors), 'failed': 0, 'invalid_tokens_cleared': 0}
 
     # Initialize app if not already initialized
     try:
-        if not firebase_admin._apps:
-            cred_path = getattr(settings, "FIREBASE_CREDENTIALS_PATH", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-            if cred_path and os.path.exists(cred_path):
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
-            else:
-                firebase_admin.initialize_app()
+        get_or_initialize_firebase_admin()
     except Exception as init_err:
-        logger.warning("Firebase Admin initialization warning: %s", init_err)
+        logger.warning("Firebase Admin initialization notice: %s", init_err)
 
     total_sent = 0
     total_failed = 0
@@ -66,7 +54,7 @@ def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, 
         message = messaging.MulticastMessage(
             notification=messaging.Notification(title=title, body=body),
             data=data_payload or {"click_action": "FLUTTER_NOTIFICATION_CLICK", "type": "BLOOD_EMERGENCY"},
-            android=messaging.AndroidConfig(priority="high"),
+            android=messaging.AndroidConfig(priority="high", notification=messaging.AndroidNotification(channel_id="bloodpulse_urgent_alerts")),
             tokens=tokens,
         )
 
@@ -78,16 +66,16 @@ def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, 
             # Process responses to catch invalid tokens
             for idx, resp in enumerate(response.responses):
                 if not resp.success:
-                    err_code = resp.exception.code if hasattr(resp.exception, 'code') else str(resp.exception)
-                    donor_obj = donors[idx]
-                    # Check for invalid / unregistered / expired FCM tokens
                     err_str = str(resp.exception).lower()
                     if any(x in err_str for x in ['unregistered', 'invalid_argument', 'invalid-registration-token', 'not_found']):
-                        if donor_obj and donor_obj.fcm_token:
-                            logger.info(f"Deactivating invalid FCM token for donor ID {donor_obj.id}")
+                        bad_token = tokens[idx]
+                        donor_obj = donors[idx]
+                        if donor_obj and donor_obj.fcm_token == bad_token:
+                            logger.info("Deactivating invalid FCM token for donor ID %s", donor_obj.id)
                             donor_obj.fcm_token = None
                             donor_obj.save(update_fields=['fcm_token'])
                             invalid_tokens_cleared += 1
+                        UserDevice.objects.filter(fcm_token=bad_token).update(fcm_token=None)
         except Exception as batch_err:
             logger.error("Failed executing FCM batch: %s", batch_err)
             total_failed += len(chunk)
@@ -96,6 +84,58 @@ def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, 
         'sent': total_sent,
         'failed': total_failed,
         'invalid_tokens_cleared': invalid_tokens_cleared,
+    }
+
+
+def send_push_to_user(user, title: str, body: str, data_payload: dict = None, dry_run: bool = False) -> dict:
+    """
+    Sends a high-priority push notification to all active devices of a specific User (#36).
+    Collects tokens from both UserDevice and DonorProfile.
+    If dry_run=True, reports tokens found without sending.
+    Cleans up any invalid tokens returned by FCM.
+    """
+    tokens = set()
+
+    for d in UserDevice.objects.filter(user=user, is_revoked=False).exclude(fcm_token__isnull=True).exclude(fcm_token=''):
+        if d.fcm_token.strip():
+            tokens.add(d.fcm_token.strip())
+
+    donor_profile = DonorProfile.objects.filter(user=user).first()
+    if donor_profile and donor_profile.fcm_token and donor_profile.fcm_token.strip():
+        tokens.add(donor_profile.fcm_token.strip())
+
+    token_list = list(tokens)
+    if not token_list:
+        return {
+            'status': 'no_tokens',
+            'user': user.username,
+            'tokens_count': 0,
+            'dry_run': dry_run,
+        }
+
+    if dry_run:
+        # Mask tokens to never expose secrets
+        return {
+            'status': 'dry_run',
+            'user': user.username,
+            'tokens_count': len(token_list),
+            'masked_tokens': [f"{t[:6]}...{t[-4:]}" for t in token_list],
+            'title': title,
+            'body': body,
+            'data': data_payload or {},
+            'dry_run': True,
+        }
+
+    tokens_with_donors = [(t, donor_profile) for t in token_list]
+    res = send_fcm_multicast_batches(tokens_with_donors, title, body, data_payload)
+    return {
+        'status': 'sent' if res['sent'] > 0 else 'failed',
+        'user': user.username,
+        'tokens_count': len(token_list),
+        'sent': res['sent'],
+        'failed': res['failed'],
+        'invalid_tokens_cleared': res['invalid_tokens_cleared'],
+        'dry_run': False,
     }
 
 
