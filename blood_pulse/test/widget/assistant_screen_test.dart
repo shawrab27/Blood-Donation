@@ -625,7 +625,21 @@ void main() {
       expect(foundAvatarAsset, isTrue,
           reason: 'Bot avatar must use assets/images/pulseai_icon.png');
     });
+
+    testWidgets('Anomaly #15: PulseAI prompt input bar and header do not contain location icon', (tester) async {
+      await tester.pumpWidget(
+        _buildScreen(state: _state()),
+      );
+      await tester.pump();
+
+      // Verify that location pin/icon is strictly absent from the screen
+      expect(find.byIcon(Icons.location_on_outlined), findsNothing);
+      expect(find.byIcon(Icons.location_on), findsNothing);
+      expect(find.byIcon(Icons.my_location), findsNothing);
+      expect(find.byTooltip('Search Nearby Donors'), findsNothing);
+    });
   });
 }
+
 
 
