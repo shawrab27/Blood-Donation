@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/config/map_config.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
 
 enum DispatchRole { requester, donor }
@@ -906,8 +907,8 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'org.bloodpulse.app',
+                  urlTemplate: MapConfig.osmTileUrlTemplate,
+                  userAgentPackageName: MapConfig.osmUserAgentPackageName,
                 ),
                 PolylineLayer(
                   polylines: [

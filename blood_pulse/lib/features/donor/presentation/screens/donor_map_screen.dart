@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/config/map_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/capsule_button.dart';
@@ -339,10 +340,8 @@ class _DonorMapScreenState extends State<DonorMapScreen>
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                  subdomains: const ['a', 'b', 'c', 'd'],
-                  userAgentPackageName: 'com.bloodpulse.app',
+                  urlTemplate: MapConfig.osmTileUrlTemplate,
+                  userAgentPackageName: MapConfig.osmUserAgentPackageName,
                 ),
 
                 // Radar mode 6km circle

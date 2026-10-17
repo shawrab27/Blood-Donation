@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../core/config/map_config.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/avatar_helper.dart';
@@ -1095,8 +1096,8 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'org.bloodpulse.app',
+                    urlTemplate: MapConfig.osmTileUrlTemplate,
+                    userAgentPackageName: MapConfig.osmUserAgentPackageName,
                   ),
                   MarkerLayer(
                     markers: donors.map((d) {

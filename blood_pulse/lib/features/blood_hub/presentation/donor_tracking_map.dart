@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/map_config.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/capsule_button.dart';
 import '../../../core/widgets/responsive_layout.dart';
@@ -211,8 +212,8 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'org.bloodpulse.app',
+                  urlTemplate: MapConfig.osmTileUrlTemplate,
+                  userAgentPackageName: MapConfig.osmUserAgentPackageName,
                 ),
                 PolylineLayer(
                   polylines: [

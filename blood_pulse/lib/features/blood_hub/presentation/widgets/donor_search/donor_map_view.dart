@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:blood_pulse/core/config/map_config.dart';
 import '../../../data/blood_hub_api_service.dart';
 
 /// Real Interactive OpenStreetMap Raster Map conforming to Stitch "Nearby Donor Network" UI.
@@ -15,9 +16,6 @@ import '../../../data/blood_hub_api_service.dart';
 /// and an interactive donor card popup when any pin is tapped.
 class DonorMapView extends ConsumerStatefulWidget {
   const DonorMapView({super.key});
-
-  static const String _osmTileUrl =
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   @override
   ConsumerState<DonorMapView> createState() => _DonorMapViewState();
@@ -100,8 +98,8 @@ class _DonorMapViewState extends ConsumerState<DonorMapView> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: DonorMapView._osmTileUrl,
-                    userAgentPackageName: 'com.bloodpulse.app',
+                    urlTemplate: MapConfig.osmTileUrlTemplate,
+                    userAgentPackageName: MapConfig.osmUserAgentPackageName,
                   ),
                   MarkerLayer(markers: markers),
                 ],

@@ -11,6 +11,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
+import '../../../../core/config/map_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
@@ -428,8 +429,8 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'org.bloodpulse.app',
+                          urlTemplate: MapConfig.osmTileUrlTemplate,
+                          userAgentPackageName: MapConfig.osmUserAgentPackageName,
                         ),
                         CircleLayer(
                           circles: [

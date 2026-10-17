@@ -9,6 +9,7 @@ import '../widgets/deferral_notice_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/config/map_config.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
 
@@ -19,10 +20,6 @@ import '../../data/blood_hub_api_service.dart';
 const Color _kPrimary = Color(0xFFC30121);
 const Color _kSecondary = Color(0xFF2B2B2B);
 const Color _kSurface = Color(0xFFFFF8F7);
-
-// OSM tile URL — single config constant per Rule 9.
-const String _kTileUrl =
-    'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 const List<String> _kBloodGroups = [
   'Any', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-',
@@ -325,8 +322,8 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
               ),
               children: [
                 TileLayer(
-                  urlTemplate: _kTileUrl,
-                  userAgentPackageName: 'com.bloodpulse.app',
+                  urlTemplate: MapConfig.osmTileUrlTemplate,
+                  userAgentPackageName: MapConfig.osmUserAgentPackageName,
                 ),
                 pinsAsync.when(
                   data: (pins) => MarkerLayer(
