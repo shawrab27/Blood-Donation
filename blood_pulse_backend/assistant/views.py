@@ -38,12 +38,15 @@ def chat_view(request):
     request_id = f"req_{uuid.uuid4().hex[:12]}"
     message_text = request.data.get('message', '')
     conversation_id = request.data.get('conversation_id')
-    locale = request.data.get('language') or request.data.get('locale', 'bn')
+    raw_locale = request.data.get('language') or request.data.get('locale', 'en')
     client_ip = get_client_ip(request)
 
     # 0. Validate input presence
     if not message_text or not str(message_text).strip():
         return Response({"code": "EMPTY_MESSAGE", "message": "Message text is required.", "request_id": request_id}, status=400)
+
+    from assistant.pipeline.language_utils import resolve_language_for_query
+    locale, _ = resolve_language_for_query(str(message_text), client_locale=raw_locale)
 
     # Compute redacted_text BEFORE the try/except
     try:
@@ -230,7 +233,12 @@ def chat_view(request):
             flags = result_json.pop("flags", [])
 
             # If Gemini is unsure or marked out of scope on a core donation topic, fallback to offline guidance:
-            is_unsure = result_json.get("out_of_scope", False) or "not sure" in result_json.get("reply", "").lower()
+            is_unsure = (
+                result_json.get("out_of_scope", False)
+                or "not sure" in result_json.get("reply", "").lower()
+                or "নিশ্চিত নই" in result_json.get("reply", "")
+                or "BLOCKED_NUMBER" in flags
+            )
             if is_unsure:
                 offline_res = get_offline_guidance(redacted_text, locale=locale)
                 if offline_res.get("matched_intent") != "general_guidance":
@@ -246,6 +254,11 @@ def chat_view(request):
                     offline_res["source"] = "fallback"
                     return _save_and_respond(conv, user, redacted_text, offline_res, flags=["FALLBACK_UNSURE"], request_id=request_id)
 
+            validated = validate_and_format_response(
+                raw_reply=result_json.get("reply", ""),
+                user_query=redacted_text,
+                locale=locale
+            )
             result_json["reply"] = validated["reply"]
             result_json["response"] = validated["response"]
             result_json["language"] = validated["language"]

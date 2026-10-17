@@ -3,6 +3,7 @@
 
 import re
 from api.conf import DONOR_COOLDOWN_DAYS
+from assistant.pipeline.language_utils import resolve_language_for_query
 
 def detect_urgent_symptoms(text: str) -> bool:
     norm = text.lower()
@@ -11,7 +12,10 @@ def detect_urgent_symptoms(text: str) -> bool:
         r'\bpassed\s+out\b', r'\bfainted\b', r'\bfainting\b', r'\bbreathing\s+difficulty\b',
         r'\bshortness\s+of\s+breath\b', r'\bheart\s+attack\b', r'\bstroke\b',
         r'বুকে\s*ব্যথা', r'প্রচুর\s*রক্তপাত', r'শ্বাসকষ্ট', r'অজ্ঞান', r'মাথা\s*ঘুরে\s*পড়ে',
-        r'দম\s*বন্ধ', r'হৃদরোগ', r'তীব্র\s*যন্ত্রণা'
+        r'দম\s*বন্ধ', r'হৃদরোগ', r'তীব্র\s*যন্ত্রণা',
+        # Banglish emergency terms
+        r'\bbuke[y]?\s+b[e|a]tha\b', r'\brokto\s+porche\b', r'\bshas[h]?\s+k[o]?s[h]?to\b',
+        r'\boggan\b', r'\bbeosh\b', r'\bmatha\s+ghur[e|che]\b'
     ]
     return any(re.search(pat, norm) for pat in urgent_patterns)
 
@@ -26,7 +30,7 @@ def get_offline_guidance(query: str, locale: str = 'bn') -> dict:
         'matched_intent': str
       }
     """
-    is_bn = (locale == 'bn') or bool(re.search(r'[\u0980-\u09FF]', query))
+    resolved_lang, is_bn = resolve_language_for_query(query, client_locale=locale)
     norm = query.lower()
 
     # 1. Safety Guard: Urgent Symptoms -> Dial 999 / Doctor immediately (No diagnosis)
@@ -51,7 +55,8 @@ def get_offline_guidance(query: str, locale: str = 'bn') -> dict:
     # 2. Donation Interval / Cooldown
     interval_kws = [
         'interval', 'how long', 'cooldown', 'how many days', 'how often', 'next donation',
-        'kobe rokt', 'koto din por', 'কত দিন পর', 'কবে রক্ত', 'বিরতি', 'পরবর্তী রক্তদান', 'কতদিন পর'
+        'kobe rokt', 'kobe rokto', 'koto din por', 'koto din por por', 'koto din baki',
+        'kobe abar', 'কত দিন পর', 'কবে রক্ত', 'বিরতি', 'পরবর্তী রক্তদান', 'কতদিন পর'
     ]
     if any(kw in norm for kw in interval_kws):
         days = DONOR_COOLDOWN_DAYS  # strictly 90 days from api.conf
@@ -75,8 +80,8 @@ def get_offline_guidance(query: str, locale: str = 'bn') -> dict:
 
     # 3. What to eat before donating (Nutrition)
     food_kws = [
-        'eat', 'food', 'meal', 'nutrition', 'khabar', 'ki khabo', 'khawa', 'diet',
-        'কী খাব', 'খাবার', 'খাওয়া', 'ডায়েট', 'আগে কি খাব', 'না খেয়ে'
+        'eat', 'food', 'meal', 'nutrition', 'khabar', 'ki khabo', 'khawa', 'khawa dawa',
+        'diet', 'age ki khabo', 'khali pete', 'কী খাব', 'খাবার', 'খাওয়া', 'ডায়েট', 'আগে কি খাব', 'না খেয়ে'
     ]
     if any(kw in norm for kw in food_kws):
         if is_bn:
@@ -99,7 +104,8 @@ def get_offline_guidance(query: str, locale: str = 'bn') -> dict:
 
     # 4. Hydration / Fluids
     hydration_kws = [
-        'water', 'drink', 'fluid', 'hydrate', 'hydration', 'pani', 'পানি', 'জল', 'পানীয়', 'তরল'
+        'water', 'drink', 'fluid', 'hydrate', 'hydration', 'pani', 'pani koto khabo',
+        'koto pani', 'jol', 'পানি', 'জল', 'পানীয়', 'তরল'
     ]
     if any(kw in norm for kw in hydration_kws):
         if is_bn:
@@ -121,7 +127,8 @@ def get_offline_guidance(query: str, locale: str = 'bn') -> dict:
 
     # 5. Aftercare / Recovery
     aftercare_kws = [
-        'aftercare', 'after donating', 'after donation', 'post donation', 'dizziness', 'pore ki',
+        'aftercare', 'after donating', 'after donation', 'post donation', 'dizziness',
+        'pore ki', 'pore ki korbo', 'rokto dewar pore', 'rokto dewar por', 'matha ghurle',
         'রক্তদানের পর', 'পরে করণীয়', 'বিশ্রাম', 'মাথা ঘোরা', 'রিকভারি', 'পরবর্তী যত্ন'
     ]
     if any(kw in norm for kw in aftercare_kws):
@@ -145,7 +152,9 @@ def get_offline_guidance(query: str, locale: str = 'bn') -> dict:
     # 6. General Eligibility
     eligibility_kws = [
         'eligible', 'eligibility', 'can i donate', 'criteria', 'rule', 'weight', 'age', 'hemoglobin',
-        'joggo', 'jogota', 'যোগ্য', 'যোগ্যতা', 'রক্ত দিতে পারব', 'শর্ত', 'ওজন', 'বয়স', 'হিমোগ্লোবিন'
+        'joggo', 'jogota', 'shortho', 'sorto', 'ojon', 'boyos', 'boyosh',
+        'ami ki rokto dite parbo', 'ke rokto dite parbe', 'যোগ্য', 'যোগ্যতা', 'রক্ত দিতে পারব',
+        'শর্ত', 'ওজন', 'বয়স', 'হিমোগ্লোবিন'
     ]
     if any(kw in norm for kw in eligibility_kws):
         days = DONOR_COOLDOWN_DAYS

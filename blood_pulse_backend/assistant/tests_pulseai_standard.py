@@ -162,3 +162,46 @@ class PulseAIStandardResponseTests(TestCase):
         self.assertIn("ELIGIBLE", reply)
         self.assertIn("Medical Disclaimer", reply)
 
+    # 10. Anomaly #20: Bangla / Banglish / English language support
+    def test_language_support_english_query(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/assistant/chat/',
+            {'message': 'What is the mandatory interval between blood donations?', 'locale': 'en'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get('language'), 'en')
+        self.assertIn('90 days', data.get('reply', '').lower())
+
+    def test_language_support_bangla_query(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/assistant/chat/',
+            {'message': 'কত দিন পর রক্ত দেওয়া যায়?', 'locale': 'bn'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get('language'), 'bn')
+        reply = data.get('reply', '')
+        self.assertTrue('90 দিন' in reply or '৯০ দিন' in reply, f"90 days in Bangla not found in: {reply}")
+
+    def test_language_support_banglish_query(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(
+            '/api/assistant/chat/',
+            {'message': 'kobe rokto dite parbo?', 'locale': 'en'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # Banglish must resolve to Bangla script response!
+        self.assertEqual(data.get('language'), 'bn')
+        reply = data.get('reply', '')
+        # Must be in Bengali Unicode script
+        import re
+        self.assertTrue(bool(re.search(r'[\u0980-\u09FF]', reply)), "Banglish reply was not in Bengali script!")
+
+
