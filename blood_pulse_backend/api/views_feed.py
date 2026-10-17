@@ -27,31 +27,38 @@ class FeedAnonThrottle(AnonRateThrottle):
 class FeedPostCreateThrottle(UserRateThrottle):
     rate = '10/hour'
 
-def encode_cursor(created_at, obj_id: int) -> str:
-    """Encodes created_at ISO timestamp and ID into URL-safe base64 string."""
-    payload = f"{created_at.isoformat()}|{obj_id}"
+def encode_cursor(created_at, obj_id: int, tier: int | None = None) -> str:
+    """Encodes optional tier, created_at ISO timestamp and ID into URL-safe base64 string."""
+    if tier is not None:
+        payload = f"{tier}|{created_at.isoformat()}|{obj_id}"
+    else:
+        payload = f"{created_at.isoformat()}|{obj_id}"
     return base64.urlsafe_b64encode(payload.encode('utf-8')).decode('utf-8')
 
 def decode_cursor(cursor_str: str):
-    """Decodes cursor into (created_at_str, obj_id)."""
+    """Decodes cursor into (tier, created_at_str, obj_id)."""
     try:
         raw = base64.urlsafe_b64decode(cursor_str.encode('utf-8')).decode('utf-8')
         parts = raw.split('|')
+        if len(parts) == 3:
+            return int(parts[0]), parts[1], int(parts[2])
         if len(parts) == 2:
-            return parts[0], int(parts[1])
+            return None, parts[0], int(parts[1])
     except Exception:
         pass
-    return None, None
+    return None, None, None
 
 class FeedListCreateAPIView(APIView):
     """
     GET /api/feed/?scope=near|division|national&kind=&cursor=
     POST /api/feed/ (creates a new post)
 
-    Keyset pagination on (created_at, id) with page size 15.
-    Near mode returns: current district posts -> division posts -> national posts (deduplicated).
-    Emergency posts pinned to top by urgency/proximity.
-    Caching 30s per (scope, district, kind) for non-personalized base feed.
+    Tiered Location Hierarchy for scope=near (Anomaly #38):
+    1. User's District posts (Tier 1)
+    2. User's Division posts (Tier 2)
+    3. Country / Nationwide posts (Tier 3)
+    With graceful fallback to national feed when location is unlinked or guest.
+    Keyset cursor pagination with page size 15. Empty state messaging.
     """
     throttle_classes = [FeedAnonThrottle]
 
@@ -66,6 +73,8 @@ class FeedListCreateAPIView(APIView):
         return super().get_throttles()
 
     def get(self, request, *args, **kwargs):
+        from django.db.models import Case, When, Value, IntegerField
+
         scope = request.query_params.get('scope', 'near').lower()
         kind = request.query_params.get('kind', '').lower()
         cursor = request.query_params.get('cursor')
@@ -86,7 +95,6 @@ class FeedListCreateAPIView(APIView):
                     if user_district:
                         user_division = user_district.division
 
-
         # Base queryset excluding soft-deleted posts
         base_qs = SocialPost.objects.filter(deleted_at__isnull=True).select_related(
             'author__user', 'district', 'division', 'original_post__author__user'
@@ -96,33 +104,33 @@ class FeedListCreateAPIView(APIView):
             base_qs = base_qs.filter(kind=kind)
 
         # Apply keyset cursor if present
-        after_dt_str, after_id = (None, None)
+        after_tier, after_dt_str, after_id = (None, None, None)
         if cursor:
-            after_dt_str, after_id = decode_cursor(cursor)
+            after_tier, after_dt_str, after_id = decode_cursor(cursor)
 
-        # Scope filtering logic
+        # Scope filtering and multi-tier ordering
         if scope == 'near' and user_district:
-            # Multi-tier ordering:
-            # Tier 1: Emergency posts pinned
-            # Tier 2: Current District posts
-            # Tier 3: Division posts
-            # Tier 4: National posts
-            # For keyset cursor pagination with 15 items:
-            district_qs = base_qs.filter(district=user_district)
-            division_qs = base_qs.filter(division=user_division).exclude(district=user_district) if user_division else SocialPost.objects.none()
-            national_qs = base_qs.exclude(division=user_division) if user_division else base_qs.exclude(district=user_district)
-
-            # Combine deterministically with district prioritized
-            # To preserve keyset without offset, filter on created_at / id:
-            posts_qs = base_qs.filter(
-                Q(district=user_district) |
-                Q(division=user_division) |
-                Q(kind='emergency')
-            ).order_by(
-                # Emergency first, then matching district, then created_at DESC
-                '-created_at', '-id'
+            # 3-Tier ordering:
+            # Tier 1: User's District
+            # Tier 2: User's Division (outside current district)
+            # Tier 3: National / Other districts
+            priority_annotation = Case(
+                When(district=user_district, then=Value(1)),
+                When(division=user_division, then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField()
             )
-            if after_dt_str and after_id:
+            posts_qs = base_qs.annotate(location_tier=priority_annotation).order_by(
+                'location_tier', '-created_at', '-id'
+            )
+            if after_tier is not None and after_dt_str and after_id:
+                posts_qs = posts_qs.filter(
+                    Q(location_tier__gt=after_tier) |
+                    (Q(location_tier=after_tier) & (
+                        Q(created_at__lt=after_dt_str) | (Q(created_at=after_dt_str) & Q(id__lt=after_id))
+                    ))
+                )
+            elif after_dt_str and after_id:
                 posts_qs = posts_qs.filter(
                     Q(created_at__lt=after_dt_str) | (Q(created_at=after_dt_str) & Q(id__lt=after_id))
                 )
@@ -132,7 +140,7 @@ class FeedListCreateAPIView(APIView):
                 posts_qs = posts_qs.filter(
                     Q(created_at__lt=after_dt_str) | (Q(created_at=after_dt_str) & Q(id__lt=after_id))
                 )
-        else: # national
+        else: # national or guest/fallback without district
             posts_qs = base_qs.order_by('-created_at', '-id')
             if after_dt_str and after_id:
                 posts_qs = posts_qs.filter(
@@ -146,7 +154,18 @@ class FeedListCreateAPIView(APIView):
         next_cursor = None
         if has_next and items:
             last_item = items[-1]
-            next_cursor = encode_cursor(last_item.created_at, last_item.id)
+            tier_val = getattr(last_item, 'location_tier', None)
+            next_cursor = encode_cursor(last_item.created_at, last_item.id, tier=tier_val)
+
+        # Empty state handling
+        empty_message = None
+        if not items:
+            if scope == 'near' and user_district:
+                empty_message = f"No posts found in {user_district.name} or {user_division.name if user_division else 'nearby'} yet. Check back soon or be the first to share!"
+            elif scope == 'division' and user_division:
+                empty_message = f"No posts found in {user_division.name} division yet."
+            else:
+                empty_message = "No posts available at this time."
 
         serializer = SocialPostSerializer(items, many=True)
         return Response({
@@ -156,7 +175,9 @@ class FeedListCreateAPIView(APIView):
             'scope': scope,
             'district': user_district.name if user_district else None,
             'division': user_division.name if user_division else None,
+            'empty_message': empty_message,
         })
+
 
     def post(self, request, *args, **kwargs):
         author = getattr(request.user, 'donorprofile', None)

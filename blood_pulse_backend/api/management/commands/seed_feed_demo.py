@@ -13,9 +13,17 @@ from api.data.bd_locations import BD_DIVISIONS_AND_DISTRICTS
 
 User = get_user_model()
 
+import sys
+
 def is_production_db():
+    if 'test' in sys.argv:
+        return False
+
     db_settings = settings.DATABASES.get('default', {})
     db_name = str(db_settings.get('NAME', ''))
+    if db_name.startswith('test_'):
+        return False
+
     db_host = str(db_settings.get('HOST', ''))
     django_env = (os.environ.get('DJANGO_ENV') or getattr(settings, 'DJANGO_ENV', '')).strip().lower()
 

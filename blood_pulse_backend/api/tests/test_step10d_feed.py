@@ -201,3 +201,64 @@ class Step10DFeedTests(TestCase):
         call_command('seed_feed_demo', '--districts', 'Dhaka', '--posts-per-district', '5', '--i-understand-this-creates-fake-posts')
         count = SocialPost.objects.filter(district__name='Dhaka').count()
         self.assertGreaterEqual(count, 5)
+
+    def test_location_tiered_feed_ordering_district_division_country(self):
+        """
+        Anomaly #38:
+        Verify feed ordering: user's district (Tier 1), then division (Tier 2), then country (Tier 3),
+        regardless of timestamp (district post created earlier still comes first).
+        """
+        # Create Gazipur district inside Dhaka division
+        dist_gazipur, _ = District.objects.get_or_create(name='Gazipur', division=self.div_dhaka)
+
+        now = timezone.now()
+        # Post 1: Rangpur (different division) - created 1 minute ago (most recent)
+        p_rangpur = SocialPost.objects.create(
+            author=self.profile_rangpur,
+            text_content="Rangpur National Post",
+            district=self.dist_rangpur,
+            division=self.div_rangpur
+        )
+        SocialPost.objects.filter(id=p_rangpur.id).update(created_at=now - timedelta(minutes=1))
+
+        # Post 2: Gazipur (same division, different district) - created 15 minutes ago
+        p_gazipur = SocialPost.objects.create(
+            author=self.profile_dhaka,
+            text_content="Gazipur Division Post",
+            district=dist_gazipur,
+            division=self.div_dhaka
+        )
+        SocialPost.objects.filter(id=p_gazipur.id).update(created_at=now - timedelta(minutes=15))
+
+        # Post 3: Dhaka (user's own district) - created 2 hours ago (oldest)
+        p_dhaka = SocialPost.objects.create(
+            author=self.profile_dhaka,
+            text_content="Dhaka Local District Post",
+            district=self.dist_dhaka,
+            division=self.div_dhaka
+        )
+        SocialPost.objects.filter(id=p_dhaka.id).update(created_at=now - timedelta(hours=2))
+
+        # Authenticate as Dhaka user
+        self.client.force_authenticate(user=self.user_dhaka)
+        res = self.client.get('/api/feed/?scope=near')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        results = data['results']
+
+        # Extract IDs in order
+        returned_ids = [p['id'] for p in results if p['id'] in [p_dhaka.id, p_gazipur.id, p_rangpur.id]]
+        # Strict order: Dhaka first (Tier 1), Gazipur second (Tier 2), Rangpur third (Tier 3)
+        self.assertEqual(returned_ids, [p_dhaka.id, p_gazipur.id, p_rangpur.id])
+
+    def test_feed_empty_state_message(self):
+        # Empty out all posts
+        SocialPost.objects.all().delete()
+        self.client.force_authenticate(user=self.user_dhaka)
+
+        res = self.client.get('/api/feed/?scope=near')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(len(data['results']), 0)
+        self.assertIsNotNone(data['empty_message'])
+        self.assertIn("No posts found in Dhaka", data['empty_message'])
