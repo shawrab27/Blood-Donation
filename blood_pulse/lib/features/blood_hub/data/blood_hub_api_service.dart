@@ -864,6 +864,60 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
     }
     throw Exception(data['detail'] ?? 'Failed to load journeys');
   }
+
+  /// POST `/api/requests/<requestId>/accept/`
+  /// Accepts an urgent blood requisition.
+  Future<Map<String, dynamic>> acceptBloodRequest(
+    int requestId, {
+    String supportStatus = 'CAN_SUPPORT',
+    int unitsPledged = 1,
+  }) async {
+    final response = await _api.post(
+      'requests/$requestId/accept/',
+      body: {
+        'support_status': supportStatus,
+        'units_pledged': unitsPledged.toString(),
+      },
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return data is Map<String, dynamic> ? data : {'message': 'Accepted'};
+    }
+    throw ApiException(
+      data['detail'] ?? data['error'] ?? 'Failed to accept blood request.',
+      statusCode: response.statusCode,
+    );
+  }
+
+  /// GET `/api/emergency/national/requests/`
+  /// Lists verified critical emergency requests across all 64 districts.
+  Future<List<NationalEmergencyRequestItem>> fetchNationalEmergencyRequests({
+    String? bloodGroup,
+    String? division,
+    String? district,
+  }) async {
+    final params = <String, String>{
+      if (bloodGroup != null && bloodGroup.isNotEmpty && bloodGroup != 'All')
+        'blood_group': bloodGroup,
+      if (division != null && division.isNotEmpty && division != 'All')
+        'division': division,
+      if (district != null && district.isNotEmpty && district != 'All')
+        'district': district,
+    };
+    final uri = Uri(
+      path: 'emergency/national/requests/',
+      queryParameters: params.isNotEmpty ? params : null,
+    );
+    final response = await _api.get(uri.toString());
+    if (response.statusCode == 200) {
+      final list = jsonDecode(response.body) as List<dynamic>? ?? [];
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map(NationalEmergencyRequestItem.fromJson)
+          .toList();
+    }
+    throw Exception('Failed to load national emergency requests: ${response.statusCode}');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -914,4 +968,93 @@ final myDisasterPledgeProvider = FutureProvider.autoDispose<DisasterPledge?>((re
     return DisasterPledge.fromJson(res['pledge']);
   }
   return null;
+});
+
+/// Verified critical emergency request across 64 districts.
+class NationalEmergencyRequestItem {
+  final int id;
+  final String patientName;
+  final String bloodGroup;
+  final String component;
+  final int unitsNeeded;
+  final int unitsReceived;
+  final int unitsPending;
+  final String urgency;
+  final String district;
+  final String divisionName;
+  final String hospitalName;
+  final String contactPhoneMasked;
+  final String status;
+  final String trustBand;
+  final int trustScore;
+  final bool isVerified;
+  final String? createdAt;
+
+  const NationalEmergencyRequestItem({
+    required this.id,
+    required this.patientName,
+    required this.bloodGroup,
+    required this.component,
+    required this.unitsNeeded,
+    required this.unitsReceived,
+    required this.unitsPending,
+    required this.urgency,
+    required this.district,
+    required this.divisionName,
+    required this.hospitalName,
+    required this.contactPhoneMasked,
+    required this.status,
+    required this.trustBand,
+    required this.trustScore,
+    this.isVerified = true,
+    this.createdAt,
+  });
+
+  factory NationalEmergencyRequestItem.fromJson(Map<String, dynamic> j) {
+    return NationalEmergencyRequestItem(
+      id: (j['id'] as num?)?.toInt() ?? 0,
+      patientName: (j['patient_name'] as String?) ?? 'Emergency Patient',
+      bloodGroup: (j['blood_group'] as String?) ?? '',
+      component: (j['component'] as String?) ?? 'WHOLE',
+      unitsNeeded: (j['units_needed'] as num?)?.toInt() ?? 1,
+      unitsReceived: (j['units_received'] as num?)?.toInt() ?? 0,
+      unitsPending: (j['units_pending'] as num?)?.toInt() ?? 0,
+      urgency: (j['urgency'] as String?) ?? 'CRITICAL_2H',
+      district: (j['district'] as String?) ?? '',
+      divisionName: (j['division_name'] as String?) ?? '',
+      hospitalName: (j['hospital_name'] as String?) ?? '',
+      contactPhoneMasked: (j['contact_phone_masked'] as String?) ?? '',
+      status: (j['status'] as String?) ?? 'ACTIVE',
+      trustBand: (j['trust_band'] as String?) ?? 'MEDIUM',
+      trustScore: (j['trust_score'] as num?)?.toInt() ?? 50,
+      isVerified: (j['is_verified'] as bool?) ?? true,
+      createdAt: j['created_at'] as String?,
+    );
+  }
+}
+
+class NationalEmergencyFilterState {
+  final String bloodGroup;
+  final String division;
+
+  const NationalEmergencyFilterState({this.bloodGroup = 'All', this.division = 'All'});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NationalEmergencyFilterState &&
+          bloodGroup == other.bloodGroup &&
+          division == other.division;
+
+  @override
+  int get hashCode => Object.hash(bloodGroup, division);
+}
+
+final nationalEmergencyRequestsProvider = FutureProvider.autoDispose
+    .family<List<NationalEmergencyRequestItem>, NationalEmergencyFilterState>((ref, filter) async {
+  final api = ref.watch(bloodHubApiServiceProvider);
+  return api.fetchNationalEmergencyRequests(
+    bloodGroup: filter.bloodGroup,
+    division: filter.division,
+  );
 });

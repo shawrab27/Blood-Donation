@@ -141,6 +141,8 @@ class DonorMapSerializer(serializers.ModelSerializer):
 class BloodRequestListSerializer(serializers.ModelSerializer):
     hospital_name = serializers.SerializerMethodField()
     contact_phone_masked = serializers.SerializerMethodField()
+    division_name = serializers.SerializerMethodField()
+    is_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = BloodRequest
@@ -159,6 +161,7 @@ class BloodRequestListSerializer(serializers.ModelSerializer):
             'scope',
             'effective_scope',
             'district',
+            'division_name',
             'hospital_name',
             'contact_phone_masked',
             'status',
@@ -168,7 +171,16 @@ class BloodRequestListSerializer(serializers.ModelSerializer):
             'created_at',
             'trust_band',
             'trust_score',
+            'is_verified',
         ]
+
+    def get_is_verified(self, obj):
+        return obj.trust_band in ('MEDIUM', 'HIGH') or getattr(obj, 'trust_score', 0) >= 60
+
+    def get_division_name(self, obj):
+        if obj.division:
+            return obj.division.name
+        return ""
 
     def get_hospital_name(self, obj):
         if obj.hospital:

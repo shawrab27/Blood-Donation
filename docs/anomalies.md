@@ -33,7 +33,7 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 | 27 | two-device test | Phase 1 | OPEN | |
 | 28 | free open-source map API | Phase 1 | OPEN | |
 | 29 | notification/tracking/standby untested | Phase 4 | OPEN | |
-| 30 | National Emergency page missing | Phase 4 | OPEN | |
+| 30 | National Emergency page missing | Phase 4 | DONE | Implemented NationalEmergencyScreen in Flutter with 64-district verified emergency listings, blood group & division chip filters, PII-shielded attendant contact, and 'I Can Donate' modal with auth guard; implemented NationalEmergencyRequestsAPIView in backend; verified via test_national_emergency_api.py (3 tests) and national_emergency_screen_test.dart (4 tests, no overflow at 360dp textScale 1.3) |
 | 31 | tracking/standby real-world logic + backend + DB | Phase 4 | OPEN | |
 | 32 | scalability (Redis) | Phase 4 | OPEN | |
 | 33 | security checklist (19 points) | Batch 2 | RESOLVED | Hardened settings, CSP/headers middleware, media upload whitelist, admin path/throttle, PII logs masked, DRF rate throttles, auth tests |

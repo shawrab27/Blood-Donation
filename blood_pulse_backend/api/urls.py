@@ -128,6 +128,7 @@ from .views_national_emergency import (
     NationalEmergencyApproveAPIView,
     NationalEmergencyActiveAPIView,
     NationalEmergencyPledgeAPIView,
+    NationalEmergencyRequestsAPIView,
 )
 from .views_public_stats import public_stats_view
 
@@ -212,6 +213,7 @@ urlpatterns = [
 
     # National Emergency & Disaster Response (Prompt 9)
     path('emergency/national/active/', active_national_emergency_view, name='bloodhub-emergency-national-active'),
+    path('emergency/national/requests/', NationalEmergencyRequestsAPIView.as_view(), name='bloodhub-emergency-national-requests'),
     path('emergency/national/pledge/', pledge_to_donate_view, name='bloodhub-emergency-national-pledge'),
     path('emergency/national/my-pledge/', my_pledge_view, name='bloodhub-emergency-national-my-pledge'),
 

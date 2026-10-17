@@ -87,3 +87,47 @@ class NationalEmergencyPledgeAPIView(APIView):
         except (NationalEmergencyEvent.DoesNotExist, ValidationError) as err:
             detail = err.detail if hasattr(err, 'detail') else str(err)
             return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NationalEmergencyRequestsAPIView(APIView):
+    """
+    Public / Guest-safe listing of active verified emergency blood requests across all 64 districts.
+    Query parameters:
+      - blood_group: Optional string filter (e.g. 'A+', 'B+', 'O-')
+      - division: Optional division name filter (e.g. 'Dhaka', 'Chattogram')
+      - district: Optional district name filter (e.g. 'Dhaka', 'Sylhet')
+    """
+    permission_classes = [__import__('rest_framework.permissions', fromlist=['AllowAny']).AllowAny]
+
+    def get(self, request):
+        from django.db.models import Q
+        from api.models import BloodRequest
+        from api.serializers_bloodhub import BloodRequestListSerializer
+
+        blood_group = request.query_params.get('blood_group', '').replace(' ', '+').strip()
+        division = request.query_params.get('division', '').strip()
+        district = request.query_params.get('district', '').strip()
+
+        qs = BloodRequest.objects.filter(
+            status='ACTIVE',
+            is_active=True,
+        )
+
+        if blood_group and blood_group.upper() != 'ALL':
+            qs = qs.filter(blood_group=blood_group.upper())
+
+        if division and division.upper() != 'ALL':
+            qs = qs.filter(
+                Q(division__name__iexact=division) |
+                Q(district__iexact=division)
+            )
+
+        if district and district.upper() != 'ALL':
+            qs = qs.filter(district__iexact=district)
+
+        # Order by newest/urgent requests first, max 100
+        qs = qs.order_by('-created_at')[:100]
+
+        serializer = BloodRequestListSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
