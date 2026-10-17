@@ -11,6 +11,10 @@ import 'package:blood_pulse/features/auth/presentation/providers/auth_notifier.d
 
 void main() {
   testWidgets('UserProfileScreen renders 30-day snooze switch tile directly after basic info', (tester) async {
+    tester.view.physicalSize = const Size(412, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     final testProfile = ProfileModel(
       id: 42,
       username: 'donor_hero',
@@ -50,6 +54,10 @@ void main() {
   });
 
   testWidgets('UserProfileScreen displays paused until date when alertPauseUntil is active', (tester) async {
+    tester.view.physicalSize = const Size(412, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     final pauseDate = DateTime.now().add(const Duration(days: 30));
     final testProfile = ProfileModel(
       id: 42,

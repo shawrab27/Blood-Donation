@@ -282,6 +282,8 @@ class DonorProfile(models.Model):
         self._explicit_is_searchable = 'is_searchable' in kwargs
         super().__init__(*args, **kwargs)
         self._was_profile_complete = bool(getattr(self, 'is_profile_complete', False))
+        self._initial_alert_pause_until = getattr(self, 'alert_pause_until', None)
+        self._initial_emergency_alerts_paused_until = getattr(self, 'emergency_alerts_paused_until', None)
 
     def save(self, *args, **kwargs):
         was_comp = getattr(self, '_was_profile_complete', False)
@@ -330,12 +332,17 @@ class DonorProfile(models.Model):
                 pass
 
         # Sync alert pause fields
-        if self.alert_pause_until and not self.emergency_alerts_paused_until:
+        init_ap = getattr(self, '_initial_alert_pause_until', None)
+        init_eap = getattr(self, '_initial_emergency_alerts_paused_until', None)
+        if self.alert_pause_until != init_ap:
             self.emergency_alerts_paused_until = self.alert_pause_until
-        elif self.emergency_alerts_paused_until and not self.alert_pause_until:
+        elif self.emergency_alerts_paused_until != init_eap:
             self.alert_pause_until = self.emergency_alerts_paused_until
-        elif not self.alert_pause_until and self.emergency_alerts_paused_until:
-            self.emergency_alerts_paused_until = None
+        elif self.alert_pause_until != self.emergency_alerts_paused_until:
+            if self.alert_pause_until is not None:
+                self.emergency_alerts_paused_until = self.alert_pause_until
+            else:
+                self.alert_pause_until = self.emergency_alerts_paused_until
 
         update_fields = kwargs.get('update_fields')
         if update_fields is not None:
@@ -360,6 +367,8 @@ class DonorProfile(models.Model):
         self._explicit_is_searchable = False
         self._last_real_lat = real_lat
         self._last_real_lng = real_lng
+        self._initial_alert_pause_until = self.alert_pause_until
+        self._initial_emergency_alerts_paused_until = self.emergency_alerts_paused_until
 
 
 
