@@ -188,6 +188,70 @@ void main() {
       expect(find.text('No clubs registered here yet'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('National Org details modal displays scrollable sheet and connect actions without overflow', (tester) async {
+      tester.view.physicalSize = const Size(360 * 2.0, 640 * 2.0);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            nationalCommunitiesProvider.overrideWith((ref) => Future.value([
+              NationalCommunity(
+                id: 1,
+                name: 'Red Crescent Bangladesh',
+                activeDonors: '15,000+',
+                description: 'National humanitarian organization active across all 64 districts.',
+                phoneNumber: '01700000000',
+              ),
+            ])),
+            medicalPartnersProvider.overrideWith((ref) => Future.value([])),
+            areaGuidesProvider.overrideWith((ref) => Future.value([])),
+          ],
+          child: const MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(360, 640),
+                textScaler: TextScaler.linear(1.3),
+              ),
+              child: Scaffold(
+                body: CommunitiesView(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Scroll to and tap 'Details' on the org card
+      final detailsFinder = find.text('Details');
+      await tester.ensureVisible(detailsFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(detailsFinder);
+      await tester.pumpAndSettle();
+
+      // Verify bottom sheet title and connect button
+      expect(find.text('Red Crescent Bangladesh'), findsWidgets);
+      expect(find.text('Call Blood Contact (01700000000)'), findsOneWidget);
+      expect(find.text('Connect with Organization'), findsOneWidget);
+
+      // Tap 'Connect with Organization'
+      await tester.tap(find.text('Connect with Organization'));
+      await tester.pumpAndSettle();
+
+      // Verify connect options modal
+      expect(find.text('Direct Phone Call'), findsOneWidget);
+      expect(find.text('Send SMS Inquiry'), findsOneWidget);
+      expect(find.text('Official Email Inquiry'), findsOneWidget);
+
+      expect(tester.takeException(), isNull);
+    });
   });
 }
+
 

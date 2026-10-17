@@ -3,6 +3,7 @@ import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -547,100 +548,275 @@ class _NationalOrgCard extends StatelessWidget {
   void _showDetailsBottomSheet(BuildContext context, NationalCommunity org) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    org.name,
-                    style: const TextStyle(fontFamily: 'Georgia', fontSize: 20, fontWeight: FontWeight.bold),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      org.name,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDE8E9),
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    child: Text(
+                      org.activeDonors,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                org.description,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  color: AppColors.neutral,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (org.phoneNumber.isNotEmpty) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: CapsuleButton(
+                    label: 'Call Blood Contact (${org.phoneNumber})',
+                    icon: Icons.phone_rounded,
+                    backgroundColor: const Color(0xFF1B8A4E),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _launchPhoneOrCopy(context, org.phoneNumber);
+                    },
                   ),
                 ),
+                const SizedBox(height: 10),
+              ] else ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFFDE8E9), borderRadius: BorderRadius.circular(50)),
-                  child: Text(org.activeDonors, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Direct contact not published yet',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      color: AppColors.neutral,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 10),
               ],
-            ),
-            const SizedBox(height: 12),
-            Text(org.description, style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AppColors.neutral, height: 1.5)),
-            const SizedBox(height: 24),
-            if (org.phoneNumber.isNotEmpty) ...[
               SizedBox(
                 width: double.infinity,
                 child: CapsuleButton(
-                  label: 'Call Blood Contact (${org.phoneNumber})',
-                  icon: Icons.phone_rounded,
-                  backgroundColor: const Color(0xFF1B8A4E),
-                  onPressed: () async {
+                  label: 'Connect with Organization',
+                  icon: Icons.connect_without_contact_rounded,
+                  onPressed: () {
                     Navigator.pop(ctx);
-                    final uri = Uri.parse('tel:${org.phoneNumber}');
-                    try {
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri);
-                      } else {
-                        // Fallback: Copy to clipboard
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Could not place call. Contact number ${org.phoneNumber} copied to clipboard.'),
-                              backgroundColor: AppColors.primary,
-                            ),
-                          );
-                        }
-                      }
-                    } catch (_) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Contact number ${org.phoneNumber} copied to clipboard.'),
-                            backgroundColor: AppColors.primary,
-                          ),
-                        );
-                      }
-                    }
+                    _showConnectOptionsModal(context, org);
                   },
                 ),
               ),
-              const SizedBox(height: 10),
-            ] else ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'Contact not published yet',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral, fontWeight: FontWeight.w600),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _launchPhoneOrCopy(BuildContext context, String phoneNumber) async {
+    final uri = Uri.parse('tel:$phoneNumber');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return;
+      }
+    } catch (_) {}
+    await Clipboard.setData(ClipboardData(text: phoneNumber));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Contact number $phoneNumber copied to clipboard.'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+    }
+  }
+
+  static Future<void> _launchSms(BuildContext context, String phoneNumber, String orgName) async {
+    final body = Uri.encodeComponent('Hello $orgName, I would like to connect regarding blood donation drives.');
+    final uri = Uri.parse('sms:$phoneNumber?body=$body');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return;
+      }
+    } catch (_) {}
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('SMS dialer unavailable. Calling $phoneNumber instead...'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      _launchPhoneOrCopy(context, phoneNumber);
+    }
+  }
+
+  static Future<void> _launchEmail(BuildContext context, String orgName) async {
+    final subject = Uri.encodeComponent('Partnership & Donation Inquiry: $orgName');
+    final body = Uri.encodeComponent('Hello BloodPulse Coordination Team,\n\nI want to connect with $orgName regarding blood donation activities and drives.');
+    final uri = Uri.parse('mailto:support@bloodpulse.org?subject=$subject&body=$body');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return;
+      }
+    } catch (_) {}
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email support: support@bloodpulse.org copied to clipboard.'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      await Clipboard.setData(const ClipboardData(text: 'support@bloodpulse.org'));
+    }
+  }
+
+  static void _showConnectOptionsModal(BuildContext context, NationalCommunity org) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Connect with ${org.name}',
+                style: const TextStyle(
+                  fontFamily: 'Georgia',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.secondary,
                 ),
               ),
-              const SizedBox(height: 10),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: CapsuleButton(
-                label: 'Connect with Organization',
-                onPressed: () {
+              const SizedBox(height: 6),
+              const Text(
+                'Choose a direct channel to connect with this organization\'s coordinators:',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: AppColors.neutral,
+                ),
+              ),
+              const SizedBox(height: 18),
+              if (org.phoneNumber.isNotEmpty) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE8F5E9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.phone_rounded, color: Color(0xFF2E7D32)),
+                  ),
+                  title: const Text('Direct Phone Call', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text('Call ${org.phoneNumber} directly', style: const TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _launchPhoneOrCopy(context, org.phoneNumber);
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE3F2FD),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.sms_rounded, color: Color(0xFF1565C0)),
+                  ),
+                  title: const Text('Send SMS Inquiry', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: const Text('Send inquiry message directly to their line', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _launchSms(context, org.phoneNumber, org.name);
+                  },
+                ),
+                const Divider(),
+              ],
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFDE8E9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.email_outlined, color: AppColors.primary),
+                ),
+                title: const Text('Official Email Inquiry', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: const Text('Send formal coordination request via email', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                onTap: () {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Connected with ${org.name}!'), backgroundColor: AppColors.primary),
-                  );
+                  _launchEmail(context, org.name);
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
