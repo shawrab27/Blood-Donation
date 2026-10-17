@@ -2,17 +2,34 @@
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import os
+import sys
+from urllib.parse import urlparse
+from dotenv import dotenv_values
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from api.models import Product, ProductImage
 
 
 def is_production_db():
+    if 'test' in sys.argv:
+        return False
+
     db_settings = settings.DATABASES.get('default', {})
+    db_name = str(db_settings.get('NAME', ''))
+    if db_name.startswith('test_'):
+        return False
+
     db_host = str(db_settings.get('HOST', ''))
     django_env = (os.environ.get('DJANGO_ENV') or getattr(settings, 'DJANGO_ENV', '')).strip().lower()
 
-    if 'neon.tech' in db_host or 'ep-noisy-poetry' in db_host:
+    env_path = getattr(settings, 'BASE_DIR', None)
+    env_vals = {}
+    if env_path and (env_path / '.env').exists():
+        env_vals = dotenv_values(env_path / '.env')
+    prod_url = env_vals.get('PROD_DATABASE_URL', '') or env_vals.get('DATABASE_URL', '') or os.environ.get('PROD_DATABASE_URL', '')
+    prod_host = urlparse(prod_url).hostname if prod_url else None
+
+    if prod_host and db_host and db_host.lower() == prod_host.lower():
         return True
     if django_env in ('prod', 'production'):
         return True

@@ -619,7 +619,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     GoRoute(
       path: '/communities/club/:id',
       builder: (context, state) {
-        final club = state.extra as LocalClub;
+        final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 1;
+        final club = state.extra as LocalClub? ??
+            LocalClub.fallbackClubs.firstWhere((c) => c.id == id, orElse: () => LocalClub.fallbackClubs.first);
         return LocalClubProfileView(club: club);
       },
     ),

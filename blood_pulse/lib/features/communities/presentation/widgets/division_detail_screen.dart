@@ -78,8 +78,29 @@ class DivisionDetailScreen extends ConsumerWidget {
                   child: AppLoader(),
                 ),
               ),
-              error: (err, _) => Center(
-                child: Text('Error loading clubs: $err'),
+              error: (err, _) => Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFD1D6)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded, color: AppColors.primary, size: 24),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Could not connect to community registry.',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.invalidate(localClubsProvider(filter)),
+                      child: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    ),
+                  ],
+                ),
               ),
               data: (clubs) {
                 if (clubs.isEmpty) {
@@ -135,7 +156,30 @@ class DivisionDetailScreen extends ConsumerWidget {
                   child: AppLoader(),
                 ),
               ),
-              error: (err, _) => Center(child: Text('Error: $err')),
+              error: (err, _) => Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFD1D6)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded, color: AppColors.primary, size: 24),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Could not load donors in this area.',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.invalidate(localDonorsProvider(divisionName)),
+                      child: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    ),
+                  ],
+                ),
+              ),
               data: (donors) {
                 return Container(
                   decoration: BoxDecoration(

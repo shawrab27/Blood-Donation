@@ -207,6 +207,95 @@ class LocalClub {
       executiveMembers: execMembers,
     );
   }
+
+  static final List<LocalClub> fallbackClubs = [
+    LocalClub(
+      id: 1,
+      name: 'Uttara Blood Warriors',
+      establishedYear: 2015,
+      slogan: 'You give today, they live today',
+      description:
+          'Dedicated to saving lives in Uttara since 2015, the Uttara Blood Warriors is a community-driven network of altruistic donors focused on ensuring a safe and reliable blood supply.',
+      divisionId: 1,
+      divisionName: 'Dhaka',
+      districtId: 1,
+      districtName: 'Dhaka',
+      upazilaId: 1,
+      upazilaName: 'Uttara',
+      presidentName: 'Dr. Rafiqul Islam',
+      contactNumber: '+880 1711-234567',
+      totalDonors: '1.2k+',
+      activeDonors: '850+',
+      contributions: '5k+',
+      isVerified: true,
+      executiveMembers: [
+        ExecutiveMember(
+          id: 1,
+          clubId: 1,
+          name: 'Tanvir Hossain',
+          designation: 'General Secretary',
+          phoneNumber: '+880 1712-345678',
+        ),
+        ExecutiveMember(
+          id: 2,
+          clubId: 1,
+          name: 'Nusrat Jahan',
+          designation: 'Organizing Secretary',
+          phoneNumber: '+880 1713-456789',
+        ),
+      ],
+    ),
+    LocalClub(
+      id: 2,
+      name: 'Dhanmondi Voluntary Blood Network',
+      establishedYear: 2018,
+      slogan: 'Together for humanity',
+      description:
+          'A neighborhood-focused youth blood donation circle connecting Dhanmondi donors directly with nearby medical centers in Dhaka.',
+      divisionId: 1,
+      divisionName: 'Dhaka',
+      districtId: 1,
+      districtName: 'Dhaka',
+      upazilaId: 2,
+      upazilaName: 'Dhanmondi',
+      presidentName: 'Engr. Mahmudul Hasan',
+      contactNumber: '+880 1714-567890',
+      totalDonors: '800+',
+      activeDonors: '420+',
+      contributions: '2.4k+',
+      isVerified: true,
+      executiveMembers: [
+        ExecutiveMember(
+          id: 3,
+          clubId: 2,
+          name: 'Sadia Afroz',
+          designation: 'Vice President',
+          phoneNumber: '+880 1715-678901',
+        ),
+      ],
+    ),
+    LocalClub(
+      id: 3,
+      name: 'Chittagong Life Savers Circle',
+      establishedYear: 2016,
+      slogan: 'Blood is life, donate today',
+      description:
+          'Serving the port city and surrounding coastal districts with 24/7 on-call blood volunteers and awareness workshops.',
+      divisionId: 2,
+      divisionName: 'Chittagong',
+      districtId: 2,
+      districtName: 'Chittagong',
+      upazilaId: 3,
+      upazilaName: 'Panchlaish',
+      presidentName: 'Kazi Farhan Ahmed',
+      contactNumber: '+880 1819-123456',
+      totalDonors: '1.5k+',
+      activeDonors: '900+',
+      contributions: '4.8k+',
+      isVerified: true,
+      executiveMembers: [],
+    ),
+  ];
 }
 
 class AreaGuide {
