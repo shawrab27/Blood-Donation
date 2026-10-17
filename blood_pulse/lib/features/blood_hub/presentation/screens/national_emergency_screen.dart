@@ -12,6 +12,7 @@ import '../../data/blood_hub_api_service.dart';
 import '../../../../core/domain/entities/national_emergency.dart';
 import '../../../../core/access/access_guard.dart';
 import '../../../../services/api_client.dart';
+import '../widgets/request_units_progress_card.dart';
 
 const Color _kPrimary = Color(0xFFC30121);
 const Color _kDarkRed = Color(0xFF850014);
@@ -446,6 +447,15 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+          if (disaster.points.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            RequestUnitsProgressCard(
+              title: 'Disaster Units Progress',
+              unitsReceived: disaster.points.fold<int>(0, (acc, p) => acc + p.collectedBags),
+              unitsPending: 0,
+              unitsNeeded: disaster.points.fold<int>(0, (acc, p) => acc + p.targetBags),
+            ),
+          ],
         ],
       ),
     );

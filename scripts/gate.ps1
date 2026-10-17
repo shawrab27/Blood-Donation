@@ -169,6 +169,8 @@ if (-not $SkipFlutter) {
 # STEP 3: python manage.py check
 # -------------------------------------------------------------
 if (-not $SkipBackend) {
+    $env:DJANGO_ENV = "test"
+    $env:USE_SQLITE = "1"
     Write-Host "[3/5] Running: python manage.py check..." -ForegroundColor Yellow
     $checkOut = & {
         Set-Location $BackendDir
