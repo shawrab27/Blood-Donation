@@ -1763,9 +1763,6 @@ class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificatio
       return;
     }
 
-    setState(() => _otpSent = true);
-    _startCountdown();
-
     final success = await ref
         .read(authProvider.notifier)
         .sendVerificationEmail(email: email);
@@ -1773,6 +1770,8 @@ class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificatio
     if (!mounted) return;
 
     if (success) {
+      setState(() => _otpSent = true);
+      _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('🔑 6-digit verification code sent to $email!'),
@@ -1781,7 +1780,8 @@ class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificatio
         ),
       );
     } else {
-      final err = ref.read(authProvider).errorMessage ?? 'Failed to send verification email.';
+      setState(() => _otpSent = false);
+      final err = ref.read(authProvider).errorMessage ?? 'Failed to send verification email. Please try again.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(err),

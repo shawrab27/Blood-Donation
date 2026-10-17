@@ -93,7 +93,7 @@ def verify_postgres_test_db_guard(test_db_url: str | None, prod_db_url: str | No
     return True
 
 
-if os.environ.get('USE_TEST_POSTGRES') == '1' or 'test' in sys.argv:
+if (os.environ.get('USE_TEST_POSTGRES') == '1' or 'test' in sys.argv) and os.environ.get('USE_SQLITE') != '1':
     _test_db_url = os.environ.get('DATABASE_URL_TEST') or _prod_env_vals.get('DATABASE_URL_TEST', '')
     if _test_db_url:
         try:

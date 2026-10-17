@@ -110,7 +110,7 @@ from .views_bloodhub import (
 )
 
 
-from .views_auth_reset import request_otp, confirm_reset
+from .views_auth_reset import request_otp, verify_otp, confirm_reset
 from .views_request_otp import request_otp_send_view, request_otp_verify_view
 from .views_search import institution_search, upazila_search
 from .views_blood_hub_v2 import (
@@ -172,9 +172,16 @@ urlpatterns = [
     path('institutions/search/', institution_search, name='institution-search'),
     path('locations/upazila-search/', upazila_search, name='upazila-search'),
 
-    # Auth Reset & Password Change
+    # Auth Reset & Password Change (Anomaly #1)
     path('auth/password-reset/request/', request_otp, name='password-reset-request'),
+    path('auth/password-reset/verify/', verify_otp, name='password-reset-verify'),
     path('auth/password-reset/confirm/', confirm_reset, name='password-reset-confirm'),
+    path('auth/request-otp/', request_otp, name='auth-request-otp'),
+    path('auth/verify-otp/', verify_otp, name='auth-verify-otp'),
+    path('auth/reset-password/', confirm_reset, name='auth-reset-password'),
+    path('request-otp/', request_otp, name='direct-request-otp'),
+    path('verify-otp/', verify_otp, name='direct-verify-otp'),
+    path('reset-password/', confirm_reset, name='direct-reset-password'),
     path('auth/password-change/', PasswordChangeAPIView.as_view(), name='password-change'),
 
     # Auth Logout (B4)

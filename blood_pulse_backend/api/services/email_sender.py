@@ -200,37 +200,17 @@ LocMemProvider = LocMemEmailSender
 
 def get_email_provider() -> EmailSender:
     """
-    Returns the appropriate EmailProvider:
-    - LocMemProvider if EMAIL_PROVIDER == 'locmem'
-    - ConsoleProvider when DEBUG=True and EMAIL_PROVIDER != 'brevo_api', or EMAIL_PROVIDER == 'console'
-    - BrevoApiProvider in production (validates config, raises EmailUnavailableError if missing)
+    Returns the appropriate EmailProvider via api.services.email_service.
+    Supports mailjet, resend, brevo, console, and locmem.
     """
-    provider_setting = getattr(settings, 'EMAIL_PROVIDER', '').strip().lower()
-    if provider_setting == 'locmem':
-        return LocMemProvider()
-    if provider_setting == 'console' or (settings.DEBUG and provider_setting != 'brevo_api'):
-        return ConsoleProvider()
-
-    provider = BrevoApiProvider()
-    if not provider.api_key or not provider.sender_email:
-        logger.error("Email service requested in production, but BREVO_API_KEY or BREVO_SENDER_EMAIL is not configured.")
-        raise EmailUnavailableError("Email service credentials not configured.")
-    return provider
+    from api.services.email_service import get_email_provider as _get_provider
+    return _get_provider()
 
 
 def get_email_sender() -> EmailSender:
-    """Returns the configured EmailSender instance according to EMAIL_PROVIDER setting."""
-    try:
-        return get_email_provider()
-    except EmailUnavailableError:
-        provider = getattr(settings, 'EMAIL_PROVIDER', 'locmem')
-        if provider in ('brevo_api', 'brevo'):
-            return BrevoApiEmailSender()
-        elif provider in ('resend_api', 'resend'):
-            return ResendApiEmailSender()
-        elif provider == 'console':
-            return ConsoleEmailSender()
-        return LocMemEmailSender()
+    """Returns the configured EmailSender instance via api.services.email_service."""
+    from api.services.email_service import get_email_service as _get_service
+    return _get_service()
 
 
 # ── Backward compatibility adapter for send_otp ───────────────────────────────

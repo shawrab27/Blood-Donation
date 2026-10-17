@@ -129,15 +129,21 @@ def request_otp(request):
     otp_code = str(secrets.randbelow(900000) + 100000)
     expiry_minutes = int(os.environ.get('OTP_EXPIRY_MINUTES', 10))
 
-    from api.services.email_sender import EmailUnavailableError
+    from api.services.email_service import (
+        get_email_service,
+        EmailDeliveryError,
+        EmailConfigError,
+        EmailProviderError,
+        mask_email,
+    )
     try:
         email_service = get_email_service()
-        sent = email_service.send_otp(user.email, otp_code)
+        sent = email_service.send_otp(user.email, otp_code, purpose="Password Reset")
         if not sent:
-            raise EmailUnavailableError("Email delivery returned False")
-    except EmailUnavailableError as exc:
+            raise EmailDeliveryError("Email delivery returned False")
+    except (EmailDeliveryError, EmailConfigError, EmailProviderError) as exc:
         import logging
-        logging.getLogger(__name__).error("Email service unavailable during OTP dispatch: %s", exc)
+        logging.getLogger(__name__).error("Email service error during OTP dispatch to %s: %s", mask_email(user.email), exc)
         return Response(
             {
                 'code': 'EMAIL_UNAVAILABLE',
@@ -148,7 +154,7 @@ def request_otp(request):
         )
     except Exception as exc:
         import logging
-        logging.getLogger(__name__).error("Unexpected error dispatching email OTP: %s", exc)
+        logging.getLogger(__name__).error("Unexpected error dispatching email OTP to %s: %s", mask_email(user.email), exc)
         return Response(
             {
                 'code': 'EMAIL_UNAVAILABLE',
@@ -172,6 +178,89 @@ def request_otp(request):
 
 # Scope for IpRateThrottle — must be set BEFORE DRF reads it on first request.
 request_otp.throttle_scope = 'request_otp'
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([IpRateThrottle, EmailRateThrottle])
+def verify_otp(request):
+    """
+    Verifies that the submitted OTP code is valid, unexpired, and under attempt limits
+    without marking it used yet (or prepares for password reset).
+    Returns 200 with {'valid': True} or 400/429 on failure.
+    """
+    email = request.data.get('email', '').strip().lower()
+    otp_code = request.data.get('otp', '').strip()
+
+    if not email or not otp_code:
+        return Response(
+            {'detail': 'Invalid or expired OTP.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    user = User.objects.filter(email=email).first()
+    if not user:
+        _constant_time_sleep()
+        return Response(
+            {'detail': 'Invalid or expired OTP.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    with transaction.atomic():
+        otp_record = (
+            PasswordResetOTP.objects
+            .select_for_update()
+            .filter(user=user, is_used=False)
+            .order_by('-created_at')
+            .first()
+        )
+
+        if not otp_record:
+            return Response(
+                {'detail': 'Invalid or expired OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        max_attempts = int(os.environ.get('OTP_MAX_ATTEMPTS', 5))
+        if otp_record.attempts >= max_attempts:
+            otp_record.is_used = True
+            otp_record.save()
+            return Response(
+                {'detail': 'Too many attempts. Request a new code.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        if timezone.now() > otp_record.expires_at:
+            otp_record.is_used = True
+            otp_record.save()
+            return Response(
+                {'detail': 'Invalid or expired OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        expected_hash = generate_otp_hash(otp_code)
+        if not hmac.compare_digest(expected_hash, otp_record.otp_hash):
+            otp_record.attempts += 1
+            if otp_record.attempts >= max_attempts:
+                otp_record.is_used = True
+                otp_record.save()
+                return Response(
+                    {'detail': 'Too many attempts. Request a new code.'},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            otp_record.save()
+            return Response(
+                {'detail': 'Invalid or expired OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    return Response(
+        {'detail': 'OTP verified successfully.', 'valid': True},
+        status=status.HTTP_200_OK,
+    )
+
+
+verify_otp.throttle_scope = 'confirm_reset'
 
 
 @api_view(['POST'])

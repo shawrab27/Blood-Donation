@@ -299,34 +299,48 @@ else:
         }
     }
 
-# Email Configuration: brevo_api | console | locmem
-# prod = brevo_api; tests = locmem; console allowed in dev only and refused in prod
+# Email Configuration: mailjet | resend | brevo | brevo_api | console | locmem
+# Render free blocks SMTP (ports 25, 465, 587); transactional emails dispatch via HTTPS REST APIs.
 EMAIL_PROVIDER = os.getenv('EMAIL_PROVIDER', '').strip().lower()
 DJANGO_ENV = os.getenv('DJANGO_ENV', '').strip().lower()
 
-# Defaults based on environment if EMAIL_PROVIDER is not explicitly specified
+VALID_EMAIL_PROVIDERS = ('mailjet', 'resend', 'brevo', 'brevo_api', 'console', 'locmem')
+
 if not EMAIL_PROVIDER:
     if DJANGO_ENV == 'test' or 'test' in sys.argv:
         EMAIL_PROVIDER = 'locmem'
     elif DJANGO_ENV == 'production':
-        EMAIL_PROVIDER = 'brevo_api'
+        EMAIL_PROVIDER = 'mailjet' if os.getenv('MAILJET_API_KEY') else 'brevo_api'
     else:
         EMAIL_PROVIDER = 'console'
 
-if EMAIL_PROVIDER == 'console' and DJANGO_ENV == 'production':
+if EMAIL_PROVIDER == 'console' and not IS_TESTING and not DEBUG:
     from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured("EMAIL_PROVIDER=console is not allowed in production.")
+    raise ImproperlyConfigured("EMAIL_PROVIDER=console is not allowed when DEBUG is False or in production.")
 
-if EMAIL_PROVIDER not in ('brevo_api', 'console', 'locmem'):
+if EMAIL_PROVIDER not in VALID_EMAIL_PROVIDERS:
     from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(f"Unknown EMAIL_PROVIDER '{EMAIL_PROVIDER}'. Must be brevo_api, console, or locmem.")
+    raise ImproperlyConfigured(f"Unknown EMAIL_PROVIDER '{EMAIL_PROVIDER}'. Must be one of: {', '.join(VALID_EMAIL_PROVIDERS)}.")
 
+# Mailjet v3.1 HTTPS API (Basic Auth)
+MAILJET_API_KEY = os.getenv('MAILJET_API_KEY', '')
+MAILJET_SECRET_KEY = os.getenv('MAILJET_SECRET_KEY', '')
+MAILJET_SENDER_EMAIL = os.getenv('MAILJET_SENDER_EMAIL', '')
+MAILJET_SENDER_NAME = os.getenv('MAILJET_SENDER_NAME', 'BloodPulse')
+
+# Resend HTTPS API (Bearer Auth)
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+RESEND_SENDER_EMAIL = os.getenv('RESEND_SENDER_EMAIL', '')
+RESEND_SENDER_NAME = os.getenv('RESEND_SENDER_NAME', 'BloodPulse')
+
+# Brevo v3 HTTPS API (api-key header)
 BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
 BREVO_SENDER_EMAIL = os.getenv('BREVO_SENDER_EMAIL', os.getenv('EMAIL_FROM', ''))
 BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'BloodPulse')
+
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
-    f"{BREVO_SENDER_NAME} <{BREVO_SENDER_EMAIL}>" if BREVO_SENDER_EMAIL else BREVO_SENDER_NAME,
+    MAILJET_SENDER_EMAIL or BREVO_SENDER_EMAIL or RESEND_SENDER_EMAIL or f"{BREVO_SENDER_NAME} <noreply@bloodpulse.app>",
 )
 
 if EMAIL_PROVIDER == 'locmem':
@@ -336,7 +350,6 @@ elif EMAIL_PROVIDER == 'console':
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     USE_SMTP_EMAIL = False
 else:
-    # brevo_api
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
     USE_SMTP_EMAIL = False
 

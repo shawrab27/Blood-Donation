@@ -135,30 +135,48 @@ def request_otp_send_view(request):
     code_hash = hash_otp(code, email)
     expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
-    # Dispatch email via configured EmailSender (Brevo REST API in prod, LocMem in tests)
-    from api.services.email import get_email_sender, EmailProviderError
-    email_sender = get_email_sender()
-    subject = f"{code} is your BloodPulse verification code"
-    message = (
-        f"Your BloodPulse verification code is: {code}\n\n"
-        f"This code will expire in {OTP_EXPIRY_MINUTES} minutes.\n"
-        f"If you did not request this code, please ignore this email."
+    # Dispatch email via configured EmailService (Mailjet, Resend, Brevo, LocMem in tests)
+    from api.services.email_service import (
+        get_email_service,
+        render_otp_email,
+        EmailDeliveryError,
+        EmailConfigError,
+        EmailProviderError,
+        mask_email,
     )
 
     try:
-        email_sender.send_email(to_email=email, subject=subject, text_content=message)
-    except EmailProviderError as exc:
-        from api.services.email_sender import mask_email
-        logger.error("Email provider error dispatching OTP to %s: %s", mask_email(email), exc)
+        email_service = get_email_service()
+        subject = f"{code} is your BloodPulse blood request verification code"
+        text_content, html_content = render_otp_email(
+            code,
+            expiry_minutes=OTP_EXPIRY_MINUTES,
+            purpose="Blood Request Verification",
+        )
+        email_service.send_email(
+            to_email=email,
+            subject=subject,
+            text_content=text_content,
+            html_content=html_content,
+        )
+    except (EmailConfigError, EmailProviderError, EmailDeliveryError) as exc:
+        logger.error("Email service error dispatching OTP to %s: %s", mask_email(email), exc)
         return Response(
-            {'error': 'Email delivery service temporarily unavailable. Please try again shortly.'},
+            {
+                'code': 'EMAIL_UNAVAILABLE',
+                'error': 'Email delivery service temporarily unavailable. Please try again shortly.',
+                'detail': 'Email delivery service temporarily unavailable. Please try again shortly.',
+            },
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
     except Exception as exc:
-        from api.services.email_sender import mask_email
         logger.error("Failed to send request OTP email to %s: %s", mask_email(email), exc)
         return Response(
-            {'error': 'Failed to send verification code. Please try again shortly.'},
+            {
+                'code': 'EMAIL_UNAVAILABLE',
+                'error': 'Failed to send verification code. Please try again shortly.',
+                'detail': 'Failed to send verification code. Please try again shortly.',
+            },
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
