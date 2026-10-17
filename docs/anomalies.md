@@ -19,14 +19,14 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 | 13 | Replace Platinum badge with "position" (meaning TBD) | Phase 1 | DONE | Added additive occupation field to DonorProfile (migration 0058); exposed position_display and occupation across serializers; ProfileHeroCard renders position_display/occupation and donorTitle chips under user name instead of hardcoded Platinum badge; verified via profile_zero_donation_clean_test.dart |
 | 14 | Blood Campaigns card: remove list (scope TBD) | Phase 1 | DONE | Removed inner list of campaigns and fake fallback previews from LandingCampaignCard and _buildActiveCampaignsSegment; wrapped entire card in InkWell routing directly to Newsfeed with 'campaign' pre-filter (post_type 'campaign' already active in backend); verified via blood_campaigns_card_test.dart |
 | 15 | PulseAI: remove location icon | Phase 3 | DONE | Removed location_on_outlined icon button and dead GPS navigation code from PulseAI prompt input bar and header; verified via assistant_screen_test.dart (28 passed) |
-| 16 | PulseAI speech-to-text (error_speech_timeout) | Phase 3 | OPEN | |
-| 17 | blood report summary | Phase 3 | OPEN | |
-| 18 | slow heartbeat bg animation | Phase 1 | OPEN | |
-| 19 | eligibility from profile data | Phase 1 | OPEN | |
-| 20 | Bangla/Banglish/English | Phase 3 | OPEN | |
-| 21 | Bangla voice | Phase 3 | OPEN | |
-| 22 | distance + vehicle fare dataset | Phase 4 | OPEN | |
-| 23 | decorated input bar | Phase 1 | OPEN | |
+| 16 | PulseAI speech-to-text (error_speech_timeout) | Phase 3 | DONE | Permission flow with microphone rationale; dynamic locale (bn_BD for Bengali/Banglish, en_US for English); structured timeout/busy handling with in-place error banner and manual retry action; verified via assistant_screen_test.dart |
+| 17 | blood report summary | Phase 3 | DONE | Deterministic CBC report analyzer (report_analyzer.py) parsing Hemoglobin, Platelets, WBC, RBC, with donor readiness indicator and medical disclaimer; Flutter AiReportAnalysisScreen supports photo upload and text paste with AiReportResultsView; verified via ai_report_analysis_test.dart |
+| 18 | slow heartbeat bg animation | Phase 1 | DONE | Added PulseHeartbeatBackground with subtle 60 BPM resting sinus rhythm, wrapped in RepaintBoundary, respects MediaQuery.disableAnimations, no overflow; verified via assistant_screen_test.dart |
+| 19 | eligibility from profile data | Phase 1 | DONE | Replaced hardcoded dummy 49 days with dynamic 90-day cooldown calculated from profileProvider last donation date (0 remaining days for new donors); verified via anomaly_19_eligibility_cooldown_test.dart |
+| 20 | Bangla/Banglish/English | Phase 3 | DONE | Added language_utils.py detecting Bengali script, Banglish (Romanized Bangla), and English; routes Banglish to polite Bengali script response; enriched Banglish vocabulary across all intents; verified via tests_pulseai_standard.py |
+| 21 | Bangla voice | Phase 3 | DONE | On-device Flutter TTS with bn-BD locale, voice toggle, active speaking animated indicator, missing voice pack detection; verified via assistant_screen_test.dart |
+| 22 | distance + vehicle fare dataset | Phase 4 | DONE | Admin-editable VehicleFareRate model (migration 0003); seed_vehicle_fares command with --confirm protection; multi-vehicle fare and travel time estimation (Rickshaw <= 6km, CNG, Bike, Car, Bus, Ambulance) with road factor and night/traffic disclaimers; verified via tests_pulseai_step8.py |
+| 23 | decorated input bar | Phase 1 | DONE | Redesigned PulseAI input bar with capsule shape, subtle gradient border, mic and send icons, attach icon, keyboard and SafeArea handling; verified via assistant_screen_test.dart |
 | 24 | phone back button | Phase 1 | OPEN | |
 | 25 | persistent login | Phase 1 | OPEN | |
 | 26 | OTP not sent | Phase 1 | OPEN | |
@@ -37,11 +37,11 @@ This document tracks all 40 baseline anomalies and issues across the Blood Pulse
 | 31 | tracking/standby real-world logic + backend + DB | Phase 4 | OPEN | |
 | 32 | scalability (Redis) | Phase 4 | OPEN | |
 | 33 | security checklist (19 points) | Batch 2 | RESOLVED | Hardened settings, CSP/headers middleware, media upload whitelist, admin path/throttle, PII logs masked, DRF rate throttles, auth tests |
-| 34 | PulseAI jailbreak | Phase 3 | OPEN | |
+| 34 | PulseAI jailbreak | Phase 3 | DONE | Hardened system prompt (system.md); detect_prompt_injection input classifier in guards.py blocking instruction overrides, DAN roleplays, prompt/credential exfiltration, and medication dosing; secondary output scrub; verified via 66-prompt tests_redteam_pulseai.py |
 | 35 | session mgmt/device tracking/revocation | Batch 2 | RESOLVED | UserDevice model (migration 0056), JWT token blacklist, device list/revoke/logout-all APIs, Flutter Devices & Sessions screen |
 | 36 | FCM never verified | Phase 1 | OPEN | |
 | 37 | realtime chat | Phase 4 | OPEN | |
-| 38 | location-based feed (scope TBD) | Phase 4 | OPEN | |
+| 38 | location-based feed (scope TBD) | Phase 4 | DONE | 3-Tier location hierarchy in views_feed.py (District Tier 1 -> Division Tier 2 -> Country Tier 3) with cursor pagination across tiers and empty state messaging; verified via test_step10d_feed.py |
 | 39 | voice message/call (type TBD) | Phase 4 | OPEN | |
 | 40 | web app, PWA, admin panel, live link | Phase 4 | OPEN | |
 
