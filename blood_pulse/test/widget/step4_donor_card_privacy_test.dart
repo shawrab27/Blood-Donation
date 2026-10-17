@@ -74,5 +74,92 @@ void main() {
 
       expect(requested, isTrue);
     });
+
+    testWidgets('CompactDonorCard renders 2-per-row compact view and tap opens detail popup with zero PII', (tester) async {
+      const donor = DonorSearchModel(
+        id: 42,
+        name: 'Kabir Hossain',
+        bloodGroup: 'B+',
+        component: 'WHOLE',
+        district: 'Sylhet',
+        division: 'Sylhet',
+        isVerified: true,
+        isEligible: true,
+        trustBand: 'HIGH',
+        badge: 'Lifesaver Donor',
+        campus: 'SUST Medical Unit',
+        maskedPhone: '+88017****9999',
+      );
+
+      bool requested = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CompactDonorCard(
+              donor: donor,
+              onTap: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Card displays: Blood group, Name, Badge/Title, District
+      expect(find.text('B+'), findsOneWidget);
+      expect(find.text('Kabir Hossain'), findsOneWidget);
+      expect(find.text('Lifesaver Donor'), findsOneWidget);
+      expect(find.text('Sylhet'), findsOneWidget);
+      expect(find.text('Available'), findsOneWidget);
+
+      // Strictly zero PII on card
+      expect(find.text('+88017****9999'), findsNothing);
+      expect(find.text('SUST Medical Unit'), findsNothing);
+
+      // Now test showDonorDetailPopup
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () {
+                  showDonorDetailPopup(
+                    context,
+                    donor,
+                    onRequestTap: () {
+                      requested = true;
+                    },
+                  );
+                },
+                child: const Text('Open Detail'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Detail'));
+      await tester.pumpAndSettle();
+
+      // Popup displays title, blood group, general location
+      expect(find.text('Lifesaver Donor'), findsOneWidget);
+      expect(find.text('B+'), findsOneWidget);
+      expect(find.text('Sylhet, Sylhet'), findsOneWidget);
+      expect(find.textContaining('Privacy locked'), findsOneWidget);
+
+      // Strictly zero PII in popup
+      expect(find.text('+88017****9999'), findsNothing);
+      expect(find.text('SUST Medical Unit'), findsNothing);
+
+      // Action button
+      final reqBtn = find.text('Request Blood');
+      expect(reqBtn, findsOneWidget);
+      await tester.tap(reqBtn);
+      await tester.pumpAndSettle();
+
+      expect(requested, isTrue);
+    });
   });
 }

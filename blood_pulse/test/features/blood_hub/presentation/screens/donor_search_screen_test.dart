@@ -52,7 +52,11 @@ void main() {
     expect(find.text('Available Donors'), findsOneWidget);
     expect(find.text('1 found near you'), findsOneWidget);
     expect(find.text('Test Altruist'), findsOneWidget);
-    expect(find.text('Request'), findsOneWidget);
+
+    // Tap compact donor card to open detail popup with Request Blood
+    await tester.tap(find.text('Test Altruist'));
+    await tester.pumpAndSettle();
+    expect(find.text('Request Blood'), findsOneWidget);
   });
 
   testWidgets('DonorSearchScreen renders empty state when no donors match', (tester) async {

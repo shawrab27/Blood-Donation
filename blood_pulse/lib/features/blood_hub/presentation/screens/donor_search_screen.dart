@@ -253,22 +253,41 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                       );
                     }
 
-                    return Column(
-                      children: page.donors.map((donor) {
-                        return DonorCard(
+                    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+                    final childAspectRatio = textScale > 1.15 ? 0.82 : 0.94;
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: childAspectRatio,
+                      ),
+                      itemCount: page.donors.length,
+                      itemBuilder: (context, index) {
+                        final donor = page.donors[index];
+                        return CompactDonorCard(
                           key: ValueKey('donor_${donor.id}'),
                           donor: donor,
-                          onRequestTap: () {
-                            context.push(
-                              '/blood-hub/request/direct',
-                              extra: {
-                                'prefill_blood_group': donor.bloodGroup,
-                                'prefill_district': donor.district,
+                          onTap: () {
+                            showDonorDetailPopup(
+                              context,
+                              donor,
+                              onRequestTap: () {
+                                context.push(
+                                  '/blood-hub/request/direct',
+                                  extra: {
+                                    'prefill_blood_group': donor.bloodGroup,
+                                    'prefill_district': donor.district,
+                                  },
+                                );
                               },
                             );
                           },
                         );
-                      }).toList(),
+                      },
                     );
                   },
                   loading: () => const DonorSearchSkeleton(),
