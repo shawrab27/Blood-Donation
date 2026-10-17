@@ -303,3 +303,110 @@ class XPEventAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at',)
 
 
+from .models import DirectMessage, StandbyOffer, UserDevice, DonationMatch, EmergencyNotification
+
+
+@admin.register(DirectMessage)
+class DirectMessageAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'sender_username', 'recipient_username', 'acceptance_id',
+        'message_type', 'status', 'is_reported', 'created_at'
+    )
+    list_filter = ('message_type', 'status', 'is_reported', 'created_at')
+    search_fields = ('sender__username', 'recipient__username', 'content', 'report_reason')
+    readonly_fields = ('created_at', 'delivered_at', 'read_at')
+    actions = ['dismiss_reports']
+
+    @admin.display(ordering='sender__username', description='Sender')
+    def sender_username(self, obj):
+        return obj.sender.username
+
+    @admin.display(ordering='recipient__username', description='Recipient')
+    def recipient_username(self, obj):
+        return obj.recipient.username
+
+    def dismiss_reports(self, request, queryset):
+        updated = queryset.update(is_reported=False, report_reason='')
+        self.message_user(request, f"Dismissed report flag on {updated} message(s).")
+    dismiss_reports.short_description = "Dismiss abuse report on selected messages"
+
+
+@admin.register(StandbyOffer)
+class StandbyOfferAdmin(admin.ModelAdmin):
+    list_display = ('id', 'request_id', 'donor_username', 'status', 'offered_at', 'expires_at', 'responded_at')
+    list_filter = ('status', 'offered_at')
+    search_fields = ('request__patient_name', 'donor__user__username')
+    readonly_fields = ('offered_at',)
+    actions = ['expire_selected_offers']
+
+    @admin.display(ordering='donor__user__username', description='Donor')
+    def donor_username(self, obj):
+        return obj.donor.user.username
+
+    def expire_selected_offers(self, request, queryset):
+        updated = queryset.filter(status='PENDING').update(status='EXPIRED')
+        self.message_user(request, f"Expired {updated} pending standby offer(s).")
+    expire_selected_offers.short_description = "Expire selected pending standby offers"
+
+
+@admin.register(UserDevice)
+class UserDeviceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user_username', 'device_name', 'platform', 'last_seen', 'last_city_approx', 'is_revoked')
+    list_filter = ('platform', 'is_revoked', 'last_seen')
+    search_fields = ('user__username', 'device_name', 'device_id', 'last_city_approx')
+    readonly_fields = ('first_seen', 'last_seen')
+    actions = ['revoke_selected_devices', 'restore_selected_devices']
+
+    @admin.display(ordering='user__username', description='User')
+    def user_username(self, obj):
+        return obj.user.username
+
+    def revoke_selected_devices(self, request, queryset):
+        count = queryset.update(is_revoked=True)
+        self.message_user(request, f"Revoked {count} device session(s).")
+    revoke_selected_devices.short_description = "Revoke selected device sessions"
+
+    def restore_selected_devices(self, request, queryset):
+        count = queryset.update(is_revoked=False)
+        self.message_user(request, f"Restored {count} device session(s).")
+    restore_selected_devices.short_description = "Restore selected device sessions"
+
+
+@admin.register(DonationMatch)
+class DonationMatchAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'request_id', 'donor_username', 'role', 'status',
+        'support_status', 'units_pledged', 'created_at'
+    )
+    list_filter = ('role', 'status', 'support_status', 'created_at')
+    search_fields = ('request__patient_name', 'donor__user__username', 'chat_room_id', 'tracking_room_id')
+    readonly_fields = ('created_at', 'updated_at')
+    actions = ['mark_arrived', 'mark_donated']
+
+    @admin.display(ordering='donor__user__username', description='Donor')
+    def donor_username(self, obj):
+        return obj.donor.user.username
+
+    def mark_arrived(self, request, queryset):
+        updated = queryset.filter(status__in=['ACCEPTED', 'ON_THE_WAY']).update(status='ARRIVED')
+        self.message_user(request, f"Marked {updated} match(es) as ARRIVED.")
+    mark_arrived.short_description = "Mark selected matches as ARRIVED"
+
+    def mark_donated(self, request, queryset):
+        updated = queryset.filter(status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED']).update(status='DONATED')
+        self.message_user(request, f"Marked {updated} match(es) as DONATED.")
+    mark_donated.short_description = "Mark selected matches as DONATED"
+
+
+@admin.register(EmergencyNotification)
+class EmergencyNotificationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'request_id', 'donor_username', 'wave', 'delivered', 'opened', 'responded', 'sent_at')
+    list_filter = ('wave', 'delivered', 'opened', 'responded', 'sent_at')
+    search_fields = ('request__patient_name', 'donor__user__username')
+    readonly_fields = ('sent_at',)
+
+    @admin.display(ordering='donor__user__username', description='Donor')
+    def donor_username(self, obj):
+        return obj.donor.user.username
+
+
