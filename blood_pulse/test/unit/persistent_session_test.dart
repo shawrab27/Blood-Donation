@@ -198,5 +198,105 @@ void main() {
       // Single-flight lock requirement: refresh was executed exactly once!
       expect(refreshEndpointHits, 1, reason: 'Single-flight lock must deduplicate parallel refresh calls');
     });
+
+    test('5. Cold Start 401: Invalid token on restoreSession clears tokens and sets friendly message', () async {
+      final mockClient = MockClient((request) async {
+        final path = request.url.path;
+        if (path.contains('profile/me') || path.contains('donors/me')) {
+          return http.Response('{"detail": "Token is invalid or expired"}', 401);
+        } else if (path.contains('token/refresh')) {
+          return http.Response('{"detail": "Token is blacklisted"}', 401);
+        }
+        return http.Response('Not Found', 404);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'https://bloodpulse-backend.onrender.com/api/',
+        client: mockClient,
+      );
+
+      await apiClient.saveTokens(access: 'bad_access', refresh: 'bad_refresh');
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(() => AuthNotifier(apiClient: apiClient)),
+        ],
+      );
+
+      final notifier = container.read(authProvider.notifier);
+      await notifier.restoreSession();
+
+      final authState = container.read(authProvider);
+      expect(authState.status, AuthStatus.unauthenticated);
+      expect(authState.errorMessage, 'Session expired. Please log in again.');
+
+      // Tokens must be cleared
+      final access = await apiClient.getAccessToken();
+      expect(access, isNull);
+    });
+
+    test('6. Session Expired on 401: onSessionExpired triggers unauthenticated state with friendly message', () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('token/refresh')) {
+          return http.Response('{"detail": "Token is blacklisted"}', 401);
+        }
+        return http.Response('{"detail": "Given token not valid for any token type"}', 401);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'https://bloodpulse-backend.onrender.com/api/',
+        client: mockClient,
+      );
+
+      await apiClient.saveTokens(access: 'stale_token', refresh: 'blacklisted_refresh');
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(() => AuthNotifier(apiClient: apiClient)),
+        ],
+      );
+
+      // Initialize notifier to attach onSessionExpired
+      container.read(authProvider);
+
+      await expectLater(
+        apiClient.get('/some-protected-endpoint/'),
+        throwsA(isA<ApiException>()),
+      );
+
+      final authState = container.read(authProvider);
+      expect(authState.status, AuthStatus.unauthenticated);
+      expect(authState.errorMessage, 'Session expired. Please log in again.');
+    });
+
+    test('7. Logout: clears tokens and resets auth state', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('{"success": true}', 200);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'https://bloodpulse-backend.onrender.com/api/',
+        client: mockClient,
+      );
+
+      await apiClient.saveTokens(access: 'active_access', refresh: 'active_refresh');
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(() => AuthNotifier(apiClient: apiClient)),
+        ],
+      );
+
+      final notifier = container.read(authProvider.notifier);
+      await notifier.logout();
+
+      final authState = container.read(authProvider);
+      expect(authState.status, AuthStatus.unauthenticated);
+
+      final access = await apiClient.getAccessToken();
+      final refresh = await apiClient.getRefreshToken();
+      expect(access, isNull);
+      expect(refresh, isNull);
+    });
   });
 }

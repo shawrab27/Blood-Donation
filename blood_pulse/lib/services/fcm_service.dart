@@ -320,6 +320,16 @@ class FcmService {
     }
   }
 
+  /// Unregisters FCM device token and unbinds from user on logout
+  Future<void> unregisterDevice() async {
+    try {
+      await FirebaseMessaging.instance.deleteToken();
+      debugPrint('[FCM] device token deleted successfully');
+    } catch (e) {
+      debugPrint('[FCM] deleteToken error (expected in tests/web/unsupported): $e');
+    }
+  }
+
   // ── Message Handlers ───────────────────────────────────────────────────
 
   /// Called when a message arrives while the app is in the foreground.

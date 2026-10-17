@@ -12,6 +12,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../services/api_client.dart';
 import '../../../../services/chat_service.dart';
 import '../../../../services/tracking_service.dart';
+import '../../../../services/fcm_service.dart';
 
 /// Authentication status for BloodPulse.
 enum AuthStatus { unauthenticated, loading, authenticated, authenticatedIncomplete, error }
@@ -158,6 +159,15 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
+    ApiClient.onSessionExpired = () {
+      if (state.status != AuthStatus.unauthenticated) {
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          errorMessage: 'Session expired. Please log in again.',
+        );
+      }
+    };
     final cached = ApiClient.cachedAccessToken;
     final hasStoredToken = cached != null && cached.isNotEmpty;
     return _initialState ?? AuthState(
@@ -236,7 +246,11 @@ class AuthNotifier extends Notifier<AuthState> {
       } else if (response.statusCode == 401) {
         // Token is genuinely invalid and refresh failed with 401 → clear session
         await _apiClient.clearTokens();
-        state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          errorMessage: 'Session expired. Please log in again.',
+        );
       } else {
         // 5xx server gateway or temporary error: preserve session, do NOT clear tokens!
         debugPrint('[AuthNotifier] restoreSession non-200 non-401 status: ${response.statusCode}. Retaining session.');
@@ -870,6 +884,9 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       const storage = FlutterSecureStorage();
       await storage.deleteAll();
+    } catch (_) {}
+    try {
+      await FcmService.instance.unregisterDevice();
     } catch (_) {}
     try {
       ChatService.instance.reset();

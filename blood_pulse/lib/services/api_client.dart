@@ -74,6 +74,9 @@ class ApiClient {
     _cachedRefreshToken = refresh;
   }
 
+  /// Callback invoked when a 401 refresh failure occurs, signalling that session has expired.
+  static void Function()? onSessionExpired;
+
   static const String _kDeviceId = 'bp_device_id';
   static String? _cachedDeviceId;
 
@@ -442,6 +445,7 @@ class ApiClient {
         // Refresh token itself is invalid or expired → clear session
         debugPrint('[ApiClient] Refresh token invalid/expired (401). Clearing session.');
         await clearTokens();
+        onSessionExpired?.call();
         completer.complete(null);
         return null;
       } else {
@@ -851,8 +855,9 @@ class ApiClient {
         }
 
         if (response.statusCode == 401) {
+          onSessionExpired?.call();
           throw ApiException(
-            'Unauthorized request (401). Please log in again.',
+            'Session expired. Please log in again.',
             statusCode: 401,
             rawError: response.body,
           );
