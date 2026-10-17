@@ -65,6 +65,52 @@ class AiReportResultsView extends StatelessWidget {
             ],
           ),
         ),
+        if (result.donorReadiness != null && result.donorReadiness!.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: result.donorReadiness!.toLowerCase().contains('eligible') &&
+                      !result.donorReadiness!.toLowerCase().contains('not')
+                  ? const Color(0xFFE8F8F0)
+                  : const Color(0xFFFFF4E0),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: result.donorReadiness!.toLowerCase().contains('eligible') &&
+                        !result.donorReadiness!.toLowerCase().contains('not')
+                    ? AppColors.success.withValues(alpha: 0.3)
+                    : const Color(0xFFD68800).withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  result.donorReadiness!.toLowerCase().contains('eligible') &&
+                          !result.donorReadiness!.toLowerCase().contains('not')
+                      ? Icons.check_circle_rounded
+                      : Icons.warning_amber_rounded,
+                  color: result.donorReadiness!.toLowerCase().contains('eligible') &&
+                          !result.donorReadiness!.toLowerCase().contains('not')
+                      ? AppColors.success
+                      : const Color(0xFFD68800),
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    result.donorReadiness!,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
 
         const Text(
@@ -92,6 +138,36 @@ class AiReportResultsView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ...result.dietaryActionPlan.map((item) => _buildDietaryPill(item)),
+        ],
+
+        if (result.disclaimer != null && result.disclaimer!.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9F9F9),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE0E0E0)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, size: 18, color: AppColors.neutral),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    result.disclaimer!,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: AppColors.neutral,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ],
     );

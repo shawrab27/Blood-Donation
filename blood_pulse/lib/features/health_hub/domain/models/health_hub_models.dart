@@ -128,11 +128,15 @@ class RecoveryTimelineStep {
 // AI Report Analysis Models
 class AiReportResult {
   final String summary;
+  final String? donorReadiness;
+  final String? disclaimer;
   final List<String> dietaryActionPlan;
   final List<TestResultItem> results;
 
   AiReportResult({
     required this.summary,
+    this.donorReadiness,
+    this.disclaimer,
     required this.dietaryActionPlan,
     required this.results,
   });
@@ -140,6 +144,9 @@ class AiReportResult {
   factory AiReportResult.fromJson(Map<String, dynamic> json) {
     return AiReportResult(
       summary: json['summary'] ?? '',
+      donorReadiness: json['donor_readiness'] as String?,
+      disclaimer: json['disclaimer'] as String? ??
+          'This is an automated preliminary informational analysis and not a formal medical diagnosis. Please consult a licensed physician or clinical pathologist for official medical evaluation.',
       dietaryActionPlan: List<String>.from(json['dietary_action_plan'] ?? []),
       results: (json['results'] as List?)
               ?.map((e) => TestResultItem.fromJson(e))

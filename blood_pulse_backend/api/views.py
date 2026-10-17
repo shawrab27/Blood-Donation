@@ -866,10 +866,15 @@ class GeminiReportAnalyzeView(APIView):
 
         api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
         if not api_key:
+            from assistant.pipeline.report_analyzer import parse_blood_report
+            parsed = parse_blood_report(safe_text)
             return Response({
-                'not_a_report': True,
-                'error': 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+                'summary': parsed['summary'],
+                'dietary_action_plan': parsed['dietary_action_plan'],
+                'results': parsed['results'],
+                'donor_readiness': parsed['donor_readiness'],
+                'disclaimer': parsed['disclaimer'],
+            })
 
         prompt = """
         You are a medical AI assistant that only analyzes blood and lab reports.
@@ -929,9 +934,29 @@ class GeminiReportAnalyzeView(APIView):
                 )
             return Response(data)
         except json.JSONDecodeError:
-            return Response({'error': 'This image does not appear to be a valid blood or lab report. Please ensure your image shows clear test names and values.'}, status=status.HTTP_400_BAD_REQUEST)
+            from assistant.pipeline.report_analyzer import parse_blood_report
+            parsed = parse_blood_report(safe_text)
+            return Response({
+                'summary': parsed['summary'],
+                'dietary_action_plan': parsed['dietary_action_plan'],
+                'results': parsed['results'],
+                'donor_readiness': parsed['donor_readiness'],
+                'disclaimer': parsed['disclaimer'],
+            })
         except Exception as e:
-            # Never expose technical OAuth/401/RPC errors to users
+            try:
+                from assistant.pipeline.report_analyzer import parse_blood_report
+                parsed = parse_blood_report(safe_text)
+                if parsed.get('results'):
+                    return Response({
+                        'summary': parsed['summary'],
+                        'dietary_action_plan': parsed['dietary_action_plan'],
+                        'results': parsed['results'],
+                        'donor_readiness': parsed['donor_readiness'],
+                        'disclaimer': parsed['disclaimer'],
+                    })
+            except Exception:
+                pass
             return Response(
                 {
                     'not_a_report': True,

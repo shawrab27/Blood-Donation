@@ -135,6 +135,58 @@ class AiAnalysisService {
       throw Exception('incorrect image or not a blood report');
     }
   }
+
+  static Future<AiReportResult> analyzeReportText(String text) async {
+    final textLower = text.toLowerCase();
+    final hasMedicalMarker = medicalKeywords.any((kw) => textLower.contains(kw));
+
+    if (text.trim().isEmpty || text.trim().length < 15 || !hasMedicalMarker) {
+      throw Exception('incorrect image or not a blood report');
+    }
+
+    final jsonPayload = jsonEncode({
+      'report_text': text.trim(),
+      'filename': 'pasted_report.txt',
+    });
+
+    final primaryUrl = ApiConfig.resolveUrl('health-hub/analyze-report/');
+
+    try {
+      final response = await http.post(
+        Uri.parse(primaryUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonPayload,
+      ).timeout(const Duration(seconds: 45));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data['not_a_report'] == true) {
+          throw Exception('incorrect image or not a blood report');
+        }
+        return AiReportResult.fromJson(data);
+      } else if (response.statusCode == 400) {
+        throw Exception('incorrect image or not a blood report');
+      } else {
+        throw Exception('Server returned error ${response.statusCode}');
+      }
+    } catch (e) {
+      final errStr = e.toString();
+      if (errStr.contains('incorrect image or not a blood report')) {
+        rethrow;
+      }
+      if (errStr.contains('ClientException') ||
+          errStr.contains('Failed to fetch') ||
+          errStr.contains('XMLHttpRequest') ||
+          errStr.contains('TimeoutException') ||
+          errStr.contains('SocketException')) {
+        throw Exception('Unable to reach AI analysis server. Please check your connection and try again.');
+      }
+      throw Exception('incorrect image or not a blood report');
+    }
+  }
 }
 
 

@@ -115,3 +115,50 @@ class PulseAIStandardResponseTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get('code'), 'EMPTY_MESSAGE')
+
+    # 9. Anomaly #17: Pasted CBC Blood Report in PulseAI Chat
+    def test_pasted_cbc_blood_report_parsing_in_pulseai(self):
+        self.client.force_authenticate(user=self.user)
+        query = (
+            "Please check my CBC report:\n"
+            "Hemoglobin: 11.2 g/dL\n"
+            "Platelets: 130,000 /mcL\n"
+            "WBC: 7,500 /mcL\n"
+            "RBC: 4.5 million/mcL"
+        )
+        response = self.client.post(
+            '/api/assistant/chat/',
+            {'message': query, 'locale': 'en'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        reply = data.get('reply', '')
+        self.assertIn("Blood Report (CBC) Analysis", reply)
+        self.assertIn("Hemoglobin", reply)
+        self.assertIn("Platelets", reply)
+        self.assertIn("WBC", reply)
+        self.assertIn("RBC", reply)
+        self.assertIn("NOT CURRENTLY ELIGIBLE", reply)
+        self.assertIn("Medical Disclaimer", reply)
+
+    def test_pasted_cbc_eligible_donor_report(self):
+        self.client.force_authenticate(user=self.user)
+        query = (
+            "CBC results:\n"
+            "Hemoglobin: 14.2 g/dL\n"
+            "Platelets: 260,000 /mcL\n"
+            "WBC: 6,800 /mcL\n"
+            "RBC: 4.9 million/mcL"
+        )
+        response = self.client.post(
+            '/api/assistant/chat/',
+            {'message': query, 'locale': 'en'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        reply = data.get('reply', '')
+        self.assertIn("ELIGIBLE", reply)
+        self.assertIn("Medical Disclaimer", reply)
+

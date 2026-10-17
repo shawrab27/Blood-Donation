@@ -103,6 +103,12 @@ def chat_view(request):
             )
             return _save_and_respond(conv, user, redacted_text, validated, flags=["EMERGENCY"], request_id=request_id)
 
+        # 3a. Deterministic CBC / Blood Report Analysis
+        from assistant.pipeline.report_analyzer import is_blood_report_query, parse_blood_report
+        if is_blood_report_query(redacted_text):
+            parsed_report = parse_blood_report(redacted_text, locale=locale)
+            return _save_and_respond(conv, user, redacted_text, parsed_report, flags=["BLOOD_REPORT_ANALYSIS"], request_id=request_id)
+
         # 3b. Deterministic classifier for personal questions & fare estimation (the server decides, not the LLM)
         from assistant.pipeline.personal_classifier import (
             classify_personal_query,
