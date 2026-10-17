@@ -1495,6 +1495,52 @@ class HealthCheckView(APIView):
         return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
 
 
+class CacheHealthCheckView(APIView):
+    """
+    Scalability & Cache Health Check Endpoint (/api/health/cache/).
+    Tests cache get/set roundtrip, reports backend provider (RedisCache / LocMemCache),
+    roundtrip latency in milliseconds, and verification status.
+    Exempt from rate throttling so uptime monitors and orchestrators can probe continuously.
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = []
+
+    def get(self, request, *args, **kwargs):
+        import time
+        from django.core.cache import cache
+
+        test_key = 'health_check_cache_probe'
+        test_val = str(time.time())
+        t0 = time.perf_counter()
+        try:
+            cache.set(test_key, test_val, timeout=10)
+            read_val = cache.get(test_key)
+            latency_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            backend_cls = cache.__class__.__module__ + '.' + cache.__class__.__name__
+
+            if read_val == test_val:
+                return Response({
+                    'status': 'healthy',
+                    'backend': backend_cls,
+                    'latency_ms': latency_ms,
+                    'read_write_verified': True,
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'status': 'degraded',
+                    'backend': backend_cls,
+                    'error': 'Value mismatch after cache write',
+                    'latency_ms': latency_ms,
+                    'read_write_verified': False,
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as exc:
+            return Response({
+                'status': 'unhealthy',
+                'error': str(exc),
+                'latency_ms': round((time.perf_counter() - t0) * 1000.0, 2),
+            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
 
 
 from rest_framework import viewsets, permissions, serializers

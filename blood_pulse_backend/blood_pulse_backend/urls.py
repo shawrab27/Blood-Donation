@@ -24,7 +24,7 @@ from django.http import JsonResponse, HttpResponse
 from django.core.cache import cache
 from rest_framework_simplejwt.views import TokenRefreshView
 from api.views_auth_tokens import BloodPulseTokenObtainPairView
-from api.views import health_check
+from api.views import health_check, CacheHealthCheckView
 from api.views_fcm import update_fcm_view
 
 # Admin Login Throttling (Item 3)
@@ -79,6 +79,7 @@ admin_url_path = f"{_admin_prefix}/" if _admin_prefix else 'admin/'
 urlpatterns = [
     path('', root_index, name='root-index'),
     path('health/', health_check, name='root-health-check'),
+    path('health/cache/', CacheHealthCheckView.as_view(), name='root-health-cache-check'),
     path(admin_url_path, admin.site.urls),
     path('api/token/', BloodPulseTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

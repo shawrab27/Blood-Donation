@@ -277,6 +277,28 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Cache Configuration (Scalability & Redis Tier - Anomaly #32)
+# In production, if REDIS_URL or CACHE_URL is set, use RedisCache.
+# In local development or testing, fall back gracefully to LocMemCache.
+REDIS_URL = os.getenv('REDIS_URL', os.getenv('CACHE_URL', '')).strip()
+
+if REDIS_URL and not IS_TESTING and DJANGO_ENV != 'test':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'TIMEOUT': 300,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'bloodpulse-default-cache',
+            'TIMEOUT': 300,
+        }
+    }
+
 # Email Configuration: brevo_api | console | locmem
 # prod = brevo_api; tests = locmem; console allowed in dev only and refused in prod
 EMAIL_PROVIDER = os.getenv('EMAIL_PROVIDER', '').strip().lower()
