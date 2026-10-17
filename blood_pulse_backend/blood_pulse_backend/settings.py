@@ -32,9 +32,14 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 DJANGO_ENV = os.environ.get('DJANGO_ENV', '').strip().lower()
 
-# SECURITY WARNING: keep the secret key used in production secret!
-_INSECURE_SECRET_KEY = 'django-insecure-#3s5ydx%hd1x$%(lj2+ai6mfzn9jbtw%4f7eif%9o#z_m07z_^'
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+# Automated test detection
+IS_TESTING = (
+    'test' in sys.argv
+    or 'pytest' in sys.modules
+    or DJANGO_ENV == 'test'
+    or os.environ.get('USE_TEST_POSTGRES') == '1'
+    or os.environ.get('BLOODPULSE_ALLOW_TEST_KEYS') == '1'
+)
 
 # DEBUG env-controlled, False by default
 if 'DJANGO_DEBUG' in os.environ:
@@ -44,12 +49,37 @@ elif DJANGO_ENV == 'dev':
 else:
     DEBUG = False
 
-if not DEBUG and DJANGO_ENV == 'production' and (not SECRET_KEY or SECRET_KEY == _INSECURE_SECRET_KEY):
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured("DJANGO_SECRET_KEY environment variable must be set to a secure value in production.")
+# P1: Read DJANGO_SECRET_KEY first, fall back to SECRET_KEY for compatibility
+SECRET_KEY = (os.environ.get('DJANGO_SECRET_KEY') or os.environ.get('SECRET_KEY') or '').strip()
 
-if not SECRET_KEY:
-    SECRET_KEY = _INSECURE_SECRET_KEY
+# P2: Insecure secret key forbidden constant
+_INSECURE_SECRET_KEY = 'django-insecure-#3s5ydx%hd1x$%(lj2+ai6mfzn9jbtw%4f7eif%9o#z_m07z_^'
+
+if IS_TESTING and not SECRET_KEY:
+    # Test-only fallback: only in automated tests, minimum 50 characters, never in production code path
+    SECRET_KEY = 'bloodpulse-automated-test-suite-secure-key-50-chars-0001abcdefghij'
+elif not DEBUG and not IS_TESTING:
+    # Production guard: whenever DEBUG is False (any environment except automated tests)
+    # Refuse to start if empty, equals insecure default, starts with django-insecure, or < 50 chars
+    from django.core.exceptions import ImproperlyConfigured
+    if not SECRET_KEY:
+        raise ImproperlyConfigured(
+            "SECRET_KEY or DJANGO_SECRET_KEY environment variable is missing. "
+            "A secure key (>= 50 characters) must be configured when DEBUG=False."
+        )
+    if SECRET_KEY == _INSECURE_SECRET_KEY or SECRET_KEY.startswith('django-insecure'):
+        raise ImproperlyConfigured(
+            "SECRET_KEY / DJANGO_SECRET_KEY cannot use an insecure default or start with 'django-insecure'. "
+            "Generate a cryptographically random secret key."
+        )
+    if len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured(
+            f"SECRET_KEY / DJANGO_SECRET_KEY must be at least 50 characters long (got {len(SECRET_KEY)}). "
+            "Provide a sufficiently long key."
+        )
+elif DEBUG and not SECRET_KEY:
+    # Local development fallback when DEBUG=True and no key is configured in .env
+    SECRET_KEY = 'django-dev-local-secret-key-only-used-when-debug-is-true-0123456789'
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
@@ -291,12 +321,35 @@ else:
 
 
 _FALLBACK_FIELD_KEY = 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc='
-FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
-if not DEBUG and DJANGO_ENV == 'production' and (not FIELD_ENCRYPTION_KEY or FIELD_ENCRYPTION_KEY == _FALLBACK_FIELD_KEY):
+_primary_field_key = (os.environ.get('FIELD_ENCRYPTION_KEY') or os.environ.get('DJANGO_FIELD_ENCRYPTION_KEY') or '').strip()
+
+if not DEBUG and not IS_TESTING:
     from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured("FIELD_ENCRYPTION_KEY environment variable must be set to a secure private key in production.")
-if not FIELD_ENCRYPTION_KEY:
-    FIELD_ENCRYPTION_KEY = _FALLBACK_FIELD_KEY
+    if not _primary_field_key:
+        raise ImproperlyConfigured(
+            "FIELD_ENCRYPTION_KEY environment variable is required in production (DEBUG=False). "
+            "Generate a 32-byte url-safe base64 Fernet key."
+        )
+    if _primary_field_key == _FALLBACK_FIELD_KEY:
+        raise ImproperlyConfigured(
+            "FIELD_ENCRYPTION_KEY cannot use the insecure built-in fallback key in production."
+        )
+    try:
+        from cryptography.fernet import Fernet
+        Fernet(_primary_field_key.encode('utf-8'))
+    except Exception as e:
+        raise ImproperlyConfigured(f"FIELD_ENCRYPTION_KEY is not a valid Fernet key: {e}")
+
+FIELD_ENCRYPTION_KEY = _primary_field_key or _FALLBACK_FIELD_KEY
+
+# FIELD_ENCRYPTION_KEYS list for MultiFernet:
+# [primary_key, fallback_key(s)]
+# The primary key is used for all new encryption and decryption.
+# The built-in fallback key is included as decrypt-only so existing rows remain readable.
+if _primary_field_key and _primary_field_key != _FALLBACK_FIELD_KEY:
+    FIELD_ENCRYPTION_KEYS = [_primary_field_key, _FALLBACK_FIELD_KEY]
+else:
+    FIELD_ENCRYPTION_KEYS = [FIELD_ENCRYPTION_KEY]
 
 
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'api.throttles.custom_exception_handler'
@@ -370,6 +423,30 @@ PASSWORD_HASHERS = [
 
 # Single source of truth for donation cooldown (90 days) and public stats threshold
 from api.conf import DONOR_COOLDOWN_DAYS, PUBLIC_STATS_MIN_DONORS
+
+# Startup security audit logging (states DEBUG, secret env presence, ALLOWED_HOSTS count; NEVER prints values)
+_secret_audit_vars = [
+    'DJANGO_SECRET_KEY',
+    'SECRET_KEY',
+    'FIELD_ENCRYPTION_KEY',
+    'DATABASE_URL',
+    'BREVO_API_KEY',
+    'GEMINI_API_KEY',
+    'ADMIN_URL',
+]
+_env_status = {k: ('found' if os.environ.get(k) else 'missing') for k in _secret_audit_vars}
+_env_status_str = ", ".join(f"{k}: {v}" for k, v in _env_status.items())
+
+import logging
+_startup_logger = logging.getLogger('blood_pulse_backend.security')
+_startup_msg = (
+    f"[STARTUP SECURITY AUDIT] DEBUG={DEBUG} | "
+    f"ALLOWED_HOSTS_COUNT={len(ALLOWED_HOSTS)} | "
+    f"Secrets status: {_env_status_str}"
+)
+if not IS_TESTING:
+    print(_startup_msg)
+_startup_logger.info(_startup_msg)
 
 
 

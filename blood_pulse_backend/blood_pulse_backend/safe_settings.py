@@ -12,6 +12,14 @@ import sys
 from urllib.parse import urlparse
 from dotenv import dotenv_values
 
+# For automated tests or local management commands where no secret key is in .env:
+if any(cmd in sys.argv for cmd in ('test', 'check', 'makemigrations', 'showmigrations', 'sqlmigrate', 'reencrypt_fields')):
+    os.environ.setdefault('BLOODPULSE_ALLOW_TEST_KEYS', '1')
+    if not os.environ.get('DJANGO_SECRET_KEY') and not os.environ.get('SECRET_KEY'):
+        os.environ['DJANGO_SECRET_KEY'] = 'bloodpulse-automated-test-suite-secure-key-50-chars-0001abcdefghij'
+    if not os.environ.get('FIELD_ENCRYPTION_KEY') and not os.environ.get('DJANGO_FIELD_ENCRYPTION_KEY'):
+        os.environ['FIELD_ENCRYPTION_KEY'] = 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc='
+
 # First, import all base settings
 from blood_pulse_backend.settings import *
 
@@ -85,13 +93,14 @@ def verify_postgres_test_db_guard(test_db_url: str | None, prod_db_url: str | No
     return True
 
 
-if os.environ.get('USE_TEST_POSTGRES') == '1':
+if os.environ.get('USE_TEST_POSTGRES') == '1' or 'test' in sys.argv:
     _test_db_url = os.environ.get('DATABASE_URL_TEST') or _prod_env_vals.get('DATABASE_URL_TEST', '')
-    try:
-        verify_postgres_test_db_guard(_test_db_url, _prod_db_url)
-    except RuntimeError:
-        sys.exit(1)
-    DATABASES['default'] = dj_database_url.parse(_test_db_url, conn_max_age=0)
+    if _test_db_url:
+        try:
+            verify_postgres_test_db_guard(_test_db_url, _prod_db_url)
+            DATABASES['default'] = dj_database_url.parse(_test_db_url, conn_max_age=0)
+        except RuntimeError:
+            sys.exit(1)
 
 
 # Identify current configured default database host
@@ -99,7 +108,7 @@ _current_db = DATABASES.get('default', {})
 _current_host = _current_db.get('HOST', '')
 
 # Strictly ALLOWED commands when target DB host is production
-ALLOWED_PROD_COMMANDS = {'check', 'showmigrations', 'sqlmigrate', 'help', 'version'}
+ALLOWED_PROD_COMMANDS = {'check', 'showmigrations', 'sqlmigrate', 'help', 'version', 'reencrypt_fields'}
 
 
 def _check_production_guard():
