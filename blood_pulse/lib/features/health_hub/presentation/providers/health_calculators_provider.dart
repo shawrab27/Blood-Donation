@@ -3,6 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../constants/app_config.dart';
+import '../../../profile/domain/providers/profile_provider.dart';
 import '../../domain/entities/health_log_entity.dart';
 
 class HealthCalculatorState {
@@ -144,9 +145,9 @@ class HealthCalculatorsNotifier extends StateNotifier<HealthCalculatorState> {
       isHemoglobinEligible: true,
       isBpEligible: true,
       isPulseEligible: true,
-      isCooldownEligible: false,
-      cooldownDaysRemaining: 49,
-      overallEligibilityStatus: false,
+      isCooldownEligible: true,
+      cooldownDaysRemaining: 0,
+      overallEligibilityStatus: true,
       wellnessScore: 92,
       notes: 'Weekly routine vitals check',
     ),
@@ -205,5 +206,18 @@ class HealthCalculatorsNotifier extends StateNotifier<HealthCalculatorState> {
 
 final healthCalculatorsProvider =
     StateNotifierProvider<HealthCalculatorsNotifier, HealthCalculatorState>(
-  (ref) => HealthCalculatorsNotifier(),
+  (ref) {
+    final notifier = HealthCalculatorsNotifier();
+    final profile = ref.watch(profileProvider).asData?.value;
+    if (profile != null) {
+      DateTime? lastDate;
+      if (profile.totalBagsDonated > 0 &&
+          profile.lastDonationDate != null &&
+          profile.lastDonationDate!.isNotEmpty) {
+        lastDate = DateTime.tryParse(profile.lastDonationDate!);
+      }
+      notifier.updateMetrics(lastDonationDate: lastDate);
+    }
+    return notifier;
+  },
 );
