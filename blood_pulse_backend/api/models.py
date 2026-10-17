@@ -95,6 +95,7 @@ class DonorProfile(models.Model):
     )
 
     institute = models.CharField(max_length=200, blank=True, null=True)
+    occupation = models.CharField(max_length=100, blank=True, null=True, help_text="User occupation or profession (e.g. Software Engineer, Doctor, Student)")
 
     institution = models.ForeignKey('Institution', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
 
@@ -211,6 +212,19 @@ class DonorProfile(models.Model):
         if count == 0:
             return None
         return DonorProfile.objects.filter(total_bags_donated__gt=count).count() + 1
+
+    @property
+    def donor_title(self):
+        from api.conf import get_donor_title
+        return get_donor_title(self.verified_donations_count)
+
+    @property
+    def position_display(self):
+        title = self.donor_title
+        occ = (self.occupation or '').strip() or (self.institute or '').strip()
+        if title and occ:
+            return f"{title} • {occ}"
+        return title or occ or "Blood Donor"
 
     @property
     def badge(self):

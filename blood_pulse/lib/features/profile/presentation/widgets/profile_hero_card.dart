@@ -22,6 +22,9 @@ class ProfileHeroCard extends StatelessWidget {
   final String bloodGroup;
   final int totalDonations;
   final int rank;
+  final String? donorTitle;
+  final String? occupation;
+  final String? positionDisplay;
   final Uint8List? avatarBytes;
   final String? photoUrl;
   final String? googlePhotoUrl;
@@ -35,6 +38,9 @@ class ProfileHeroCard extends StatelessWidget {
     required this.bloodGroup,
     required this.totalDonations,
     this.rank = 0,
+    this.donorTitle,
+    this.occupation,
+    this.positionDisplay,
     this.avatarBytes,
     this.photoUrl,
     this.googlePhotoUrl,
@@ -44,7 +50,14 @@ class ProfileHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rankText = rank > 0 ? 'Rank #$rank' : 'Active';
+    final String rankText;
+    if (totalDonations == 0) {
+      rankText = 'New Member';
+    } else if (rank > 0) {
+      rankText = 'Rank #$rank';
+    } else {
+      rankText = donorTitle ?? 'Active';
+    }
 
     return Container(
       width: double.infinity,
@@ -132,8 +145,8 @@ class ProfileHeroCard extends StatelessWidget {
                   top: -2,
                   right: -4,
                   child: Container(
-                    width: 76,
-                    height: 26,
+                    constraints: const BoxConstraints(minWidth: 76, minHeight: 26),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFC30121),
                       borderRadius: BorderRadius.circular(50),
@@ -215,7 +228,86 @@ class ProfileHeroCard extends StatelessWidget {
               height: 1.2,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
+
+          // Title / Occupation / Position Display
+          if (totalDonations == 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(color: const Color(0xFFE5E5E5)),
+                ),
+                child: Text(
+                  positionDisplay ?? (occupation != null && occupation!.isNotEmpty ? occupation! : 'New Member'),
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5F5E5E),
+                  ),
+                ),
+              ),
+            )
+          else ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  if (donorTitle != null && donorTitle!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0F1),
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: const Color(0xFFFFD1D6)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.military_tech_rounded, size: 14, color: Color(0xFFC30121)),
+                          const SizedBox(width: 4),
+                          Text(
+                            donorTitle!,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFC30121),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (occupation != null && occupation!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(color: const Color(0xFFE5E5E5)),
+                      ),
+                      child: Text(
+                        occupation!,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF5F5E5E),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
 
           GestureDetector(
             onTap: onEditBio,

@@ -73,6 +73,8 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     badge = serializers.CharField(read_only=True)
     days_until_eligible = serializers.IntegerField(read_only=True)
     missing_fields = serializers.SerializerMethodField()
+    donor_title = serializers.CharField(read_only=True)
+    position_display = serializers.CharField(read_only=True)
 
     def get_missing_fields(self, obj):
         _, missing = obj.check_is_complete()
@@ -85,7 +87,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
             'district', 'phone_number', 'nid_hash', 'last_donation_date', 'days_until_eligible', 'is_verified', 
             'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'institution', 'upazila_linked', 'address', 
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
-            'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
+            'recent_logs', 'global_rank', 'badge', 'donor_title', 'occupation', 'position_display', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
             'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until', 'emergency_alerts_paused_until',
             'public_profile', 'show_contact', 'notifications_enabled', 'emergency_alerts_enabled',
             'weight_kg', 'show_in_rankings'
@@ -178,6 +180,9 @@ class PublicDonorProfileSerializer(serializers.ModelSerializer):
     bags = serializers.IntegerField(source='total_bags_donated', read_only=True)
     rating_avg = serializers.FloatField(read_only=True)
     rating_count = serializers.IntegerField(read_only=True)
+    donor_title = serializers.CharField(read_only=True)
+    occupation = serializers.CharField(read_only=True)
+    position_display = serializers.CharField(read_only=True)
 
     class Meta:
         model = DonorProfile
@@ -192,6 +197,9 @@ class PublicDonorProfileSerializer(serializers.ModelSerializer):
             'bags',
             'rating_avg',
             'rating_count',
+            'donor_title',
+            'occupation',
+            'position_display',
         ]
 
     def get_name(self, obj):

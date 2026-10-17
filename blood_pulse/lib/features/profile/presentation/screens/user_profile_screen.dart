@@ -383,6 +383,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     int level = 1;
     double levelProgress = 0.0;
     String tier = 'Active Donor';
+    String? donorTitle;
+    String? occupation;
+    String? positionDisplay;
 
     String? profileLastDonationDate;
     String? hospitalName;
@@ -401,6 +404,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         level = p.level;
         levelProgress = p.levelProgress;
         tier = p.tier;
+        donorTitle = p.donorTitle;
+        occupation = p.occupation;
+        positionDisplay = p.positionDisplay;
         if (p.bio != null && p.bio!.isNotEmpty) _bio = p.bio!;
         if (p.donationHistory.isNotEmpty) {
           hospitalName = p.donationHistory.first.hospital;
@@ -445,6 +451,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               bloodGroup: bloodGroup,
               totalDonations: totalDonations,
               rank: rank,
+              donorTitle: donorTitle,
+              occupation: occupation,
+              positionDisplay: positionDisplay,
               avatarBytes: authUser?.avatarBytes,
               photoUrl: authUser?.photoUrl,
               googlePhotoUrl: authUser?.googlePhotoUrl,
@@ -663,6 +672,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               level: level,
               levelProgress: levelProgress,
               tier: tier,
+              totalDonations: totalDonations,
+              donorTitle: donorTitle,
             ),
             const SizedBox(height: 16),
 

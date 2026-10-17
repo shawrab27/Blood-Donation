@@ -15,6 +15,8 @@ class ProfileRatingXpCard extends StatelessWidget {
   final int level;
   final double levelProgress;
   final String tier;
+  final int totalDonations;
+  final String? donorTitle;
   final VoidCallback? onTapRating;
   final VoidCallback? onTapXp;
 
@@ -26,6 +28,8 @@ class ProfileRatingXpCard extends StatelessWidget {
     required this.level,
     required this.levelProgress,
     required this.tier,
+    this.totalDonations = 0,
+    this.donorTitle,
     this.onTapRating,
     this.onTapXp,
   });
@@ -91,7 +95,9 @@ class ProfileRatingXpCard extends StatelessWidget {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
-                                ratingAvg > 0 ? ratingAvg.toStringAsFixed(1) : '5.0',
+                                totalDonations == 0
+                                    ? '--'
+                                    : (ratingAvg > 0 ? ratingAvg.toStringAsFixed(1) : '5.0'),
                                 style: const TextStyle(
                                   fontFamily: 'Georgia',
                                   fontSize: 22,
@@ -119,6 +125,16 @@ class ProfileRatingXpCard extends StatelessWidget {
                   // 5 Blood drop icons
                   Row(
                     children: List.generate(5, (index) {
+                      if (totalDonations == 0) {
+                        return const Padding(
+                          padding: EdgeInsets.only(right: 3),
+                          child: Icon(
+                            Icons.water_drop_outlined,
+                            size: 16,
+                            color: Color(0xFFE2D6D6),
+                          ),
+                        );
+                      }
                       final double dropValue = (ratingAvg - index).clamp(0.0, 1.0);
                       return Padding(
                         padding: const EdgeInsets.only(right: 3),
@@ -135,7 +151,9 @@ class ProfileRatingXpCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      ratingCount > 0 ? '$ratingCount reviews' : 'New verified donor',
+                      totalDonations == 0
+                          ? 'No reviews yet'
+                          : (ratingCount > 0 ? '$ratingCount reviews' : 'New verified donor'),
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 11,
@@ -207,7 +225,7 @@ class ProfileRatingXpCard extends StatelessWidget {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
-                                '$xp',
+                                totalDonations == 0 ? '0' : '$xp',
                                 style: const TextStyle(
                                   fontFamily: 'Georgia',
                                   fontSize: 20,
@@ -240,7 +258,7 @@ class ProfileRatingXpCard extends StatelessWidget {
                       color: const Color(0xFFF3DDE0),
                       alignment: Alignment.centerLeft,
                       child: FractionallySizedBox(
-                        widthFactor: levelProgress.clamp(0.05, 1.0),
+                        widthFactor: totalDonations == 0 ? 0.0 : levelProgress.clamp(0.05, 1.0),
                         child: Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFFC30121),
@@ -255,7 +273,7 @@ class ProfileRatingXpCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Lvl $level • $tier',
+                      totalDonations == 0 ? 'Unranked • New Member' : 'Lvl $level • ${donorTitle ?? tier}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

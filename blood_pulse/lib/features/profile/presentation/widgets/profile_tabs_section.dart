@@ -358,8 +358,11 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
     final activityAsync = ref.watch(profileActivityProvider);
     final profile = profileAsync.valueOrNull;
 
-    final donorId = profile != null ? 'BP-D${profile.id.toString().padLeft(6, "0")}' : 'BP-D------';
-    final isVerified = profile?.isVerified ?? false;
+    final totalDonations = profile?.totalBagsDonated ?? 0;
+    final donorId = (profile != null && totalDonations > 0)
+        ? 'BP-D${profile.id.toString().padLeft(6, "0")}'
+        : (profile != null ? 'Not yet issued' : 'BP-D------');
+    final isVerified = (profile?.isVerified ?? false) && totalDonations > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

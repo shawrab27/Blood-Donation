@@ -28,6 +28,9 @@ class ProfileModel {
   final int rank;
   final int globalRank;
   final String badge;
+  final String? donorTitle;
+  final String? occupation;
+  final String? positionDisplay;
   final String? alertPauseUntil;
   final bool showContact;
   final bool publicProfile;
@@ -74,6 +77,9 @@ class ProfileModel {
     this.rank = 0,
     this.globalRank = 0,
     this.badge = 'Active Donor',
+    this.donorTitle,
+    this.occupation,
+    this.positionDisplay,
     this.alertPauseUntil,
     this.showContact = false,
     this.publicProfile = false,
@@ -121,6 +127,9 @@ class ProfileModel {
     int? rank,
     int? globalRank,
     String? badge,
+    String? donorTitle,
+    String? occupation,
+    String? positionDisplay,
     String? alertPauseUntil,
     bool? showContact,
     bool? publicProfile,
@@ -167,6 +176,9 @@ class ProfileModel {
       rank: rank ?? this.rank,
       globalRank: globalRank ?? this.globalRank,
       badge: badge ?? this.badge,
+      donorTitle: donorTitle ?? this.donorTitle,
+      occupation: occupation ?? this.occupation,
+      positionDisplay: positionDisplay ?? this.positionDisplay,
       alertPauseUntil: alertPauseUntil ?? this.alertPauseUntil,
       showContact: showContact ?? this.showContact,
       publicProfile: publicProfile ?? this.publicProfile,
@@ -246,6 +258,9 @@ class ProfileModel {
       rank: rankVal,
       globalRank: rankVal,
       badge: json['tier'] ?? json['badge'] ?? 'Active Donor',
+      donorTitle: json['donor_title'],
+      occupation: json['occupation'],
+      positionDisplay: json['position_display'],
       alertPauseUntil: json['emergency_alerts_paused_until']?.toString() ?? json['alert_pause_until']?.toString() ?? json['deferral_until']?.toString(),
       showContact: json['show_contact'] ?? false,
       publicProfile: json['public_profile'] ?? false,

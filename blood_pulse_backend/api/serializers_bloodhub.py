@@ -65,6 +65,8 @@ class HospitalSerializer(serializers.ModelSerializer):
 class DonorSearchSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     badge = serializers.CharField(read_only=True)
+    donor_title = serializers.CharField(read_only=True)
+    position_display = serializers.CharField(read_only=True)
 
     class Meta:
         model = DonorProfile
@@ -74,6 +76,8 @@ class DonorSearchSerializer(serializers.ModelSerializer):
             'blood_group',
             'district',
             'badge',
+            'donor_title',
+            'position_display',
         ]
 
     def get_name(self, obj):
@@ -89,6 +93,8 @@ class DonorMapSerializer(serializers.ModelSerializer):
     public_lat = serializers.SerializerMethodField()
     public_lng = serializers.SerializerMethodField()
     badge = serializers.CharField(read_only=True)
+    donor_title = serializers.CharField(read_only=True)
+    position_display = serializers.CharField(read_only=True)
     name = serializers.SerializerMethodField()
 
     class Meta:
@@ -103,6 +109,8 @@ class DonorMapSerializer(serializers.ModelSerializer):
             'public_lat',
             'public_lng',
             'badge',
+            'donor_title',
+            'position_display',
         ]
 
     def get_name(self, obj):

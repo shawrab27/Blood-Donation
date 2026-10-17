@@ -142,3 +142,24 @@ FARE_MAX_RATE_PER_KM = int(os.environ.get('FARE_MAX_RATE_PER_KM', '20'))
 FARE_MIN_BASE_FARE = int(os.environ.get('FARE_MIN_BASE_FARE', '50'))
 FARE_MAX_BASE_FARE = int(os.environ.get('FARE_MAX_BASE_FARE', '70'))
 
+
+def get_donor_title(donations: int):
+    """
+    Returns the official BloodPulse donor title hierarchy based on verified donation count.
+    0 donations: None (Unranked / New Member)
+    1 donation: "Newcomer"
+    2-4 donations: "Regular"
+    5-9 donations: "Lifesaver"
+    10+ donations: "Hero"
+    """
+    if donations is None or donations <= 0:
+        return None
+    if donations == 1:
+        return "Newcomer"
+    elif 2 <= donations <= 4:
+        return "Regular"
+    elif 5 <= donations <= 9:
+        return "Lifesaver"
+    else:
+        return "Hero"
+
