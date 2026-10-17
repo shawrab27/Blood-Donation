@@ -11,14 +11,21 @@ import 'package:flutter/foundation.dart';
 
 import '../models/chat_message_model.dart';
 import 'chat_message_codec.dart';
+import 'chat_transport.dart';
 import 'encryption_service.dart';
 
-/// Singleton chat service managing Firestore persistence and E2EE.
+/// Singleton chat service managing Firestore persistence, transport abstraction, and E2EE.
 class ChatService {
   ChatService._();
   static final ChatService instance = ChatService._();
 
   FirebaseFirestore? _customDb;
+  ChatTransport? _customTransport;
+
+  ChatTransport get transport => _customTransport ??= HttpPollingChatTransport();
+
+  @visibleForTesting
+  set transport(ChatTransport? customTransport) => _customTransport = customTransport;
 
   @visibleForTesting
   set firestoreInstance(FirebaseFirestore? db) => _customDb = db;
@@ -104,20 +111,37 @@ class ChatService {
     String? receiverName,
     String? bloodGroup,
     String? attachmentUrl,
+    String messageType = 'TEXT',
+    String? voiceUrl,
+    int voiceDurationSeconds = 0,
   }) async {
     final roomMessagesRef = _roomMessages(chatId);
-    if (roomMessagesRef == null) {
-      _addToMockCache(ChatMessageModel(
-        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+    if (int.tryParse(chatId) != null || roomMessagesRef == null) {
+      final res = await transport.sendMessage(
         chatId: chatId,
-        senderId: senderId,
-        receiverId: receiverId,
         text: text,
-        attachmentUrl: attachmentUrl,
-        timestamp: DateTime.now(),
-        isRead: false,
-        status: 'sent',
-      ));
+        messageType: messageType,
+        voiceUrl: voiceUrl,
+        voiceDurationSeconds: voiceDurationSeconds,
+      );
+      if (res != null) {
+        _addToMockCache(res);
+      } else {
+        _addToMockCache(ChatMessageModel(
+          messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+          chatId: chatId,
+          senderId: senderId,
+          receiverId: receiverId,
+          text: text,
+          attachmentUrl: attachmentUrl,
+          messageType: messageType,
+          voiceUrl: voiceUrl,
+          voiceDurationSeconds: voiceDurationSeconds,
+          timestamp: DateTime.now(),
+          isRead: false,
+          status: 'sent',
+        ));
+      }
       return;
     }
 
@@ -197,6 +221,9 @@ class ChatService {
       receiverId: receiverId,
       text: text,
       attachmentUrl: attachmentUrl,
+      messageType: messageType,
+      voiceUrl: voiceUrl,
+      voiceDurationSeconds: voiceDurationSeconds,
       timestamp: DateTime.now(),
       isRead: false,
       status: 'sent',
@@ -205,8 +232,16 @@ class ChatService {
 
   /// Real-time stream of [ChatMessageModel] from `chat_rooms/{chatId}/messages`.
   Stream<List<ChatMessageModel>> getMessagesStream(String chatId, {String? currentUserId}) {
+    if (int.tryParse(chatId) != null) {
+      return transport.getMessagesStream(chatId, currentUserId: currentUserId);
+    }
     final roomMessagesRef = _roomMessages(chatId);
-    if (roomMessagesRef == null) return _getMockStream(chatId);
+    if (roomMessagesRef == null) {
+      if (_localMessageCache.isNotEmpty) {
+        return _getMockStream(chatId);
+      }
+      return transport.getMessagesStream(chatId, currentUserId: currentUserId);
+    }
 
     try {
       return roomMessagesRef
@@ -232,6 +267,46 @@ class ChatService {
       debugPrint('[ChatService] Firestore stream error, using fallback: $e');
       return _getMockStream(chatId);
     }
+  }
+
+  /// Reports an offensive or abusive chat message to moderation (#37).
+  Future<void> reportMessage({
+    required String chatId,
+    required String messageId,
+    String reason = 'Inappropriate content',
+  }) async {
+    await transport.reportMessage(chatId, messageId, reason);
+  }
+
+  /// Deletes a message sent by the current user (#37, #39).
+  Future<void> deleteMessage({
+    required String chatId,
+    required String messageId,
+  }) async {
+    await transport.deleteMessage(chatId, messageId);
+    _localMessageCache.removeWhere((m) => m.messageId == messageId);
+    if (!_mockStreamController.isClosed) {
+      _mockStreamController.add(List.from(_localMessageCache));
+    }
+  }
+
+  /// Uploads a recorded voice note to the server (#39).
+  Future<Map<String, dynamic>?> uploadVoiceNote({
+    required String chatId,
+    required List<int> audioBytes,
+    required int durationSeconds,
+    String filename = 'voice_note.m4a',
+  }) async {
+    final tr = transport;
+    if (tr is HttpPollingChatTransport) {
+      return tr.uploadVoiceNote(
+        chatId: chatId,
+        audioBytes: audioBytes,
+        durationSeconds: durationSeconds,
+        filename: filename,
+      );
+    }
+    return null;
   }
 
   /// Updates incoming unread messages to 'delivered' status.

@@ -73,5 +73,57 @@ void main() {
       expect(accountBRooms.map((r) => r.otherParticipantName), contains('Donor Yasmin'));
       expect(accountBRooms.map((r) => r.otherParticipantName), isNot(contains('Donor Xavier')));
     });
+
+    test('ChatMessageModel handles voice message payload correctly (#39)', () {
+      final voiceMsg = ChatMessageModel.fromJson({
+        'id': 'msg_voice_1',
+        'acceptance_id': '42',
+        'sender_id': 'user_1',
+        'recipient_id': 'user_2',
+        'content': '',
+        'message_type': 'VOICE',
+        'voice_url': '/media/chat_voice/42/sample.m4a',
+        'voice_duration_seconds': 25,
+        'created_at': DateTime.now().toIso8601String(),
+        'status': 'sent',
+      });
+
+      expect(voiceMsg.isVoice, isTrue);
+      expect(voiceMsg.voiceUrl, '/media/chat_voice/42/sample.m4a');
+      expect(voiceMsg.voiceDurationSeconds, 25);
+      expect(voiceMsg.isSent, isTrue);
+      expect(voiceMsg.isDelivered, isFalse);
+      expect(voiceMsg.isReadReceipt, isFalse);
+      expect(voiceMsg.isReported, isFalse);
+
+      final reportedMsg = voiceMsg.copyWith(isReported: true, status: 'delivered');
+      expect(reportedMsg.isReported, isTrue);
+      expect(reportedMsg.isDelivered, isTrue);
+    });
+
+    test('ChatMessageModel WhatsApp-style status transitions (#37)', () {
+      final sentMsg = ChatMessageModel(
+        messageId: 'm1',
+        chatId: '42',
+        senderId: '10',
+        receiverId: '20',
+        text: 'Are you near the hospital?',
+        timestamp: DateTime.now(),
+        status: 'sent',
+      );
+      expect(sentMsg.isSent, isTrue);
+      expect(sentMsg.isDelivered, isFalse);
+      expect(sentMsg.isReadReceipt, isFalse);
+
+      final deliveredMsg = sentMsg.copyWith(status: 'delivered');
+      expect(deliveredMsg.isSent, isFalse);
+      expect(deliveredMsg.isDelivered, isTrue);
+      expect(deliveredMsg.isReadReceipt, isFalse);
+
+      final readMsg = deliveredMsg.copyWith(status: 'read', isRead: true);
+      expect(readMsg.isSent, isFalse);
+      expect(readMsg.isDelivered, isFalse);
+      expect(readMsg.isReadReceipt, isTrue);
+    });
   });
 }

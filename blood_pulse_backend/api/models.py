@@ -2864,4 +2864,66 @@ class UserDevice(models.Model):
         return f"{self.user.username} - {self.device_name or self.device_id[:8]} ({self.platform})"
 
 
+class DirectMessage(models.Model):
+    """
+    Real-time direct messaging between blood requisition participant (requester)
+    and accepted donor (#37, #39).
+    Supports delivery and read states, voice notes, and reporting.
+    """
+    STATUS_CHOICES = (
+        ('SENT', 'Sent'),
+        ('DELIVERED', 'Delivered'),
+        ('READ', 'Read'),
+    )
+    MESSAGE_TYPE_CHOICES = (
+        ('TEXT', 'Text Message'),
+        ('VOICE', 'Voice Note'),
+        ('IMAGE', 'Image'),
+    )
+
+    acceptance = models.ForeignKey(
+        'RequestAcceptance',
+        on_delete=models.CASCADE,
+        related_name='chat_messages',
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_direct_messages',
+    )
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='received_direct_messages',
+    )
+    content = models.TextField(blank=True, default='')
+    message_type = models.CharField(
+        max_length=20,
+        choices=MESSAGE_TYPE_CHOICES,
+        default='TEXT',
+    )
+    voice_url = models.URLField(blank=True, null=True, max_length=500)
+    voice_duration_seconds = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='SENT',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    is_reported = models.BooleanField(default=False)
+    report_reason = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['acceptance', 'created_at']),
+            models.Index(fields=['recipient', 'status']),
+        ]
+
+    def __str__(self):
+        return f"Msg {self.id} from {self.sender.username} to {self.recipient.username} ({self.status})"
+
+
 

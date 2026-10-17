@@ -11,9 +11,13 @@ class ChatMessageModel {
     required this.receiverId,
     required this.text,
     this.attachmentUrl,
+    this.messageType = 'TEXT',
+    this.voiceUrl,
+    this.voiceDurationSeconds = 0,
     required this.timestamp,
     this.isRead = false,
     this.status = 'sent',
+    this.isReported = false,
   });
 
   final String messageId;
@@ -22,13 +26,18 @@ class ChatMessageModel {
   final String receiverId;
   final String text;
   final String? attachmentUrl;
+  final String messageType; // 'TEXT' | 'VOICE' | 'IMAGE'
+  final String? voiceUrl;
+  final int voiceDurationSeconds;
   final DateTime timestamp;
   final bool isRead;
   final String status; // 'sent' | 'delivered' | 'read'
+  final bool isReported;
 
-  bool get isSent => status == 'sent';
-  bool get isDelivered => status == 'delivered';
-  bool get isReadReceipt => status == 'read' || isRead;
+  bool get isSent => status.toLowerCase() == 'sent';
+  bool get isDelivered => status.toLowerCase() == 'delivered';
+  bool get isReadReceipt => status.toLowerCase() == 'read' || isRead;
+  bool get isVoice => messageType == 'VOICE' || (voiceUrl != null && voiceUrl!.isNotEmpty);
 
   ChatMessageModel copyWith({
     String? messageId,
@@ -37,20 +46,28 @@ class ChatMessageModel {
     String? receiverId,
     String? text,
     String? attachmentUrl,
+    String? messageType,
+    String? voiceUrl,
+    int? voiceDurationSeconds,
     DateTime? timestamp,
     bool? isRead,
     String? status,
+    bool? isReported,
   }) {
     return ChatMessageModel(
-      messageId:     messageId ?? this.messageId,
-      chatId:        chatId ?? this.chatId,
-      senderId:      senderId ?? this.senderId,
-      receiverId:    receiverId ?? this.receiverId,
-      text:          text ?? this.text,
-      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
-      timestamp:     timestamp ?? this.timestamp,
-      isRead:        isRead ?? this.isRead,
-      status:        status ?? this.status,
+      messageId:            messageId ?? this.messageId,
+      chatId:               chatId ?? this.chatId,
+      senderId:             senderId ?? this.senderId,
+      receiverId:           receiverId ?? this.receiverId,
+      text:                 text ?? this.text,
+      attachmentUrl:        attachmentUrl ?? this.attachmentUrl,
+      messageType:          messageType ?? this.messageType,
+      voiceUrl:             voiceUrl ?? this.voiceUrl,
+      voiceDurationSeconds: voiceDurationSeconds ?? this.voiceDurationSeconds,
+      timestamp:            timestamp ?? this.timestamp,
+      isRead:               isRead ?? this.isRead,
+      status:               status ?? this.status,
+      isReported:           isReported ?? this.isReported,
     );
   }
 
@@ -62,9 +79,13 @@ class ChatMessageModel {
       'receiverId': receiverId,
       'text': text,
       'attachmentUrl': attachmentUrl,
+      'messageType': messageType,
+      'voiceUrl': voiceUrl,
+      'voiceDurationSeconds': voiceDurationSeconds,
       'timestamp': timestamp.toIso8601String(),
       'isRead': isRead,
       'status': status,
+      'isReported': isReported,
     };
   }
 
@@ -72,17 +93,25 @@ class ChatMessageModel {
     final rawIsRead = map['isRead'] as bool? ?? false;
     final rawStatus = map['status'] as String? ?? (rawIsRead ? 'read' : 'sent');
     return ChatMessageModel(
-      messageId: map['messageId'] as String,
-      chatId: map['chatId'] as String,
-      senderId: map['senderId'] as String,
-      receiverId: map['receiverId'] as String,
-      text: map['text'] as String,
+      messageId: (map['messageId'] ?? map['id'] ?? '').toString(),
+      chatId: (map['chatId'] ?? map['acceptance_id'] ?? '').toString(),
+      senderId: (map['senderId'] ?? map['sender_id'] ?? '').toString(),
+      receiverId: (map['receiverId'] ?? map['recipient_id'] ?? '').toString(),
+      text: (map['text'] ?? map['content'] ?? '') as String,
       attachmentUrl: map['attachmentUrl'] as String?,
-      timestamp: DateTime.parse(map['timestamp'] as String),
-      isRead: rawIsRead || rawStatus == 'read',
-      status: rawStatus,
+      messageType: (map['messageType'] ?? map['message_type'] ?? 'TEXT') as String,
+      voiceUrl: (map['voiceUrl'] ?? map['voice_url']) as String?,
+      voiceDurationSeconds: (map['voiceDurationSeconds'] ?? map['voice_duration_seconds'] as num?)?.toInt() ?? 0,
+      timestamp: map['timestamp'] != null
+          ? DateTime.parse(map['timestamp'] as String)
+          : (map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : DateTime.now()),
+      isRead: rawIsRead || rawStatus.toLowerCase() == 'read',
+      status: rawStatus.toLowerCase(),
+      isReported: (map['isReported'] ?? map['is_reported'] as bool?) ?? false,
     );
   }
+
+  factory ChatMessageModel.fromJson(Map<String, dynamic> json) => ChatMessageModel.fromMap(json);
 }
 
 /// Summary of a real-time conversation room between two users in Firestore.

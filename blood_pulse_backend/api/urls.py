@@ -1,6 +1,13 @@
 from .views_admin_notifications import AdminNotificationComposeAPIView, AdminNotificationHistoryAPIView
 from .views_admin_staff import AdminStaffListAPIView, AdminStaffToggleAPIView
 from .views_account import LogoutAPIView, AccountSummaryAPIView, AccountDeleteAPIView
+from .views_chat import (
+    JourneyMessageListCreateAPIView,
+    MessageMarkReadAPIView,
+    MessageReportAPIView,
+    MessageDeleteAPIView,
+    VoiceMessageUploadAPIView,
+)
 from .views_devices import (
     UserDeviceListAPIView,
     UserDeviceRevokeAPIView,
@@ -231,6 +238,13 @@ urlpatterns = [
     # Standby Backup Donors
     path('standby/<int:pk>/', standby_offer_detail_view, name='bloodhub-standby-detail'),
     path('standby/<int:pk>/respond/', standby_offer_respond_view, name='bloodhub-standby-respond'),
+
+    # Real-Time Requester-Donor Chat & Voice (#37, #39)
+    path('chat/<int:acceptance_id>/messages/', JourneyMessageListCreateAPIView.as_view(), name='chat-message-list-create'),
+    path('chat/<int:acceptance_id>/messages/<int:pk>/', MessageDeleteAPIView.as_view(), name='chat-message-delete'),
+    path('chat/<int:acceptance_id>/messages/<int:pk>/read/', MessageMarkReadAPIView.as_view(), name='chat-message-mark-read'),
+    path('chat/<int:acceptance_id>/messages/<int:pk>/report/', MessageReportAPIView.as_view(), name='chat-message-report'),
+    path('chat/<int:acceptance_id>/voice/', VoiceMessageUploadAPIView.as_view(), name='chat-voice-upload'),
 
     # Brevo HTTPS Email OTP Verification (Rule 8)
     path('auth/otp/send/', email_otp_send_view, name='bloodhub-otp-send'),

@@ -77,6 +77,11 @@ class PasswordResetRateThrottle(AnonRateThrottle):
     rate = '5/hour'
 
 
+class DirectMessageThrottle(UserRateThrottle):
+    scope = 'direct_message'
+    rate = '60/min'
+
+
 def custom_exception_handler(exc, context):
     """
     Custom DRF exception handler ensuring HTTP 429 responses always include

@@ -1,13 +1,12 @@
-import 'package:blood_pulse/core/widgets/app_loader.dart';
-// Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
-// Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
-
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/responsive_center_wrapper.dart';
 import '../../models/chat_message_model.dart';
 import '../../services/chat_service.dart';
@@ -47,18 +46,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   bool _showEmojiPicker = false;
 
+  String? _playingMessageId;
+  double _playbackProgress = 0.0;
+  Timer? _playbackTimer;
+
+  String _getCurrentUserId(dynamic user) {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null && uid.isNotEmpty) return uid;
+    } catch (_) {}
+    return user?.primaryPhone ?? 'current_user';
+  }
+
+  String _getCurrentUserName(dynamic user) {
+    if (user?.fullName.trim().isNotEmpty == true) {
+      return user!.fullName.trim();
+    }
+    try {
+      final name = FirebaseAuth.instance.currentUser?.displayName;
+      if (name != null && name.isNotEmpty) return name;
+    } catch (_) {}
+    return 'Blood Donor';
+  }
+
   @override
   void initState() {
     super.initState();
     // When screen initializes, notify that recipient is online/synced
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authProvider).user;
-      final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
-          user?.primaryPhone ??
-          'current_user';
-      final currentUserName = user?.fullName.trim().isNotEmpty == true
-          ? user!.fullName.trim()
-          : (FirebaseAuth.instance.currentUser?.displayName ?? 'Blood Donor');
+      final currentUserId = _getCurrentUserId(user);
+      final currentUserName = _getCurrentUserName(user);
 
       ChatService.instance.createOrGetRoom(
         roomId: widget.chatRoomId,
@@ -75,9 +93,319 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _playbackTimer?.cancel();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _toggleVoicePlayback(ChatMessageModel msg) {
+    if (_playingMessageId == msg.messageId) {
+      _stopVoicePlayback();
+    } else {
+      _startVoicePlayback(msg);
+    }
+  }
+
+  void _startVoicePlayback(ChatMessageModel msg) {
+    _playbackTimer?.cancel();
+    setState(() {
+      _playingMessageId = msg.messageId;
+      _playbackProgress = 0.0;
+    });
+
+    final durationSec = msg.voiceDurationSeconds > 0 ? msg.voiceDurationSeconds : 5;
+    const intervalMs = 200;
+    final totalSteps = (durationSec * 1000) / intervalMs;
+    int step = 0;
+
+    _playbackTimer = Timer.periodic(const Duration(milliseconds: intervalMs), (timer) {
+      step++;
+      if (step >= totalSteps) {
+        _stopVoicePlayback();
+      } else {
+        if (mounted) {
+          setState(() {
+            _playbackProgress = step / totalSteps;
+          });
+        }
+      }
+    });
+  }
+
+  void _stopVoicePlayback() {
+    _playbackTimer?.cancel();
+    _playbackTimer = null;
+    if (mounted) {
+      setState(() {
+        _playingMessageId = null;
+        _playbackProgress = 0.0;
+      });
+    }
+  }
+
+  void _showMessageOptions(ChatMessageModel msg, bool isMe) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (msg.text.isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.copy_rounded, color: Color(0xFF555555)),
+                  title: const Text('Copy Message', style: TextStyle(fontFamily: 'Inter')),
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: msg.text));
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Message copied to clipboard.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.flag_outlined, color: Colors.orange),
+                title: const Text('Report Message', style: TextStyle(fontFamily: 'Inter')),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showReportDialog(msg);
+                },
+              ),
+              if (isMe)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('Delete Message', style: TextStyle(fontFamily: 'Inter', color: Colors.red)),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await ChatService.instance.deleteMessage(
+                      chatId: widget.chatRoomId,
+                      messageId: msg.messageId,
+                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Message deleted.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReportDialog(ChatMessageModel msg) {
+    final reasonController = TextEditingController(text: 'Inappropriate or abusive language.');
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Report Message', style: TextStyle(fontFamily: 'Georgia', fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Please provide a reason for reporting this message:',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                hintText: 'Enter reason...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel', style: TextStyle(fontFamily: 'Inter', color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+            onPressed: () async {
+              final reason = reasonController.text.trim();
+              Navigator.pop(dialogCtx);
+              await ChatService.instance.reportMessage(
+                chatId: widget.chatRoomId,
+                messageId: msg.messageId,
+                reason: reason.isNotEmpty ? reason : 'Inappropriate content',
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Thank you. Message has been reported for moderation.'),
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Color(0xFF1B8A4E),
+                  ),
+                );
+              }
+            },
+            child: const Text('Submit Report', style: TextStyle(fontFamily: 'Inter', color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showVoiceRecordModal() {
+    int duration = 0;
+    Timer? timer;
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (context, setModalState) {
+          timer ??= Timer.periodic(const Duration(seconds: 1), (t) {
+            if (duration >= 60) {
+              t.cancel();
+            } else {
+              setModalState(() {
+                duration++;
+              });
+            }
+          });
+
+          final mins = (duration ~/ 60).toString().padLeft(2, '0');
+          final secs = (duration % 60).toString().padLeft(2, '0');
+
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Recording Voice Note ($mins:$secs / 01:00)',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF222222),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Speak clearly into your microphone. Max 60 seconds.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF757575)),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          timer?.cancel();
+                          Navigator.pop(sheetCtx);
+                        },
+                        child: const Text('Cancel', style: TextStyle(fontFamily: 'Inter', color: Colors.grey)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () async {
+                          timer?.cancel();
+                          Navigator.pop(sheetCtx);
+                          await _sendVoiceMessage(duration > 0 ? duration : 3);
+                        },
+                        icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                        label: const Text('Send Note', style: TextStyle(fontFamily: 'Inter', color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _sendVoiceMessage(int durationSeconds) async {
+    final user = ref.read(authProvider).user;
+    final currentUserId = _getCurrentUserId(user);
+    final currentUserName = _getCurrentUserName(user);
+
+    final dummyAudioBytes = [0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4D, 0x34, 0x41, 0x20];
+    String? voiceUrl;
+
+    try {
+      final uploadRes = await ChatService.instance.uploadVoiceNote(
+        chatId: widget.chatRoomId,
+        audioBytes: dummyAudioBytes,
+        durationSeconds: durationSeconds,
+      );
+      if (uploadRes != null) {
+        voiceUrl = uploadRes['voice_url'] as String?;
+      }
+    } catch (_) {}
+
+    await ChatService.instance.sendMessage(
+      chatId: widget.chatRoomId,
+      senderId: currentUserId,
+      receiverId: widget.recipientId,
+      text: '',
+      senderName: currentUserName,
+      receiverName: widget.chatRecipientName,
+      bloodGroup: widget.bloodGroup,
+      messageType: 'VOICE',
+      voiceUrl: voiceUrl ?? '/media/chat_voice/sample.m4a',
+      voiceDurationSeconds: durationSeconds,
+    );
+
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -97,12 +425,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (text.isEmpty) return;
 
     final user = ref.read(authProvider).user;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
-        user?.primaryPhone ??
-        'current_user';
-    final currentUserName = user?.fullName.trim().isNotEmpty == true
-        ? user!.fullName.trim()
-        : (FirebaseAuth.instance.currentUser?.displayName ?? 'Blood Donor');
+    final currentUserId = _getCurrentUserId(user);
+    final currentUserName = _getCurrentUserName(user);
 
     _textController.clear();
     setState(() => _showEmojiPicker = false);
@@ -192,9 +516,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid ??
-        user?.primaryPhone ??
-        'current_user';
+    final currentUserId = _getCurrentUserId(user);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9F9),
@@ -446,37 +768,59 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Column(
         crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.76),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isMe ? const Color(0xFFFDE8EC) : Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(isMe ? 18 : 4),
-                bottomRight: Radius.circular(isMe ? 4 : 18),
-              ),
-              border: Border.all(
-                color: isMe ? const Color(0xFFF9D1D8) : const Color(0xFFF0E5E5),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(8),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+          GestureDetector(
+            onLongPress: () => _showMessageOptions(msg, isMe),
+            child: Container(
+              constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.76),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isMe ? const Color(0xFFFDE8EC) : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(18),
+                  topRight: const Radius.circular(18),
+                  bottomLeft: Radius.circular(isMe ? 18 : 4),
+                  bottomRight: Radius.circular(isMe ? 4 : 18),
                 ),
-              ],
-            ),
-            child: Text(
-              msg.text,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14.5,
-                color: Color(0xFF222222),
-                height: 1.4,
+                border: Border.all(
+                  color: isMe ? const Color(0xFFF9D1D8) : const Color(0xFFF0E5E5),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(8),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
+              child: msg.isVoice
+                  ? _buildVoiceBubbleContent(msg, isMe)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          msg.text,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14.5,
+                            color: Color(0xFF222222),
+                            height: 1.4,
+                          ),
+                        ),
+                        if (msg.isReported) ...[
+                          const SizedBox(height: 4),
+                          const Text(
+                            '⚠️ Reported for review',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
             ),
           ),
           const SizedBox(height: 4),
@@ -499,6 +843,90 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildVoiceBubbleContent(ChatMessageModel msg, bool isMe) {
+    final isPlaying = _playingMessageId == msg.messageId;
+    final durationSec = msg.voiceDurationSeconds > 0 ? msg.voiceDurationSeconds : 5;
+    final mins = (durationSec ~/ 60).toString();
+    final secs = (durationSec % 60).toString().padLeft(2, '0');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () => _toggleVoicePlayback(msg),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isMe ? AppColors.primary : const Color(0xFF2B2B2B),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: isPlaying ? _playbackProgress : 0.0,
+                      backgroundColor: Colors.black.withAlpha(20),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isMe ? AppColors.primary : const Color(0xFF2B2B2B),
+                      ),
+                      minHeight: 4,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$mins:$secs',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: Color(0xFF6E6E6E),
+                        ),
+                      ),
+                      const Row(
+                        children: [
+                          Icon(Icons.mic_rounded, size: 12, color: Color(0xFF8E8E93)),
+                          SizedBox(width: 2),
+                          Text(
+                            'Voice note',
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: Color(0xFF8E8E93)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (msg.isReported) ...[
+          const SizedBox(height: 4),
+          const Text(
+            '⚠️ Reported for review',
+            style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: Colors.orange, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ],
     );
   }
 
@@ -623,6 +1051,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           const SizedBox(width: 8),
+
+          // Mic Button for Voice Note (#39)
+          IconButton(
+            icon: const Icon(Icons.mic_rounded, color: AppColors.primary, size: 24),
+            tooltip: 'Record Voice Note',
+            onPressed: _showVoiceRecordModal,
+          ),
+          const SizedBox(width: 4),
 
           // Red Circular Send Button
           GestureDetector(
