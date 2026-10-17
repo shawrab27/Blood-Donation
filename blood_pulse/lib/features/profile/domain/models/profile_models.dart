@@ -543,7 +543,7 @@ class ProfileStoryModel {
       location: json['location']?.toString(),
       content: (json['content'] ?? '').toString(),
       imageUrl: json['image_url']?.toString(),
-      likesCount: (json['likes_count'] as num?)?.toInt() ?? 0,
+      likesCount: (json['likes_count'] as num?)?.toInt() ?? (json['reactions_count'] as num?)?.toInt() ?? 0,
       commentsCount: (json['comments_count'] as num?)?.toInt() ?? 0,
       createdAt: (json['created_at'] ?? '').toString(),
     );

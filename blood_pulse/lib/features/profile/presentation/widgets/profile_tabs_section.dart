@@ -221,11 +221,50 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
             ),
           ),
           error: (err, _) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             alignment: Alignment.center,
-            child: Text(
-              'Could not load stories. Tap to retry.',
-              style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.grey.shade600),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0F1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFD1D6)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded, size: 32, color: Color(0xFFC30121)),
+                const SizedBox(height: 8),
+                const Text(
+                  'Could not load your stories',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Please check your connection and try again.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF5F5E5E)),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 34,
+                  child: OutlinedButton.icon(
+                    onPressed: () => ref.read(profileStoriesProvider.notifier).fetchStories(),
+                    icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFC30121)),
+                    label: const Text('Retry'),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFC30121)),
+                      foregroundColor: const Color(0xFFC30121),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                      textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           data: (stories) {
@@ -319,9 +358,19 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  story.authorName,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF24191A)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      story.authorName,
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF24191A)),
+                    ),
+                    if (story.location != null && story.location!.isNotEmpty)
+                      Text(
+                        story.location!,
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: Color(0xFF8C8A8A)),
+                      ),
+                  ],
                 ),
               ),
               Text(
@@ -335,6 +384,17 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
             story.content,
             style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF24191A), height: 1.35),
           ),
+          if (story.imageUrl != null && story.imageUrl!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                story.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Row(
             children: [

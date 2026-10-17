@@ -549,18 +549,36 @@ class ProfileStoriesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        profile = DonorProfile.objects.filter(user=request.user).first()
+        profile = DonorProfile.objects.filter(user=request.user).select_related('user').first()
         if not profile:
             return Response({"results": []})
-        posts = SocialPost.objects.filter(author=profile, deleted_at__isnull=True).order_by('-created_at', '-id')
+
+        author_name = f"{profile.user.first_name} {profile.user.last_name}".strip() or profile.user.username
+        author_photo = profile.google_photo_url or (profile.profile_picture.url if profile.profile_picture else None)
+
+        posts = SocialPost.objects.filter(author=profile, deleted_at__isnull=True).select_related('district').order_by('-created_at', '-id')
         data = []
         for p in posts[:30]:
+            img_url = None
+            if p.media and len(p.media) > 0:
+                first_item = p.media[0]
+                if isinstance(first_item, str):
+                    img_url = first_item
+                elif isinstance(first_item, dict):
+                    img_url = first_item.get('url') or first_item.get('image_url')
+
+            likes = p.like_count or p.likes_count or 0
             data.append({
                 "id": p.id,
+                "author_name": author_name,
+                "author_photo": author_photo,
+                "location": p.district.name if p.district else (profile.district or ""),
                 "content": p.text_content,
-                "created_at": p.created_at.isoformat(),
-                "reactions_count": p.like_count or p.likes_count,
+                "image_url": img_url,
+                "likes_count": likes,
+                "reactions_count": likes,
                 "comments_count": p.comment_count,
+                "created_at": p.created_at.isoformat(),
             })
         return Response({"results": data})
 
