@@ -142,6 +142,13 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
+        // 0. Close dialogs / bottom sheets / pushed screens first
+        final nav = Navigator.of(context);
+        if (nav.canPop()) {
+          nav.pop();
+          return;
+        }
+
         // 1. If not on Feed tab (index 0), navigate to Feed tab first
         if (activeTabIndex != 0) {
           ref.read(shellTabProvider.notifier).state = 0;

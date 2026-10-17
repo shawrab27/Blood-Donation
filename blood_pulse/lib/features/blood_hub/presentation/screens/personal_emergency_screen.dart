@@ -828,9 +828,69 @@ class _PersonalEmergencyScreenState
     );
   }
 
+  bool get _hasUnsavedInput {
+    return _patientNameController.text.trim().isNotEmpty ||
+        _attendantController.text.trim().isNotEmpty ||
+        _contactController.text.trim().isNotEmpty ||
+        _hospitalController.text.trim().isNotEmpty ||
+        _wardBedController.text.trim().isNotEmpty ||
+        _conditionNoteController.text.trim().isNotEmpty ||
+        _patientPhotoBytes != null ||
+        _slipBytes != null ||
+        (_bloodGroup != null && _bloodGroup != widget.prefillBloodGroup);
+  }
+
+  Future<bool?> _showDiscardConfirmDialog() {
+    final isBangla = Localizations.localeOf(context).languageCode == 'bn';
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          isBangla ? 'অনুরোধটি বাতিল করবেন?' : 'Discard unsaved request?',
+          style: const TextStyle(fontFamily: 'Georgia', fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          isBangla
+              ? 'আপনার প্রবেশ করানো তথ্য হারিয়ে যাবে। আপনি কি নিশ্চিত?'
+              : 'You have unsaved changes. Are you sure you want to discard them?',
+          style: const TextStyle(fontFamily: 'Inter'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              isBangla ? 'চালিয়ে যান' : 'Keep Editing',
+              style: const TextStyle(fontFamily: 'Inter', color: _kSecondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kPrimary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              isBangla ? 'বাতিল করুন' : 'Discard',
+              style: const TextStyle(fontFamily: 'Inter'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_hasUnsavedInput,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldDiscard = await _showDiscardConfirmDialog();
+        if (shouldDiscard == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFFDF3F3),
       body: SafeArea(
         child: ResponsiveCenterWrapper(
@@ -1111,7 +1171,7 @@ class _PersonalEmergencyScreenState
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

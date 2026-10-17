@@ -173,14 +173,89 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     );
   }
 
+  bool get _hasUnsavedInput {
+    return _patientNameCtrl.text.trim().isNotEmpty ||
+        _conditionReasonCtrl.text.trim().isNotEmpty ||
+        _hospitalNameCtrl.text.trim().isNotEmpty ||
+        _contactPhoneCtrl.text.trim().isNotEmpty ||
+        _districtCtrl.text.trim().isNotEmpty ||
+        _upazilaCtrl.text.trim().isNotEmpty ||
+        _addressDetailsCtrl.text.trim().isNotEmpty ||
+        _selectedBloodGroup != null ||
+        _nidFile != null ||
+        _medicalReportFile != null;
+  }
+
+  Future<bool?> _showDiscardConfirmDialog() {
+    final isBangla = Localizations.localeOf(context).languageCode == 'bn';
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          isBangla ? 'অনুরোধটি বাতিল করবেন?' : 'Discard unsaved request?',
+          style: const TextStyle(fontFamily: 'Georgia', fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          isBangla
+              ? 'আপনার প্রবেশ করানো তথ্য হারিয়ে যাবে। আপনি কি নিশ্চিত?'
+              : 'You have unsaved changes. Are you sure you want to discard them?',
+          style: const TextStyle(fontFamily: 'Inter'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              isBangla ? 'চালিয়ে যান' : 'Keep Editing',
+              style: const TextStyle(fontFamily: 'Inter', color: AppColors.secondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              isBangla ? 'বাতিল করুন' : 'Discard',
+              style: const TextStyle(fontFamily: 'Inter'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: BloodPulseAppBar(
-        subtitle: 'Emergency Blood Request',
-        showBackButton: true,
-        onBack: () => context.go('/dashboard'),
-      ),
+    return PopScope(
+      canPop: !_hasUnsavedInput,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldDiscard = await _showDiscardConfirmDialog();
+        if (shouldDiscard == true && context.mounted) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/feed');
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: BloodPulseAppBar(
+          subtitle: 'Emergency Blood Request',
+          showBackButton: true,
+          onBack: () async {
+            if (_hasUnsavedInput) {
+              final shouldDiscard = await _showDiscardConfirmDialog();
+              if (shouldDiscard != true || !context.mounted) return;
+            }
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/feed');
+            }
+          },
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
           child: Form(
@@ -299,7 +374,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
             ),
           ),
         ),
-    );
+    ));
   }
 
   Widget _buildHeaderBanner() {
