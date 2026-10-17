@@ -536,7 +536,9 @@ class PostgresSpatialIndexBenchmarkTest(TestCase):
                         is_profile_complete, is_searchable, user_intent, phone_number,
                         latitude, longitude, total_bags_donated, fulfilled_count, no_show_count,
                         cancel_count, alert_count, response_count, rating_avg, rating_count,
-                        is_verified, email_verified, auth_provider
+                        is_verified, email_verified, auth_provider,
+                        show_in_rankings, public_profile, show_contact,
+                        notifications_enabled, emergency_alerts_enabled
                     )
                     SELECT
                         u.id,
@@ -553,7 +555,9 @@ class PostgresSpatialIndexBenchmarkTest(TestCase):
                         23.8 + (row_number() over() % 1000) * 0.0001,
                         90.4 + (row_number() over() % 1000) * 0.0001,
                         0, 0, 0, 0, 0, 0, 5.0, 0,
-                        FALSE, FALSE, 'password'
+                        FALSE, FALSE, 'password',
+                        TRUE, TRUE, FALSE,
+                        TRUE, TRUE
                     FROM auth_user u
                     WHERE u.username LIKE 'synth_user_%';
                 """)
