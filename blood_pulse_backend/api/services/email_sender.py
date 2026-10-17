@@ -193,9 +193,11 @@ class ResendApiEmailSender(EmailSender):
 
 
 # Aliases matching Phase 1 architecture naming
-BrevoApiProvider = BrevoApiEmailSender
-ConsoleProvider = ConsoleEmailSender
-LocMemProvider = LocMemEmailSender
+from api.services.email_service import (
+    ConsoleEmailProvider as ConsoleProvider,
+    BrevoEmailProvider as BrevoApiProvider,
+    LocMemEmailProvider as LocMemProvider,
+)
 
 
 def get_email_provider() -> EmailSender:

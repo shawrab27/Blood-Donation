@@ -132,6 +132,7 @@ class PasswordResetTests(TestCase):
     @override_settings(DEBUG=False, USE_SMTP_EMAIL=False, EMAIL_PROVIDER='brevo_api', BREVO_API_KEY='', BREVO_SENDER_EMAIL='')
     def test_missing_config_in_production_gives_503_not_500(self):
         """When Brevo credentials are missing in production, returns clean 503 JSON, never 500."""
+        PasswordResetOTP.objects.filter(user=self.user).delete()
         resp = self.client.post(REQUEST_URL, {'email': 'reset@example.com'})
         self.assertEqual(resp.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         data = resp.json()
@@ -142,9 +143,10 @@ class PasswordResetTests(TestCase):
     @patch('api.views_auth_reset.get_email_service')
     def test_provider_failure_gives_503_not_500(self, mock_get_svc):
         """When the email provider throws an error during delivery, returns 503 JSON, not 500."""
-        from api.services.email_sender import EmailUnavailableError
+        from api.services.email_service import EmailProviderError
+        PasswordResetOTP.objects.filter(user=self.user).delete()
         mock_svc = MagicMock()
-        mock_svc.send_otp.side_effect = EmailUnavailableError("Network timeout connecting to Brevo API")
+        mock_svc.send_otp.side_effect = EmailProviderError("Network timeout connecting to Brevo API", status_code=503)
         mock_get_svc.return_value = mock_svc
 
         resp = self.client.post(REQUEST_URL, {'email': 'reset@example.com'})
@@ -159,9 +161,9 @@ class PasswordResetTests(TestCase):
         self.assertIsInstance(provider, ConsoleProvider)
 
     def test_brevo_api_provider_validates_credentials(self):
-        from api.services.email_sender import BrevoApiProvider, EmailUnavailableError
-        provider = BrevoApiProvider(api_key='', sender_email='')
-        with self.assertRaises(EmailUnavailableError):
+        from api.services.email_service import BrevoEmailProvider, EmailConfigError
+        provider = BrevoEmailProvider(api_key='', sender_email='')
+        with self.assertRaises(EmailConfigError):
             provider.send_email(to_email='user@example.com', subject='Test', text_content='Body')
 
     # ------------------------------------------------------------------

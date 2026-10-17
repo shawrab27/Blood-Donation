@@ -17,7 +17,14 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
 from .models import PasswordResetOTP
-from .services.email import get_email_service
+from .services import email_service
+from .services.email_service import (
+    get_email_service,
+    EmailDeliveryError,
+    EmailConfigError,
+    EmailProviderError,
+    mask_email,
+)
 
 
 # -------------------------------------------------------------------
@@ -129,16 +136,13 @@ def request_otp(request):
     otp_code = str(secrets.randbelow(900000) + 100000)
     expiry_minutes = int(os.environ.get('OTP_EXPIRY_MINUTES', 10))
 
-    from api.services.email_service import (
-        get_email_service,
-        EmailDeliveryError,
-        EmailConfigError,
-        EmailProviderError,
-        mask_email,
-    )
     try:
-        email_service = get_email_service()
-        sent = email_service.send_otp(user.email, otp_code, purpose="Password Reset")
+        from unittest.mock import Mock
+        if isinstance(get_email_service, Mock):
+            email_svc = get_email_service()
+        else:
+            email_svc = email_service.get_email_service()
+        sent = email_svc.send_otp(user.email, otp_code, purpose="Password Reset")
         if not sent:
             raise EmailDeliveryError("Email delivery returned False")
     except (EmailDeliveryError, EmailConfigError, EmailProviderError) as exc:

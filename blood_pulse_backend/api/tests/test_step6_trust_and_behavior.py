@@ -27,6 +27,8 @@ from api.services.match_operations_service import (
 
 class Step6TrustAndBehaviorTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.client = APIClient()
         self.requester = User.objects.create_user(username='step6_req', email='req@bloodpulse.org', password='password123', first_name='Req', last_name='User')
         self.donor_user1 = User.objects.create_user(username='step6_donor1', email='d1@example.com', password='password123', first_name='Donor', last_name='One')

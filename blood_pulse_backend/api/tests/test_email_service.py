@@ -247,6 +247,7 @@ class VerifyOtpAndResetEndpointTests(TestCase):
     @override_settings(DEBUG=True)
     @patch('api.services.email_service.get_email_service')
     def test_request_otp_provider_failure_returns_clean_503(self, mock_get_svc):
+        PasswordResetOTP.objects.filter(user=self.user).delete()
         mock_svc = MagicMock()
         mock_svc.send_otp.side_effect = EmailProviderError("Mailjet returned HTTP 500", status_code=500)
         mock_get_svc.return_value = mock_svc
