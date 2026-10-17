@@ -94,20 +94,24 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
     }
   }
 
-  /// Toggles 30-day snooze for emergency alerts via PATCH /api/users/me/snooze/
-  Future<bool> setSnooze({required bool enable, UserProfile? fallbackUser}) async {
-    final pauseUntil = enable ? DateTime.now().add(const Duration(days: 30)).toIso8601String() : null;
+  /// Toggles emergency alerts snooze via PATCH /api/users/me/snooze/
+  /// Supports custom duration: 1d, 3d, 7d, 30d, 90d (defaults to 30).
+  Future<bool> setSnooze({required bool enable, int? days, UserProfile? fallbackUser}) async {
+    final effectiveDays = enable ? (days ?? 30) : null;
+    final pauseUntil = enable ? DateTime.now().add(Duration(days: effectiveDays!)).toIso8601String() : null;
 
     try {
       final token = await ApiClient().getAccessToken();
       if (token != null && token.isNotEmpty) {
         final payload = <String, dynamic>{
-          'days': enable ? 30 : null,
+          'days': effectiveDays,
         };
         final response = await ApiClient().patch('users/me/snooze/', body: payload);
         if (response.statusCode >= 200 && response.statusCode < 300) {
           final data = jsonDecode(response.body) as Map<String, dynamic>;
-          final serverPauseUntil = data['alert_pause_until']?.toString() ?? pauseUntil;
+          final serverPauseUntil = data['emergency_alerts_paused_until']?.toString() ??
+              data['alert_pause_until']?.toString() ??
+              pauseUntil;
           _applySnooze(serverPauseUntil, fallbackUser);
           return true;
         }

@@ -1593,9 +1593,11 @@ def donor_snooze_view(request):
 
     if days is None:
         profile.alert_pause_until = None
-        profile.save(update_fields=['alert_pause_until'])
+        profile.emergency_alerts_paused_until = None
+        profile.save(update_fields=['alert_pause_until', 'emergency_alerts_paused_until'])
         return Response({
             'alert_pause_until': None,
+            'emergency_alerts_paused_until': None,
             'is_snoozed': False,
             'days': None,
             'message': 'Alert snooze disabled. You are now available for emergency alerts.',
@@ -1608,9 +1610,11 @@ def donor_snooze_view(request):
 
     if days_int <= 0:
         profile.alert_pause_until = None
-        profile.save(update_fields=['alert_pause_until'])
+        profile.emergency_alerts_paused_until = None
+        profile.save(update_fields=['alert_pause_until', 'emergency_alerts_paused_until'])
         return Response({
             'alert_pause_until': None,
+            'emergency_alerts_paused_until': None,
             'is_snoozed': False,
             'days': None,
             'message': 'Alert snooze cleared.',
@@ -1619,10 +1623,12 @@ def donor_snooze_view(request):
     now = timezone.now()
     pause_until = now + timezone.timedelta(days=days_int)
     profile.alert_pause_until = pause_until
-    profile.save(update_fields=['alert_pause_until'])
+    profile.emergency_alerts_paused_until = pause_until
+    profile.save(update_fields=['alert_pause_until', 'emergency_alerts_paused_until'])
 
     return Response({
         'alert_pause_until': pause_until.isoformat(),
+        'emergency_alerts_paused_until': pause_until.isoformat(),
         'is_snoozed': True,
         'days': days_int,
         'message': f'Emergency alerts paused for {days_int} days.',

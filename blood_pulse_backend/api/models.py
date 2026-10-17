@@ -178,6 +178,11 @@ class DonorProfile(models.Model):
     deferral_until = models.DateTimeField(null=True, blank=True)
 
     alert_pause_until = models.DateTimeField(null=True, blank=True)
+    emergency_alerts_paused_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp until which emergency alerts are paused/snoozed (synced with alert_pause_until)"
+    )
 
     firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
     public_profile = models.BooleanField(default=False, help_text="Consent to display name on public leaderboard")
@@ -310,9 +315,21 @@ class DonorProfile(models.Model):
             except Exception:
                 pass
 
+        # Sync alert pause fields
+        if self.alert_pause_until and not self.emergency_alerts_paused_until:
+            self.emergency_alerts_paused_until = self.alert_pause_until
+        elif self.emergency_alerts_paused_until and not self.alert_pause_until:
+            self.alert_pause_until = self.emergency_alerts_paused_until
+        elif not self.alert_pause_until and self.emergency_alerts_paused_until:
+            self.emergency_alerts_paused_until = None
+
         update_fields = kwargs.get('update_fields')
         if update_fields is not None:
             update_fields = set(update_fields)
+            if 'alert_pause_until' in update_fields:
+                update_fields.add('emergency_alerts_paused_until')
+            elif 'emergency_alerts_paused_until' in update_fields:
+                update_fields.add('alert_pause_until')
             update_fields.add('is_profile_complete')
             if self.user_intent == 'ONLY_REQUEST' or (is_comp and not was_comp and not getattr(self, '_explicit_is_searchable', False)):
                 update_fields.add('is_searchable')

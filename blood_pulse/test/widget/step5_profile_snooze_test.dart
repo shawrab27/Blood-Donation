@@ -95,8 +95,9 @@ class _FakeProfileNotifier extends ProfileNotifier {
   }
 
   @override
-  Future<bool> setSnooze({required bool enable, UserProfile? fallbackUser}) async {
+  Future<bool> setSnooze({required bool enable, int? days, UserProfile? fallbackUser}) async {
     if (_initial != null) {
+      final effectiveDays = days ?? 30;
       final updated = ProfileModel(
         id: _initial.id,
         username: _initial.username,
@@ -105,7 +106,7 @@ class _FakeProfileNotifier extends ProfileNotifier {
         bloodGroup: _initial.bloodGroup,
         totalBagsDonated: _initial.totalBagsDonated,
         isProfileComplete: _initial.isProfileComplete,
-        alertPauseUntil: enable ? DateTime.now().add(const Duration(days: 30)).toIso8601String() : null,
+        alertPauseUntil: enable ? DateTime.now().add(Duration(days: effectiveDays)).toIso8601String() : null,
       );
       state = AsyncValue.data(updated);
     }

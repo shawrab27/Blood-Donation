@@ -229,6 +229,142 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
+  Future<void> _showSnoozeDurationSheet(BuildContext context, UserProfile? authUser) async {
+    const options = [
+      {'label': '1 Day (24 Hours)', 'days': 1, 'desc': 'Take a quick 24-hour break'},
+      {'label': '3 Days', 'days': 3, 'desc': 'Pause alerts over the weekend'},
+      {'label': '7 Days (1 Week)', 'days': 7, 'desc': 'Rest for a week'},
+      {'label': '30 Days (1 Month)', 'days': 30, 'desc': 'Standard post-donation recovery'},
+      {'label': '90 Days (3 Months)', 'days': 90, 'desc': 'Full clinical cooldown period'},
+    ];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2D6D6),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Pause Emergency Alerts',
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF24191A),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Choose how long you want to pause incoming emergency blood donation requests:',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    color: Color(0xFF5F5E5E),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...options.map((opt) {
+                  final days = opt['days'] as int;
+                  final label = opt['label'] as String;
+                  final desc = opt['desc'] as String;
+                  return InkWell(
+                    onTap: () async {
+                      Navigator.pop(sheetCtx);
+                      setState(() => _isUpdatingSnooze = true);
+                      final success = await ref.read(profileProvider.notifier).setSnooze(
+                        enable: true,
+                        days: days,
+                        fallbackUser: authUser,
+                      );
+                      if (mounted) setState(() => _isUpdatingSnooze = false);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? '✓ Alerts paused for $days days.'
+                                  : 'Could not pause alerts. Please check connection.',
+                              style: const TextStyle(fontFamily: 'Inter'),
+                            ),
+                            backgroundColor: success ? const Color(0xFF2B2B2B) : AppColors.error,
+                          ),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.timer_outlined, color: AppColors.primary, size: 20),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  label,
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF24191A),
+                                  ),
+                                ),
+                                Text(
+                                  desc,
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 12,
+                                    color: Color(0xFF5F5E5E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded, color: Color(0xFF8C8A8A), size: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authUser = ref.watch(authProvider).user;
@@ -326,7 +462,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ),
             const SizedBox(height: 14),
 
-            // ── 30-Day Emergency Snooze Toggle ──
+            // ── Total Bags & Countdown Stats Row (3 Equal Tiles - Impact Section) ──
+            ProfileStatsRow(
+              totalBags: totalDonations,
+              daysRemaining: daysRemaining,
+              progressPercent: progressPercent,
+              showCountdown: authUser?.userIntent != 'ONLY_REQUEST',
+              lastDonationDateFormatted: profileLastDonationDate != null
+                  ? DateFormat('d MMM yyyy').format(DateTime.tryParse(profileLastDonationDate!) ?? DateTime.now())
+                  : (authUser?.lastDonationDate != null ? DateFormat('d MMM yyyy').format(authUser!.lastDonationDate!) : null),
+              hospitalName: hospitalName,
+              onEditLastDonation: _selectLastDonationDate,
+            ),
+            const SizedBox(height: 14),
+
+            // ── Emergency Alerts Snooze Section (Below Impact) ──
             Builder(
               builder: (ctx) {
                 final currentProfile = profileAsync.valueOrNull;
@@ -345,7 +495,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isSnoozed ? const Color(0xFFFFF8F7) : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSnoozed ? AppColors.primary.withValues(alpha: 0.3) : const Color(0xFFF0E5E5),
@@ -358,105 +508,150 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isSnoozed ? const Color(0xFFFDE8E8) : const Color(0xFFF0F4F8),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isSnoozed ? Icons.notifications_paused_rounded : Icons.notifications_active_outlined,
-                          color: isSnoozed ? AppColors.primary : const Color(0xFF5A6E85),
-                          size: 22,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: isSnoozed ? const Color(0xFFFDE8E8) : const Color(0xFFF0F4F8),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isSnoozed ? Icons.notifications_paused_rounded : Icons.notifications_active_outlined,
+                              color: isSnoozed ? AppColors.primary : const Color(0xFF5A6E85),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Pause Emergency Alerts',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitleText,
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 13,
+                                    color: isSnoozed ? AppColors.primary : const Color(0xFF64748B),
+                                    fontWeight: isSnoozed ? FontWeight.w500 : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_isUpdatingSnooze)
+                            const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: AppLoader(),
+                            )
+                          else
+                            Switch.adaptive(
+                              value: isSnoozed,
+                              activeColor: AppColors.primary,
+                              onChanged: (val) async {
+                                if (val) {
+                                  await _showSnoozeDurationSheet(context, authUser);
+                                } else {
+                                  setState(() => _isUpdatingSnooze = true);
+                                  final success = await ref.read(profileProvider.notifier).setSnooze(
+                                    enable: false,
+                                    fallbackUser: authUser,
+                                  );
+                                  if (mounted) setState(() => _isUpdatingSnooze = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          success ? '✓ Alerts resumed. You are now available.' : 'Could not resume alerts.',
+                                          style: const TextStyle(fontFamily: 'Inter'),
+                                        ),
+                                        backgroundColor: success ? const Color(0xFF1B8A4E) : AppColors.error,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      if (isSnoozed) ...[
+                        const SizedBox(height: 12),
+                        Row(
                           children: [
-                            const Text(
-                              'Pause Emergency Alerts',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E293B),
+                            Expanded(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(minHeight: 44),
+                                child: ElevatedButton.icon(
+                                  onPressed: _isUpdatingSnooze
+                                      ? null
+                                      : () async {
+                                          setState(() => _isUpdatingSnooze = true);
+                                          final success = await ref.read(profileProvider.notifier).setSnooze(
+                                            enable: false,
+                                            fallbackUser: authUser,
+                                          );
+                                          if (mounted) setState(() => _isUpdatingSnooze = false);
+                                          if (ctx.mounted) {
+                                            ScaffoldMessenger.of(ctx).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  success
+                                                      ? '✓ Alerts resumed. You are now available.'
+                                                      : 'Could not resume alerts.',
+                                                  style: const TextStyle(fontFamily: 'Inter'),
+                                                ),
+                                                backgroundColor: success ? const Color(0xFF1B8A4E) : AppColors.error,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                  icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                                  label: const Text('Resume Alerts Now'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                    textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              subtitleText,
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 13,
-                                color: isSnoozed ? AppColors.primary : const Color(0xFF64748B),
-                                fontWeight: isSnoozed ? FontWeight.w500 : FontWeight.normal,
+                            const SizedBox(width: 8),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 44),
+                              child: OutlinedButton(
+                                onPressed: () => _showSnoozeDurationSheet(context, authUser),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFFE2D6D6)),
+                                  foregroundColor: const Color(0xFF5F5E5E),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                  textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                child: const Text('Change'),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      if (_isUpdatingSnooze)
-                        const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: AppLoader(),
-                        )
-                      else
-                        Switch.adaptive(
-                          value: isSnoozed,
-                          activeColor: AppColors.primary,
-                          onChanged: (val) async {
-                            setState(() => _isUpdatingSnooze = true);
-                            final success = await ref.read(profileProvider.notifier).setSnooze(
-                              enable: val,
-                              fallbackUser: authUser,
-                            );
-                            if (mounted) {
-                              setState(() => _isUpdatingSnooze = false);
-                            }
-                            if (ctx.mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    success
-                                        ? (val
-                                            ? '✓ Alerts paused for 1 month.'
-                                            : '✓ Alerts resumed. You are now available.')
-                                        : 'Could not update alert status. Please check connection.',
-                                    style: const TextStyle(fontFamily: 'Inter'),
-                                  ),
-                                  backgroundColor: success
-                                      ? (val ? const Color(0xFF2B2B2B) : const Color(0xFF1B8A4E))
-                                      : AppColors.error,
-                                  duration: const Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          },
-                        ),
+                      ],
                     ],
                   ),
                 );
               },
-            ),
-            const SizedBox(height: 14),
-
-            // ── Total Bags & Countdown Stats Row (3 Equal Tiles) ──
-            ProfileStatsRow(
-              totalBags: totalDonations,
-              daysRemaining: daysRemaining,
-              progressPercent: progressPercent,
-              showCountdown: authUser?.userIntent != 'ONLY_REQUEST',
-              lastDonationDateFormatted: profileLastDonationDate != null
-                  ? DateFormat('d MMM yyyy').format(DateTime.tryParse(profileLastDonationDate!) ?? DateTime.now())
-                  : (authUser?.lastDonationDate != null ? DateFormat('d MMM yyyy').format(authUser!.lastDonationDate!) : null),
-              hospitalName: hospitalName,
-              onEditLastDonation: _selectLastDonationDate,
             ),
             const SizedBox(height: 14),
 

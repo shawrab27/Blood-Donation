@@ -94,6 +94,7 @@ def get_eligible_donors_base_queryset(
         )
         .exclude(user_intent='ONLY_REQUEST')
         .filter(Q(alert_pause_until__isnull=True) | Q(alert_pause_until__lte=now))
+        .filter(Q(emergency_alerts_paused_until__isnull=True) | Q(emergency_alerts_paused_until__lte=now))
         .filter(Q(deferral_until__isnull=True) | Q(deferral_until__lte=now))
         .filter(Q(last_donation_date__isnull=True) | Q(last_donation_date__lte=cooldown_cutoff))
     )
@@ -160,13 +161,14 @@ def evaluate_donor_eligibility(
         }
 
     # 2. Alert pause window (e.g. donor paused notifications)
-    if donor.alert_pause_until and donor.alert_pause_until > now:
-        delta = (donor.alert_pause_until.date() - today).days
+    pause_until = getattr(donor, 'emergency_alerts_paused_until', None) or getattr(donor, 'alert_pause_until', None)
+    if pause_until and pause_until > now:
+        delta = (pause_until.date() - today).days
         return {
             'is_eligible': False,
             'reason': 'Donor alerts are currently paused.',
             'days_remaining': max(1, delta),
-            'deferred_until': donor.alert_pause_until,
+            'deferred_until': pause_until,
         }
 
     # 3. Explicit Medical / Travel Deferral

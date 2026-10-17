@@ -86,7 +86,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
             'is_profile_complete', 'is_available', 'email_verified', 'latitude', 'longitude', 'bio', 'institute', 'institution', 'upazila_linked', 'address', 
             'total_bags_donated', 'profile_picture', 'manual_rank_override', 'donation_history', 
             'recent_logs', 'global_rank', 'badge', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
-            'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until',
+            'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until', 'emergency_alerts_paused_until',
             'public_profile', 'show_contact', 'notifications_enabled', 'emergency_alerts_enabled',
             'weight_kg', 'show_in_rankings'
         ]

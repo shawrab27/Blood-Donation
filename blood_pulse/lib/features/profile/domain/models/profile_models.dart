@@ -246,7 +246,7 @@ class ProfileModel {
       rank: rankVal,
       globalRank: rankVal,
       badge: json['tier'] ?? json['badge'] ?? 'Active Donor',
-      alertPauseUntil: json['deferral_until']?.toString() ?? json['alert_pause_until']?.toString(),
+      alertPauseUntil: json['emergency_alerts_paused_until']?.toString() ?? json['alert_pause_until']?.toString() ?? json['deferral_until']?.toString(),
       showContact: json['show_contact'] ?? false,
       publicProfile: json['public_profile'] ?? false,
       notificationsEnabled: json['notifications_enabled'] ?? true,
