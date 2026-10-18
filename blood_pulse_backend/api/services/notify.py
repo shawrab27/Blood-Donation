@@ -102,7 +102,9 @@ def send_push_to_user(user, title: str, body: str, data_payload: dict = None, dr
 
     donor_profile = DonorProfile.objects.filter(user=user).first()
     if donor_profile and donor_profile.fcm_token and donor_profile.fcm_token.strip():
-        tokens.add(donor_profile.fcm_token.strip())
+        token_candidate = donor_profile.fcm_token.strip()
+        if not UserDevice.objects.filter(user=user, fcm_token=token_candidate, is_revoked=True).exists():
+            tokens.add(token_candidate)
 
     token_list = list(tokens)
     if not token_list:
@@ -186,7 +188,9 @@ def dispatch_wave_notifications(blood_request, candidate_list: list, wave_number
 
         # 5. Collect valid FCM token
         if donor.fcm_token and donor.fcm_token.strip():
-            tokens_with_donors.append((donor.fcm_token.strip(), donor))
+            candidate_t = donor.fcm_token.strip()
+            if not UserDevice.objects.filter(user=donor.user, fcm_token=candidate_t, is_revoked=True).exists():
+                tokens_with_donors.append((candidate_t, donor))
 
         dispatched_count += 1
 

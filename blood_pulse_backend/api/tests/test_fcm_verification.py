@@ -135,3 +135,42 @@ class FCMVerificationTests(TestCase):
 
         device.refresh_from_db()
         self.assertIsNone(device.fcm_token)
+
+    def test_logout_revokes_device_and_fcm_token_stops_push(self):
+        """P0-1: Logout must revoke UserDevice, clear FCM token, and send_push_to_user must target nothing."""
+        token = 'active_push_token_for_logout_test_123'
+        device = UserDevice.objects.create(
+            user=self.user,
+            device_id='device_to_logout',
+            fcm_token=token,
+            is_revoked=False,
+        )
+        self.donor.fcm_token = token
+        self.donor.save(update_fields=['fcm_token'])
+
+        # Before logout: user has 1 active token
+        pre_push = send_push_to_user(self.user, 'Test', 'Body', dry_run=True)
+        self.assertEqual(pre_push['status'], 'dry_run')
+        self.assertEqual(pre_push['tokens_count'], 1)
+
+        # Call logout with device_id
+        self.client.force_authenticate(user=self.user)
+        logout_resp = self.client.post('/api/auth/logout/', {
+            'device_id': 'device_to_logout',
+            'fcm_token': token,
+        })
+        self.assertEqual(logout_resp.status_code, status.HTTP_200_OK)
+
+        # Verify device revoked and fcm_token cleared
+        device.refresh_from_db()
+        self.assertTrue(device.is_revoked)
+        self.assertIsNone(device.fcm_token)
+
+        # Verify donor profile cleared
+        self.donor.refresh_from_db()
+        self.assertIsNone(self.donor.fcm_token)
+
+        # After logout: send_push_to_user must target nothing
+        post_push = send_push_to_user(self.user, 'Test', 'Body', dry_run=True)
+        self.assertEqual(post_push['status'], 'no_tokens')
+        self.assertEqual(post_push['tokens_count'], 0)

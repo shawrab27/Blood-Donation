@@ -13,7 +13,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from api.models import (
     DonorProfile, BloodRequest, SocialPost, Comment, PostReaction, Notification,
     DonorFeedback, ChatMessage, SupportTicket, EmailOTP,
-    RequestSubmitToken, PasswordResetOTP, AuditLog
+    RequestSubmitToken, PasswordResetOTP, AuditLog, UserDevice
 )
 
 class LogoutAPIView(APIView):
@@ -32,14 +32,43 @@ class LogoutAPIView(APIView):
             except Exception:
                 pass
 
-        if request.user and request.user.is_authenticated:
+        device_id = (
+            request.data.get('device_id')
+            or request.headers.get('X-Device-Id')
+            or request.headers.get('X-Device-ID')
+            or request.data.get('deviceId')
+        )
+        fcm_token = request.data.get('fcm_token') or request.data.get('token')
+
+        user = request.user if (request.user and request.user.is_authenticated) else None
+
+        # 1. Clear DonorProfile.fcm_token
+        if user:
             try:
-                profile = DonorProfile.objects.filter(user=request.user).first()
-                if profile and profile.fcm_token:
-                    profile.fcm_token = None
-                    profile.save(update_fields=['fcm_token'])
+                DonorProfile.objects.filter(user=user).update(fcm_token=None)
             except Exception:
                 pass
+
+        if fcm_token:
+            try:
+                DonorProfile.objects.filter(fcm_token=fcm_token).update(fcm_token=None)
+            except Exception:
+                pass
+
+        # 2. Revoke UserDevice matching request device/token and clear fcm_token
+        try:
+            device_qs = UserDevice.objects.all()
+            if user:
+                device_qs = device_qs.filter(user=user)
+
+            if device_id:
+                device_qs.filter(device_id=device_id).update(is_revoked=True, fcm_token=None)
+            elif fcm_token:
+                device_qs.filter(fcm_token=fcm_token).update(is_revoked=True, fcm_token=None)
+            elif user:
+                device_qs.filter(is_revoked=False).update(is_revoked=True, fcm_token=None)
+        except Exception:
+            pass
 
         return Response({
             "status": "success",
