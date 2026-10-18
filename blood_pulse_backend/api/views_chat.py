@@ -8,6 +8,7 @@ Supports polling with backoff, delivery/read receipts, rate limiting, and voice 
 
 import os
 import uuid
+from django.conf import settings
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.core.files.storage import default_storage
@@ -21,6 +22,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from api.models import RequestAcceptance, DirectMessage, Notification
 from api.serializers_chat import DirectMessageSerializer
 from api.throttles import DirectMessageThrottle
+from api.services.storage import get_media_storage, is_persistent_remote_configured
 
 
 def _get_journey_and_check_participant(acceptance_id, user):
@@ -228,6 +230,16 @@ class VoiceMessageUploadAPIView(APIView):
         if not acceptance:
             return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
 
+        is_testing = getattr(settings, 'IS_TESTING', False)
+        if not settings.DEBUG and not is_testing and not is_persistent_remote_configured():
+            return Response(
+                {
+                    'code': 'VOICE_UNAVAILABLE',
+                    'detail': 'Voice messaging is temporarily unavailable because persistent storage is not configured.',
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         voice_file = request.FILES.get('voice_file')
         if not voice_file:
             return Response({'detail': 'No voice_file provided.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -255,9 +267,16 @@ class VoiceMessageUploadAPIView(APIView):
         duration = int(request.data.get('duration_seconds', 0) or 0)
         duration = min(60, max(1, duration))  # Enforce max 60s
 
-        filename = f"chat_voice/{acceptance_id}/{uuid.uuid4().hex}{ext}"
-        saved_path = default_storage.save(filename, ContentFile(voice_file.read()))
-        voice_url = f"/media/{saved_path}"
+        storage = get_media_storage()
+        filename = f"{uuid.uuid4().hex}{ext}"
+        folder = f"chat_voice/{acceptance_id}"
+        upload_result = storage.upload_file(
+            file_bytes=voice_file.read(),
+            filename=filename,
+            folder=folder,
+            resource_type="video",
+        )
+        voice_url = upload_result.get('url')
 
         return Response({
             'voice_url': voice_url,

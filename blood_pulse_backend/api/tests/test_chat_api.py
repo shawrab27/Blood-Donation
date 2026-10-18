@@ -165,7 +165,7 @@ class RealtimeChatAPITests(TestCase):
         )
         self.assertEqual(upload_resp.status_code, status.HTTP_201_CREATED)
         data = upload_resp.json()
-        self.assertIn('/media/chat_voice/', data['voice_url'])
+        self.assertIn('chat_voice', data['voice_url'])
         self.assertEqual(data['duration_seconds'], 12)
 
         # Send voice message with the returned URL
@@ -177,6 +177,29 @@ class RealtimeChatAPITests(TestCase):
         })
         self.assertEqual(send_resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(send_resp.json()['message_type'], 'VOICE')
+
+    def test_voice_message_upload_503_when_persistent_storage_missing_in_production(self):
+        """P0-2: When DEBUG=False and no persistent remote storage configured, returns 503 VOICE_UNAVAILABLE."""
+        from django.conf import settings
+        from unittest.mock import patch
+
+        self.client.force_authenticate(user=self.donor_user)
+        dummy_audio = SimpleUploadedFile(
+            "voice_note.m4a",
+            b"\x00\x00\x00\x20ftypM4A \x00\x00\x00\x00isomiso2",
+            content_type="audio/m4a",
+        )
+
+        with patch.object(settings, 'DEBUG', False), patch.object(settings, 'IS_TESTING', False):
+            with patch('api.services.storage.is_persistent_remote_configured', return_value=False):
+                resp = self.client.post(
+                    f'/api/chat/{self.acceptance.id}/voice/',
+                    {'voice_file': dummy_audio, 'duration_seconds': 15},
+                    format='multipart',
+                )
+                self.assertEqual(resp.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+                self.assertEqual(resp.json()['code'], 'VOICE_UNAVAILABLE')
+                self.assertIn('persistent storage is not configured', resp.json()['detail'])
 
     def test_cleanup_chat_voice_command(self):
         from datetime import timedelta
@@ -190,15 +213,15 @@ class RealtimeChatAPITests(TestCase):
             recipient=self.requester_user,
             content='',
             message_type='VOICE',
-            voice_url='/media/chat_voice/test/dummy.m4a',
+            voice_url='https://storage.bloodpulse.local/chat_voice/test/dummy.m4a',
             voice_duration_seconds=10,
         )
-        # Update created_at to 100 days ago
-        past_date = timezone.now() - timedelta(days=100)
+        # Update created_at to 10 days ago (older than 7-day default)
+        past_date = timezone.now() - timedelta(days=10)
         DirectMessage.objects.filter(id=msg.id).update(created_at=past_date)
 
         out = io.StringIO()
-        call_command('cleanup_chat_voice', days=90, stdout=out)
+        call_command('cleanup_chat_voice', stdout=out)
         self.assertIn("Cleaned up", out.getvalue())
 
         msg.refresh_from_db()

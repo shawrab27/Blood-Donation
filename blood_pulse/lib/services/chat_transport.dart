@@ -231,7 +231,16 @@ class HttpPollingChatTransport implements ChatTransport {
 
       if (response.statusCode == 201) {
         return jsonDecode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 503) {
+        final err = jsonDecode(response.body) as Map<String, dynamic>;
+        throw ApiException(
+          err['detail'] as String? ?? 'Voice messaging is temporarily unavailable.',
+          statusCode: 503,
+          rawError: err['code'],
+        );
       }
+    } on ApiException {
+      rethrow;
     } catch (e) {
       debugPrint('[HttpPollingChatTransport] Voice upload error: $e');
     }

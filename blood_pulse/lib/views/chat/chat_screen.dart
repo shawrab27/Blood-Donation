@@ -11,6 +11,7 @@ import '../../core/widgets/responsive_center_wrapper.dart';
 import '../../models/chat_message_model.dart';
 import '../../services/chat_service.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../services/api_client.dart';
 
 /// 1-on-1 Real-Time Chat Screen
 /// Rebuilt to precisely align with BloodPulse Stitch UI & WhatsApp read receipt convention:
@@ -45,6 +46,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _showEmojiPicker = false;
+  bool _isVoiceAvailable = true;
 
   String? _playingMessageId;
   double _playbackProgress = 0.0;
@@ -390,7 +392,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (uploadRes != null) {
         voiceUrl = uploadRes['voice_url'] as String?;
       }
+    } on ApiException catch (e) {
+      if (e.statusCode == 503 || e.rawError == 'VOICE_UNAVAILABLE') {
+        if (mounted) {
+          setState(() => _isVoiceAvailable = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message.isNotEmpty ? e.message : 'Voice messaging is temporarily unavailable.'),
+              backgroundColor: Colors.black87,
+            ),
+          );
+        }
+        return;
+      }
     } catch (_) {}
+
+    if (voiceUrl == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Voice messaging is currently unavailable.'),
+            backgroundColor: Colors.black87,
+          ),
+        );
+      }
+      return;
+    }
 
     await ChatService.instance.sendMessage(
       chatId: widget.chatRoomId,
@@ -401,7 +428,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       receiverName: widget.chatRecipientName,
       bloodGroup: widget.bloodGroup,
       messageType: 'VOICE',
-      voiceUrl: voiceUrl ?? '/media/chat_voice/sample.m4a',
+      voiceUrl: voiceUrl,
       voiceDurationSeconds: durationSeconds,
     );
 
@@ -1054,9 +1081,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           // Mic Button for Voice Note (#39)
           IconButton(
-            icon: const Icon(Icons.mic_rounded, color: AppColors.primary, size: 24),
-            tooltip: 'Record Voice Note',
-            onPressed: _showVoiceRecordModal,
+            icon: Icon(
+              Icons.mic_rounded,
+              color: _isVoiceAvailable ? AppColors.primary : const Color(0xFFB0B0B0),
+              size: 24,
+            ),
+            tooltip: _isVoiceAvailable ? 'Record Voice Note' : 'Voice messaging unavailable',
+            onPressed: _isVoiceAvailable
+                ? _showVoiceRecordModal
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Voice messaging is temporarily unavailable because persistent storage is not configured.'),
+                        backgroundColor: Colors.black87,
+                      ),
+                    );
+                  },
           ),
           const SizedBox(width: 4),
 

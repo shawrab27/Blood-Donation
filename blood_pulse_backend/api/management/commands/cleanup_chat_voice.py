@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.core.files.storage import default_storage
 
 from api.models import DirectMessage
+from api.services.storage import get_media_storage
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +26,13 @@ class Command(BaseCommand):
         parser.add_argument(
             '--days',
             type=int,
-            default=90,
-            help='Retention period in days for active voice messages (default 90 days).',
+            default=7,
+            help='Retention period in days for active voice messages (default 7 days).',
         )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
-        days = options.get('days', 90)
+        days = options.get('days', 7)
         cutoff = timezone.now() - timedelta(days=days)
 
         self.stdout.write(f"Scanning voice messages older than {days} days (cutoff: {cutoff})...")
@@ -46,17 +47,24 @@ class Command(BaseCommand):
         expired_count = expired_messages.count()
         self.stdout.write(f"Found {expired_count} expired voice messages.")
 
+        storage = get_media_storage()
         deleted_files = 0
         for msg in expired_messages:
-            if msg.voice_url and '/media/' in msg.voice_url:
-                rel_path = msg.voice_url.split('/media/')[-1]
+            if msg.voice_url:
                 if not dry_run:
                     try:
-                        if default_storage.exists(rel_path):
-                            default_storage.delete(rel_path)
-                            deleted_files += 1
+                        storage.delete_file(msg.voice_url, resource_type="video")
+                        deleted_files += 1
                     except Exception as e:
-                        logger.warning("Failed to delete file %s: %s", rel_path, e)
+                        logger.warning("Failed to delete voice file %s: %s", msg.voice_url, e)
+
+                    try:
+                        if '/media/' in msg.voice_url:
+                            rel_path = msg.voice_url.split('/media/')[-1]
+                            if default_storage.exists(rel_path):
+                                default_storage.delete(rel_path)
+                    except Exception:
+                        pass
                 else:
                     deleted_files += 1
 
