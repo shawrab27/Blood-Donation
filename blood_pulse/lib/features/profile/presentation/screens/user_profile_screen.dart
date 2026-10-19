@@ -234,8 +234,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       {'label': '1 Day (24 Hours)', 'days': 1, 'desc': 'Take a quick 24-hour break'},
       {'label': '3 Days', 'days': 3, 'desc': 'Pause alerts over the weekend'},
       {'label': '7 Days (1 Week)', 'days': 7, 'desc': 'Rest for a week'},
-      {'label': '30 Days (1 Month)', 'days': 30, 'desc': 'Standard post-donation recovery'},
-      {'label': '90 Days (3 Months)', 'days': 90, 'desc': 'Full clinical cooldown period'},
+      {'label': '30 Days (1 Month)', 'days': 30, 'desc': 'Pause alerts for 1 month'},
+      {'label': '60 Days (2 Months)', 'days': 60, 'desc': 'Pause alerts for 2 months'},
+      {'label': '90 Days (3 Months)', 'days': 90, 'desc': 'Full clinical cooldown period (3 months)'},
     ];
 
     await showModalBottomSheet(
@@ -495,7 +496,19 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 if (isSnoozed && currentProfile?.alertPauseUntil != null) {
                   final dt = DateTime.tryParse(currentProfile!.alertPauseUntil!);
                   if (dt != null) {
-                    subtitleText = 'Paused until ${DateFormat('d MMM yyyy').format(dt)}';
+                    final remaining = dt.difference(DateTime.now());
+                    if (remaining.isNegative || remaining.inSeconds <= 0) {
+                      subtitleText = 'Snooze expired. Resuming alerts...';
+                    } else if (remaining.inDays >= 1) {
+                      final days = remaining.inDays;
+                      subtitleText = 'Paused until ${DateFormat('d MMM yyyy').format(dt)} ($days ${days == 1 ? "day" : "days"} remaining)';
+                    } else if (remaining.inHours >= 1) {
+                      final hours = remaining.inHours;
+                      subtitleText = 'Paused until ${DateFormat('h:mm a').format(dt)} ($hours ${hours == 1 ? "hour" : "hours"} remaining)';
+                    } else {
+                      final mins = remaining.inMinutes;
+                      subtitleText = 'Paused until ${DateFormat('h:mm a').format(dt)} ($mins ${mins <= 1 ? "min" : "mins"} remaining)';
+                    }
                   } else {
                     subtitleText = 'Paused for 1 month';
                   }
@@ -599,62 +612,64 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         ],
                       ),
                       if (isSnoozed) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(minHeight: 44),
-                                child: ElevatedButton.icon(
-                                  onPressed: _isUpdatingSnooze
-                                      ? null
-                                      : () async {
-                                          setState(() => _isUpdatingSnooze = true);
-                                          final success = await ref.read(profileProvider.notifier).setSnooze(
-                                            enable: false,
-                                            fallbackUser: authUser,
-                                          );
-                                          if (mounted) setState(() => _isUpdatingSnooze = false);
-                                          if (ctx.mounted) {
-                                            ScaffoldMessenger.of(ctx).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  success
-                                                      ? '✓ Alerts resumed. You are now available.'
-                                                      : 'Could not resume alerts.',
-                                                  style: const TextStyle(fontFamily: 'Inter'),
-                                                ),
-                                                backgroundColor: success ? const Color(0xFF1B8A4E) : AppColors.error,
-                                              ),
-                                            );
-                                          }
-                                        },
-                                  icon: const Icon(Icons.notifications_active_rounded, size: 18),
-                                  label: const Text('Resume Alerts Now'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                                    textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 48),
+                            child: ElevatedButton.icon(
+                              onPressed: _isUpdatingSnooze
+                                  ? null
+                                  : () async {
+                                      setState(() => _isUpdatingSnooze = true);
+                                      final success = await ref.read(profileProvider.notifier).setSnooze(
+                                        enable: false,
+                                        fallbackUser: authUser,
+                                      );
+                                      if (mounted) setState(() => _isUpdatingSnooze = false);
+                                      if (ctx.mounted) {
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              success
+                                                  ? '✓ Alerts resumed. You are now available.'
+                                                  : 'Could not resume alerts.',
+                                              style: const TextStyle(fontFamily: 'Inter'),
+                                            ),
+                                            backgroundColor: success ? const Color(0xFF1B8A4E) : AppColors.error,
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: const Icon(Icons.notifications_active_rounded, size: 20),
+                              label: const Text('Resume Alerts Now'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(minHeight: 44),
-                              child: OutlinedButton(
-                                onPressed: () => _showSnoozeDurationSheet(context, authUser),
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFFE2D6D6)),
-                                  foregroundColor: const Color(0xFF5F5E5E),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                                  textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600),
-                                ),
-                                child: const Text('Change'),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showSnoozeDurationSheet(context, authUser),
+                              icon: const Icon(Icons.edit_calendar_outlined, size: 18),
+                              label: const Text('Change Pause Duration'),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFE2D6D6)),
+                                foregroundColor: const Color(0xFF5F5E5E),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
                               ),
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ],

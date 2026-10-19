@@ -50,6 +50,8 @@ class ProfileModel {
   final List<DonationHistoryModel> donationHistory;
   final List<RecentLogModel> recentLogs;
 
+  static const Object _sentinel = Object();
+
   ProfileModel({
     required this.id,
     this.userId,
@@ -130,7 +132,8 @@ class ProfileModel {
     String? donorTitle,
     String? occupation,
     String? positionDisplay,
-    String? alertPauseUntil,
+    Object? alertPauseUntil = _sentinel,
+    bool clearAlertPauseUntil = false,
     bool? showContact,
     bool? publicProfile,
     bool? notificationsEnabled,
@@ -179,7 +182,11 @@ class ProfileModel {
       donorTitle: donorTitle ?? this.donorTitle,
       occupation: occupation ?? this.occupation,
       positionDisplay: positionDisplay ?? this.positionDisplay,
-      alertPauseUntil: alertPauseUntil ?? this.alertPauseUntil,
+      alertPauseUntil: clearAlertPauseUntil
+          ? null
+          : (identical(alertPauseUntil, _sentinel)
+              ? this.alertPauseUntil
+              : alertPauseUntil as String?),
       showContact: showContact ?? this.showContact,
       publicProfile: publicProfile ?? this.publicProfile,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,

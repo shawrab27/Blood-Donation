@@ -115,39 +115,60 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
 
   /// Toggles emergency alerts snooze via PATCH /api/users/me/snooze/
   /// Supports custom duration: 1d, 3d, 7d, 30d, 90d (defaults to 30).
+  /// Performs optimistic update with rollback on API failure.
   Future<bool> setSnooze({required bool enable, int? days, UserProfile? fallbackUser}) async {
     final effectiveDays = enable ? (days ?? 30) : null;
     final pauseUntil = enable ? DateTime.now().add(Duration(days: effectiveDays!)).toIso8601String() : null;
+
+    final previousProfile = state.value;
+    // Optimistically apply local state change
+    _applySnooze(pauseUntil, fallbackUser);
 
     try {
       final token = await ApiClient().getAccessToken();
       if (token != null && token.isNotEmpty) {
         final payload = <String, dynamic>{
+          'enable': enable,
           'days': effectiveDays,
+          if (!enable) 'off': true,
         };
         final response = await ApiClient().patch('users/me/snooze/', body: payload);
         if (response.statusCode >= 200 && response.statusCode < 300) {
           final data = jsonDecode(response.body) as Map<String, dynamic>;
-          final serverPauseUntil = data['emergency_alerts_paused_until']?.toString() ??
-              data['alert_pause_until']?.toString() ??
-              pauseUntil;
+          final serverPauseUntil = enable
+              ? (data['emergency_alerts_paused_until']?.toString() ??
+                  data['alert_pause_until']?.toString() ??
+                  pauseUntil)
+              : null;
           _applySnooze(serverPauseUntil, fallbackUser);
           return true;
+        } else {
+          // Revert on API failure
+          if (previousProfile != null) {
+            state = AsyncValue.data(previousProfile);
+          }
+          return false;
         }
       }
     } catch (e) {
       if (kDebugMode) print('[setSnooze] API exception: $e');
+      // Revert on network exception
+      if (previousProfile != null) {
+        state = AsyncValue.data(previousProfile);
+      }
+      return false;
     }
 
-    // Graceful offline/local profile fallback
-    _applySnooze(pauseUntil, fallbackUser);
     return true;
   }
 
   void _applySnooze(String? pauseUntil, UserProfile? fallbackUser) {
     final current = state.value;
     if (current != null) {
-      state = AsyncValue.data(current.copyWith(alertPauseUntil: pauseUntil));
+      state = AsyncValue.data(current.copyWith(
+        alertPauseUntil: pauseUntil,
+        clearAlertPauseUntil: pauseUntil == null,
+      ));
     } else {
       state = AsyncValue.data(ProfileModel(
         id: 0,

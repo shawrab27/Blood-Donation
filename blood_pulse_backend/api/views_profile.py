@@ -151,6 +151,9 @@ class ProfileMeView(APIView):
             "address": profile.address or "",
             "is_available": profile.is_available,
             "deferral_until": profile.deferral_until.isoformat() if profile.deferral_until else None,
+            "alert_pause_until": profile.alert_pause_until.isoformat() if profile.alert_pause_until else None,
+            "emergency_alerts_paused_until": profile.emergency_alerts_paused_until.isoformat() if profile.emergency_alerts_paused_until else None,
+            "is_snoozed": bool(profile.alert_pause_until and profile.alert_pause_until > timezone.now()),
             "show_in_rankings": profile.show_in_rankings,
             "is_profile_complete": True,
             "user_intent": getattr(profile, 'user_intent', 'DONATE_AND_REQUEST'),
@@ -261,6 +264,19 @@ class ProfileMeView(APIView):
                 profile.is_available = False
             else:
                 profile.deferral_until = None
+
+        # Emergency alerts pause / snooze handling
+        if 'snooze' in request.data or 'alert_pause_until' in request.data or 'emergency_alerts_paused_until' in request.data or 'enable_snooze' in request.data:
+            val = request.data.get('alert_pause_until') or request.data.get('emergency_alerts_paused_until') or request.data.get('snooze')
+            is_off = (
+                val is None
+                or val is False
+                or request.data.get('enable_snooze') is False
+                or str(val).strip().lower() in ('', 'null', 'none', 'off', '0')
+            )
+            if is_off:
+                profile.alert_pause_until = None
+                profile.emergency_alerts_paused_until = None
 
         # Show in rankings
         if 'show_in_rankings' in request.data:

@@ -1659,9 +1659,17 @@ def donor_snooze_view(request):
     if not profile:
         return Response({'error': 'Donor profile not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    days = request.data.get('days')
+    # Check for explicit 'off' indicators
+    is_explicit_off = (
+        request.data.get('off') is True
+        or request.data.get('enable') is False
+        or request.data.get('snooze') is False
+        or str(request.data.get('action', '')).strip().lower() == 'off'
+        or str(request.data.get('status', '')).strip().lower() == 'off'
+    )
 
-    if days is None:
+    days = request.data.get('days')
+    if is_explicit_off or days is None or str(days).strip().lower() in ('', 'null', 'none', 'off'):
         profile.alert_pause_until = None
         profile.emergency_alerts_paused_until = None
         profile.save(update_fields=['alert_pause_until', 'emergency_alerts_paused_until'])

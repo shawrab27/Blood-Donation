@@ -7,6 +7,11 @@
 test/features/blood_hub/presentation/screens/phase_1a_golden_test.dart: Golden DonorSearch 360dp
 test/features/blood_hub/presentation/screens/phase_1a_golden_test.dart: Golden DonorSearch 412dp
 
+# Flutter Baseline Failures (pre-existing in feat/b8-security before task P-01)
+test/widget/guest_welcome_and_soft_wall_test.dart: STEP 2: Guest Welcome Screen & Soft Wall Widget Tests C1: Guest taps on header notification bell and profile avatar show RegistrationGatePopup
+test/widget/step10d_feed_test.dart: Step 10D: Feed Widgets & Responsiveness District change banner renders and interacts cleanly
+test/widget/step10d_feed_test.dart: Step 10D: Feed Widgets & Responsiveness Renders feed with scope filter chips (Near me, My division, National)
+
 # Django Backend Baseline Failures & Errors (Neon Host Guard & Spatial Schema)
 api.tests.test_step10d_feed.Step10DFeedTests.test_seed_feed_demo_creates_posts
 api.tests.test_step10f_products.Step10FProductsTestCase.test_filter_by_tier
