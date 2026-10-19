@@ -1,54 +1,64 @@
-# BAUST Pilot Deployment & Feature Plan
+# BloodPulse Nationwide Deployment & Architecture Plan
 
-This report corrects the generic deployment plan, aligning with the real state of the repository, fixing the missing/broken components, and outlining the strict roadmap for the BAUST pilot.
-
-## 1. Verified Project Reality Check
-
-| Area | Verified Status & Required Action |
-| :--- | :--- |
-| **Backend Tests** | Tests passing on SQLite locally. **Action:** Must migrate to Neon (PostgreSQL) immediately, as race-condition and PostGIS location tests are invalid on SQLite. |
-| **Phone App 127.0.0.1 Bug** | App API base URL was hardcoded to local IP. **Action:** A release build with the production Render URL is required. Not a backend bug. |
-| **Router Bug (Language/Auth)** | The `go_router` redirect logic in `router_notifier.dart` is mishandling unauthenticated edge cases for paths like `/language`, `/forgot-password`, and `/verify-otp`. **Action:** Fix the GoRouter `redirectLogic` to safely bypass these routes. |
-| **Deleted Folders** | `chat`, `admin`, and `integration_test` folders were removed by `git clean`. **Action:** Verify if any chat/admin screens in the remaining Flutter tree still compile, or rebuild them if they were fully located in those deleted folders. |
-| **PulseAI Chatbot** | Production endpoint 404s. Knowledge-base row counts are out of sync (33 vs 42 vs 46). **Action:** Needs a backend rebuild (Track A only) and database sync. |
-| **Firebase Keys** | Keys are untracked but unrotated. **Action:** If the repo has ever been public, keys must be rotated immediately before the pilot. |
-| **Wave / Trust / GDPR / Role Engines** | Found some Wave Engine backend code (`views_wave_engine.py`), but the others (Trust Engine, Role Editor, GDPR erase) lack verified backend integrations and are mostly HTML/UI. **Action:** Build the missing Django endpoints. |
+This document establishes the verified deployment plan and system architecture for the nationwide launch of BloodPulse across all 64 districts of Bangladesh.
 
 ---
 
-## 2. Terminology & Core Rules Settled
+## 1. Product Scope & Institutional Target
 
-*   **Wording:** We will strictly use **"Donations completed"** and **"Requests supported"**. All instances of "Successfully Transfused", "Life Saved", or "Lives Saved" will be purged to prevent unprovable claims.
-*   **Cooldown Interval:** We are standardizing entirely on the **90-day** cooldown (from one constant only). Any stray references to a 120-day deferral in the code or the paper will be updated to 90 days.
-
----
-
-## 3. Implementation Roadmap: What Goes In and What Waits
-
-The deployment separates the BAUST pilot requirements from paper extras and future scope.
-
-### Phase 1: Must Do First (Core BAUST Pilot & Paper Claims)
-*   **Wave Engine (Backend + Force Next Wave):** Do first. This is the main paper claim.
-*   **Trust & Fraud Engine:** Do. Explicitly label it "rule-based" (not ML) to avoid paper rejection.
-*   **Role & Permission Editor:** Do. Small scope, necessary for admin management.
-*   **GDPR Erase / Anonymize:** Do. Critical for a strong privacy section in the paper.
-*   **PulseAI Rebuild (Track A only):** Do. Second main section of the paper.
-*   **Thanks Letter / Certificate:** Do. Small effort, good UX.
-*   **Impact Metrics:** Do. Using the strict wording ("Donations completed", "Requests supported").
-
-### Phase 2: Do After the App is Stable
-*   **Auto Poster (Flutter-side, one widget):** Cheap and useful for social amplification.
-*   **Passive-donor XP + tier badge (no leaderboard):** Donor engagement without gamification distortions.
-
-### Phase 3: Later (Post-Pilot / Future Scope)
-*   **Multi-bag progress bars:** Pushed to later (requires per-donor tracking).
-*   **IMEI ban, Support button:** Pushed to after the pilot (low value for the paper, adds risk).
-*   **In-app VoIP, Fast-Track QR, hospital 90-day portal, stock ping:** Future work (requires hospital cooperation).
-*   **Panic-syntax NLP, retention ML, epidemiology map:** Future work (requires real data gathering first).
+- **Geographic Scope**: Nationwide Bangladesh (64 districts, 8 divisions, 495 upazilas).
+- **Decoupled Architecture**: No single academic institution, hospital, or region is hardcoded in application logic, routing, or defaults.
+- **Educational & Professional Affiliations**: Student/institution fields (`institution`, `occupation`) are regular user profile metadata rather than structural tenancy barriers.
+- **Audience**: Voluntary blood donors, emergency patients/requesters, volunteer blood organizations, and accredited healthcare facilities nationwide.
 
 ---
 
-## Immediate Next Steps
-1. **Fix `router_notifier.dart`** so that the Language, Forgot Password, and OTP pages are accessible.
-2. **Configure Neon (PostgreSQL)** in the backend `.env` for accurate testing.
-3. **Build the Wave Engine Django endpoints** to support the primary paper claim.
+## 2. Verified Technical Architecture
+
+| Component | Implementation & Deployment Architecture | Status |
+| :--- | :--- | :--- |
+| **Backend API** | Django 5.2 + Django REST Framework deployed on Render. Automated tests run against isolated in-memory/SQLite or staging PostgreSQL instances (`USE_SQLITE=1`). | Verified & Hardened |
+| **Database** | Neon Serverless PostgreSQL with pgvector and spatial index support for production. Additive-only migrations (0001 through 0060). | Verified |
+| **Mobile Client** | Flutter 3.x for Android & iOS. Uses `ApiConfig` with dynamic candidate fallback discovery and zero circular proxies. | Verified |
+| **Security & Cleartext** | `android:usesCleartextTraffic` strictly removed from production AndroidManifest; isolated to debug manifest. `READ_EXTERNAL_STORAGE` scoped to `maxSdkVersion="32"`. | Verified |
+| **Release Signing** | Gradle release signing enforced via `android/key.properties`. Fails fast with clear error if keystore credentials are missing. Keystores strictly git-ignored. | Verified |
+| **Authentication & Tokens** | SimpleJWT with 1-hour access, 7-day refresh, token rotation, and secure encrypted storage in `FlutterSecureStorage`. Session revocation on logout clears `UserDevice` and FCM tokens. | Verified |
+| **Transactional Email / OTP** | Modular `EmailService` supporting Mailjet v3.1 HTTPS API, Resend, and Brevo. Guaranteed `locmem` test isolation during automated test runs. | Verified |
+| **Emergency Wave Engine** | 5-Wave expanding geographic radius dispatcher with automated standby promotion, atomic double-booking prevention, and donor eligibility cooldowns (90 days). | Verified |
+| **Realtime Chat & Media** | `DirectMessage` real-time journey chat with N+1 query elimination (`select_related`), delivery/read receipts, persistent remote storage for voice notes, and 7-day automated voice cleanup. | Verified |
+| **Geospatial & Mapping** | OpenStreetMap (OSM) tile rendering with mandatory attribution, privacy-fuzzed donor coordinates, and server-side OSRM routing proxy with haversine fallback. | Verified |
+| **PulseAI Health Assistant** | Multimodal health assistant powered by Gemini 2.5 Flash, guarded by prompt-injection filters, with on-device Bangla TTS and deterministic CBC report analyzer. | Verified |
+
+---
+
+## 3. Core Terminology & Platform Rules
+
+1. **Impact Wording**: Strictly use **"Donations completed"** and **"Requests supported"**. Claims of "Lives Saved" or "Successfully Transfused" are prohibited as unprovable medical claims.
+2. **Standard Deferral Interval**: Uniform **90-day cooldown** across all backend eligibility queries, profile countdowns, and snooze pickers.
+3. **Zero Fake Data Policy**: All mock pins and fake donor fallbacks are banned; empty states honestly communicate real-time donor availability and offer radius expansion.
+4. **Privacy by Design**: Donor contact information and exact GPS coordinates are masked; coarse geohashes and fuzzed markers protect donor residential privacy.
+
+---
+
+## 4. Nationwide Rollout Roadmap
+
+### Phase 1: Operational Launch (Ready)
+- [x] Canonical Bangladesh phone normalization (`+8801XXXXXXXXX`) across auth, registration, and profile queries.
+- [x] Unified OTP service for password reset and blood requisition confirmation.
+- [x] End-to-end two-device emergency journey flow: request -> wave notification -> acceptance -> chat/voice -> donation confirmation.
+- [x] National Emergency 64-district filter screen and verified hospital directories.
+- [x] Security hardening: FCM token revocation on logout, dependency pinning, and release signing enforcement.
+
+### Phase 2: Post-Launch Scale & Monitoring
+- [ ] Connect Redis/Upstash cluster for distributed multi-instance caching in high-load emergency spikes.
+- [ ] Monitor Mailjet/Brevo delivery webhooks and bounce rates across Bangladeshi telecom domains.
+- [ ] Establish telemetry dashboards for wave progression times, donor response latencies, and journey completion rates.
+
+---
+
+## 5. Deployment Verification Checklist
+
+1. **Pre-flight Gate**: Run `scripts/gate.ps1 -KeepDb` to verify all 5 acceptance criteria.
+2. **Environment Configuration**: Ensure `EMAIL_PROVIDER`, `MAILJET_API_KEY`, `MAILJET_SECRET_KEY`, and `GEMINI_API_KEY` are populated in the production environment settings.
+3. **Android Release Build**: Verify release build with `flutter build apk --release` or App Bundle generation following `docs/release_signing.md`.
+4. **Database Readiness**: Execute additive migrations on target PostgreSQL instance (`python manage.py migrate`).
