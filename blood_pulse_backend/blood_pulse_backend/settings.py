@@ -307,8 +307,7 @@ DJANGO_ENV = os.getenv('DJANGO_ENV', '').strip().lower()
 VALID_EMAIL_PROVIDERS = ('mailjet', 'resend', 'brevo', 'brevo_api', 'console', 'locmem')
 
 if DJANGO_ENV == 'test' or 'test' in sys.argv or IS_TESTING:
-    if not EMAIL_PROVIDER or EMAIL_PROVIDER == 'console':
-        EMAIL_PROVIDER = 'locmem'
+    EMAIL_PROVIDER = 'locmem'
 elif not EMAIL_PROVIDER:
     if DJANGO_ENV == 'production':
         EMAIL_PROVIDER = 'mailjet' if os.getenv('MAILJET_API_KEY') else 'brevo_api'

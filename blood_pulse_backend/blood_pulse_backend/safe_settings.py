@@ -23,6 +23,10 @@ if any(cmd in sys.argv for cmd in ('test', 'check', 'makemigrations', 'showmigra
 # First, import all base settings
 from blood_pulse_backend.settings import *
 
+# P1-4: Force EMAIL_PROVIDER='locmem' unconditionally during test runs
+if any(cmd in sys.argv for cmd in ('test',)) or IS_TESTING or DJANGO_ENV == 'test':
+    EMAIL_PROVIDER = 'locmem'
+
 # Identify production database host from .env
 _prod_env_path = BASE_DIR / '.env'
 _prod_env_vals = dotenv_values(_prod_env_path) if _prod_env_path.exists() else {}
