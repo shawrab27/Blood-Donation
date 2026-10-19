@@ -58,6 +58,7 @@ lib/firebase_options.dart
 # Keystore files
 key.properties
 *.jks
+*.keystore
 
 # Golden test failures & diff artifacts
 test/**/failures/

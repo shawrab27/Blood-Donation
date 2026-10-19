@@ -15,17 +15,20 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
-if (keystorePropertiesFile.exists()) {
+val hasKeyProperties = keystorePropertiesFile.exists()
+if (hasKeyProperties) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-            storePassword = keystoreProperties["storePassword"] as String?
+            if (hasKeyProperties) {
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
         }
     }
 
@@ -52,9 +55,17 @@ android {
 
     buildTypes {
         release {
-            // Signed with debug keystore to match Firebase registered SHA-1 (42:87:15:C4:DA:C5:E7:60:83:9D:1D:60:6C:C1:50:4D:23:8B:87:C1).
-            // When building for Play Store, add release-key.jks SHA-1 to Firebase Console and switch to signingConfigs.getByName("release").
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            if (!hasKeyProperties) {
+                gradle.taskGraph.whenReady {
+                    if (allTasks.any { it.name.contains("Release", ignoreCase = true) }) {
+                        throw GradleException(
+                            "Release build failed: 'android/key.properties' is missing. " +
+                            "Please create 'android/key.properties' with keystore credentials as documented in docs/release_signing.md."
+                        )
+                    }
+                }
+            }
             isMinifyEnabled = false
             isShrinkResources = false
         }
