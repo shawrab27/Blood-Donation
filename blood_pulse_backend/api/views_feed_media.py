@@ -100,7 +100,7 @@ class UserLocationSyncView(APIView):
         changed: bool
     }
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         lat = request.data.get('lat') or request.data.get('latitude')
@@ -126,33 +126,51 @@ class UserLocationSyncView(APIView):
                 return Response({'error': 'Invalid latitude or longitude format.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Fallback to user profile district if not resolved
-        if not target_district:
+        if not target_district and request.user and request.user.is_authenticated:
             profile = getattr(request.user, 'donorprofile', None)
             if profile and profile.district:
                 target_district = District.objects.filter(name__iexact=profile.district).select_related('division').first()
             source = 'profile'
 
-        state_obj, _ = UserLocationState.objects.get_or_create(user=request.user)
-        prev_district_id = state_obj.current_district_id
+        if request.user and request.user.is_authenticated:
+            state_obj, _ = UserLocationState.objects.get_or_create(user=request.user)
+            prev_district_id = state_obj.current_district_id
+            changed = bool(target_district and target_district.id != prev_district_id)
 
-        changed = bool(target_district and target_district.id != prev_district_id)
+            if target_district:
+                state_obj.current_district = target_district
+                state_obj.current_division = target_district.division
+                state_obj.source = source
+                state_obj.save()
 
-        if target_district:
-            state_obj.current_district = target_district
-            state_obj.current_division = target_district.division
-            state_obj.source = source
-            state_obj.save()
+            return Response({
+                'current_district_id': state_obj.current_district_id,
+                'district_name': state_obj.current_district.name if state_obj.current_district else None,
+                'division_id': state_obj.current_division_id,
+                'division_name': state_obj.current_division.name if state_obj.current_division else None,
+                'source': state_obj.source,
+                'changed': changed,
+            }, status=status.HTTP_200_OK)
 
         return Response({
-            'current_district_id': state_obj.current_district_id,
-            'district_name': state_obj.current_district.name if state_obj.current_district else None,
-            'division_id': state_obj.current_division_id,
-            'division_name': state_obj.current_division.name if state_obj.current_division else None,
-            'source': state_obj.source,
-            'changed': changed,
+            'current_district_id': target_district.id if target_district else None,
+            'district_name': target_district.name if target_district else None,
+            'division_id': target_district.division_id if target_district else None,
+            'division_name': target_district.division.name if (target_district and target_district.division) else None,
+            'source': source,
+            'changed': False,
         }, status=status.HTTP_200_OK)
 
     def get(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return Response({
+                'current_district_id': None,
+                'district_name': None,
+                'division_id': None,
+                'division_name': None,
+                'source': 'profile',
+                'changed': False,
+            }, status=status.HTTP_200_OK)
         state_obj = UserLocationState.objects.filter(user=request.user).select_related('current_district', 'current_division').first()
         if not state_obj or not state_obj.current_district:
             profile = getattr(request.user, 'donorprofile', None)

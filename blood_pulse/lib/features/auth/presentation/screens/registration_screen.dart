@@ -126,15 +126,32 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       widget.isGoogleUser ||
       (ref.read(authProvider).user?.authProvider == 'google');
 
+  bool get _isExistingUser =>
+      _isGoogleUser ||
+      ref.read(authProvider).status == AuthStatus.authenticatedIncomplete ||
+      ref.read(authProvider).status == AuthStatus.authenticated;
+
   @override
   void initState() {
     super.initState();
     _picker = widget.imagePicker ?? ImagePicker();
+    final currentUser = ref.read(authProvider).user;
     if (widget.prefillName != null && widget.prefillName!.isNotEmpty) {
       _nameCtrl.text = widget.prefillName!;
+    } else if (currentUser != null && currentUser.fullName.isNotEmpty) {
+      _nameCtrl.text = currentUser.fullName;
     }
     if (widget.prefillEmail != null && widget.prefillEmail!.isNotEmpty) {
       _emailCtrl.text = widget.prefillEmail!;
+    } else if (currentUser != null && currentUser.email.isNotEmpty) {
+      _emailCtrl.text = currentUser.email;
+    }
+    if (currentUser != null && currentUser.primaryPhone.isNotEmpty) {
+      _phoneCtrl.text = currentUser.primaryPhone;
+    }
+    if (currentUser != null && currentUser.bloodGroup.isNotEmpty && _bloodGroups.contains(currentUser.bloodGroup)) {
+      _bloodGroup = currentUser.bloodGroup;
+      _confirmBloodGroup = currentUser.bloodGroup;
     }
     _pwCtrl.addListener(_onPasswordChanged);
     _confirmPwCtrl.addListener(_onPasswordChanged);
@@ -379,7 +396,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       _showError('Please enter your phone number.');
       return;
     }
-    if (!_isGoogleUser) {
+    if (!_isExistingUser) {
       if (_pwCtrl.text.isEmpty) {
         _showError('Please enter a password.');
         return;
@@ -459,13 +476,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       isProfileComplete: true,
       nidHash: nidHash,
       avatarBytes: _avatarBytes,
-      authProvider: _isGoogleUser ? 'google' : null,
+      authProvider: _isGoogleUser ? 'google' : (ref.read(authProvider).user?.authProvider),
       userIntent: isOnlyReq ? 'ONLY_REQUEST' : 'DONATE_AND_REQUEST',
     );
 
     final success = await ref.read(authProvider.notifier).registerUser(
       profile,
-      password: _isGoogleUser ? null : _pwCtrl.text,
+      password: _isExistingUser ? null : _pwCtrl.text,
     );
     if (!mounted) return;
     if (!success) {
@@ -614,8 +631,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 // Submit Button
                 CapsuleButton(
                   label: auth.isLoading
-                      ? (_isGoogleUser ? 'Saving Profile...' : 'Creating Account...')
-                      : (_isGoogleUser ? 'Complete Registration' : 'Create Account'),
+                      ? (_isExistingUser ? 'Saving Profile...' : 'Creating Account...')
+                      : (_isExistingUser ? 'Complete Registration' : 'Create Account'),
                   icon: Icons.arrow_forward_rounded,
                   isLoading: auth.isLoading,
                   showGlow: true,
@@ -1163,7 +1180,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           hint: 'Enter your email',
           prefixIcon: Icons.mail_outline_rounded,
           keyboardType: TextInputType.emailAddress,
-          readOnly: _isGoogleUser,
+          readOnly: _isExistingUser && _emailCtrl.text.isNotEmpty,
           validator: (v) {
             if (v == null || v.trim().isEmpty) return 'Please enter your email';
             if (!v.contains('@') || !v.contains('.')) return 'Please enter a valid email';
@@ -1172,7 +1189,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         ),
         const SizedBox(height: 16),
 
-        if (!_isGoogleUser) ...[
+        if (!_isExistingUser) ...[
           _fieldLabel('Password'),
           const SizedBox(height: 6),
           CustomInputField(

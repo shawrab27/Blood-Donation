@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'dart:ui';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,32 +17,65 @@ import '../../features/profile/presentation/widgets/drawer/profile_drawer_menu_l
 import '../../features/profile/presentation/widgets/modals/logout_confirmation_modal.dart';
 
 /// 1:1 Parity with Stitch Screen 4 (Notification Profile Slidebar / Drawer).
-/// Modularized architecture with <300 lines per file.
+/// High-fidelity top-right aligned profile slidebar popup card with frosted glass
+/// background blur, cropped cleanly after the Log Out button, and smooth popup animation.
 class ProfileDrawer extends ConsumerWidget {
   const ProfileDrawer({super.key});
 
-  /// Smooth slide-in from the right edge with backdrop blur.
+  /// Smooth popup animation with background blur matching Stitch Screen 4.
   static Future<void> show(BuildContext context) {
     return showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss Profile Drawer',
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      transitionDuration: const Duration(milliseconds: 280),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return const Align(
-          alignment: Alignment.centerRight,
-          child: ProfileDrawer(),
-        );
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return const SizedBox.shrink();
       },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
+      transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+
+        final blurSigma = (animation.value * 8.0).clamp(0.001, 8.0);
+
+        return Stack(
+          children: [
+            // Frosted glass background blur over the entire screen behind the slidebar
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: blurSigma,
+                  sigmaY: blurSigma,
+                ),
+                child: const SizedBox.expand(),
+              ),
+            ),
+
+            // Profile Slidebar Floating Card pinned to Top-Right below status bar
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8, right: 10, left: 16),
+                  child: FadeTransition(
+                    opacity: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOut,
+                    ),
+                    child: ScaleTransition(
+                      alignment: Alignment.topRight,
+                      scale: Tween<double>(begin: 0.88, end: 1.0).animate(curvedAnimation),
+                      child: const ProfileDrawer(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -68,93 +102,107 @@ class ProfileDrawer extends ConsumerWidget {
       displayName = name;
     }
 
-    final double drawerWidth = (MediaQuery.of(context).size.width * 0.84).clamp(300.0, 340.0);
+    final mediaQuery = MediaQuery.of(context);
+    final double dialogWidth = (mediaQuery.size.width * 0.88).clamp(300.0, 350.0);
+    final double maxDialogHeight = mediaQuery.size.height * 0.88;
 
     return Material(
       color: Colors.transparent,
-      child: Container(
-        width: drawerWidth,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF8F7),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(32),
-            bottomLeft: Radius.circular(32),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 24,
-              offset: Offset(-4, 0),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: dialogWidth,
+          maxHeight: maxDialogHeight,
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Top Branded Header
-              ProfileDrawerHeader(onClose: () => Navigator.of(context).pop()),
-              const Divider(height: 1, color: Color(0xFFF3DDE0)),
-
-              // Scrollable Menu Body
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  children: [
-                    // Burgundy Identity Hero Card
-                    ProfileDrawerHeroCard(
-                      displayName: displayName,
-                      avatarBytes: avatarBytes,
-                      googlePhotoUrl: googlePhotoUrl,
-                      photoUrl: photoUrl,
-                      onViewProfile: () {
-                        Navigator.of(context).pop();
-                        context.go('/profile');
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Appearance Theme Selector
-                    const ProfileDrawerThemeSelector(),
-                    const SizedBox(height: 12),
-
-                    // Preferences Navigation Menu
-                    const ProfileDrawerMenuList(),
-                    const SizedBox(height: 16),
-
-                    // Log Out CTA (Pill Button wired to LogoutConfirmationModal)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFC30121),
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () {
-                          LogoutConfirmationModal.show(context, ref);
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Text(
-                              'Log Out',
-                              style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                            SizedBox(width: 6),
-                            Icon(Icons.arrow_forward_rounded, size: 15),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8F7),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: const Color(0xFFF3DDE0),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.20),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
               ),
             ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Branded Header (No divider line below it matching Stitch UI)
+                ProfileDrawerHeader(onClose: () => Navigator.of(context).pop()),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Burgundy Identity Hero Card
+                      ProfileDrawerHeroCard(
+                        displayName: displayName,
+                        avatarBytes: avatarBytes,
+                        googlePhotoUrl: googlePhotoUrl,
+                        photoUrl: photoUrl,
+                        onViewProfile: () {
+                          Navigator.of(context).pop();
+                          context.go('/profile');
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Appearance Theme Selector
+                      const ProfileDrawerThemeSelector(),
+                      const SizedBox(height: 12),
+
+                      // Preferences Navigation Menu
+                      const ProfileDrawerMenuList(),
+                      const SizedBox(height: 16),
+
+                      // Log Out CTA (Pill Button wired to LogoutConfirmationModal)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFC30121),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () {
+                            LogoutConfirmationModal.show(context, ref);
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Text(
+                                'Log Out',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 16),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

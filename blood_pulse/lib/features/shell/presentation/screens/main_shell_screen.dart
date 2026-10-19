@@ -18,7 +18,6 @@ import '../../../blood_hub/presentation/screens/blood_hub_landing_screen.dart';
 import '../../../communities/presentation/widgets/communities_view.dart';
 import '../../../health_hub/presentation/screens/health_hub_dashboard_screen.dart';
 import '../../../profile/presentation/widgets/profile_view.dart';
-import '../../../blood_hub/presentation/widgets/global_live_banner.dart';
 
 /// The Main Responsive 5-Tab Navigation Shell of BloodPulse.
 class MainShellScreen extends ConsumerStatefulWidget {
@@ -190,45 +189,38 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       },
       child: Scaffold(
         appBar: const BloodPulseAppBar(),
-        body: Column(
-          children: [
-            const GlobalLiveBanner(),
-            Expanded(
-              child: isExpanded
-                  ? Row(
-                      children: [
-                        NavigationRail(
-                          selectedIndex: activeTabIndex,
-                          onDestinationSelected: onTabSelected,
-                          labelType: NavigationRailLabelType.all,
-                          backgroundColor: AppColors.surface,
-                          selectedIconTheme: const IconThemeData(color: AppColors.primary),
-                          unselectedIconTheme: const IconThemeData(color: AppColors.neutral),
-                          selectedLabelTextStyle: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: AppColors.primary,
-                          ),
-                          unselectedLabelTextStyle: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 11,
-                            color: AppColors.neutral,
-                          ),
-                          destinations: navigationRailDestinations,
-                        ),
-                        const VerticalDivider(thickness: 1, width: 1, color: Color(0xFFEEEEEE)),
-                        Expanded(
-                          child: buildPageView(maxWidth: 1100.0),
-                        ),
-                      ],
-                    )
-                  : buildPageView(
-                      maxWidth: screenWidth >= 600 ? 720.0 : double.infinity,
+        body: isExpanded
+            ? Row(
+                children: [
+                  NavigationRail(
+                    selectedIndex: activeTabIndex,
+                    onDestinationSelected: onTabSelected,
+                    labelType: NavigationRailLabelType.all,
+                    backgroundColor: AppColors.surface,
+                    selectedIconTheme: const IconThemeData(color: AppColors.primary),
+                    unselectedIconTheme: const IconThemeData(color: AppColors.neutral),
+                    selectedLabelTextStyle: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: AppColors.primary,
                     ),
-            ),
-          ],
-        ),
+                    unselectedLabelTextStyle: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: AppColors.neutral,
+                    ),
+                    destinations: navigationRailDestinations,
+                  ),
+                  const VerticalDivider(thickness: 1, width: 1, color: Color(0xFFEEEEEE)),
+                  Expanded(
+                    child: buildPageView(maxWidth: 1100.0),
+                  ),
+                ],
+              )
+            : buildPageView(
+                maxWidth: screenWidth >= 600 ? 720.0 : double.infinity,
+              ),
         bottomNavigationBar: isExpanded
             ? null
             : Container(

@@ -14,7 +14,6 @@ import '../../domain/models/assistant_message_model.dart';
 import '../../../../widgets/pulse_loading_indicator.dart';
 import '../../../../core/widgets/avatar_helper.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
-import '../../../../core/access/profile_completion_modal.dart';
 import 'package:flutter/foundation.dart';
 import '../../data/pulseai_audio_service.dart';
 import '../widgets/ecg_3d_background.dart';
@@ -624,7 +623,18 @@ class MessageWidget extends ConsumerWidget {
                         ),
                       ),
                       onPressed: () {
-                        ProfileCompletionModal.show(context);
+                        final auth = ref.read(authProvider);
+                        final u = auth.user;
+                        final isGoogle = u?.authProvider == 'google' ||
+                            (u != null && u.email.isNotEmpty && u.authProvider != 'credentials');
+                        context.push(
+                          '/register',
+                          extra: {
+                            'prefillName': u?.fullName ?? '',
+                            'prefillEmail': u?.email ?? '',
+                            'isGoogleUser': isGoogle,
+                          },
+                        );
                       },
                     ),
                   ),

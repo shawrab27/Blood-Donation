@@ -265,18 +265,11 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    AccessGuard.checkAndHandle(
-                      context: context,
-                      ref: ref,
-                      feature: AccessFeature.profile,
-                      onAllowed: () {
-                        if (onProfileTap != null) {
-                          onProfileTap!();
-                        } else {
-                          ProfileDrawer.show(context);
-                        }
-                      },
-                    );
+                    if (onProfileTap != null) {
+                      onProfileTap!();
+                    } else {
+                      ProfileDrawer.show(context);
+                    }
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),

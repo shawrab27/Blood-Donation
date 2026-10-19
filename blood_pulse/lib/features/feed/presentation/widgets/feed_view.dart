@@ -9,11 +9,11 @@ import 'package:blood_pulse/core/widgets/avatar_helper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_loader.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../../core/access/access_guard.dart';
 import '../../../../core/access/registration_gate_popup.dart';
-import '../../../../core/access/profile_completion_modal.dart';
 import '../../../../core/services/image_compression_service.dart';
 import '../../../../services/api_client.dart';
 import 'guest_lock_card.dart';
@@ -31,22 +31,38 @@ class FeedView extends ConsumerStatefulWidget {
 class _FeedViewState extends ConsumerState<FeedView> {
   final _picker = ImagePicker();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userLocationProvider.notifier).refreshCoarseLocation();
+    });
+  }
+
   Future<void> _handleRefresh() async {
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Feed updated with latest donor stories & requests.', style: TextStyle(fontFamily: 'Inter')),
-          backgroundColor: Color(0xFF1B8A4E),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+    await ref.read(userLocationProvider.notifier).refreshCoarseLocation(force: true);
+    final latestLoc = ref.read(userLocationProvider);
+    await ref.read(feedProvider.notifier).fetchPosts(
+      scope: 'near',
+      district: latestLoc.districtName,
+      division: latestLoc.divisionName,
+      reset: true,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<UserLocationState>(userLocationProvider, (previous, next) {
+      if (previous?.districtName != next.districtName && next.districtName != null) {
+        ref.read(feedProvider.notifier).fetchPosts(
+          scope: 'near',
+          district: next.districtName,
+          division: next.divisionName,
+          reset: true,
+        );
+      }
+    });
+
     return _buildMobileLayout();
   }
 
@@ -200,157 +216,46 @@ class _FeedViewState extends ConsumerState<FeedView> {
   }
 
   Widget _buildSegmentFilterBar(String? currentFilter) {
-    final locState = ref.watch(userLocationProvider);
-    final feedNotifier = ref.read(feedProvider.notifier);
-    final currentScope = feedNotifier.currentScope;
-
     const segments = [
       {'id': null, 'label': 'All Updates'},
       {'id': 'campaign', 'label': 'Campaign'},
       {'id': 'emergency', 'label': 'Emergency'},
     ];
 
-    const scopes = [
-      {'id': 'near', 'label': 'Near me', 'icon': Icons.my_location_rounded},
-      {'id': 'division', 'label': 'My division', 'icon': Icons.location_city_rounded},
-      {'id': 'national', 'label': 'National', 'icon': Icons.public_rounded},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // District Change Prompt Banner
-        if (locState.changed && locState.districtName != null) ...[
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFDF3F3),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFC30121).withAlpha(60)),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: segments.map((seg) {
+          final isSelected = currentFilter == seg['id'];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(seg['label'] as String),
+              selected: isSelected,
+              onSelected: (selected) {
+                ref.read(feedFilterProvider.notifier).state = seg['id'];
+                ref.read(feedProvider.notifier).fetchPosts(kind: seg['id'], reset: true);
+              },
+              selectedColor: const Color(0xFF2B2B2B),
+              backgroundColor: Colors.white,
+              labelStyle: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF2B2B2B),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(50),
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF2B2B2B) : const Color(0xFFE5D5D5),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.location_on_rounded, color: Color(0xFFC30121), size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'You are in ${locState.districtName} now. Show ${locState.districtName} updates?',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(userLocationProvider.notifier).acknowledgeDistrictChange();
-                    ref.read(feedProvider.notifier).fetchPosts(scope: 'near', reset: true);
-                  },
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: const Color(0xFFC30121),
-                  ),
-                  child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF888888)),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () {
-                    ref.read(userLocationProvider.notifier).acknowledgeDistrictChange();
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        // Scope Filter Row (Near me / My division / National)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: scopes.map((sc) {
-              final isSelected = currentScope == sc['id'];
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  avatar: Icon(
-                    sc['icon'] as IconData,
-                    size: 14,
-                    color: isSelected ? Colors.white : const Color(0xFFC30121),
-                  ),
-                  label: Text(
-                    sc['id'] == 'near' && locState.districtName != null
-                        ? 'Near me (${locState.districtName})'
-                        : sc['label'] as String,
-                  ),
-                  selected: isSelected,
-                  onSelected: (_) {
-                    ref.read(feedProvider.notifier).fetchPosts(scope: sc['id'] as String, reset: true);
-                    setState(() {});
-                  },
-                  selectedColor: const Color(0xFFC30121),
-                  backgroundColor: const Color(0xFFFFF0F1),
-                  labelStyle: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11.5,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected ? Colors.white : const Color(0xFFC30121),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                    side: BorderSide(
-                      color: isSelected ? const Color(0xFFC30121) : const Color(0xFFF9D2D7),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Type Filter Row (All Updates / Campaign / Emergency)
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: segments.map((seg) {
-              final isSelected = currentFilter == seg['id'];
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(seg['label'] as String),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    ref.read(feedFilterProvider.notifier).state = seg['id'];
-                    ref.read(feedProvider.notifier).fetchPosts(kind: seg['id'], reset: true);
-                  },
-                  selectedColor: const Color(0xFF2B2B2B),
-                  backgroundColor: Colors.white,
-                  labelStyle: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected ? Colors.white : const Color(0xFF2B2B2B),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                    side: BorderSide(
-                      color: isSelected ? const Color(0xFF2B2B2B) : const Color(0xFFE5D5D5),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -654,9 +559,12 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                         backgroundColor: const Color(0xFFEDF4FF),
                         side: const BorderSide(color: Color(0xFFD0E4FF)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                        onPressed: () {
+                        onPressed: () async {
+                          await ref.read(userLocationProvider.notifier).refreshCoarseLocation(force: true);
+                          final loc = ref.read(userLocationProvider);
+                          final locName = loc.districtName ?? 'Dhaka';
                           setModalState(() {
-                            locationCtrl.text = 'Current Location (GPS Verified)';
+                            locationCtrl.text = '$locName (GPS)';
                           });
                         },
                       ),
@@ -2008,7 +1916,20 @@ class _ProfileCompletionBanner extends ConsumerWidget {
             width: double.infinity,
             height: 40,
             child: ElevatedButton(
-              onPressed: () => ProfileCompletionModal.show(context),
+              onPressed: () {
+                final auth = ref.read(authProvider);
+                final u = auth.user;
+                final isGoogle = u?.authProvider == 'google' ||
+                    (u != null && u.email.isNotEmpty && u.authProvider != 'credentials');
+                context.push(
+                  '/register',
+                  extra: {
+                    'prefillName': u?.fullName ?? '',
+                    'prefillEmail': u?.email ?? '',
+                    'isGoogleUser': isGoogle,
+                  },
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
                 foregroundColor: Colors.white,

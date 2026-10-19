@@ -34,8 +34,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
   }
 
   Future<void> _initializeAndPlayVideo() async {
-    // Safety fallback timer (3.8s ensures 3.0s video completes with margin for initialization)
-    _fallbackTimer = Timer(const Duration(milliseconds: 3800), () {
+    // Initial safety fallback timer (7s ensures codec initialization plus playback)
+    _fallbackTimer = Timer(const Duration(milliseconds: 7000), () {
       if (mounted && !_hasNavigated) {
         _navigateToNext();
       }
@@ -48,13 +48,23 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
       );
       _controller = controller;
 
-      // Timeout initialization to 2200ms so slow decoders do not hang the app
-      await controller.initialize().timeout(const Duration(milliseconds: 2200));
+      // Allow 5000ms for ExoPlayer surface and media codec initialization
+      await controller.initialize().timeout(const Duration(milliseconds: 5000));
       if (!mounted) return;
 
       controller.addListener(_videoListener);
       await controller.setLooping(false);
       await controller.play();
+
+      // Cancel initial fallback timer and set it to video length + 600ms margin
+      _fallbackTimer?.cancel();
+      final totalMs = controller.value.duration.inMilliseconds;
+      final safetyMs = (totalMs > 0 ? totalMs : 3000) + 600;
+      _fallbackTimer = Timer(Duration(milliseconds: safetyMs), () {
+        if (mounted && !_hasNavigated) {
+          _navigateToNext();
+        }
+      });
 
       setState(() {});
     } catch (e) {
@@ -74,7 +84,7 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
     if (controller != null &&
         controller.value.isInitialized &&
         controller.value.duration > Duration.zero &&
-        controller.value.position >= controller.value.duration) {
+        controller.value.position >= (controller.value.duration - const Duration(milliseconds: 100))) {
       _navigateToNext();
     }
   }

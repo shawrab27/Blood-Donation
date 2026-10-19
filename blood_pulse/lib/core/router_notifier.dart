@@ -53,12 +53,13 @@ class RouterNotifier extends ChangeNotifier {
 
     if (authState.status == AuthStatus.unauthenticated) {
       if (isGuest) {
-        // Guest allowlist is exactly Welcome, Feed (read-only), Health Hub (and pre-auth flows)
+        // Guest allowlist is exactly Welcome, Feed (read-only), Health Hub, National Emergency / Drill, and pre-auth flows
         final isGuestAllowed = path == '/guest-welcome' ||
                                path == '/feed' ||
                                path == '/health-hub' ||
                                path.startsWith('/health-hub/') ||
                                path == '/assistant' ||
+                               path == '/emergency/national' ||
                                isPreAuthRoute;
 
         if (!isGuestAllowed) {
@@ -76,7 +77,6 @@ class RouterNotifier extends ChangeNotifier {
 
     if (authState.status == AuthStatus.authenticated || authState.status == AuthStatus.authenticatedIncomplete) {
       final isAuthFlow = path == '/login' || 
-                         path == '/register' || 
                          path == '/forgot-password' ||
                          path == '/verify-otp' ||
                          path == '/onboarding' || 
@@ -87,8 +87,11 @@ class RouterNotifier extends ChangeNotifier {
       }
     }
     
-    // Explicitly block deep links to locked features when incomplete
+    // Explicitly block deep links to locked features when incomplete (except national emergency/drill)
     if (authState.status == AuthStatus.authenticatedIncomplete) {
+      if (path == '/emergency/national') {
+        return null;
+      }
       if (path == '/profile' || 
           path.startsWith('/profile/') ||
           path == '/edit-profile' || 
@@ -96,7 +99,7 @@ class RouterNotifier extends ChangeNotifier {
           path == '/blood-hub' || 
           path.startsWith('/blood-hub/') ||
           path == '/emergency' ||
-          path.startsWith('/emergency/') ||
+          (path.startsWith('/emergency/') && path != '/emergency/national') ||
           path == '/emergency-request' ||
           path == '/create-request' ||
           path == '/live-dispatch' ||

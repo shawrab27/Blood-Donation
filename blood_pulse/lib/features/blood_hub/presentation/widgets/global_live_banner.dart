@@ -42,6 +42,7 @@ class _GlobalLiveBannerState extends ConsumerState<GlobalLiveBanner>
         if (event == null || !event.isActive) return const SizedBox.shrink();
         
         return GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             context.push('/emergency/national');
           },
@@ -49,9 +50,6 @@ class _GlobalLiveBannerState extends ConsumerState<GlobalLiveBanner>
             width: double.infinity,
             decoration: const BoxDecoration(
               color: Color(0xFF2B2B2B), // Secondary
-              border: Border(
-                top: BorderSide(color: Color(0xFFC30121), width: 3),
-              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(

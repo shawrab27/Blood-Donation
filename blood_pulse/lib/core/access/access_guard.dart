@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 import 'registration_gate_popup.dart';
-import 'profile_completion_modal.dart';
 
 /// Features gated by BloodPulse soft-wall access rules.
 enum AccessFeature {
@@ -131,11 +130,11 @@ class AccessGuard {
     }
 
     if (isAuthenticated && !isComplete) {
-      if (feature == AccessFeature.profile) {
-        ProfileCompletionModal.show(context);
-      } else {
-        RegistrationGatePopup.show(context, isGuest: false, targetRoute: targetRoute);
-      }
+      RegistrationGatePopup.show(
+        context,
+        isGuest: false,
+        targetRoute: targetRoute ?? (feature == AccessFeature.profile ? '/profile' : null),
+      );
       return false;
     }
 

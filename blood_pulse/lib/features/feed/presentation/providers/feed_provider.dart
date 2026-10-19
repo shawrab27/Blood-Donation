@@ -403,23 +403,35 @@ class FeedNotifier extends StateNotifier<List<FeedPostItem>> {
   bool _isLoadingMore = false;
   String _currentScope = 'near';
   String? _currentKind;
+  String? _currentDistrict;
+  String? _currentDivision;
 
   String? get nextCursor => _nextCursor;
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
   String get currentScope => _currentScope;
 
-  Future<void> fetchPosts({String? scope, String? kind, bool reset = true}) async {
+  Future<void> fetchPosts({
+    String? scope,
+    String? kind,
+    String? district,
+    String? division,
+    bool reset = true,
+  }) async {
     if (reset) {
       _nextCursor = null;
       _hasMore = true;
     }
     if (scope != null) _currentScope = scope;
     if (kind != null) _currentKind = kind == 'all' ? null : kind;
+    if (district != null) _currentDistrict = district;
+    if (division != null) _currentDivision = division;
 
     try {
       final queryParams = <String, String>{
         'scope': _currentScope,
+        if (_currentDistrict != null && _currentDistrict!.isNotEmpty) 'district': _currentDistrict!,
+        if (_currentDivision != null && _currentDivision!.isNotEmpty) 'division': _currentDivision!,
         if (_currentKind != null && _currentKind!.isNotEmpty) 'kind': _currentKind!,
         if (!reset && _nextCursor != null) 'cursor': _nextCursor!,
       };

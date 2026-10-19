@@ -163,11 +163,13 @@ class ProfileMeView(APIView):
         if not profile:
             return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Blood group modification is strictly admin-only
-        if 'blood_group' in request.data and request.data['blood_group'] != profile.blood_group:
+        # Blood group modification is strictly admin-only once set
+        if 'blood_group' in request.data and profile.blood_group and request.data['blood_group'] != profile.blood_group:
             return Response({
                 "blood_group": ["Blood group cannot be directly modified. Please submit a Blood Group Change Request."]
             }, status=status.HTTP_400_BAD_REQUEST)
+        elif 'blood_group' in request.data and not profile.blood_group:
+            profile.blood_group = request.data['blood_group']
 
         # Name updates
         if 'name' in request.data:

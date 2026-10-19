@@ -35,10 +35,27 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
       }
 
       // Try Stage 1B profile/me/ first
-      http.Response response = await ApiClient().get('profile/me/');
-      if (response.statusCode != 200) {
-        // Fallback to legacy donors/me/
-        response = await ApiClient().get('donors/me/');
+      http.Response? response;
+      try {
+        response = await ApiClient().get('profile/me/');
+      } on ApiException catch (apiErr) {
+        if (apiErr.statusCode == 403 || apiErr.statusCode == 404) {
+          // Fallback to legacy donors/me/
+          try {
+            response = await ApiClient().get('donors/me/');
+          } on ApiException catch (fallbackErr) {
+            if (fallbackErr.statusCode == 403 || fallbackErr.statusCode == 404 || fallbackErr.statusCode == 401) {
+              if (mounted) state = const AsyncValue.data(null);
+              return;
+            }
+            rethrow;
+          }
+        } else if (apiErr.statusCode == 401) {
+          if (mounted) state = const AsyncValue.data(null);
+          return;
+        } else {
+          rethrow;
+        }
       }
 
       if (!mounted) return;
@@ -46,14 +63,16 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final profile = ProfileModel.fromJson(data);
         state = AsyncValue.data(profile);
-      } else if (response.statusCode == 404 || response.statusCode == 401) {
-        state = const AsyncValue.data(null);
       } else {
-        throw Exception('Failed to load profile [${response.statusCode}]');
+        state = const AsyncValue.data(null);
       }
     } catch (e, st) {
       if (!mounted) return;
-      state = AsyncValue.error(e, st);
+      if (e is ApiException && (e.statusCode == 401 || e.statusCode == 403 || e.statusCode == 404)) {
+        state = const AsyncValue.data(null);
+      } else {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 

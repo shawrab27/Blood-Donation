@@ -83,7 +83,17 @@ class FeedListCreateAPIView(APIView):
         # Determine user district / division context
         user_district = None
         user_division = None
-        if request.user and request.user.is_authenticated:
+        q_district = request.query_params.get('district')
+        q_division = request.query_params.get('division')
+        if q_district:
+            user_district = District.objects.filter(name__iexact=str(q_district).strip()).select_related('division').first()
+            if user_district:
+                user_division = user_district.division
+        elif q_division:
+            from api.models import Division
+            user_division = Division.objects.filter(name__iexact=str(q_division).strip()).first()
+
+        if not user_district and request.user and request.user.is_authenticated:
             loc_state = UserLocationState.objects.filter(user=request.user).select_related('current_district', 'current_division').first()
             if loc_state and loc_state.current_district:
                 user_district = loc_state.current_district

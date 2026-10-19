@@ -2,13 +2,14 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
-import 'profile_completion_modal.dart';
+import '../../features/auth/presentation/providers/auth_notifier.dart';
 
 /// Stitch "Complete your registration" modal dialog.
 /// Displays a soft-wall barrier for guests and incomplete logged-in users.
-class RegistrationGatePopup extends StatelessWidget {
+class RegistrationGatePopup extends ConsumerWidget {
   final bool isGuest;
   final String? targetRoute;
 
@@ -37,7 +38,7 @@ class RegistrationGatePopup extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -175,11 +176,19 @@ class RegistrationGatePopup extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  if (isGuest) {
-                    context.push('/register', extra: targetRoute != null ? {'targetRoute': targetRoute} : null);
-                  } else {
-                    ProfileCompletionModal.show(context);
-                  }
+                  final auth = ref.read(authProvider);
+                  final u = auth.user;
+                  final isGoogle = u?.authProvider == 'google' ||
+                      (u != null && u.email.isNotEmpty && u.authProvider != 'credentials');
+                  context.push(
+                    '/register',
+                    extra: {
+                      if (targetRoute != null) 'targetRoute': targetRoute,
+                      'prefillName': u?.fullName ?? '',
+                      'prefillEmail': u?.email ?? '',
+                      'isGoogleUser': isGoogle,
+                    },
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,

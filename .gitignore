@@ -92,5 +92,8 @@ failures/
 *.isolatedDiff.png
 *.maskedDiff.png
 *.testImage.png
+/*.png
+/blood_pulse/*.png
+/view_dump.xml
 
 screenshots/
