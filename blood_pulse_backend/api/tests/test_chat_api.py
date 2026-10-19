@@ -226,3 +226,33 @@ class RealtimeChatAPITests(TestCase):
 
         msg.refresh_from_db()
         self.assertIsNone(msg.voice_url)
+
+    def test_direct_messages_query_count_constant_for_50_messages(self):
+        """P1-1: Verifies select_related('sender', 'recipient') avoids N+1 queries for 50 messages."""
+        from django.test.utils import CaptureQueriesContext
+        from django.db import connection
+
+        # Bulk create 50 messages alternating between sender and recipient
+        messages = [
+            DirectMessage(
+                acceptance=self.acceptance,
+                sender=self.requester_user if i % 2 == 0 else self.donor_user,
+                recipient=self.donor_user if i % 2 == 0 else self.requester_user,
+                content=f"Message {i}",
+                status='DELIVERED',
+            )
+            for i in range(50)
+        ]
+        DirectMessage.objects.bulk_create(messages)
+
+        self.client.force_authenticate(user=self.requester_user)
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(f'/api/chat/{self.acceptance.id}/messages/?limit=50')
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.json()['results']), 50)
+
+        # Without select_related, it would be > 100 queries (2 queries per message for sender and recipient).
+        # With select_related, queries remain constant and <= 6 regardless of message count.
+        self.assertLessEqual(len(queries), 6)
+

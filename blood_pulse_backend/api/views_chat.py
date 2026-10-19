@@ -91,7 +91,7 @@ class JourneyMessageListCreateAPIView(APIView):
             limit = 30
             offset = 0
 
-        qs = DirectMessage.objects.filter(acceptance=acceptance).order_by('created_at')
+        qs = DirectMessage.objects.filter(acceptance=acceptance).select_related('sender', 'recipient').order_by('created_at')
         total = qs.count()
         messages = qs[offset:offset + limit]
 
