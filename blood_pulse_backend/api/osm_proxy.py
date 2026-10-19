@@ -2,6 +2,7 @@ import requests
 import logging
 from django.core.cache import cache
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from api.throttles import OSMProxyThrottle
@@ -9,14 +10,17 @@ from api.throttles import OSMProxyThrottle
 logger = logging.getLogger(__name__)
 
 class GeocodeView(APIView):
+    permission_classes = [IsAuthenticated]
     throttle_classes = [OSMProxyThrottle]
 
     def get(self, request, *args, **kwargs):
-        q = request.query_params.get('q')
+        q = (request.query_params.get('q') or '').strip()
         if not q:
             return Response({'error': 'Missing query param q'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(q) < 2 or len(q) > 100:
+            return Response({'error': 'Query length must be between 2 and 100 characters'}, status=status.HTTP_400_BAD_REQUEST)
         
-        cache_key = f"geocode_{q.strip().lower()}"
+        cache_key = f"geocode_{q.lower()}"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
@@ -49,6 +53,7 @@ class GeocodeView(APIView):
             return Response({'error': 'OSM service error'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class ReverseGeocodeView(APIView):
+    permission_classes = [IsAuthenticated]
     throttle_classes = [OSMProxyThrottle]
 
     def get(self, request, *args, **kwargs):
@@ -58,7 +63,15 @@ class ReverseGeocodeView(APIView):
         if not lat or not lng:
             return Response({'error': 'Missing lat/lng'}, status=status.HTTP_400_BAD_REQUEST)
             
-        cache_key = f"rev_geocode_{lat}_{lng}"
+        try:
+            lat_f = float(lat)
+            lng_f = float(lng)
+            if not (-90.0 <= lat_f <= 90.0 and -180.0 <= lng_f <= 180.0):
+                return Response({'error': 'Coordinates out of bounds'}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
+            return Response({'error': 'Invalid lat/lng format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = f"rev_geocode_{lat_f}_{lng_f}"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
@@ -66,7 +79,7 @@ class ReverseGeocodeView(APIView):
         try:
             res = requests.get(
                 'https://nominatim.openstreetmap.org/reverse',
-                params={'lat': lat, 'lon': lng, 'format': 'json', 'zoom': 14},
+                params={'lat': lat_f, 'lon': lng_f, 'format': 'json', 'zoom': 14},
                 headers={'User-Agent': 'BloodPulse/1.0'},
                 timeout=5
             )
@@ -90,6 +103,7 @@ class ReverseGeocodeView(APIView):
             return Response({'error': 'OSM service error'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 class RouteView(APIView):
+    permission_classes = [IsAuthenticated]
     throttle_classes = [OSMProxyThrottle]
 
     def get(self, request, *args, **kwargs):
@@ -107,7 +121,9 @@ class RouteView(APIView):
             f_lng = float(from_lng)
             t_lat = float(to_lat)
             t_lng = float(to_lng)
-        except ValueError:
+            if not (-90.0 <= f_lat <= 90.0 and -180.0 <= f_lng <= 180.0 and -90.0 <= t_lat <= 90.0 and -180.0 <= t_lng <= 180.0):
+                return Response({'error': 'Coordinates out of bounds'}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
             return Response({'error': 'Invalid latitude/longitude format'}, status=status.HTTP_400_BAD_REQUEST)
 
         from api.services.routing import get_route_or_fallback
