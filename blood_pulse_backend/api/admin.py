@@ -14,6 +14,17 @@ class HospitalAdmin(admin.ModelAdmin):
 
 class DonorProfileAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'blood_group', 'district', 'phone_number', 'is_verified')
+    actions = ['approve_verification', 'revoke_verification']
+
+    @admin.action(description="Approve selected donor profile verifications")
+    def approve_verification(self, request, queryset):
+        updated = queryset.update(is_verified=True)
+        self.message_user(request, f"Successfully approved verification for {updated} donor profile(s).")
+
+    @admin.action(description="Revoke selected donor profile verifications")
+    def revoke_verification(self, request, queryset):
+        updated = queryset.update(is_verified=False)
+        self.message_user(request, f"Successfully revoked verification for {updated} donor profile(s).")
 
     @admin.display(ordering='user__username', description='Username')
     def username(self, obj):

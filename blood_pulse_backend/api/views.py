@@ -604,38 +604,51 @@ class NearbyDonorsView(APIView):
 
 class NIDVerificationView(APIView):
     """
-    Receives NID image uploaded by client and marks the donor profile as verified.
+    Submits NID document for verification review.
+    Critical IDOR fixed: Operates strictly on request.user's own DonorProfile.
+    Never trusts client-supplied user_id. Does NOT allow self-verification;
+    verification must be reviewed and approved by staff/admin.
     """
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
-        # Real OCR/trust-scoring wired in Flutter client, see ai_trust_detector_service.dart
-        user_id = request.data.get('user_id')
         from api.utils import validate_uploaded_file
-        uploaded_file = validate_uploaded_file(request.FILES.get('image') or request.FILES.get('file'))
+        raw_file = request.FILES.get('image') or request.FILES.get('file')
+        if not raw_file:
+            return Response(
+                {"error": "Valid NID document image or file is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if uploaded_file:
-            from django.core.files.storage import default_storage
-            from django.core.files.base import ContentFile
-            save_path = f"nid_uploads/{uploaded_file.name}"
-            default_storage.save(save_path, ContentFile(uploaded_file.read()))
+        uploaded_file = validate_uploaded_file(raw_file)
 
-        profile = None
-        if user_id:
-            try:
-                profile = DonorProfile.objects.get(user__id=user_id)
-            except DonorProfile.DoesNotExist:
-                pass
-        elif request.user and request.user.is_authenticated:
-            try:
-                profile = DonorProfile.objects.get(user=request.user)
-            except DonorProfile.DoesNotExist:
-                pass
+        try:
+            profile = DonorProfile.objects.get(user=request.user)
+        except DonorProfile.DoesNotExist:
+            return Response(
+                {"error": "Donor profile not found for authenticated user."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        if profile:
-            profile.is_verified = True
-            profile.save()
-            return Response({"status": "success", "message": "NID verified and profile updated."}, status=status.HTTP_200_OK)
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+        import uuid
+        import os
 
-        return Response({"status": "success", "message": "NID uploaded, profile updated if user existed."}, status=status.HTTP_200_OK)
+        ext = os.path.splitext(uploaded_file.name)[1].lower() or '.jpg'
+        safe_filename = f"user_{request.user.id}_{uuid.uuid4().hex}{ext}"
+        save_path = f"nid_uploads/{safe_filename}"
+        default_storage.save(save_path, ContentFile(uploaded_file.read()))
+
+        # Invariant: User submission records the file as pending; self-verify is strictly disallowed.
+        return Response(
+            {
+                "status": "pending",
+                "message": "NID document submitted successfully. Verification is pending staff/admin review.",
+                "is_verified": profile.is_verified,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 
