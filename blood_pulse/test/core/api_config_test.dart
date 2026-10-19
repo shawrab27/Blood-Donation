@@ -36,5 +36,11 @@ void main() {
     test('ApiConfig default baseUrl resolves to production Render backend', () {
       expect(ApiConfig.baseUrl, equals('https://bloodpulse-backend.onrender.com'));
     });
+
+    test('ApiConfig candidateUrls in default prod mode does not contain circular vercel proxy', () {
+      final candidates = ApiConfig.candidateUrls;
+      expect(candidates, contains('https://bloodpulse-backend.onrender.com'));
+      expect(candidates.any((url) => url.contains('vercel')), isFalse);
+    });
   });
 }

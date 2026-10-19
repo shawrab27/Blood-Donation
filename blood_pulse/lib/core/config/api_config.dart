@@ -17,7 +17,6 @@ class ApiConfig {
 
   static const String _defaultUrl = 'https://bloodpulse-backend.onrender.com';
   static const String _renderUrl = 'https://bloodpulse-backend.onrender.com';
-  static const String _vercelUrl = 'https://blood-donation-liard.vercel.app';
   static const String _lanDefault = 'http://192.168.0.103:8000';
   static const String _adbDefault = 'http://127.0.0.1:8000';
 
@@ -39,7 +38,6 @@ class ApiConfig {
     }
     return [
       _clean(_defaultUrl),
-      _clean(_vercelUrl),
     ];
   }
 
