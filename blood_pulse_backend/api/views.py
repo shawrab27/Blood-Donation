@@ -525,9 +525,17 @@ class HospitalViewSet(viewsets.ModelViewSet):
 class NearbyDonorsView(APIView):
     """
     Geospatial query to find nearby donors with privacy fuzzing.
+    GET is intentionally public with fuzzed coordinates and zero PII.
+    POST is restricted to authenticated users.
     """
     from api.throttles import NearbyDonorsThrottle
     throttle_classes = [NearbyDonorsThrottle]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
     def _validate_coords(self, lat, lng):
         try:
             if lat is None or lng is None:

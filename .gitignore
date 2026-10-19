@@ -33,6 +33,8 @@ media/
 staticfiles/
 chat_voice/
 blood_pulse_backend/chat_voice/
+nid_uploads/
+blood_pulse_backend/nid_uploads/
 data/institutions/*.xlsx
 blood_pulse_backend/data/institutions/*.xlsx
 test_db.sqlite3

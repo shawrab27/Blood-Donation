@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 
 class ValidationTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.client = APIClient()
 
     def test_haversine_bounds_get(self):
@@ -16,6 +18,8 @@ class ValidationTests(TestCase):
         self.assertEqual(response.status_code, 400)
         
     def test_haversine_bounds_post(self):
+        user = User.objects.create_user(username='haversine_user', password='pw')
+        self.client.force_authenticate(user=user)
         response = self.client.post('/api/donors-nearby/', {'lat': '999.99', 'lng': '-999.99'}, format='json')
         self.assertEqual(response.status_code, 400)
 

@@ -11,6 +11,7 @@ __pycache__/
 db.sqlite3
 staticfiles/
 media/
+nid_uploads/
 *firebase*adminsdk*.json
 *service-account*.json
 firebase-service-account.json

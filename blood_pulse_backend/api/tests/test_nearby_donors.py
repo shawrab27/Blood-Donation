@@ -99,6 +99,57 @@ class NearbyDonorsViewTest(TestCase):
         res = self.client.get(url, {'lat': 23.8103, 'lng': 90.4125})
         self.assertEqual(res.status_code, 429)
 
+    def test_anonymous_get_returns_no_pii_and_fuzzed_coordinates(self):
+        """Item 3: Anonymous GET returns 200, strictly fuzzed coordinates, and zero PII."""
+        from django.core.cache import cache
+        cache.clear()
+        self.client.force_authenticate(user=None)
+        url = reverse('donors-nearby')
+        response = self.client.get(url, {'lat': 23.8103, 'lng': 90.4125, 'radius_km': 5})
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertGreaterEqual(len(data), 1)
+
+        for donor in data:
+            # Zero PII: No phone numbers or emails exposed
+            self.assertNotIn('phone_number', donor)
+            self.assertNotIn('phone', donor)
+            self.assertNotIn('email', donor)
+
+            # Privacy Fuzzing: No exact coordinates exposed
+            self.assertNotIn('latitude', donor)
+            self.assertNotIn('longitude', donor)
+            self.assertNotIn('lat', donor)
+            self.assertNotIn('lng', donor)
+
+            # Must contain fuzzed coordinates
+            self.assertIn('fuzzed_lat', donor)
+            self.assertIn('fuzzed_lng', donor)
+
+            # Fuzzed coordinates must not equal exact coordinates
+            if donor['donor_id'] == self.dp1.id:
+                self.assertNotEqual((donor['fuzzed_lat'], donor['fuzzed_lng']), (self.dp1.latitude, self.dp1.longitude))
+
+    def test_anonymous_post_rejected_with_401(self):
+        """Item 3: Anonymous POST on /api/donors-nearby/ must be rejected with 401 Unauthorized."""
+        from django.core.cache import cache
+        cache.clear()
+        self.client.force_authenticate(user=None)
+        url = reverse('donors-nearby')
+        response = self.client.post(url, {'lat': 23.8103, 'lng': 90.4125}, format='json')
+        self.assertEqual(response.status_code, 401)
+
+    def test_authenticated_post_allowed(self):
+        """Item 3: Authenticated POST on /api/donors-nearby/ is allowed."""
+        from django.core.cache import cache
+        cache.clear()
+        self.client.force_authenticate(user=self.user1)
+        url = reverse('donors-nearby')
+        response = self.client.post(url, {'lat': 23.8103, 'lng': 90.4125}, format='json')
+        self.assertEqual(response.status_code, 200)
+
+
 
 class GuestDonorMapEndpointTests(TestCase):
     def setUp(self):
@@ -269,4 +320,5 @@ class GuestDonorMapEndpointTests(TestCase):
             res2 = self.client.get('/api/donors/guest-map/')
         self.assertEqual(res2.status_code, 200)
         self.assertEqual(res1.json(), res2.json())
+
 

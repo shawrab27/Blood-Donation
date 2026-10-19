@@ -1,7 +1,9 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-from django.test import TestCase, RequestFactory
+import shutil
+import tempfile
+from django.test import TestCase, RequestFactory, override_settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
@@ -13,6 +15,19 @@ User = get_user_model()
 
 
 class NIDVerificationSecurityTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._temp_media = tempfile.mkdtemp()
+        cls._override = override_settings(MEDIA_ROOT=cls._temp_media)
+        cls._override.enable()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._override.disable()
+        shutil.rmtree(cls._temp_media, ignore_errors=True)
+        super().tearDownClass()
+
     def setUp(self):
         self.client = APIClient()
         self.user_a = User.objects.create_user(username='user_a', password='password123')
