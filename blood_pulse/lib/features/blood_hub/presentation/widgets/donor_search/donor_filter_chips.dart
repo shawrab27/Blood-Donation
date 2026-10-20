@@ -39,7 +39,7 @@ class DonorFilterChips extends StatelessWidget {
     super.key,
     required this.currentFilter,
     required this.onBloodGroupSelected,
-    required this.onCampusSelected,
+    this.onCampusSelected,
     required this.onDivisionSelected,
     required this.onDistrictSelected,
     required this.onResetFilters,
@@ -47,7 +47,7 @@ class DonorFilterChips extends StatelessWidget {
 
   final DonorSearchFilter currentFilter;
   final ValueChanged<String?> onBloodGroupSelected;
-  final ValueChanged<String?> onCampusSelected;
+  final ValueChanged<String?>? onCampusSelected;
   final ValueChanged<String?> onDivisionSelected;
   final ValueChanged<String?> onDistrictSelected;
   final VoidCallback onResetFilters;
@@ -79,15 +79,7 @@ class DonorFilterChips extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // 2. Campus Chip
-          _FilterChipButton(
-            label: campusLabel,
-            isSelected: isCampusSelected,
-            onTap: () => _showCampusSheet(context),
-          ),
-          const SizedBox(width: 8),
-
-          // 3. Division Chip
+          // 2. Division Chip
           _FilterChipButton(
             label: divLabel,
             isSelected: isDivSelected,
@@ -104,7 +96,7 @@ class DonorFilterChips extends StatelessWidget {
           const SizedBox(width: 8),
 
           // 5. Reset Filter Button
-          if (isBgSelected || isCampusSelected || isDivSelected || isDistSelected)
+          if (isBgSelected || isDivSelected || isDistSelected)
             InkWell(
               onTap: onResetFilters,
               borderRadius: BorderRadius.circular(50),
@@ -238,7 +230,7 @@ class DonorFilterChips extends StatelessWidget {
                   trailing: isSel ? const Icon(Icons.check, color: Color(0xFF960017)) : null,
                   onTap: () {
                     Navigator.pop(ctx);
-                    onCampusSelected(camp == 'All Campuses' ? null : camp);
+                    onCampusSelected?.call(camp == 'All Campuses' ? null : camp);
                   },
                 );
               }),

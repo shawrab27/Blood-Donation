@@ -181,7 +181,13 @@ Working style: **one task at a time**, short steps, evidence required.
   - Root cause 3: `ProfileMeView.get()` omitted `alert_pause_until` and `emergency_alerts_paused_until`, dropping snooze state upon app restart.
   - Fix: Client sentinel in `ProfileModel.copyWith`; server accepts explicit `off=True`, `enable=False`, `days=null/0`; `ProfileMeView` includes and persists snooze fields; Wave Engine query immediately includes donor upon turn-off; full-size capsule button (`minHeight: 48`) with dynamic countdown and days/months picker (1d, 3d, 7d, 30d, 60d, 90d) below Impact; client error rollback.
   - Verification: `blood_pulse_backend/api/tests/test_p01_snooze.py` (5/5 PASS), `emergency_alerts_snooze_test.dart` (7/7 PASS), `step5_profile_snooze_test.dart` (2/2 PASS), `scripts/gate.ps1` (ALL CRITERIA SATISFIED).
-- [ ] P-04 | N4 Search for Blood card design (`fix/p04-search-cards`)
+- [x] P-04 | N4 Search for Blood card design (`fix/p04-search-cards`)
+  - Redesigned `DonorSearchScreen` background to soft light surface (`#FDF3F3`).
+  - Implemented 2-per-row compact cards with dark red (`#960017`) background and white text (>8.4:1 contrast ratio).
+  - Strictly enforced 4 privacy fields (donor name, blood group, district name, platform tier) with zero PII (no phone, exact location, or campus).
+  - Tapping a card opens a modal popup displaying only the 4 privacy fields and a prominent "Request Blood" / "Send Request" action.
+  - Removed "Campus" filter chip in favor of nationwide scope (Division and Zila/District).
+  - Verification: `p04_donor_search_card_test.dart` (5/5 PASS), `step4_donor_card_privacy_test.dart` (2/2 PASS), `scripts/gate.ps1` (ALL CRITERIA SATISFIED).
 - [ ] P-05 | N6 Splash video (`fix/p05-splash-video`)
 - [ ] P-06 | N7 Local community registration: leadership & members (`fix/p06-club-members`)
 - [ ] P-07 | N8 Create Poster button & Poster Studio (`fix/p07-action-bar-poster`)

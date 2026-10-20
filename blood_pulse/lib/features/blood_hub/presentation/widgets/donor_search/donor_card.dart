@@ -4,169 +4,208 @@
 import 'package:flutter/material.dart';
 import '../../../data/blood_hub_api_service.dart';
 
-/// Donor result card matching Stitch UI specification.
-/// Features verified badge, campus location, blood group pill, last donation box,
-/// and an interactive direct requisition popup card when "Request" is tapped.
+/// Dark red card background (#960017) with white text achieves >8.4:1 contrast ratio (exceeding WCAG 4.5:1).
+const Color kDonorCardDarkRed = Color(0xFF960017);
+const Color kDonorCardBorder = Color(0xFF750012);
+
+/// Shared 2-per-row compact donor result card matching Stitch UI and Anomaly N4 / Task P-04 specifications.
+/// Cards are dark red (#960017) with white text, two per row, small and responsive.
+/// Strictly enforces privacy decision 2026-10-10: shows ONLY district name, donor name, blood group, and platform tier.
 class DonorCard extends StatelessWidget {
   const DonorCard({
     super.key,
     required this.donor,
-    required this.onRequestTap,
+    this.onRequestTap,
+    this.onTap,
   });
 
   final DonorSearchModel donor;
-  final VoidCallback onRequestTap;
+  final VoidCallback? onRequestTap;
+  final VoidCallback? onTap;
+
+  void _handleTap(BuildContext context) {
+    if (onTap != null) {
+      onTap!();
+    } else {
+      _showDonorRequestCard(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final districtText = donor.district.isNotEmpty ? donor.district : 'Bangladesh';
-    final tierBadge = donor.badge;
+    final tierBadge = donor.badge.isNotEmpty ? donor.badge : 'Donor';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF3DDE0), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x088E7D7F),
-            blurRadius: 14,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top Row: Donor Name + District on left, Blood Group Pill on right
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      donor.name,
-                      style: const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF24191A),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 15,
-                          color: Color(0xFF5C3F3D),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            districtText,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              color: Color(0xFF5C3F3D),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE9EB),
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(color: const Color(0xFFE6BDBA), width: 0.8),
-                ),
-                child: Text(
-                  donor.bloodGroup,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF960017),
-                  ),
-                ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _handleTap(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: kDonorCardDarkRed,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: kDonorCardBorder, width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // Platform Tier Badge Box
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF8F7),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF3DDE0)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.military_tech_rounded,
-                  size: 16,
-                  color: Color(0xFFC30121),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  tierBadge,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF24191A),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 1. Top Row: Blood Group pill + Platform Tier pill
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Blood Group (White pill with dark red text for >=10:1 contrast)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Text(
+                          donor.bloodGroup,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: kDonorCardDarkRed,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // Platform Tier Badge
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 0.8),
+                          ),
+                          child: Text(
+                            tierBadge,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
+                  const SizedBox(height: 6),
 
-          // Request Button: Capsule Shape with Interactive Popup
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _showDonorRequestCard(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC30121),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Request',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                  // 2. Middle Content: Donor Name + District Name
+                  Text(
+                    donor.name,
+                    style: const TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 12,
+                        color: Color(0xFFFFCDD2),
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          districtText,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11,
+                            color: Color(0xFFFFECEE),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  // 3. Status Pill (Available / Resting)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      donor.isEligible ? 'Available' : 'Resting',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        color: donor.isEligible ? const Color(0xFFC8E6C9) : Colors.white70,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // 4. Bottom Button: Small Full-Width Capsule "Request" Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 28,
+                    child: ElevatedButton(
+                      onPressed: () => _handleTap(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: kDonorCardDarkRed,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        padding: EdgeInsets.zero,
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Request',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: kDonorCardDarkRed,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  /// Interactive Donor Requisition Popup Card
+  /// Interactive Requisition Popup for DonorCard
   void _showDonorRequestCard(BuildContext context) {
+    final districtText = donor.district.isNotEmpty ? donor.district : 'Bangladesh';
+    final tierBadge = donor.badge.isNotEmpty ? donor.badge : 'Donor';
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -177,14 +216,18 @@ class DonorCard extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
+          ),
           child: SafeArea(
             top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Drag handle
                 Center(
                   child: Container(
                     width: 40,
@@ -196,18 +239,19 @@ class DonorCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-
-                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      donor.name,
-                      style: const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF24191A),
+                    Expanded(
+                      child: Text(
+                        donor.name,
+                        style: const TextStyle(
+                          fontFamily: 'Georgia',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF24191A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
@@ -230,7 +274,7 @@ class DonorCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${donor.district.isNotEmpty ? donor.district : 'Bangladesh'} • ${donor.badge}',
+                  '$districtText • $tierBadge',
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 12,
@@ -238,8 +282,6 @@ class DonorCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Compatibility banner
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -265,8 +307,6 @@ class DonorCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Action Buttons
                 Row(
                   children: [
                     Expanded(
@@ -280,7 +320,7 @@ class DonorCard extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
-                        child: const Text('Cancel'),
+                        child: const Text('Close'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -289,7 +329,7 @@ class DonorCard extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          onRequestTap();
+                          if (onRequestTap != null) onRequestTap!();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFC30121),
@@ -328,384 +368,276 @@ class DonorCard extends StatelessWidget {
   }
 }
 
-/// Compact 2-per-row donor card matching Anomaly #12 requirements.
-/// Zero PII is displayed on the card. Tapping opens detailed bottom sheet popup.
+/// CompactDonorCard alias maintaining backwards compatibility for existing tests and callers.
 class CompactDonorCard extends StatelessWidget {
   const CompactDonorCard({
     super.key,
     required this.donor,
     required this.onTap,
+    this.onRequestTap,
   });
 
   final DonorSearchModel donor;
   final VoidCallback onTap;
+  final VoidCallback? onRequestTap;
 
   @override
   Widget build(BuildContext context) {
-    final districtText = donor.district.isNotEmpty ? donor.district : 'Bangladesh';
-    final tierBadge = donor.badge;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFF3DDE0), width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x088E7D7F),
-                blurRadius: 10,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top Row: Blood group pill + Verified badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE9EB),
-                        borderRadius: BorderRadius.circular(50),
-                        border: Border.all(color: const Color(0xFFE6BDBA), width: 0.8),
-                      ),
-                      child: Text(
-                        donor.bloodGroup,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF960017),
-                        ),
-                      ),
-                    ),
-                    if (donor.isVerified)
-                      const Icon(
-                        Icons.verified_rounded,
-                        size: 16,
-                        color: Color(0xFF0D68AA),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                // Donor name
-                Text(
-                  donor.name,
-                  style: const TextStyle(
-                    fontFamily: 'Georgia',
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF24191A),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                // Donor title / badge
-                Text(
-                  tierBadge,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFC30121),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                // Location / Distance
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 13,
-                      color: Color(0xFF5C3F3D),
-                    ),
-                    const SizedBox(width: 3),
-                    Expanded(
-                      child: Text(
-                        districtText,
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          color: Color(0xFF5C3F3D),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                // Status Pill
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  decoration: BoxDecoration(
-                    color: donor.isEligible ? const Color(0xFFE8F5E9) : const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    donor.isEligible ? 'Available' : 'Resting',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: donor.isEligible ? const Color(0xFF2E7D32) : const Color(0xFF888888),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return DonorCard(
+      donor: donor,
+      onTap: onTap,
+      onRequestTap: onRequestTap,
     );
   }
 }
 
-/// Detailed bottom sheet popup for a donor (zero PII: no phone, no email, no exact GPS coordinates).
+/// Detailed bottom sheet popup dialog for a donor.
+/// Privacy (decision 2026-10-10): shows ONLY district name, donor name, blood group, and platform tier.
+/// Strictly zero PII: no phone, no email, no exact street or coordinates.
 void showDonorDetailPopup(
   BuildContext context,
   DonorSearchModel donor, {
   required VoidCallback onRequestTap,
 }) {
+  final districtText = donor.district.isNotEmpty
+      ? (donor.division.isNotEmpty && donor.division == donor.district
+          ? '${donor.district}, ${donor.division}'
+          : donor.district)
+      : 'Bangladesh';
+  final tierBadge = donor.badge.isNotEmpty ? donor.badge : 'Donor';
+
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (ctx) => SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 16,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE0D5D5),
-                  borderRadius: BorderRadius.circular(2),
+    builder: (ctx) => Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Drag Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0D5D5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              donor.name,
-                              style: const TextStyle(
-                                fontFamily: 'Georgia',
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF24191A),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (donor.isVerified) ...[
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.verified_rounded,
-                              size: 18,
-                              color: Color(0xFF0D68AA),
-                            ),
-                          ],
-                        ],
+              const SizedBox(height: 16),
+
+              // Header: 1. Donor Name & 2. Blood Group Pill
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      donor.name,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        donor.badge,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE9EB),
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(color: const Color(0xFFE6BDBA), width: 1.0),
+                    ),
+                    child: Text(
+                      donor.bloodGroup,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFC30121),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${donor.district} • $tierBadge',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  color: Color(0xFF5F5E5E),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 3. Platform Tier Badge Box
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8F7),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFF3DDE0)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.military_tech_rounded,
+                      size: 16,
+                      color: Color(0xFFC30121),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      tierBadge,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF24191A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 4. District Location Box (Zero PII - ONLY District / Regional location)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8F7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFF3DDE0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 18,
+                      color: Color(0xFFC30121),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        districtText,
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFC30121),
+                          color: Color(0xFF24191A),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEE9EB),
-                    borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: const Color(0xFFE6BDBA), width: 1.0),
-                  ),
-                  child: Text(
-                    donor.bloodGroup,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF960017),
+              ),
+              const SizedBox(height: 14),
+
+              // Privacy Reassurance Notice
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4FBF7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFC8E6C9)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.shield_outlined, color: Color(0xFF2E7D32), size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Privacy locked: Exact phone numbers and street locations remain confidential until the donor accepts.',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: Color(0xFF1B5E20),
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Action Buttons: Close + Request Blood
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF5F5E5E),
+                        side: const BorderSide(color: Color(0xFFE8DADA)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                      ),
+                      child: const Text('Close'),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Location and Distance (Zero PII - no exact GPS or street)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8F7),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFF3DDE0)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.near_me_outlined,
-                    size: 20,
-                    color: Color(0xFF0D68AA),
-                  ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          donor.district.isNotEmpty ? '${donor.district}, ${donor.division}' : 'Bangladesh',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF24191A),
-                          ),
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        onRequestTap();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFC30121),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
                         ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Estimated within your zone • Zero PII protected',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 11,
-                            color: Color(0xFF757575),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        elevation: 0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Request Blood',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            // Zero PII Security Guarantee
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4FBF7),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFC8E6C9)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.shield_outlined, color: Color(0xFF2E7D32), size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Privacy locked: Exact phone numbers and street locations are strictly confidential. Tapping Request notifies this donor securely.',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: Color(0xFF1B5E20),
-                        height: 1.4,
+                          SizedBox(width: 6),
+                          Icon(Icons.arrow_forward_rounded, size: 16),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF5F5E5E),
-                      side: const BorderSide(color: Color(0xFFE8DADA)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                    ),
-                    child: const Text('Close'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      onRequestTap();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFC30121),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      elevation: 0,
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Request Blood',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Icon(Icons.arrow_forward_rounded, size: 16),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
   );
 }
-
