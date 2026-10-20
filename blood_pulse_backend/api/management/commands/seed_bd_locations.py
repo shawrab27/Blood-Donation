@@ -169,7 +169,18 @@ class Command(BaseCommand):
                             if not updated:
                                 District.objects.create(division=div_obj, name=dist_name)
 
-            self.stdout.write(self.style.SUCCESS("Database successfully seeded/updated with canonical BD locations!"))
+                # Seed Canonical Upazilas for all districts
+                from api.data.bd_upazilas import BD_DISTRICT_UPAZILAS
+                seeded_upazilas = 0
+                for d_name, up_names in BD_DISTRICT_UPAZILAS.items():
+                    target_dist = District.objects.filter(name=d_name).first()
+                    if target_dist:
+                        for up_name in up_names:
+                            _, created_up = Upazila.objects.get_or_create(district=target_dist, name=up_name)
+                            if created_up:
+                                seeded_upazilas += 1
+
+            self.stdout.write(self.style.SUCCESS(f"Database successfully seeded/updated with canonical BD locations! ({seeded_upazilas} new upazilas created)"))
         else:
             self.stdout.write(self.style.WARNING("\n[DRY-RUN] No changes were written. Use --apply to execute."))
 

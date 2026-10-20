@@ -241,7 +241,9 @@ class FcmService {
         debugPrint('👤 User UID: $userUid');
       }
       debugPrint('🔑 Token: $token');
-        if (token != null) {
+      if (token != null) {
+        final accessToken = await ApiClient().getAccessToken();
+        if (accessToken != null && accessToken.isNotEmpty) {
           try {
             final response = await ApiClient().post('/api/users/update-fcm/', body: {
               'token': token,
@@ -252,28 +254,41 @@ class FcmService {
           } catch (apiErr) {
             debugPrint('[FCM] Failed to register token with backend: $apiErr');
           }
+        } else {
+          debugPrint('[FCM] User is unauthenticated; deferring /api/users/update-fcm/ until login/registration.');
         }
-      } catch (e) {
+      }
+    } catch (e) {
       debugPrint('[FCM] token fetch error: $e');
     }
 
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-        debugPrint('[FCM] token refreshed: $newToken');
-        try {
+      debugPrint('[FCM] token refreshed: $newToken');
+      try {
+        final accessToken = await ApiClient().getAccessToken();
+        if (accessToken != null && accessToken.isNotEmpty) {
           final response = await ApiClient().post('/api/users/update-fcm/', body: {
             'token': newToken,
             'fcm_token': newToken,
           });
           debugPrint('[DEBUG] FCM token posted: ${response.statusCode}');
-        } catch (apiErr) {
-          debugPrint('[DEBUG] FCM token sync skipped: $apiErr');
+        } else {
+          debugPrint('[FCM] Refresh token sync deferred: user not authenticated.');
         }
-      });
+      } catch (apiErr) {
+        debugPrint('[DEBUG] FCM token sync skipped: $apiErr');
+      }
+    });
   }
 
   /// Callable helper for posting FCM device token directly.
   Future<void> updateFCMToken() async {
     try {
+      final accessToken = await ApiClient().getAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        debugPrint('[FCM] updateFCMToken skipped: user is unauthenticated.');
+        return;
+      }
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
         final response = await ApiClient().post(

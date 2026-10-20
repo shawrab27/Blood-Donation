@@ -80,6 +80,22 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         _, missing = obj.check_is_complete()
         return missing
 
+    def create(self, validated_data):
+        validated_data.pop('password', None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        if password and instance.user:
+            instance.user.set_password(password)
+            instance.user.save()
+        return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret.pop('password', None)
+        return ret
+
     class Meta:
         model = DonorProfile
         fields = [

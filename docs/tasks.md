@@ -200,6 +200,13 @@ Working style: **one task at a time**, short steps, evidence required.
   - Unified `handlePayloadRouting` in Flutter across foreground, background, and terminated tap states.
   - Added management command `send_test_push <user_id>` (positional user ID, dry-run default).
   - Verification: `api/tests/test_fcm_verification.py` (11/11 PASS), `p09_fcm_service_test.dart` (8/8 PASS), `scripts/gate.ps1` (ALL CRITERIA SATISFIED).
+- [x] **H-01 (Blocker / Anomaly N2) | POST /api/donors/ 500 error, registration atomicity & upazila seed (`fix/h01-registration-500`)**:
+  - Root cause: Commit `7f15cba3` added `password` field to `DonorProfileSerializer` without popping it in `create()`. DRF passed `password` in `validated_data` to `DonorProfile.objects.create(**validated_data)`, triggering `TypeError: unexpected keyword arguments: 'password'`.
+  - Client bug: `auth_notifier.dart` caught non-2xx exceptions and fell back to fake local authentication (`AuthStatus.authenticated`), advancing the user to the feed with no backend record (causing empty/slow feed).
+  - Backend Fix: Pop and hash password for `User` only via `set_password`; strip password completely from `DonorProfileSerializer` representations; wrap `DonorProfileViewSet.create` in `transaction.atomic()`; validate duplicate phone and email with clear 400 Bad Request; generate SimpleJWT access/refresh tokens in response.
+  - Flutter Fix: Removed fake local registration fallback; now stays on form with `AuthStatus.error` and friendly message; guarded `FcmService.instance.updateFCMToken` until access token is present, eliminating 401 at startup.
+  - Seed & Location: Added canonical 496 upazilas across 64 districts in `api/data/bd_upazilas.py` and updated `seed_bd_locations --apply` to seed them idempotently.
+  - Verification: `test_h01_registration.py` (6/6 PASS), `h01_registration_test.dart` (6/6 PASS), `scripts/gate.ps1` 100% PASS (flutter analyze PASS, flutter test PASS, manage.py check PASS, makemigrations PASS, manage.py test PASS).
 
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved

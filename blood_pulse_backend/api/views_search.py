@@ -92,7 +92,15 @@ def upazila_search(request):
     if not q:
         return Response([])
 
-    results = Upazila.objects.filter(name__icontains=q).annotate(
+    qs = Upazila.objects.filter(name__icontains=q).exclude(name__contains='├').exclude(name__contains='│').exclude(name__contains='└')
+    district = request.GET.get('district') or request.GET.get('district_id')
+    if district:
+        if str(district).isdigit():
+            qs = qs.filter(district_id=int(district))
+        else:
+            qs = qs.filter(district__name__iexact=str(district).strip())
+
+    results = qs.annotate(
         starts_with=Case(
             When(name__istartswith=q, then=Value(1)),
             default=Value(0),

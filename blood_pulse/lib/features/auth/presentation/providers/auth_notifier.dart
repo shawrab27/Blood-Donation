@@ -644,16 +644,8 @@ class AuthNotifier extends Notifier<AuthState> {
           user: completeProfile.copyWith(isProfileComplete: true),
           errorMessage: null,
         );
-        return true;
-      } else if (response.statusCode >= 500) {
-        // Server side module/hasher error on live host: fallback gracefully to local account
-        debugPrint('[registerUser] Backend returned ${response.statusCode}, falling back to local registration.');
-        ref.read(isGuestProvider.notifier).state = false;
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          user: completeProfile.copyWith(isProfileComplete: true),
-          errorMessage: null,
-        );
+        // Post FCM device token once after successful registration
+        FcmService.instance.updateFCMToken();
         return true;
       } else {
         final errorMsg = _extractErrorMessage(response.body);
@@ -664,14 +656,13 @@ class AuthNotifier extends Notifier<AuthState> {
         return false;
       }
     } catch (e) {
-      debugPrint('[registerUser] Network exception $e, falling back to local registration.');
-      ref.read(isGuestProvider.notifier).state = false;
+      debugPrint('[registerUser] Registration exception: $e');
+      final errorMsg = 'Registration failed. Please check your network connection and try again.';
       state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: completeProfile.copyWith(isProfileComplete: true),
-        errorMessage: null,
+        status: AuthStatus.error,
+        errorMessage: errorMsg,
       );
-      return true;
+      return false;
     }
   }
 

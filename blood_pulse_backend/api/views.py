@@ -108,58 +108,78 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         first_name = full_name.split(' ')[0] if full_name else data.get('first_name', '')
         last_name = ' '.join(full_name.split(' ')[1:]) if full_name and len(full_name.split(' ')) > 1 else data.get('last_name', '')
         email = (data.get('email') or '').strip()
+        raw_password = data.get('password')
 
-        # Resolve or create the Django user for unauthenticated registrations
+        if not user and raw_password is not None and len(raw_password) < 6:
+            return Response(
+                {'password': ['Password must be at least 6 characters.']},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate duplicates for unauthenticated registrations before creating any records
         if not user:
             username = canonical_phone or str(phone or 'donor_guest').replace('+', '').replace(' ', '')
-            
-            # Check if this phone number is already registered to an existing profile (any variant)
             if canonical_phone:
                 variants = get_phone_variants(canonical_phone)
-                if DonorProfile.objects.filter(phone_number__in=variants).exists():
+                if DonorProfile.objects.filter(phone_number__in=variants).exists() or User.objects.filter(username=username).exists():
                     return Response(
                         {'phone_number': ['An account with this phone number is already registered.']},
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-            # Check if user with this username exists
-            user = User.objects.filter(username=username).first()
-            if not user and email:
-                user = User.objects.filter(email=email).first()
+            if email:
+                if User.objects.filter(email__iexact=email).exists():
+                    return Response(
+                        {'email': ['An account with this email is already registered.']},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
+        from django.db import transaction
+
+        with transaction.atomic():
+            # Resolve or create the Django user for unauthenticated registrations
             if not user:
+                username = canonical_phone or str(phone or 'donor_guest').replace('+', '').replace(' ', '')
                 user = User.objects.create_user(
                     username=username,
                     email=email,
                     first_name=first_name,
                     last_name=last_name,
                 )
-            else:
-                if first_name and not user.first_name:
-                    user.first_name = first_name
-                if last_name and not user.last_name:
-                    user.last_name = last_name
-                if email and not user.email:
-                    user.email = email
-
-            raw_password = data.get('password') or 'password123'
-            user.set_password(raw_password)
-            user.save()
-        else:
-            if full_name:
-                parts = full_name.split(' ', 1)
-                user.first_name = parts[0]
-                user.last_name = parts[1] if len(parts) > 1 else ''
+                password_to_set = raw_password or 'password123'
+                user.set_password(password_to_set)
                 user.save()
+            else:
+                if full_name:
+                    parts = full_name.split(' ', 1)
+                    user.first_name = parts[0]
+                    user.last_name = parts[1] if len(parts) > 1 else ''
+                    user.save()
 
-        # Upsert DonorProfile for authenticated user
-        existing = DonorProfile.objects.filter(user=user).first()
-        if existing:
-            # Profile already exists → update fields and return 200
-            serializer = self.get_serializer(existing, data=data, partial=True)
+            # Upsert DonorProfile for user
+            existing = DonorProfile.objects.select_for_update().filter(user=user).first()
+            if existing:
+                # Profile already exists → update fields and return 200
+                serializer = self.get_serializer(existing, data=data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(user=user)
+                resp_data = dict(serializer.data)
+                resp_data.pop('password', None)
+                try:
+                    from rest_framework_simplejwt.tokens import RefreshToken
+                    refresh = RefreshToken.for_user(user)
+                    resp_data['access'] = str(refresh.access_token)
+                    resp_data['refresh'] = str(refresh)
+                except Exception:
+                    pass
+                return Response(resp_data, status=status.HTTP_200_OK)
+
+            # No profile yet → create
+            serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save(user=user)
             resp_data = dict(serializer.data)
+            resp_data.pop('password', None)
             try:
                 from rest_framework_simplejwt.tokens import RefreshToken
                 refresh = RefreshToken.for_user(user)
@@ -167,21 +187,7 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
                 resp_data['refresh'] = str(refresh)
             except Exception:
                 pass
-            return Response(resp_data, status=status.HTTP_200_OK)
-
-        # No profile yet → create
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(user=user)
-        resp_data = dict(serializer.data)
-        try:
-            from rest_framework_simplejwt.tokens import RefreshToken
-            refresh = RefreshToken.for_user(user)
-            resp_data['access'] = str(refresh.access_token)
-            resp_data['refresh'] = str(refresh)
-        except Exception:
-            pass
-        return Response(resp_data, status=status.HTTP_201_CREATED)
+            return Response(resp_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
