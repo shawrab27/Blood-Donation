@@ -105,16 +105,10 @@ def trigger_standby_donor_offer(blood_request, exclude_donor_ids: list = None) -
     )
 
     try:
-        Notification.objects.create(
-            user=top_candidate.user,
-            title="Urgent: Standby Blood Donation Opportunity",
-            body=f"You have been ranked as a standby donor for urgent request #{blood_request.id} ({blood_request.blood_group}). Please respond within {STANDBY_TIMEOUT_MINUTES} minutes.",
-            type="STANDBY_OFFER",
-            is_read=False,
-            created_at=now,
-        )
+        from api.services.notify import notify_standby_offer
+        notify_standby_offer(offer)
     except Exception as notif_err:
-        logger.warning(f"Could not create standby notification for user {top_candidate.user_id}: {notif_err}")
+        logger.warning(f"Could not dispatch standby notification for user {top_candidate.user_id}: {notif_err}")
 
     logger.info(f"Standby offer #{offer.id} created for Donor #{top_candidate.id} on Request #{blood_request.id}")
     return offer

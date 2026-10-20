@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.management import call_command
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.models import DonorProfile, UserDevice
 from api.services.notify import send_push_to_user, send_fcm_multicast_batches
@@ -174,3 +175,194 @@ class FCMVerificationTests(TestCase):
         post_push = send_push_to_user(self.user, 'Test', 'Body', dry_run=True)
         self.assertEqual(post_push['status'], 'no_tokens')
         self.assertEqual(post_push['tokens_count'], 0)
+
+    def test_update_fcm_requires_is_authenticated_not_admin(self):
+        """Endpoint /api/users/update-fcm/ must require IsAuthenticated, but not IsAdminUser."""
+        # 1. Unauthenticated -> 401
+        resp = self.client.post('/api/users/update-fcm/', {'token': 'unauth_tok_123'})
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # 2. Authenticated regular user (not staff, not superuser) -> 200
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+        self.client.force_authenticate(user=self.user)
+        resp2 = self.client.post('/api/users/update-fcm/', {
+            'token': 'auth_regular_user_token_123',
+            'device_id': 'dev_regular_user',
+        })
+        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+
+    def test_logout_via_refresh_token_resolves_user_and_revokes_device(self):
+        """When client calls /api/auth/logout/ unauthenticated with refresh token, server resolves user and clears device FCM token."""
+        token = 'tok_for_anon_refresh_logout'
+        device = UserDevice.objects.create(
+            user=self.user,
+            device_id='dev_anon_logout',
+            fcm_token=token,
+            is_revoked=False,
+        )
+        self.donor.fcm_token = token
+        self.donor.save(update_fields=['fcm_token'])
+
+        refresh = RefreshToken.for_user(self.user)
+        # Client makes request WITHOUT Authorization header
+        resp = self.client.post('/api/auth/logout/', {
+            'refresh': str(refresh),
+            'fcm_token': token,
+        })
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        device.refresh_from_db()
+        self.assertTrue(device.is_revoked)
+        self.assertIsNone(device.fcm_token)
+
+        self.donor.refresh_from_db()
+        self.assertIsNone(self.donor.fcm_token)
+
+    @patch('api.services.notify.send_push_to_user')
+    def test_all_seven_send_paths(self, mock_send_push):
+        """Audit and test all 7 send paths (wave, accepted, chat, tracking, standby, closing, thanks)."""
+        from api.models import BloodRequest, RequestAcceptance, DirectMessage, StandbyOffer, DonorReview
+        from api.services.notify import (
+            notify_donor_accepted,
+            notify_chat_message,
+            notify_journey_update,
+            notify_standby_offer,
+            notify_request_closed,
+            notify_donor_thanks,
+            dispatch_wave_notifications,
+        )
+
+        mock_send_push.return_value = {'status': 'sent', 'sent': 1, 'failed': 0}
+
+        requester = User.objects.create_user(username='req_user', password='password123')
+        req = BloodRequest.objects.create(
+            requester=requester,
+            patient_name='Patient A',
+            blood_group='O+',
+            units_needed=2,
+            district='Dhaka',
+            contact_number='+8801700000000',
+        )
+
+        # 1. New request / Wave alert
+        candidate = {'donor': self.donor, 'distance': 2.5}
+        with patch('api.services.notify.send_fcm_multicast_batches') as mock_multicast:
+            mock_multicast.return_value = {'sent': 1, 'failed': 0, 'invalid_tokens_cleared': 0}
+            self.donor.fcm_token = 'token_for_wave'
+            self.donor.save(update_fields=['fcm_token'])
+            count = dispatch_wave_notifications(req, [candidate], wave_number=1)
+            self.assertEqual(count, 1)
+            mock_multicast.assert_called_once()
+            # Verify payload and channel
+            call_args = mock_multicast.call_args[0]
+            self.assertIn("Urgent: O+ Blood Needed!", call_args[1])
+            self.assertEqual(mock_multicast.call_args[0][3]['type'], 'BLOOD_EMERGENCY')
+
+        # 2. Donor accepted
+        acc = RequestAcceptance.objects.create(
+            request=req,
+            donor=self.donor,
+            status='ACCEPTED',
+            units_pledged=1,
+        )
+        notify_donor_accepted(req, acc)
+        self.assertTrue(mock_send_push.called)
+        last_call = mock_send_push.call_args
+        self.assertEqual(last_call[0][0], requester)
+        self.assertEqual(last_call[1]['data_payload']['type'], 'DONOR_ACCEPTED')
+
+        # 3. Chat message
+        msg = DirectMessage.objects.create(
+            acceptance=acc,
+            sender=requester,
+            recipient=self.user,
+            content='Hello donor',
+            message_type='TEXT',
+        )
+        notify_chat_message(msg, self.user)
+        last_call = mock_send_push.call_args
+        self.assertEqual(last_call[0][0], self.user)
+        self.assertEqual(last_call[1]['data_payload']['type'], 'CHAT_MESSAGE')
+
+        # 4. Tracking event (e.g. ON_THE_WAY)
+        notify_journey_update(acc, 'ON_THE_WAY', self.user)
+        last_call = mock_send_push.call_args
+        self.assertEqual(last_call[0][0], requester)
+        self.assertEqual(last_call[1]['data_payload']['type'], 'JOURNEY_UPDATE')
+        self.assertEqual(last_call[1]['data_payload']['status'], 'ON_THE_WAY')
+
+        # 5. Standby offer
+        from django.utils import timezone
+        from datetime import timedelta
+        offer = StandbyOffer.objects.create(
+            request=req,
+            donor=self.donor,
+            status='PENDING',
+            expires_at=timezone.now() + timedelta(minutes=15),
+        )
+        notify_standby_offer(offer)
+        last_call = mock_send_push.call_args
+        self.assertEqual(last_call[0][0], self.user)
+        self.assertEqual(last_call[1]['data_payload']['type'], 'STANDBY_OFFER')
+
+        # 6. Request closing
+        notify_request_closed(req, 'FULFILLED')
+        last_call = mock_send_push.call_args
+        self.assertEqual(last_call[0][0], requester)
+        self.assertEqual(last_call[1]['data_payload']['type'], 'REQUEST_CLOSED')
+
+        # 7. Thanks / Review
+        from api.models import DonationHistory
+        DonationHistory.objects.create(
+            donor=self.donor,
+            linked_request=req,
+            date=timezone.now().date(),
+            bags=1,
+        )
+        review = DonorReview.objects.create(
+            donor=self.donor,
+            reviewer=requester,
+            blood_request=req,
+            stars=5,
+            comment='Lifesaver! Thank you!',
+        )
+        notify_donor_thanks(req, self.donor, review)
+        last_call = mock_send_push.call_args
+        self.assertEqual(last_call[0][0], self.user)
+        self.assertEqual(last_call[1]['data_payload']['type'], 'DONOR_THANKS')
+
+    def test_firebase_service_account_assembly_from_split_env_vars(self):
+        """Assembling credentials from FIREBASE_SERVICE_ACCOUNT_* split env vars produces valid dict without exposing secrets."""
+        from api.services.firebase_service import assemble_firebase_credentials_from_env
+        import os
+
+        env_vars = {
+            'FIREBASE_SERVICE_ACCOUNT_PROJECT_ID': 'test-bloodpulse-proj',
+            'FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL': 'firebase-adminsdk@test-bloodpulse.iam.gserviceaccount.com',
+            'FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY': '-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASC\\n-----END PRIVATE KEY-----\\n',
+            'FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY_ID': 'key123',
+            'FIREBASE_SERVICE_ACCOUNT_CLIENT_ID': 'client456',
+        }
+        with patch.dict(os.environ, env_vars, clear=False):
+            cred_dict = assemble_firebase_credentials_from_env()
+            self.assertIsNotNone(cred_dict)
+            self.assertEqual(cred_dict['project_id'], 'test-bloodpulse-proj')
+            self.assertEqual(cred_dict['client_email'], 'firebase-adminsdk@test-bloodpulse.iam.gserviceaccount.com')
+            self.assertIn('\n', cred_dict['private_key'])
+            self.assertNotIn('\\n', cred_dict['private_key'])
+
+    def test_send_test_push_positional_user_id(self):
+        """send_test_push accepts positional user_id and defaults to dry-run."""
+        UserDevice.objects.create(
+            user=self.user,
+            device_id='dev_positional',
+            fcm_token='tok_positional_12345678',
+        )
+        out = io.StringIO()
+        call_command('send_test_push', str(self.user.id), stdout=out)
+        output = out.getvalue()
+        self.assertIn('[DRY RUN]', output)
+        self.assertIn(self.user.username, output)
+        self.assertIn('Tokens found  : 1', output)
+

@@ -421,6 +421,10 @@ class AuthNotifier extends Notifier<AuthState> {
         user: user,
         errorMessage: null,
       );
+      // Token fetched and sent on login (#36)
+      try {
+        FcmService.instance.updateFCMToken();
+      } catch (_) {}
       return true;
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
@@ -551,6 +555,10 @@ class AuthNotifier extends Notifier<AuthState> {
         errorMessage: null,
       );
       debugPrint('[GoogleSignIn] ✓ Sign-in complete. status: $statusEnum isProfileComplete: $isProfileComplete');
+      // Token fetched and sent on login (#36)
+      try {
+        FcmService.instance.updateFCMToken();
+      } catch (_) {}
       return true;
     } catch (e) {
       debugPrint('[GoogleSignIn] ✗ ERROR: $e');
@@ -871,8 +879,13 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> logout() async {
     try {
       final refresh = await _apiClient.getRefreshToken();
-      if (refresh != null && refresh.isNotEmpty) {
-        await _apiClient.post('auth/logout/', body: {'refresh': refresh});
+      final fcmToken = await FcmService.instance.getDeviceToken();
+      final payload = <String, dynamic>{
+        if (refresh != null && refresh.isNotEmpty) 'refresh': refresh,
+        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
+      };
+      if (payload.isNotEmpty) {
+        await _apiClient.post('auth/logout/', body: payload);
       }
     } catch (_) {}
     ref.read(isGuestProvider.notifier).state = false;

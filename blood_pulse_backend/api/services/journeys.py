@@ -57,6 +57,12 @@ def finalize_donation(acceptance, auto=False):
             blood_req.closed_at = blood_req.closed_at or now
             blood_req.close_reason = blood_req.close_reason or 'FULFILLED'
             req_update_fields.extend(['status', 'is_active', 'closed_at', 'close_reason'])
+            # Send Path 6: Requisition fulfilled notification & push
+            try:
+                from api.services.notify import notify_request_closed
+                notify_request_closed(blood_req, 'FULFILLED')
+            except Exception:
+                pass
         blood_req.save(update_fields=req_update_fields)
 
         donor = locked_acc.donor

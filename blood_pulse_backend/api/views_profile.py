@@ -861,6 +861,12 @@ class DonorReviewView(APIView):
                 tag=request.data.get('tag', ''),
                 comment=comment,
             )
+            # Send Path 7: Notify donor of thanks & review
+            try:
+                from api.services.notify import notify_donor_thanks
+                notify_donor_thanks(blood_req, donor_profile, review)
+            except Exception:
+                pass
         except ValidationError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

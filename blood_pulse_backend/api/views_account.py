@@ -41,6 +41,15 @@ class LogoutAPIView(APIView):
         fcm_token = request.data.get('fcm_token') or request.data.get('token')
 
         user = request.user if (request.user and request.user.is_authenticated) else None
+        if not user and refresh_token:
+            try:
+                from django.contrib.auth.models import User
+                r_token = RefreshToken(refresh_token)
+                uid = r_token.get('user_id')
+                if uid:
+                    user = User.objects.filter(pk=uid).first()
+            except Exception:
+                pass
 
         # 1. Clear DonorProfile.fcm_token
         if user:

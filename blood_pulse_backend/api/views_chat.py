@@ -139,17 +139,10 @@ class JourneyMessageListCreateAPIView(APIView):
         )
 
         now = timezone.now()
-        # In-app notification for the recipient
-        preview_text = content[:60] if content else ("Voice note" if message_type == 'VOICE' else "Attachment")
+        # In-app notification & push for the recipient (Send Path 3)
         try:
-            Notification.objects.create(
-                user=other_user,
-                title="New Chat Message",
-                body=f"{request.user.first_name or request.user.username}: {preview_text}",
-                type="CHAT_MESSAGE",
-                is_read=False,
-                created_at=now,
-            )
+            from api.services.notify import notify_chat_message
+            notify_chat_message(msg, other_user)
         except Exception:
             pass
 

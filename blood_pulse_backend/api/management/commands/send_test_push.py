@@ -18,9 +18,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            'user_id',
+            nargs='?',
+            default=None,
+            type=str,
+            help='(Positional) Username, User ID, or Phone number of the recipient user.',
+        )
+        parser.add_argument(
             '--user',
             type=str,
-            required=True,
+            default=None,
             help='Username, User ID, or Phone number of the recipient user.',
         )
         parser.add_argument(
@@ -43,7 +50,11 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        user_identifier = options['user'].strip()
+        user_identifier = options.get('user') or options.get('user_id')
+        if not user_identifier or not str(user_identifier).strip():
+            self.stderr.write(self.style.ERROR("Error: Recipient user_id or --user is required."))
+            sys.exit(1)
+        user_identifier = str(user_identifier).strip()
         confirm = options['confirm']
         dry_run = not confirm
         title = options['title'].strip()

@@ -30,7 +30,7 @@ Working style: **one task at a time**, short steps, evidence required.
 - [x] flutter test: full test suite passing (107/107 tests); flutter analyze to 0 issues
 - [ ] Delete junk files clean_urls.md, concise_urls.md, url_table.md
 - [x] Chat: keep ONE Firestore path (chat_rooms); locked down chats/ (403 forbidden); Firestore rules verified with emulator unit tests
-- [ ] Fix `IsAdminUser` regression on `/api/users/update-fcm/` (donors must be able to register their own FCM token)
+- [x] Fix `IsAdminUser` regression on `/api/users/update-fcm/` (donors must be able to register their own FCM token)
 - [ ] Audit every `AllowAny` endpoint and `emergency_requests_list_create_view` (no permission class); lock down or justify each
 - [ ] Tighten CORS (remove `CORS_ALLOW_ALL_ORIGINS = True`)
 - [ ] Full device golden-path test with pass/fail evidence (auth → camera OCR → PII redaction log → trust gate ≥ 60% → admin approve)
@@ -186,6 +186,14 @@ Working style: **one task at a time**, short steps, evidence required.
 - [ ] P-06 | N7 Local community registration: leadership & members (`fix/p06-club-members`)
 - [ ] P-07 | N8 Create Poster button & Poster Studio (`fix/p07-action-bar-poster`)
 - [ ] P-08 | N9 PulseAI voice & listening mode (`fix/p08-voice`)
+- [x] P-09 | Anomaly #36 FCM push end-to-end audit & verification (`fix/p09-fcm`)
+  - Audited Android 13+ POST_NOTIFICATIONS permission & high-importance channel `bloodpulse_urgent_alerts`.
+  - Token lifecycle: Flutter login triggers `updateFCMToken()`, `onTokenRefresh` re-posts to `/api/users/update-fcm/` (`IsAuthenticated`), logout passes `fcm_token` and unregisters device; backend `LogoutAPIView` clears tokens on `UserDevice` and `DonorProfile` (also resolving user from refresh token if anonymous).
+  - Centralized 7 send paths in `notify.py` (wave alerts, donor accepted, chat message, tracking events, standby offer, requisition closing, donor thanks) with notification + data payloads, quiet hours/snooze respected.
+  - Assembles split `FIREBASE_SERVICE_ACCOUNT_*` env vars safely; deletes UNREGISTERED tokens on both models.
+  - Unified `handlePayloadRouting` in Flutter across foreground, background, and terminated tap states.
+  - Added management command `send_test_push <user_id>` (positional user ID, dry-run default).
+  - Verification: `api/tests/test_fcm_verification.py` (11/11 PASS), `p09_fcm_service_test.dart` (8/8 PASS), `scripts/gate.ps1` (ALL CRITERIA SATISFIED).
 
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved
@@ -197,7 +205,7 @@ Working style: **one task at a time**, short steps, evidence required.
 - [~] Theme, auth (JWT, Google Sign-In, phone), OTP (JIT), blood requests with AI trust gate, 90-day countdown
 - [~] Feed (post/like/comment/repost), Communities, Health Hub, Profile
 - [~] E2EE chat with read receipts, Messages tab on Firestore
-- [~] FCM push (confirmed on one real phone), offline notification cache
+- [x] FCM push (audited end-to-end, token lifecycle, 7 send paths, offline notification cache)
 - [~] Bangla + English localization
 - [~] Resources Hub wired to `/api/hospitals/`; donor search uses Haversine
 - [~] Admin trust views (backend), 77/77 backend tests passing at last report

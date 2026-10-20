@@ -9,12 +9,53 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+def assemble_firebase_credentials_from_env() -> dict:
+    """
+    Assembles a Firebase service account credential dictionary from individual
+    FIREBASE_SERVICE_ACCOUNT_* environment variables if present.
+    Safely unescapes newline characters in private keys.
+    Never exposes or logs secrets.
+    """
+    client_email = (
+        os.environ.get('FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL') or
+        os.environ.get('FIREBASE_CLIENT_EMAIL')
+    )
+    private_key = (
+        os.environ.get('FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY') or
+        os.environ.get('FIREBASE_PRIVATE_KEY')
+    )
+    if not client_email or not private_key:
+        return None
+
+    clean_private_key = private_key.replace('\\n', '\n')
+    project_id = (
+        os.environ.get('FIREBASE_SERVICE_ACCOUNT_PROJECT_ID') or
+        os.environ.get('FIREBASE_PROJECT_ID') or
+        'bloodpulse-283dc'
+    )
+    private_key_id = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY_ID', '')
+    client_id = os.environ.get('FIREBASE_SERVICE_ACCOUNT_CLIENT_ID', '')
+
+    return {
+        "type": "service_account",
+        "project_id": project_id,
+        "private_key_id": private_key_id,
+        "private_key": clean_private_key,
+        "client_email": client_email,
+        "client_id": client_id,
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    }
+
+
 def get_or_initialize_firebase_admin():
     """
     Initializes Firebase Admin SDK using credentials from:
-    1. Environment variables with JSON content (FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_CREDENTIALS_JSON)
-    2. Environment variables pointing to certificate file path (FIREBASE_SERVICE_ACCOUNT_PATH, GOOGLE_APPLICATION_CREDENTIALS)
-    3. Default file at settings.BASE_DIR / firebase-service-account.json
+    1. Assembled FIREBASE_SERVICE_ACCOUNT_* split environment variables
+    2. Environment variables with JSON content (FIREBASE_SERVICE_ACCOUNT_JSON, FIREBASE_CREDENTIALS_JSON)
+    3. Environment variables pointing to certificate file path (FIREBASE_SERVICE_ACCOUNT_PATH, GOOGLE_APPLICATION_CREDENTIALS)
+    4. Default file at settings.BASE_DIR / firebase-service-account.json
     Never logs or prints secrets.
     """
     try:
@@ -28,7 +69,17 @@ def get_or_initialize_firebase_admin():
         project_id = os.environ.get('FIREBASE_PROJECT_ID', 'bloodpulse-283dc')
         options = {'projectId': project_id}
 
-        # 1. Raw JSON string in environment variables
+        # 1. Assembled split variables
+        assembled_dict = assemble_firebase_credentials_from_env()
+        if assembled_dict:
+            try:
+                cred = credentials.Certificate(assembled_dict)
+                logger.info("[FirebaseAdmin] Initialized from assembled FIREBASE_SERVICE_ACCOUNT_* environment variables.")
+                return firebase_admin.initialize_app(cred, options=options)
+            except Exception as asm_err:
+                logger.error("[FirebaseAdmin] Failed to initialize from assembled env vars: %s", asm_err)
+
+        # 2. Raw JSON string in environment variables
         for env_var in [
             'FIREBASE_SERVICE_ACCOUNT_JSON',
             'FIREBASE_CREDENTIALS_JSON',

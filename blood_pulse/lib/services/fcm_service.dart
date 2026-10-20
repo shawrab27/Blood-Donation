@@ -194,7 +194,8 @@ class FcmService {
 
   // ── Permission Helpers ─────────────────────────────────────────────────
 
-  Future<void> _requestPermissions() async {
+  /// Requests notification permissions for Android 13+ (POST_NOTIFICATIONS) and iOS.
+  Future<NotificationSettings?> requestPermissions() async {
     try {
       final NotificationSettings settings =
           await FirebaseMessaging.instance.requestPermission(
@@ -215,9 +216,15 @@ class FcmService {
         badge: true,
         sound: true,
       );
+      return settings;
     } catch (e) {
       debugPrint('[FCM] permission request error: $e');
+      return null;
     }
+  }
+
+  Future<void> _requestPermissions() async {
+    await requestPermissions();
   }
 
   // ── Token Retrieval ────────────────────────────────────────────────────
@@ -431,22 +438,60 @@ class FcmService {
     }
   }
 
+  /// Unified routing handler for FCM notifications tapped in foreground, background, or launched from terminated state (#36).
+  void handlePayloadRouting(
+    Map<String, dynamic> payload,
+    BuildContext context,
+  ) {
+    if (!context.mounted) return;
+    final type = payload['type'] as String? ?? '';
+    final chatId = payload['chatId'] as String? ?? payload['chat_id'] as String?;
+    final journeyId = payload['journey_id'] as String? ?? payload['acceptance_id'] as String?;
+
+    debugPrint('[FCM] Routing payload: type=$type, chatId=$chatId, journeyId=$journeyId');
+
+    switch (type) {
+      case 'BLOOD_EMERGENCY':
+      case 'EMERGENCY_REQUEST':
+      case 'STANDBY_OFFER':
+      case 'REQUEST_CLOSED':
+        context.go('/blood-hub');
+        break;
+
+      case 'CHAT_MESSAGE':
+        _navigateToChat(chatId ?? 'chat_999', context);
+        break;
+
+      case 'DONOR_ACCEPTED':
+      case 'JOURNEY_UPDATE':
+        if (journeyId != null && journeyId.isNotEmpty) {
+          context.push('/journeys/$journeyId');
+        } else {
+          context.go('/blood-hub');
+        }
+        break;
+
+      case 'DONOR_THANKS':
+        context.go('/profile');
+        break;
+
+      case 'TEST_PUSH':
+      default:
+        if (chatId != null && chatId.isNotEmpty) {
+          _navigateToChat(chatId, context);
+        } else {
+          context.push('/notifications');
+        }
+        break;
+    }
+  }
+
   /// Called when the user taps a notification to open the app.
   void _handleNotificationTap(
     RemoteMessage message,
     BuildContext context,
   ) {
-    final data = message.data;
-    final type = data['type'] as String? ?? '';
-    final chatId = data['chatId'] as String?;
-
-    debugPrint('[FCM] tapped: type=$type chatId=$chatId');
-
-    if (type == 'EMERGENCY_REQUEST' && context.mounted) {
-      context.go('/blood-hub');
-    } else if ((type == 'CHAT_MESSAGE' || chatId != null) && context.mounted) {
-      _navigateToChat(chatId ?? 'chat_999', context);
-    }
+    handlePayloadRouting(message.data, context);
   }
 
   /// Handles background/terminated payloads that are surfaced via a UI bridge.
@@ -454,15 +499,7 @@ class FcmService {
     Map<String, dynamic> payload,
     BuildContext context,
   ) {
-    final type = payload['type'] as String? ?? '';
-    if (type == 'EMERGENCY_REQUEST' && context.mounted) {
-      context.go('/blood-hub');
-    } else if (type == 'CHAT_MESSAGE' && context.mounted) {
-      _navigateToChat(
-        payload['chatId'] as String? ?? 'chat_999',
-        context,
-      );
-    }
+    handlePayloadRouting(payload, context);
   }
 
   // ── Quick Action: Call Now ─────────────────────────────────────────────

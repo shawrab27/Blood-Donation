@@ -677,6 +677,13 @@ def emergency_request_accept_view(request, pk):
         donor.response_count = (donor.response_count or 0) + 1
         donor.save(update_fields=['response_count'])
 
+        # Send Path 2: Notify requester that donor accepted
+        try:
+            from api.services.notify import notify_donor_accepted
+            notify_donor_accepted(blood_req, acceptance)
+        except Exception:
+            pass
+
     serializer = RequestAcceptanceSerializer(acceptance)
     return Response({
         'message': 'Request successfully accepted. Contact details unmasked.',
@@ -1024,6 +1031,11 @@ def journey_status_transition_view(request, pk):
     # ON_THE_WAY or ARRIVED
     acceptance.status = new_status
     acceptance.save(update_fields=['status'])
+    try:
+        from api.services.notify import notify_journey_update
+        notify_journey_update(acceptance, new_status, request.user)
+    except Exception:
+        pass
     return Response({
         'message': f'Status transitioned to {new_status}.',
         'status': acceptance.status,
@@ -1215,17 +1227,10 @@ def standby_offer_respond_view(request, pk):
             donor.response_count = (donor.response_count or 0) + 1
             donor.save(update_fields=['response_count'])
 
-            # Notify requester of standby donor connection
-            from api.models import Notification
+            # Notify requester of standby donor connection (Send Path 2)
             try:
-                Notification.objects.create(
-                    user=locked_req.requester,
-                    title="Standby Donor Connected",
-                    body=f"Standby donor {donor.user.get_full_name() or donor.user.username} has accepted and joined your requisition.",
-                    type="STANDBY_ACCEPTED",
-                    is_read=False,
-                    created_at=now,
-                )
+                from api.services.notify import notify_donor_accepted
+                notify_donor_accepted(locked_req, acceptance)
             except Exception:
                 pass
 

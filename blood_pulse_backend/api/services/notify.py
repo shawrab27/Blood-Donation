@@ -211,3 +211,265 @@ def dispatch_wave_notifications(blood_request, candidate_list: list, wave_number
     logger.info(f"Dispatched Wave {wave_number} for Request #{blood_request.id} to {dispatched_count} donors.")
     return dispatched_count
 
+
+
+def notify_donor_accepted(blood_request, acceptance, is_standby: bool = False) -> dict:
+    """
+    Send Path 2: Donor accepted requisition (or standby donor stepped up).
+    Notifies the requester via in-app Notification and high-priority FCM push.
+    Channel: bloodpulse_urgent_alerts
+    """
+    requester = blood_request.requester if blood_request else None
+    if not requester:
+        return {'status': 'no_requester'}
+
+    donor_user = acceptance.donor.user if (acceptance and acceptance.donor) else None
+    donor_name = donor_user.get_full_name() or donor_user.username if donor_user else "A donor"
+    blood_group = blood_request.blood_group or "Blood"
+
+    is_standby_acceptance = is_standby or getattr(acceptance, 'is_standby', False)
+    if is_standby_acceptance:
+        notif_type = "STANDBY_ACCEPTED"
+        title = "Standby Donor Connected"
+        body = f"Standby donor {donor_name} has accepted and joined your requisition."
+    else:
+        notif_type = "DONOR_ACCEPTED"
+        title = "Donor Accepted Your Request!"
+        body = f"{donor_name} accepted your {blood_group} blood requisition and is preparing to donate."
+
+    data_payload = {
+        "type": notif_type,
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "request_id": str(blood_request.id),
+        "acceptance_id": str(acceptance.id),
+        "donor_id": str(acceptance.donor_id),
+    }
+
+    from api.models import Notification
+    try:
+        Notification.objects.create(
+            user=requester,
+            title=title,
+            body=body,
+            type=notif_type,
+            is_read=False,
+            created_at=timezone.now(),
+        )
+    except Exception:
+        pass
+    UserNotificationState.increment_for_user(requester)
+
+    return send_push_to_user(requester, title, body, data_payload=data_payload)
+
+
+def notify_chat_message(message, recipient_user) -> dict:
+    """
+    Send Path 3: New direct chat message.
+    Notifies the recipient via in-app Notification and high-priority FCM push.
+    Channel: bloodpulse_urgent_alerts
+    """
+    if not recipient_user:
+        return {'status': 'no_recipient'}
+
+    sender_name = message.sender.get_full_name() or message.sender.username if message.sender else "Someone"
+    preview_text = message.content[:60] if message.content else ("Voice note" if message.message_type == 'VOICE' else "Attachment")
+
+    title = f"New Message from {sender_name}"
+    body = preview_text
+    data_payload = {
+        "type": "CHAT_MESSAGE",
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "chat_id": str(message.acceptance_id),
+        "chatId": str(message.acceptance_id),
+        "acceptance_id": str(message.acceptance_id),
+        "sender_id": str(message.sender_id),
+    }
+
+    from api.models import Notification
+    try:
+        Notification.objects.create(
+            user=recipient_user,
+            title=title,
+            body=body,
+            type="CHAT_MESSAGE",
+            is_read=False,
+            created_at=timezone.now(),
+        )
+    except Exception:
+        pass
+    UserNotificationState.increment_for_user(recipient_user)
+
+    return send_push_to_user(recipient_user, title, body, data_payload=data_payload)
+
+
+def notify_journey_update(acceptance, new_status: str, actor_user) -> dict:
+    """
+    Send Path 4: Journey tracking milestone updated (ON_THE_WAY, ARRIVED, DONATED, CONFIRMED, CANCELLED).
+    Notifies the counter-party (requester if actor is donor; donor if actor is requester).
+    Channel: bloodpulse_urgent_alerts
+    """
+    blood_request = acceptance.request if acceptance else None
+    donor_user = acceptance.donor.user if (acceptance and acceptance.donor) else None
+    requester = blood_request.requester if blood_request else None
+
+    # Determine recipient
+    if actor_user and donor_user and actor_user.id == donor_user.id:
+        recipient = requester
+        actor_name = donor_user.get_full_name() or donor_user.username
+    else:
+        recipient = donor_user
+        actor_name = requester.get_full_name() or requester.username if requester else "Requester"
+
+    if not recipient:
+        return {'status': 'no_recipient'}
+
+    status_labels = {
+        'ON_THE_WAY': 'on the way to hospital',
+        'ARRIVED': 'arrived at hospital',
+        'DONATED': 'marked donation complete',
+        'CONFIRMED': 'confirmed donation verified',
+        'CANCELLED': 'cancelled journey',
+    }
+    status_display = status_labels.get(new_status, new_status.lower())
+
+    title = f"Journey Update: {new_status}"
+    body = f"{actor_name} is {status_display}."
+    data_payload = {
+        "type": "JOURNEY_UPDATE",
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "journey_id": str(acceptance.id),
+        "acceptance_id": str(acceptance.id),
+        "status": new_status,
+        "request_id": str(blood_request.id) if blood_request else "",
+    }
+
+    from api.models import Notification
+    try:
+        Notification.objects.create(
+            user=recipient,
+            title=title,
+            body=body,
+            type="JOURNEY_UPDATE",
+            is_read=False,
+            created_at=timezone.now(),
+        )
+    except Exception:
+        pass
+    UserNotificationState.increment_for_user(recipient)
+
+    return send_push_to_user(recipient, title, body, data_payload=data_payload)
+
+
+def notify_standby_offer(offer) -> dict:
+    """
+    Send Path 5: Standby donation opportunity offered to ranked candidate.
+    Channel: bloodpulse_urgent_alerts
+    """
+    donor_user = offer.donor.user if (offer and offer.donor) else None
+    if not donor_user:
+        return {'status': 'no_donor_user'}
+
+    from api.conf import STANDBY_TIMEOUT_MINUTES
+    blood_req = offer.request
+    blood_group = blood_req.blood_group if blood_req else "Blood"
+
+    title = "Urgent: Standby Blood Donation Opportunity"
+    body = f"You are ranked as a standby donor for request #{offer.request_id} ({blood_group}). Please respond within {STANDBY_TIMEOUT_MINUTES} minutes."
+    data_payload = {
+        "type": "STANDBY_OFFER",
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "offer_id": str(offer.id),
+        "request_id": str(offer.request_id),
+    }
+
+    from api.models import Notification
+    try:
+        Notification.objects.create(
+            user=donor_user,
+            title=title,
+            body=body,
+            type="STANDBY_OFFER",
+            is_read=False,
+            created_at=timezone.now(),
+        )
+    except Exception:
+        pass
+    UserNotificationState.increment_for_user(donor_user)
+
+    return send_push_to_user(donor_user, title, body, data_payload=data_payload)
+
+
+def notify_request_closed(blood_request, reason: str = 'FULFILLED') -> dict:
+    """
+    Send Path 6: Requisition closed or fulfilled.
+    Channel: bloodpulse_urgent_alerts
+    """
+    requester = blood_request.requester if blood_request else None
+    if not requester:
+        return {'status': 'no_requester'}
+
+    blood_group = blood_request.blood_group or "Blood"
+    status_text = "Fulfilled" if reason == 'FULFILLED' else "Closed"
+
+    title = f"Requisition {status_text}"
+    body = f"Blood request #{blood_request.id} for {blood_group} has been marked as {status_text}."
+    data_payload = {
+        "type": "REQUEST_CLOSED",
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "request_id": str(blood_request.id),
+        "reason": reason,
+    }
+
+    from api.models import Notification
+    try:
+        Notification.objects.create(
+            user=requester,
+            title=title,
+            body=body,
+            type="REQUEST_CLOSED",
+            is_read=False,
+            created_at=timezone.now(),
+        )
+    except Exception:
+        pass
+    UserNotificationState.increment_for_user(requester)
+
+    return send_push_to_user(requester, title, body, data_payload=data_payload)
+
+
+def notify_donor_thanks(blood_request, donor, review=None) -> dict:
+    """
+    Send Path 7: Requester expresses gratitude/review to donor.
+    Channel: bloodpulse_urgent_alerts
+    """
+    donor_user = donor.user if donor else None
+    if not donor_user:
+        return {'status': 'no_donor_user'}
+
+    stars = f"{getattr(review, 'stars', getattr(review, 'rating', ''))}★ " if review and (getattr(review, 'stars', None) or getattr(review, 'rating', None)) else ""
+    requester_name = blood_request.requester.get_full_name() or blood_request.requester.username if blood_request and blood_request.requester else "The requester"
+
+    title = "Heartfelt Thanks From Requester! ❤️"
+    body = f"{requester_name} left a {stars}review and heartfelt gratitude for your lifesaving blood donation!"
+    data_payload = {
+        "type": "DONOR_THANKS",
+        "click_action": "FLUTTER_NOTIFICATION_CLICK",
+        "request_id": str(blood_request.id) if blood_request else "",
+        "donor_id": str(donor.id),
+    }
+
+    from api.models import Notification
+    try:
+        Notification.objects.create(
+            user=donor_user,
+            title=title,
+            body=body,
+            type="DONOR_THANKS",
+            is_read=False,
+            created_at=timezone.now(),
+        )
+    except Exception:
+        pass
+    UserNotificationState.increment_for_user(donor_user)
+
+    return send_push_to_user(donor_user, title, body, data_payload=data_payload)
