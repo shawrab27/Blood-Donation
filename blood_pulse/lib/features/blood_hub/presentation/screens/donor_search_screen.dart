@@ -57,7 +57,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
     final filter = ref.watch(bloodHubFilterProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F7),
+      backgroundColor: const Color(0xFFFDF3F3),
       appBar: CustomAppBar(
         showBackButton: true,
         onBack: () {
@@ -268,7 +268,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                       itemCount: page.donors.length,
                       itemBuilder: (context, index) {
                         final donor = page.donors[index];
-                        return CompactDonorCard(
+                        return DonorCard(
                           key: ValueKey('donor_${donor.id}'),
                           donor: donor,
                           onTap: () {
