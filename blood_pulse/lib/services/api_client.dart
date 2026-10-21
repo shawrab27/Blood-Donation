@@ -269,16 +269,19 @@ class ApiClient {
         final cleanPath = 'token/';
         final fullUrl = '$candidateBase/api/$cleanPath';
         final uri = Uri.parse(fullUrl);
-        final deviceId = await getDeviceId();
+        final headers = <String, String>{
+          'Content-Type': 'application/json',
+        };
+        if (!kIsWeb) {
+          final deviceId = await getDeviceId();
+          headers['X-Device-ID'] = deviceId;
+          headers['X-Device-Name'] = getDeviceName();
+          headers['X-Platform'] = getPlatform();
+        }
         final response = await _client
             .post(
               uri,
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Device-ID': deviceId,
-                'X-Device-Name': getDeviceName(),
-                'X-Platform': getPlatform(),
-              },
+              headers: headers,
               body: jsonEncode({
                 'username': phone,
                 'password': password,
@@ -845,10 +848,12 @@ class ApiClient {
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
     }
-    final deviceId = await getDeviceId();
-    headers['X-Device-ID'] = deviceId;
-    headers['X-Device-Name'] = getDeviceName();
-    headers['X-Platform'] = getPlatform();
+    if (!kIsWeb) {
+      final deviceId = await getDeviceId();
+      headers['X-Device-ID'] = deviceId;
+      headers['X-Device-Name'] = getDeviceName();
+      headers['X-Platform'] = getPlatform();
+    }
     return headers;
   }
 

@@ -168,6 +168,15 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost(:\d+)?$",
     r"^http://127\.0\.0\.1(:\d+)?$",
 ]
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'x-device-id',
+    'x-device-name',
+    'x-platform',
+    'x-app-version',
+]
+
 # Append any additional origins from the CORS_ALLOWED_ORIGINS env variable (comma-separated).
 if _cors_origins_env:
     for origin in _cors_origins_env.split(','):
