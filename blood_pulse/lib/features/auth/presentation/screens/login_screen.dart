@@ -337,15 +337,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 height: 50,
                                 onPressed: auth.isLoading ? null : _onSignIn,
                               ),
-                              const SizedBox(height: 12),
-                              // ── Create Account Button (Prominent) ─────────
-                              CapsuleButton(
-                                label: l10n?.createAccount ?? 'Create an Account',
-                                icon: Icons.person_add_alt_1_rounded,
-                                isOutlined: true,
-                                height: 50,
-                                onPressed: auth.isLoading ? null : () => context.push('/register'),
-                              ),
+
                             ],
                           ),
                         ),
