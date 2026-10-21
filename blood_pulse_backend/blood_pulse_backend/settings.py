@@ -83,7 +83,7 @@ elif DEBUG and not SECRET_KEY:
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-_allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS', '').strip()
+_allowed_hosts_env = (os.environ.get('ALLOWED_HOSTS') or os.environ.get('DJANGO_ALLOWED_HOSTS') or '').strip()
 if _allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
 elif DEBUG:
@@ -96,6 +96,12 @@ else:
         '[::1]',
         'testserver',
     ]
+
+# If RENDER_EXTERNAL_HOSTNAME is automatically supplied by Render (e.g. your-app.onrender.com),
+# ensure it is present in ALLOWED_HOSTS
+_render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+if _render_hostname and _render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_render_hostname)
 
 
 # Application definition
@@ -140,9 +146,9 @@ MIDDLEWARE = [
 ]
 
 # CORS & CSRF Configuration
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').strip().lower() in ('true', '1')
 
-_cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+_cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -164,8 +170,12 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 # Append any additional origins from the CORS_ALLOWED_ORIGINS env variable (comma-separated).
 if _cors_origins_env:
-    CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in _cors_origins_env.split(',') if origin.strip()])
+    for origin in _cors_origins_env.split(','):
+        clean_origin = origin.strip()
+        if clean_origin and clean_origin not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(clean_origin)
 
+_csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '').strip()
 CSRF_TRUSTED_ORIGINS = [
     'https://blood-donation-liard.vercel.app',
     'https://bloodpulse-backend.onrender.com',
@@ -174,9 +184,16 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
-_csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 if _csrf_origins_env:
-    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in _csrf_origins_env.split(',') if origin.strip()])
+    for origin in _csrf_origins_env.split(','):
+        clean_origin = origin.strip()
+        if clean_origin and clean_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(clean_origin)
+
+if _render_hostname:
+    _render_origin = f"https://{_render_hostname}"
+    if _render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_render_origin)
 
 
 ROOT_URLCONF = 'blood_pulse_backend.urls'

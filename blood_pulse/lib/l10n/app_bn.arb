@@ -188,7 +188,7 @@
   "openCamera": "ক্যামেরা খুলুন",
   "removePhoto": "ছবি মুছুন",
   "optionalBadge": "ঐচ্ছিক",
-  "invalidImageFormat": "শুধুমাত্র JPG, JPEG, PNG এবং WEBP ফরম্যাট সমর্থিত।",
+  "invalidImageFormat": "শুধুমাত্র JPG, JPEG, PNG, WEBP এবং HEIC ফরম্যাট সমর্থিত।",
   "imageSizeTooLarge": "ছবির আকার সর্বোচ্চ ৫ মেগাবাইট হতে হবে।",
   "cameraPermissionDenied": "ক্যামেরার অনুমতি প্রত্যাখ্যাত হয়েছে।",
   "cameraPermissionPermanentlyDenied": "ক্যামেরার অনুমতি স্থায়ীভাবে বাতিল করা হয়েছে। অনুগ্রহ করে সেটিংস থেকে চালু করুন।",

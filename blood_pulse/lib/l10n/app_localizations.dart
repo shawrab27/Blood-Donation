@@ -1133,7 +1133,7 @@ abstract class AppLocalizations {
   /// No description provided for @invalidImageFormat.
   ///
   /// In en, this message translates to:
-  /// **'Only JPG, JPEG, PNG, and WEBP formats are supported.'**
+  /// **'Only JPG, JPEG, PNG, WEBP, and HEIC formats are supported.'**
   String get invalidImageFormat;
 
   /// No description provided for @imageSizeTooLarge.

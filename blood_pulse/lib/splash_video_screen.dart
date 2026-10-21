@@ -54,6 +54,8 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
 
       controller.addListener(_videoListener);
       await controller.setLooping(false);
+      // Mute audio so Web and mobile browser autoplay policies allow instant playback
+      await controller.setVolume(0.0);
       await controller.play();
 
       // Cancel initial fallback timer and set it to video length + 600ms margin
@@ -118,7 +120,7 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
         authStatus == AuthStatus.authenticatedIncomplete) {
       context.go('/feed');
     } else {
-      context.go('/login');
+      context.go('/onboarding');
     }
   }
 

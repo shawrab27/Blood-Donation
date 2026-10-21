@@ -1094,9 +1094,23 @@ class ApiClient {
     try {
       final decoded = jsonDecode(responseBody);
       if (decoded is Map) {
+        // Standard DRF single-key errors
         if (decoded.containsKey('detail')) return decoded['detail'].toString();
         if (decoded.containsKey('message')) return decoded['message'].toString();
         if (decoded.containsKey('error')) return decoded['error'].toString();
+
+        // DRF field-level validation errors: {"field": ["msg1", "msg2"], ...}
+        // Extract all messages and join them into one readable string.
+        final parts = <String>[];
+        for (final entry in decoded.entries) {
+          final val = entry.value;
+          if (val is List) {
+            parts.add(val.map((v) => v.toString()).join(' '));
+          } else {
+            parts.add(val.toString());
+          }
+        }
+        if (parts.isNotEmpty) return parts.join(' | ');
       }
     } catch (_) {
       if (statusCode == 404) {

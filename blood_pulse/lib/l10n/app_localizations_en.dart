@@ -538,7 +538,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidImageFormat =>
-      'Only JPG, JPEG, PNG, and WEBP formats are supported.';
+      'Only JPG, JPEG, PNG, WEBP, and HEIC formats are supported.';
 
   @override
   String get imageSizeTooLarge => 'Image size must not exceed 5 MB.';

@@ -654,25 +654,35 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final response = await _apiClient.post('donors/', body: payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
+        bool isComp = true;
         try {
           final data = jsonDecode(response.body);
-          if (data is Map<String, dynamic> && data['access'] != null) {
-            await _apiClient.saveTokens(
-              access: data['access'].toString(),
-              refresh: data['refresh']?.toString() ?? '',
-            );
-          } else if (password != null && password.isNotEmpty) {
-            await _apiClient.login(completeProfile.primaryPhone, password);
+          if (data is Map<String, dynamic>) {
+            if (data.containsKey('is_profile_complete')) {
+              isComp = data['is_profile_complete'] == true || data['is_profile_complete'] == 'true';
+            }
+            if (data['access'] != null) {
+              await _apiClient.saveTokens(
+                access: data['access'].toString(),
+                refresh: data['refresh']?.toString() ?? '',
+              );
+            } else if (password != null && password.isNotEmpty) {
+              await _apiClient.login(completeProfile.primaryPhone, password);
+            }
           }
         } catch (e) {
           debugPrint('[registerUser] Token capture warning: $e');
         }
         ref.read(isGuestProvider.notifier).state = false;
+        final finalStatus = isComp ? AuthStatus.authenticated : AuthStatus.authenticatedIncomplete;
         state = state.copyWith(
-          status: AuthStatus.authenticated,
-          user: completeProfile.copyWith(isProfileComplete: true),
+          status: finalStatus,
+          user: completeProfile.copyWith(isProfileComplete: isComp),
           errorMessage: null,
         );
+        try {
+          ref.invalidate(profileProvider);
+        } catch (_) {}
         // Post FCM device token once after successful registration
         FcmService.instance.updateFCMToken();
         return true;
@@ -684,6 +694,20 @@ class AuthNotifier extends Notifier<AuthState> {
         );
         return false;
       }
+    } on ApiException catch (e) {
+      debugPrint('[registerUser] ApiException: $e');
+      // For HTTP 4xx errors the backend already sent a validation message –
+      // surface it directly so the user can correct the form.
+      // For network/timeout errors (no statusCode) show the connection hint.
+      final isHttpError = e.statusCode != null && e.statusCode! >= 400 && e.statusCode! < 500;
+      final errorMsg = isHttpError
+          ? e.message
+          : 'Registration failed. Please check your network connection and try again.';
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: errorMsg,
+      );
+      return false;
     } catch (e) {
       debugPrint('[registerUser] Registration exception: $e');
       final errorMsg = 'Registration failed. Please check your network connection and try again.';

@@ -159,11 +159,29 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             # Upsert DonorProfile for user
             existing = DonorProfile.objects.select_for_update().filter(user=user).first()
             if existing:
-                # Profile already exists → update fields and return 200
+                # Profile already exists → update fields and return 200.
+                # Strip blood_group from the partial-update payload when it matches
+                # the stored value: no change means no need to run the alteration
+                # validator, which would incorrectly reject an identical value.
+                incoming_bg = (data.get('blood_group') or '').strip()
+                stored_bg = (existing.blood_group or '').strip()
+                if incoming_bg and incoming_bg == stored_bg:
+                    data.pop('blood_group', None)
+
                 serializer = self.get_serializer(existing, data=data, partial=True)
-                serializer.is_valid(raise_exception=True)
-                serializer.save(user=user)
+                if not serializer.is_valid():
+                    if settings.DEBUG:
+                        print(f'[DonorProfile.create/upsert] serializer.errors: {serializer.errors}')
+                    from rest_framework.exceptions import ValidationError as DRFValidationError
+                    raise DRFValidationError(serializer.errors)
+                profile_instance = serializer.save(user=user)
+                is_comp, missing = profile_instance.check_is_complete()
+                if profile_instance.is_profile_complete != is_comp:
+                    profile_instance.is_profile_complete = is_comp
+                    profile_instance.save(update_fields=['is_profile_complete'])
                 resp_data = dict(serializer.data)
+                resp_data['is_profile_complete'] = is_comp
+                resp_data['missing_fields'] = missing
                 resp_data.pop('password', None)
                 try:
                     from rest_framework_simplejwt.tokens import RefreshToken
@@ -176,9 +194,19 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
 
             # No profile yet → create
             serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user)
+            if not serializer.is_valid():
+                if settings.DEBUG:
+                    print(f'[DonorProfile.create/new] serializer.errors: {serializer.errors}')
+                from rest_framework.exceptions import ValidationError as DRFValidationError
+                raise DRFValidationError(serializer.errors)
+            profile_instance = serializer.save(user=user)
+            is_comp, missing = profile_instance.check_is_complete()
+            if profile_instance.is_profile_complete != is_comp:
+                profile_instance.is_profile_complete = is_comp
+                profile_instance.save(update_fields=['is_profile_complete'])
             resp_data = dict(serializer.data)
+            resp_data['is_profile_complete'] = is_comp
+            resp_data['missing_fields'] = missing
             resp_data.pop('password', None)
             try:
                 from rest_framework_simplejwt.tokens import RefreshToken

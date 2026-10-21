@@ -123,6 +123,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   bool _neverDonated = false;
   DateTime? _lastDonationDate;
   int _totalBags = 0;
+  bool _isBloodGroupLocked = false;
 
   bool get _isGoogleUser =>
       widget.isGoogleUser ||
@@ -154,9 +155,124 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     if (currentUser != null && currentUser.bloodGroup.isNotEmpty && _bloodGroups.contains(currentUser.bloodGroup)) {
       _bloodGroup = currentUser.bloodGroup;
       _confirmBloodGroup = currentUser.bloodGroup;
+      _isBloodGroupLocked = true;
     }
     _pwCtrl.addListener(_onPasswordChanged);
     _confirmPwCtrl.addListener(_onPasswordChanged);
+
+    if (_isGoogleUser) {
+      _loadExistingGoogleProfile();
+    }
+  }
+
+  Future<void> _loadExistingGoogleProfile() async {
+    try {
+      final response = await _apiClient.get('donors/me/');
+      if (response.statusCode == 200 && mounted) {
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          setState(() {
+            // Full name
+            final fn = data['first_name']?.toString() ?? '';
+            final ln = data['last_name']?.toString() ?? '';
+            final fullName = (data['full_name']?.toString() ?? '$fn $ln').trim();
+            if (fullName.isNotEmpty && _nameCtrl.text.isEmpty) {
+              _nameCtrl.text = fullName;
+            }
+
+            // Email
+            final email = data['email']?.toString() ?? '';
+            if (email.isNotEmpty && _emailCtrl.text.isEmpty) {
+              _emailCtrl.text = email;
+            }
+
+            // Phone number
+            final phone = data['phone_number']?.toString() ?? '';
+            final isPlaceholder = phone.isEmpty ||
+                phone == '+8801700000000' ||
+                phone == '01700000000' ||
+                (phone.startsWith('+8800000') && phone.length == 12);
+            if (!isPlaceholder && _phoneCtrl.text.isEmpty) {
+              _phoneCtrl.text = phone;
+            }
+
+            // Blood group (lock if stored)
+            final bg = data['blood_group']?.toString().trim() ?? '';
+            if (bg.isNotEmpty && _bloodGroups.contains(bg)) {
+              _bloodGroup = bg;
+              _confirmBloodGroup = bg;
+              _isBloodGroupLocked = true;
+            }
+
+            // District & Division
+            final dist = data['district']?.toString().trim() ?? '';
+            if (dist.isNotEmpty) {
+              for (final entry in _divisionDistricts.entries) {
+                if (entry.value.contains(dist)) {
+                  _selectedDivision = entry.key;
+                  _selectedZila = dist;
+                  break;
+                }
+              }
+            }
+
+            // Upazila
+            if (data['upazila_linked'] != null) {
+              _selectedUpazilaId = data['upazila_linked'].toString();
+            }
+            final upazilaName = data['upazila']?.toString() ?? data['upazila_name']?.toString() ?? '';
+            if (upazilaName.isNotEmpty && _upazilaCtrl.text.isEmpty) {
+              _upazilaCtrl.text = upazilaName;
+            }
+
+            // Village / address
+            final address = data['address']?.toString() ?? '';
+            if (address.isNotEmpty && _villageCtrl.text.isEmpty) {
+              _villageCtrl.text = address;
+            }
+
+            // Age & Gender
+            if (data['age'] != null && _ageCtrl.text.isEmpty) {
+              _ageCtrl.text = data['age'].toString();
+            }
+            final g = data['gender']?.toString().toLowerCase() ?? '';
+            if (g == 'male') _gender = _Gender.male;
+            if (g == 'female') _gender = _Gender.female;
+
+            // Intent
+            final intent = data['user_intent']?.toString() ?? '';
+            if (intent == 'ONLY_REQUEST') {
+              _userIntent = _UserIntent.onlyRequest;
+            } else if (intent == 'DONATE_AND_REQUEST') {
+              _userIntent = _UserIntent.donateAndRequest;
+            }
+
+            // Category
+            final cat = data['category']?.toString().toLowerCase() ?? '';
+            if (cat == 'student') _category = _UserCategory.student;
+            if (cat == 'civilian') _category = _UserCategory.civilian;
+
+            // Institution
+            if (data['institution'] != null) {
+              _selectedInstitutionId = data['institution'].toString();
+            }
+            if (data['institute'] != null && _instituteCtrl.text.isEmpty) {
+              _instituteCtrl.text = data['institute'].toString();
+            }
+
+            // Donation history
+            if (data['last_donation_date'] != null) {
+              _lastDonationDate = DateTime.tryParse(data['last_donation_date'].toString());
+            }
+            if (data['total_bags_donated'] != null) {
+              _totalBags = int.tryParse(data['total_bags_donated'].toString()) ?? 0;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('[RegistrationScreen] Error prefilling Google profile: $e');
+    }
   }
 
   void _onPasswordChanged() {
@@ -184,7 +300,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   static const int _maxImageBytes = 5 * 1024 * 1024; // 5 MB
-  static const Set<String> _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+  static const Set<String> _allowedExtensions = {'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'};
   bool _cameraPermanentlyDenied = false;
 
   Future<void> _processAndSetAvatar(XFile picked) async {
@@ -197,7 +313,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     if (ext.isNotEmpty && !_allowedExtensions.contains(ext)) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        _showError(l10n?.invalidImageFormat ?? 'Only JPG, JPEG, PNG, and WEBP formats are supported.');
+        _showError(l10n?.invalidImageFormat ?? 'Only JPG, JPEG, PNG, WEBP, and HEIC formats are supported.');
       }
       return;
     }
@@ -247,7 +363,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           ? await widget.pickFileFunction!()
           : await FilePicker.pickFile(
               type: FileType.custom,
-              allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+              allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'],
             );
       if (file == null) return;
 
@@ -257,7 +373,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       if (!_allowedExtensions.contains(ext)) {
         if (mounted) {
           final l10n = AppLocalizations.of(context);
-          _showError(l10n?.invalidImageFormat ?? 'Only JPG, JPEG, PNG, and WEBP formats are supported.');
+          _showError(l10n?.invalidImageFormat ?? 'Only JPG, JPEG, PNG, WEBP, and HEIC formats are supported.');
         }
         return;
       }
@@ -500,8 +616,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     ref.read(isGuestProvider.notifier).state = false;
 
     // Ensure user state is complete
+    final isComp = ref.read(authProvider).user?.isProfileComplete ?? true;
     ref.read(authProvider.notifier).updateUser(profile.copyWith(
-      isProfileComplete: true,
+      isProfileComplete: isComp,
       isOtpVerified: true,
     ));
 
@@ -1705,53 +1822,121 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           ),
           const SizedBox(height: 16),
 
-          _fieldLabel(isBangla ? 'রক্তের গ্রুপ নির্বাচন করুন' : 'Select Blood Group'),
-          const SizedBox(height: 6),
-          _buildBloodGroupDropdown(
-            hint: isBangla ? 'রক্তের গ্রুপ বেছে নিন' : 'Choose your blood type',
-            value: _bloodGroup,
-            onChanged: (val) => setState(() => _bloodGroup = val),
-          ),
-          const SizedBox(height: 14),
-
-          _fieldLabel(isBangla ? 'রক্তের গ্রুপ নিশ্চিত করুন' : 'Confirm Blood Group'),
-          const SizedBox(height: 6),
-          _buildBloodGroupDropdown(
-            hint: isBangla ? 'রক্তের গ্রুপ নিশ্চিত করুন' : 'Confirm your blood type',
-            value: _confirmBloodGroup,
-            onChanged: (val) => setState(() => _confirmBloodGroup = val),
-          ),
-          const SizedBox(height: 14),
-
-          // Immutable Warning Notice
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(200),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFC30121)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    isBangla
-                        ? 'সংরক্ষণ করার পর রক্তের গ্রুপ কেবল অ্যাডমিন পরিবর্তন করতে পারবেন।'
-                        : 'Blood Group can ONLY be edited by an Admin once saved.',
+          if (_isBloodGroupLocked && _bloodGroup != null && _bloodGroup!.isNotEmpty) ...[
+            _fieldLabel(isBangla ? 'রক্তের গ্রুপ (নিবন্ধিত)' : 'Blood Group (Registered)'),
+            const SizedBox(height: 6),
+            Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(color: const Color(0xFFE2E2E2)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline_rounded, size: 18, color: Color(0xFF888888)),
+                  const SizedBox(width: 10),
+                  Text(
+                    _bloodGroup!,
                     style: const TextStyle(
                       fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                       color: Color(0xFFC30121),
-                      height: 1.3,
                     ),
                   ),
-                ),
-              ],
+                  const Spacer(),
+                  Text(
+                    isBangla ? 'লক করা' : 'Locked',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF888888),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(200),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFC30121)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isBangla
+                          ? 'রক্তের গ্রুপ কেবল অ্যাডমিন পরিবর্তন করতে পারবেন।'
+                          : 'Blood group can only be changed by an admin.',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFC30121),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            _fieldLabel(isBangla ? 'রক্তের গ্রুপ নির্বাচন করুন' : 'Select Blood Group'),
+            const SizedBox(height: 6),
+            _buildBloodGroupDropdown(
+              hint: isBangla ? 'রক্তের গ্রুপ বেছে নিন' : 'Choose your blood type',
+              value: _bloodGroup,
+              onChanged: (val) => setState(() => _bloodGroup = val),
+            ),
+            const SizedBox(height: 14),
+
+            _fieldLabel(isBangla ? 'রক্তের গ্রুপ নিশ্চিত করুন' : 'Confirm Blood Group'),
+            const SizedBox(height: 6),
+            _buildBloodGroupDropdown(
+              hint: isBangla ? 'রক্তের গ্রুপ নিশ্চিত করুন' : 'Confirm your blood type',
+              value: _confirmBloodGroup,
+              onChanged: (val) => setState(() => _confirmBloodGroup = val),
+            ),
+            const SizedBox(height: 14),
+
+            // Immutable Warning Notice
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(200),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFC30121)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isBangla
+                          ? 'সংরক্ষণ করার পর রক্তের গ্রুপ কেবল অ্যাডমিন পরিবর্তন করতে পারবেন।'
+                          : 'Blood Group can ONLY be edited by an Admin once saved.',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFC30121),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

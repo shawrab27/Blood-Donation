@@ -1,0 +1,1 @@
+web: gunicorn blood_pulse_backend.wsgi:application

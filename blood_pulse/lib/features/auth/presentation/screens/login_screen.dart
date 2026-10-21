@@ -195,10 +195,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             height: 1.5,
                           ),
                         ),
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 18),
                         // ── Card ──────────────────────────────────────────
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
@@ -337,10 +337,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 height: 50,
                                 onPressed: auth.isLoading ? null : _onSignIn,
                               ),
+                              const SizedBox(height: 12),
+                              // ── Create Account Button (Prominent) ─────────
+                              CapsuleButton(
+                                label: l10n?.createAccount ?? 'Create an Account',
+                                icon: Icons.person_add_alt_1_rounded,
+                                isOutlined: true,
+                                height: 50,
+                                onPressed: auth.isLoading ? null : () => context.push('/register'),
+                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 18),
                         // ── Register link ──────────────────────────────────
                         Wrap(
                           alignment: WrapAlignment.center,

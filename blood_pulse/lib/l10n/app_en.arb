@@ -188,7 +188,7 @@
   "openCamera": "Open Camera",
   "removePhoto": "Remove photo",
   "optionalBadge": "Optional",
-  "invalidImageFormat": "Only JPG, JPEG, PNG, and WEBP formats are supported.",
+  "invalidImageFormat": "Only JPG, JPEG, PNG, WEBP, and HEIC formats are supported.",
   "imageSizeTooLarge": "Image size must not exceed 5 MB.",
   "cameraPermissionDenied": "Camera permission denied.",
   "cameraPermissionPermanentlyDenied": "Camera permission is permanently denied. Please enable it in Settings.",
