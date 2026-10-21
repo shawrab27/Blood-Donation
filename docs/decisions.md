@@ -17,3 +17,13 @@ TRUST: private donor review (1-5 + tags) only from confirmed donations, requeste
 COMMUNITIES: National = group details + call blood contacts; Local = clubs division-wise with President/GS/Treasurer/VP; phone shown only if show_contact and verified_by_admin. No member dashboard.
 PULSEAI: server-decided personal guard, 90-day answers from server data, never list donor identities, Bangla voice in/out, fare as a RANGE with disclaimer.
 ENGINEERING: additive migrations only, one linear chain, never edit applied migrations, never migrate production, old app builds must keep working, no mock data, no overflow at 320x568/360x800/412x915 and text scale 1.3, report raw test output, never write "done" without evidence.
+20: POST-ACCEPT JOURNEY & STANDBY (H-05):
+- Single request state machine: OPEN -> ACCEPTED -> DONOR_ON_THE_WAY -> ARRIVED -> DONATED -> COMPLETED; side states: STANDBY_SEARCHING, DONOR_CANCELLED, EXPIRED, CLOSED.
+- Every state change writes an immutable RequestTimelineEvent (actor, old_status, new_status, timestamp). Idempotent on repeated calls.
+- Atomic last-unit lock via select_for_update(); simultaneous donor race rejects losing donor with 409 conflict and clear 'slot taken' message.
+- Phone unmasking rule: Phone numbers remain shielded until request reaches ACCEPTED/DONOR_ON_THE_WAY/ARRIVED/DONATED; detail screen displays direct tel: call action only for accepted participants.
+- Realtime chat: auto-created on ACCEPTED; requester + accepted donor only; DirectMessage model in PostgreSQL as source of truth; read-only banner when COMPLETED/EXPIRED/CANCELLED; voice notes capped at 60s, 5MB, stored via persistent media storage backend.
+- Live donor tracking: OpenStreetMap + OSM routing proxy with straight-line Haversine fallback; 10s server-side throttle; stores latest point per journey with automatic TTL cleanup; stops immediately on CANCELLED/ARRIVED/DONATED/COMPLETED.
+- Standby escalation ladder: 5 km -> 25 km -> 100 km -> 1000 km (STANDBY_ESCALATION_LADDER_KM in api/conf.py). Max attempts: 3 (STANDBY_MAX_OFFER_ATTEMPTS). Per-offer timeout: 300 seconds (STANDBY_OFFER_TIMEOUT_SECONDS).
+- Stale tracking trigger: 10 minutes without update while in DONOR_ON_THE_WAY triggers automatic standby promotion (STANDBY_STALE_TRACKING_MINUTES).
+- Standby cron tick endpoint: POST /api/blood-requests/tick-standby/ with Authorization: Bearer <TICK_BEARER_TOKEN>; idempotent execution, safe for 1-minute external crons.

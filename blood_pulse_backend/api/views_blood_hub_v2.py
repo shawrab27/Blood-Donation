@@ -157,10 +157,12 @@ class BloodRequestAcceptAPIView(APIView):
                 support_status=support_status,
                 units_pledged=units_pledged,
             )
-            return Response(
-                DonationMatchDetailSerializer(match, context={'request': request}).data,
-                status=status.HTTP_201_CREATED,
-            )
+            resp_data = DonationMatchDetailSerializer(match, context={'request': request}).data
+            from api.models import RequestAcceptance
+            acceptance = RequestAcceptance.objects.filter(request_id=pk, donor=match.donor).first()
+            if acceptance:
+                resp_data['acceptance_id'] = acceptance.id
+            return Response(resp_data, status=status.HTTP_201_CREATED)
         except (ConflictError, IllegalStateTransitionError) as err:
             return Response({"detail": str(err)}, status=status.HTTP_409_CONFLICT)
         except ValidationError as err:

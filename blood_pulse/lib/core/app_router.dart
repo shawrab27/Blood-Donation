@@ -270,7 +270,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // /journeys — Active Requests list (Prompt 5)
     GoRoute(
       path: '/journeys',
-      builder: (context, state) => const JourneyListScreen(),
+      builder: (context, state) {
+        final tab = state.uri.queryParameters['tab'];
+        return JourneyListScreen(initialTab: tab);
+      },
     ),
     // /journeys/:id — Journey Detail (Prompt 4) — role-aware two-sided tracking
     GoRoute(
@@ -353,11 +356,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   : 'chat_${chatRecipientName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_')}');
         }
 
+        final bool isClosed = (extra is Map<String, dynamic> && extra['isClosed'] == true) ||
+            state.uri.queryParameters['isClosed'] == 'true';
+
         return ChatScreen(
           chatRoomId: chatRoomId,
           chatRecipientName: chatRecipientName,
           bloodGroup: bloodGroup,
           recipientId: recipientId,
+          isClosed: isClosed,
         );
       },
     ),

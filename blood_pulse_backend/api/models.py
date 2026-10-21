@@ -553,10 +553,15 @@ class BloodRequest(models.Model):
         ('DRAFT', 'Draft'),
         ('PENDING_EMAIL_OTP', 'Pending Email OTP'),
         ('OPEN', 'Open'),
+        ('ACCEPTED', 'Accepted'),
         ('MATCHED', 'Matched'),
+        ('DONOR_ON_THE_WAY', 'Donor On The Way'),
         ('IN_TRANSIT', 'In Transit'),
         ('ARRIVED', 'Arrived'),
         ('DONATED', 'Donated'),
+        ('COMPLETED', 'Completed'),
+        ('STANDBY_SEARCHING', 'Standby Searching'),
+        ('DONOR_CANCELLED', 'Donor Cancelled'),
         ('CLOSED', 'Closed'),
         ('FAILED', 'Failed'),
         ('EXPIRED', 'Expired'),
@@ -759,6 +764,28 @@ class RequestAcceptance(models.Model):
             ),
         ]
 
+
+
+class RequestTimelineEvent(models.Model):
+    request = models.ForeignKey(BloodRequest, on_delete=models.CASCADE, related_name='timeline_events')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    state = models.CharField(max_length=50)
+    note = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def who(self):
+        return self.actor
+
+    @property
+    def when(self):
+        return self.created_at
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Request #{self.request_id} -> {self.state} at {self.created_at}'
 
 
 class FakeReport(models.Model):

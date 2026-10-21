@@ -26,6 +26,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../features/notifications/presentation/screens/notification_wallpaper_overlay.dart';
+import '../core/deep_link_resolver.dart';
 import 'api_client.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ def _get_journey_and_check_participant(acceptance_id, user):
     requester = acceptance.request.requester
     donor_user = acceptance.donor.user
 
-    if user.id == requester.id:
+    if requester and user.id == requester.id:
         return acceptance, donor_user
     elif user.id == donor_user.id:
         return acceptance, requester
@@ -96,10 +96,15 @@ class JourneyMessageListCreateAPIView(APIView):
         messages = qs[offset:offset + limit]
 
         serializer = DirectMessageSerializer(messages, many=True, context={'request': request})
+        is_closed = (
+            acceptance.status in ('COMPLETED', 'CONFIRMED', 'CANCELLED', 'FAILED') or
+            acceptance.request.status in ('CLOSED', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'FAILED')
+        )
         return Response({
             'count': total,
             'limit': limit,
             'offset': offset,
+            'is_closed': is_closed,
             'other_user_id': other_user.id if other_user else None,
             'other_user_name': other_user.get_full_name() or other_user.username if other_user else '',
             'results': serializer.data,
@@ -110,6 +115,16 @@ class JourneyMessageListCreateAPIView(APIView):
         if not acceptance or not other_user:
             return Response(
                 {'detail': 'You are not a participant in this journey chat.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        is_closed = (
+            acceptance.status in ('COMPLETED', 'CONFIRMED', 'CANCELLED', 'FAILED') or
+            acceptance.request.status in ('CLOSED', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'FAILED')
+        )
+        if is_closed:
+            return Response(
+                {'detail': 'This chat is closed because the request has concluded.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

@@ -43,6 +43,7 @@ class DonorTrackingMapScreen extends ConsumerStatefulWidget {
     this.unitsPending = 1,
     this.requestMode = 'PROXY',
     this.supportStatus = 'CAN_SUPPORT',
+    this.enableLiveTracking = true,
   });
 
   final String? requestId;
@@ -63,6 +64,7 @@ class DonorTrackingMapScreen extends ConsumerStatefulWidget {
   final int unitsPending;
   final String requestMode;
   final String supportStatus;
+  final bool enableLiveTracking;
 
   @override
   ConsumerState<DonorTrackingMapScreen> createState() => _DonorTrackingMapScreenState();
@@ -88,7 +90,9 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
     _hospitalLocation = LatLng(widget.hospitalLat, widget.hospitalLng);
     _donorLocation = LatLng(widget.initialDonorLat, widget.initialDonorLng);
     _calculateInitialDistanceAndEta();
-    _initLiveTracking();
+    if (widget.enableLiveTracking) {
+      _initLiveTracking();
+    }
   }
 
   Future<void> _initLiveTracking() async {
@@ -261,6 +265,40 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
                         ),
                       ),
                       TextButton(onPressed: _initLiveTracking, child: const Text('Allow')),
+                    ],
+                  ),
+                ),
+              )
+            else if (widget.isDonorView)
+              Positioned(
+                top: 12,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF81C784)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.share_location_rounded, color: Color(0xFF2E7D32), size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Sharing location with requester',
+                          style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await TrackingService.instance.stopTracking();
+                          if (!context.mounted) return;
+                          context.pop();
+                        },
+                        child: const Text('Stop', style: TextStyle(color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
+                      ),
                     ],
                   ),
                 ),

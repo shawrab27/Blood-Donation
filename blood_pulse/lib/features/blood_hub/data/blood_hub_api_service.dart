@@ -479,14 +479,19 @@ class JourneyStep {
 
   static String _stepLabel(String k) {
     switch (k) {
+      case 'OPEN':
+        return 'Open';
       case 'ACCEPTED':
         return 'Accepted';
       case 'ON_THE_WAY':
+      case 'DONOR_ON_THE_WAY':
         return 'On the Way';
       case 'ARRIVED':
         return 'Arrived';
       case 'DONATED':
         return 'Donated';
+      case 'COMPLETED':
+        return 'Completed';
       default:
         return k;
     }
@@ -526,7 +531,12 @@ class JourneyDetail {
     // ── Shared readable fields ─────────────────────────────────────
     required this.requesterLat,  // null if requester didn't opt-in
     required this.requesterLng,
+    this.chatRoomId,
+    this.requestId,
   });
+
+  final String? chatRoomId;
+  final int? requestId;
 
   final int id;
   final String status;
@@ -576,8 +586,14 @@ class JourneyDetail {
   }
 
   factory JourneyDetail.fromJson(Map<String, dynamic> j) {
-    const stepOrder = ['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED'];
-    final milestones = (j['milestones'] as Map<String, dynamic>?) ?? {};
+    const stepOrder = ['OPEN', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED', 'COMPLETED'];
+    final milestones = Map<String, dynamic>.from((j['milestones'] as Map<String, dynamic>?) ?? {});
+    if (!milestones.containsKey('OPEN') && j['created_at'] != null) {
+      milestones['OPEN'] = j['created_at'];
+    }
+    if (j['status'] == 'COMPLETED' && !milestones.containsKey('COMPLETED')) {
+      milestones['COMPLETED'] = j['updated_at'] ?? j['closed_at'] ?? DateTime.now().toIso8601String();
+    }
     final steps =
         stepOrder.map((k) => JourneyStep.fromEntry(k, milestones[k])).toList();
 
@@ -616,6 +632,8 @@ class JourneyDetail {
       // Shared
       requesterLat: (j['requester_lat'] as num?)?.toDouble(),
       requesterLng: (j['requester_lng'] as num?)?.toDouble(),
+      chatRoomId: j['chat_room_id'] as String?,
+      requestId: (j['request_id'] as num?)?.toInt(),
     );
   }
 }

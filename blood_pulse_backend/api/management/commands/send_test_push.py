@@ -71,7 +71,19 @@ class Command(BaseCommand):
             ).first()
 
         if not user:
-            donor = DonorProfile.objects.filter(phone_number=user_identifier).select_related('user').first()
+            clean_phone = user_identifier.replace(' ', '').replace('-', '')
+            candidates = [clean_phone]
+            if clean_phone.startswith('01'):
+                candidates.append('+88' + clean_phone)
+                candidates.append('88' + clean_phone)
+            elif clean_phone.startswith('+8801'):
+                candidates.append(clean_phone[3:])
+                candidates.append(clean_phone[1:])
+            elif clean_phone.startswith('8801'):
+                candidates.append('+' + clean_phone)
+                candidates.append(clean_phone[2:])
+
+            donor = DonorProfile.objects.filter(phone_number__in=candidates).select_related('user').first()
             if donor and donor.user:
                 user = donor.user
 
@@ -115,5 +127,6 @@ class Command(BaseCommand):
             self.stdout.write(f"Tokens targeted: {result['tokens_count']}")
             self.stdout.write(f"Sent successfully: {result.get('sent', 0)}")
             self.stdout.write(f"Failed deliveries: {result.get('failed', 0)}")
+            self.stdout.write(f"Raw FCM Response: {result.get('raw_response', result)}")
             if result.get('invalid_tokens_cleared', 0) > 0:
                 self.stdout.write(self.style.NOTICE(f"Deactivated {result['invalid_tokens_cleared']} invalid/expired tokens."))

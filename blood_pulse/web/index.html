@@ -158,6 +158,10 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for (let registration of registrations) {
+          const swUrl = (registration.active || registration.installing || registration.waiting)?.scriptURL || '';
+          if (swUrl.includes('firebase-messaging-sw.js') || swUrl.includes('bloodpulse_sw.js')) {
+            continue;
+          }
           registration.unregister();
         }
       });

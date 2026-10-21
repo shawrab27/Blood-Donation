@@ -15,6 +15,7 @@ import '../../../../models/chat_message_model.dart';
 import '../../../../services/chat_service.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import 'notification_wallpaper_overlay.dart';
+import '../../../../core/deep_link_resolver.dart';
 
 /// Notification Center Screen implementing the Notification Exception Rule.
 ///

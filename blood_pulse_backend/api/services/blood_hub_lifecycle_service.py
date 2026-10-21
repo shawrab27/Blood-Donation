@@ -56,18 +56,31 @@ class ConflictError(Exception):
     pass
 
 
+STATE_ALIASES = {
+    'MATCHED': 'ACCEPTED',
+    'IN_TRANSIT': 'DONOR_ON_THE_WAY',
+    'ON_THE_WAY': 'DONOR_ON_THE_WAY',
+    'FULFILLED': 'COMPLETED',
+    'ACTIVE': 'OPEN',
+}
+
 ALLOWED_TRANSITIONS = {
     'DRAFT': ['PENDING_EMAIL_OTP', 'CLOSED', 'FAILED'],
     'PENDING_EMAIL_OTP': ['OPEN', 'CLOSED', 'EXPIRED', 'FAILED'],
-    'OPEN': ['MATCHED', 'CLOSED', 'EXPIRED', 'FAILED'],
-    'MATCHED': ['IN_TRANSIT', 'OPEN', 'CLOSED', 'EXPIRED', 'FAILED'],
-    'IN_TRANSIT': ['ARRIVED', 'OPEN', 'CLOSED', 'EXPIRED', 'FAILED'],
-    'ARRIVED': ['DONATED', 'OPEN', 'CLOSED', 'EXPIRED', 'FAILED'],
-    'DONATED': ['CLOSED'],
+    'OPEN': ['ACCEPTED', 'MATCHED', 'STANDBY_SEARCHING', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'ACCEPTED': ['DONOR_ON_THE_WAY', 'IN_TRANSIT', 'DONOR_CANCELLED', 'STANDBY_SEARCHING', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'MATCHED': ['DONOR_ON_THE_WAY', 'IN_TRANSIT', 'DONOR_CANCELLED', 'STANDBY_SEARCHING', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'DONOR_ON_THE_WAY': ['ARRIVED', 'DONOR_CANCELLED', 'STANDBY_SEARCHING', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'IN_TRANSIT': ['ARRIVED', 'DONOR_CANCELLED', 'STANDBY_SEARCHING', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'ARRIVED': ['DONATED', 'DONOR_CANCELLED', 'STANDBY_SEARCHING', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'DONATED': ['COMPLETED', 'CLOSED'],
+    'STANDBY_SEARCHING': ['ACCEPTED', 'MATCHED', 'OPEN', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'DONOR_CANCELLED': ['STANDBY_SEARCHING', 'OPEN', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'COMPLETED': ['COMPLETED'],
     'CLOSED': ['CLOSED'],
     'FAILED': ['FAILED'],
     'EXPIRED': ['EXPIRED'],
-    'ACTIVE': ['MATCHED', 'CLOSED', 'EXPIRED', 'FAILED'],
+    'ACTIVE': ['ACCEPTED', 'MATCHED', 'CLOSED', 'EXPIRED', 'FAILED'],
 }
 
 
@@ -109,37 +122,55 @@ def normalize_request_mode(raw_mode: str | None, patient_name: str = "", attenda
     return 'SELF'
 
 
-def transition(request: BloodRequest, new_state: str, actor=None) -> BloodRequest:
+def transition(request: BloodRequest, new_state: str, actor=None, note: str = "") -> BloodRequest:
     """
-    State machine single entry point for BloodRequest.
+    State machine single entry point for BloodRequest (Part 1 source of truth).
+    States: OPEN -> ACCEPTED -> DONOR_ON_THE_WAY -> ARRIVED -> DONATED -> COMPLETED;
+    Side states: STANDBY_SEARCHING, DONOR_CANCELLED, EXPIRED, CLOSED.
     Raises IllegalStateTransitionError (maps to HTTP 409) on invalid transition.
-    Idempotent when already in terminal state CLOSED/EXPIRED/FAILED.
+    Idempotent when already in target state (no-op, no duplicate timeline entry).
+    Writes RequestTimelineEvent(who, when, state, note) on every state change.
     """
+    from api.models import RequestTimelineEvent
+
     current_state = request.status
-    if current_state == new_state and new_state in ('CLOSED', 'EXPIRED', 'FAILED'):
+    target_state = new_state
+
+    # Same state change sent twice is idempotent
+    if current_state == target_state:
         return request
 
     allowed = ALLOWED_TRANSITIONS.get(current_state, [])
-    if new_state not in allowed:
+    if target_state not in allowed:
         raise IllegalStateTransitionError(
-            f"Cannot transition BloodRequest #{request.id} from {current_state} to {new_state}.",
+            f"Cannot transition BloodRequest #{request.id} from {current_state} to {target_state}.",
             current_state=current_state,
-            target_state=new_state,
+            target_state=target_state,
         )
 
     now = timezone.now()
-    request.status = new_state
+    request.status = target_state
     update_fields = ['status', 'is_active']
-    if new_state in ['CLOSED', 'FAILED', 'EXPIRED']:
+    if target_state in ['CLOSED', 'FAILED', 'EXPIRED', 'COMPLETED']:
         request.is_active = False
         if not request.closed_at:
             request.closed_at = now
             update_fields.append('closed_at')
         if not request.close_reason:
-            request.close_reason = new_state
+            request.close_reason = target_state
             update_fields.append('close_reason')
     request.save(update_fields=update_fields)
-    logger.info("BloodRequest #%s transitioned from %s to %s by actor %s", request.id, current_state, new_state, actor)
+
+    # Write timeline event (who, when)
+    user_actor = actor if (actor and getattr(actor, 'is_authenticated', False)) else None
+    RequestTimelineEvent.objects.create(
+        request=request,
+        actor=user_actor,
+        state=target_state,
+        note=note or f"State transitioned from {current_state} to {target_state}",
+    )
+
+    logger.info("BloodRequest #%s transitioned from %s to %s by actor %s", request.id, current_state, target_state, actor)
     return request
 
 

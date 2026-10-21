@@ -17,7 +17,8 @@ const Color _kNeutral = Color(0xFF8E7D7F);
 // ─────────────────────────────────────────────────────────────────────────────
 
 class JourneyListScreen extends ConsumerStatefulWidget {
-  const JourneyListScreen({super.key});
+  final String? initialTab;
+  const JourneyListScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<JourneyListScreen> createState() => _JourneyListScreenState();
@@ -30,7 +31,8 @@ class _JourneyListScreenState extends ConsumerState<JourneyListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    final initialIndex = (widget.initialTab == 'accepted' || widget.initialTab == 'donations') ? 1 : 0;
+    _tabController = TabController(length: 2, vsync: this, initialIndex: initialIndex);
   }
 
   @override
@@ -71,7 +73,7 @@ class _JourneyListScreenState extends ConsumerState<JourneyListScreen>
           ),
           tabs: const [
             Tab(text: 'My Requests'),
-            Tab(text: 'My Donations'),
+            Tab(text: 'My Accepted'),
           ],
         ),
       ),

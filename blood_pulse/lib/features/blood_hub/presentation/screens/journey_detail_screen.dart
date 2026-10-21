@@ -82,9 +82,14 @@ String _urgencyLabel(String u) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class JourneyDetailScreen extends ConsumerStatefulWidget {
-  const JourneyDetailScreen({super.key, required this.journeyId});
+  const JourneyDetailScreen({
+    super.key,
+    required this.journeyId,
+    this.enablePolling = true,
+  });
 
   final int journeyId;
+  final bool enablePolling;
 
   @override
   ConsumerState<JourneyDetailScreen> createState() =>
@@ -100,9 +105,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   void initState() {
     super.initState();
     // Poll every 15 s for live status + location updates
-    _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (mounted) ref.invalidate(journeyDetailProvider(widget.journeyId));
-    });
+    if (widget.enablePolling) {
+      _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (mounted) ref.invalidate(journeyDetailProvider(widget.journeyId));
+      });
+    }
   }
 
   @override
@@ -284,6 +291,7 @@ class _JourneyBody extends ConsumerWidget {
                 journey: journey,
                 onRefresh: () => ref.invalidate(journeyDetailProvider(journey.id)),
                 onReport: onReport,
+                onCancel: onCancel,
               ),
             )
           else if (journey.isDonor)
@@ -449,8 +457,8 @@ class _LiveMap extends StatelessWidget {
                 // Primary marker (donor for requester / hospital for donor)
                 Marker(
                   point: focusPin,
-                  width: 40,
-                  height: 40,
+                  width: 60,
+                  height: 60,
                   child: _MapPin(
                     icon: journey.isRequester
                         ? Icons.person_pin_circle_rounded
@@ -463,8 +471,8 @@ class _LiveMap extends StatelessWidget {
                 if (secondaryPin != null)
                   Marker(
                     point: secondaryPin,
-                    width: 40,
-                    height: 40,
+                    width: 60,
+                    height: 60,
                     child: _MapPin(
                       icon: journey.isRequester
                           ? Icons.local_hospital_rounded
@@ -550,20 +558,21 @@ class _ProgressStepper extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFEEE8E8)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(journey.steps.length * 2 - 1, (i) {
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: List.generate(journey.steps.length * 2 - 1, (i) {
           if (i.isOdd) {
             final stepIdx = i ~/ 2;
             final done = stepIdx + 1 < journey.steps.length &&
                 journey.steps[stepIdx + 1].isComplete;
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 13),
-                child: Container(
-                  height: 2,
-                  color: done ? _kPrimary : const Color(0xFFE0DCDC),
-                ),
+            return Padding(
+              padding: const EdgeInsets.only(top: 13),
+              child: Container(
+                width: 24,
+                height: 2,
+                color: done ? _kPrimary : const Color(0xFFE0DCDC),
               ),
             );
           }
@@ -628,6 +637,7 @@ class _ProgressStepper extends StatelessWidget {
             ],
           );
         }),
+        ),
       ),
     );
   }
@@ -643,10 +653,12 @@ class _RequesterInfoCard extends ConsumerWidget {
     required this.journey,
     required this.onRefresh,
     required this.onReport,
+    required this.onCancel,
   });
   final JourneyDetail journey;
   final VoidCallback onRefresh;
   final VoidCallback onReport;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -657,27 +669,27 @@ class _RequesterInfoCard extends ConsumerWidget {
           titleIcon: Icons.volunteer_activism_rounded,
           titleColor: _kTertiary,
           rows: [
-            _InfoRow('Donor', journey.donorName),
+            _InfoRow('Donor', journey.donorName.isNotEmpty ? journey.donorName : 'Searching for donor...'),
             _InfoRow(
               'Contact',
               journey.donorContact.isNotEmpty
                   ? journey.donorContact
-                  : 'Revealed after donor arrives',
+                  : 'Revealed after acceptance',
               highlight: journey.donorContact.isNotEmpty,
             ),
             const _InfoDivider(),
             _InfoRow('Patient', journey.patientName),
             _InfoRow('Hospital', journey.hospitalName),
-            _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
-            _InfoRow('Units', '${journey.unitsNeeded}'),
+            _InfoRow('Blood', ' · '),
+            _InfoRow('Units', ''),
             _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
           ],
         ),
         JourneyRequesterActions(
-          journeyId: journey.id,
-          status: journey.status,
+          journey: journey,
           onRefresh: onRefresh,
           onIssueReport: onReport,
+          onCancel: onCancel,
         ),
       ],
     );
@@ -720,8 +732,7 @@ class _DonorInfoCard extends ConsumerWidget {
           ],
         ),
         JourneyDonorActions(
-          journeyId: journey.id,
-          status: journey.status,
+          journey: journey,
           onRefresh: onRefresh,
           onCancel: onCancel,
         ),
@@ -1173,9 +1184,10 @@ class _SkeletonLoader extends StatelessWidget {
   const _SkeletonLoader();
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
         children: [
           _Bone(height: 80, radius: 18),
           const SizedBox(height: 12),
@@ -1185,6 +1197,7 @@ class _SkeletonLoader extends StatelessWidget {
           const SizedBox(height: 12),
           _Bone(height: 180, radius: 16),
         ],
+      ),
       ),
     );
   }

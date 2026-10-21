@@ -794,10 +794,13 @@ def maintenance_tick_view(request):
 
     from api.services.journeys import auto_confirm_stale_donations, auto_manage_deferrals
     from api.services.match_operations_service import run_due_followups
+    from api.services.standby import process_stale_tracking_and_standby_tick
+    standby_stats = process_stale_tracking_and_standby_tick()
     closed = auto_confirm_stale_donations(hours=48)
     deferred, reenabled = auto_manage_deferrals()
     followups_count = run_due_followups()
     return Response({
+        'standby_stats': standby_stats,
         'auto_confirmed_count': len(closed),
         'auto_deferred_count': deferred,
         'auto_reenabled_count': reenabled,
@@ -915,7 +918,7 @@ def journey_status_transition_view(request, pk):
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     new_status = request.data.get('status', '').strip().upper()
-    valid_statuses = ['ON_THE_WAY', 'ARRIVED', 'DONATED', 'CANCELLED', 'CONFIRMED']
+    valid_statuses = ['ON_THE_WAY', 'ARRIVED', 'DONATED', 'CANCELLED', 'CONFIRMED', 'COMPLETED']
     if new_status not in valid_statuses:
         return Response({'error': f'Invalid status. Allowed: {valid_statuses}'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -926,6 +929,11 @@ def journey_status_transition_view(request, pk):
         return Response({'error': 'Unauthorized.'}, status=status.HTTP_403_FORBIDDEN)
 
     now = timezone.now()
+
+    if new_status == 'COMPLETED':
+        new_status = 'CONFIRMED'
+
+    from api.services.blood_hub_lifecycle_service import transition
 
     if new_status == 'DONATED':
         with transaction.atomic():
@@ -951,6 +959,10 @@ def journey_status_transition_view(request, pk):
 
             if locked_acc.donor_confirmed_at is not None and locked_acc.requester_confirmed_at is not None:
                 finalize_donation(locked_acc, auto=False)
+                try:
+                    transition(blood_req, 'COMPLETED', request.user, note="Donation confirmed by both sides")
+                except Exception:
+                    pass
                 return Response({'status': 'CONFIRMED', 'message': 'Donation confirmed by both sides.'}, status=status.HTTP_200_OK)
 
         return Response({'status': 'DONATED', 'message': 'Pending requester confirmation.'})
@@ -982,6 +994,10 @@ def journey_status_transition_view(request, pk):
             # Complete only when donor has ALSO confirmed (status=='DONATED' or donor_confirmed_at set)
             if locked_acc.status == 'DONATED' or locked_acc.donor_confirmed_at is not None:
                 finalize_donation(locked_acc, auto=False)
+                try:
+                    transition(blood_req, 'COMPLETED', request.user, note="Donation confirmed by both sides")
+                except Exception:
+                    pass
                 return Response({
                     'message': 'Donation successfully marked as completed. Donor record updated.',
                     'status': 'CONFIRMED',
@@ -1017,9 +1033,19 @@ def journey_status_transition_view(request, pk):
             donor.cancel_count = (donor.cancel_count or 0) + 1
             donor.save(update_fields=['cancel_count'])
 
+            try:
+                transition(blood_req, 'DONOR_CANCELLED' if is_donor else 'CLOSED', request.user, note=reason)
+            except Exception:
+                pass
+
             # Automatically promote next standby candidate when active journey is cancelled
             from api.services.standby import trigger_standby_donor_offer
             standby_offer = trigger_standby_donor_offer(blood_req, exclude_donor_ids=[donor.id])
+            if standby_offer:
+                try:
+                    transition(blood_req, 'STANDBY_SEARCHING', request.user, note="Searching for standby replacement donor")
+                except Exception:
+                    pass
 
         return Response({
             'message': 'Journey cancelled.',
@@ -1031,6 +1057,11 @@ def journey_status_transition_view(request, pk):
     # ON_THE_WAY or ARRIVED
     acceptance.status = new_status
     acceptance.save(update_fields=['status'])
+    try:
+        req_target_state = 'DONOR_ON_THE_WAY' if new_status == 'ON_THE_WAY' else 'ARRIVED'
+        transition(acceptance.request, req_target_state, request.user, note=f"Donor updated status to {new_status}")
+    except Exception:
+        pass
     try:
         from api.services.notify import notify_journey_update
         notify_journey_update(acceptance, new_status, request.user)
@@ -1344,11 +1375,58 @@ def journey_detail_view(request, pk):
             'request', 'request__requester', 'request__hospital',
             'donor', 'donor__user',
         )
-        .filter(pk=pk)
+        .filter(Q(pk=pk) | Q(request_id=pk))
         .first()
     )
 
     if not acceptance:
+        # Check if pk refers directly to a BloodRequest with no acceptance yet
+        req = BloodRequest.objects.filter(pk=pk).select_related('requester', 'hospital').first()
+        if req and (req.requester_id == request.user.id or request.user.is_staff):
+            hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
+            timeline_events = [
+                {
+                    'state': ev.state,
+                    'actor_name': (ev.actor.get_full_name() or ev.actor.username) if ev.actor else 'System',
+                    'note': ev.note,
+                    'created_at': ev.created_at.isoformat(),
+                }
+                for ev in req.timeline_events.all()
+            ]
+            return Response({
+                'id': req.id,
+                'request_id': req.id,
+                'status': req.status,
+                'viewer_role': 'REQUESTER',
+                'blood_group': req.blood_group or '',
+                'component': getattr(req, 'component', 'WHOLE') or 'WHOLE',
+                'urgency': req.urgency or getattr(req, 'urgency_level', '') or '',
+                'units_needed': req.units_needed,
+                'units_received': req.units_received,
+                'units_pending': req.units_pending,
+                'request_mode': req.request_mode,
+                'support_status': 'CAN_SUPPORT',
+                'support_status_label': 'Can Support',
+                'milestones': {'ACCEPTED': None, 'ON_THE_WAY': None, 'ARRIVED': None, 'DONATED': None},
+                'eta_minutes': None,
+                'distance_km': None,
+                'can_report': False,
+                'can_cancel': req.status in ('OPEN', 'STANDBY_SEARCHING'),
+                'created_at': req.created_at.isoformat(),
+                'donor_name': 'Searching for donors...',
+                'donor_contact': '',
+                'donor_lat': None,
+                'donor_lng': None,
+                'patient_name': req.patient_name or '',
+                'hospital_name': hospital_name,
+                'requester_contact': req.contact_phone or req.contact_number or '',
+                'dest_lat': req.lat or (req.hospital.lat if req.hospital else None),
+                'dest_lng': req.lng or (req.hospital.lng if req.hospital else None),
+                'requester_lat': None,
+                'requester_lng': None,
+                'chat_room_id': '',
+                'timeline': timeline_events,
+            }, status=status.HTTP_200_OK)
         return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     req = acceptance.request
@@ -1359,16 +1437,33 @@ def journey_detail_view(request, pk):
     if not (is_donor or is_requester):
         return Response({'detail': 'You are not part of this journey.'}, status=status.HTTP_403_FORBIDDEN)
 
+    from api.models import DonationMatch
     viewer_role = 'DONOR' if is_donor else 'REQUESTER'
-    contact_revealed = acceptance.status in ('ARRIVED', 'DONATED')
+    contact_revealed = acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED', 'COMPLETED', 'CONFIRMED')
     hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
     dest_lat = req.lat or (req.hospital.lat if req.hospital else None)
     dest_lng = req.lng or (req.hospital.lng if req.hospital else None)
-    donor_lat_fuzzed = _fuzz_coord(acceptance.donor_lat)
-    donor_lng_fuzzed = _fuzz_coord(acceptance.donor_lng)
-    donor_phone = getattr(donor_profile.user, 'phone_number', '') or ''
+    donor_lat = acceptance.donor_lat
+    donor_lng = acceptance.donor_lng
+    donor_phone = donor_profile.phone_number or getattr(donor_profile.user, 'phone_number', '') or ''
+    requester_phone = req.contact_phone or req.contact_number or ''
     can_report = is_requester and acceptance.status in ('ON_THE_WAY', 'ARRIVED')
     can_cancel = is_requester and acceptance.status in ('ACCEPTED', 'ON_THE_WAY')
+
+    # Find or derive chat room id
+    match_obj = DonationMatch.objects.filter(request=req, donor=donor_profile).first()
+    chat_room_id = match_obj.chat_room_id if match_obj and match_obj.chat_room_id else f"chat_{req.id}_{donor_profile.id}"
+
+    # Timeline events
+    timeline_events = [
+        {
+            'state': ev.state,
+            'actor_name': (ev.actor.get_full_name() or ev.actor.username) if ev.actor else 'System',
+            'note': ev.note,
+            'created_at': ev.created_at.isoformat(),
+        }
+        for ev in req.timeline_events.all()
+    ]
 
     return Response({
         'id': acceptance.id,
@@ -1393,17 +1488,20 @@ def journey_detail_view(request, pk):
         'can_report': can_report,
         'can_cancel': can_cancel,
         'created_at': acceptance.started_at.isoformat(),
+        'request_id': req.id,
+        'chat_room_id': chat_room_id,
         'donor_name': donor_profile.user.get_full_name() or donor_profile.user.username,
         'donor_contact': _mask_phone(donor_phone, revealed=contact_revealed),
-        'donor_lat': donor_lat_fuzzed,
-        'donor_lng': donor_lng_fuzzed,
+        'donor_lat': donor_lat,
+        'donor_lng': donor_lng,
         'patient_name': req.patient_name or '',
         'hospital_name': hospital_name,
-        'requester_contact': _mask_phone(req.contact_phone or '', revealed=contact_revealed),
+        'requester_contact': _mask_phone(requester_phone, revealed=contact_revealed),
         'dest_lat': dest_lat,
         'dest_lng': dest_lng,
         'requester_lat': None,
         'requester_lng': None,
+        'timeline': timeline_events,
     }, status=status.HTTP_200_OK)
 
 
@@ -1429,12 +1527,15 @@ def journey_list_view(request):
     page = qs[offset: offset + limit]
 
     items = []
+    represented_req_ids = set()
     for acc in page:
         req = acc.request
+        represented_req_ids.add(req.id)
         is_donor_view = donor_profile and acc.donor_id == donor_profile.id
         hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
         items.append({
             'id': acc.id,
+            'request_id': req.id,
             'status': acc.status,
             'viewer_role': 'DONOR' if is_donor_view else 'REQUESTER',
             'blood_group': req.blood_group or '',
@@ -1443,6 +1544,26 @@ def journey_list_view(request):
             'is_standby': acc.is_standby,
             'support_status': acc.support_status,
             'created_at': acc.started_at.isoformat(),
+        })
+
+    # Also include any of the user's active blood requests that do not yet have an acceptance
+    open_user_requests = BloodRequest.objects.filter(
+        requester=user,
+        is_active=True,
+    ).exclude(id__in=represented_req_ids).select_related('hospital')
+    for ureq in open_user_requests:
+        hosp = ureq.hospital.name if ureq.hospital else (ureq.hospital_location or '')
+        items.append({
+            'id': ureq.id,
+            'request_id': ureq.id,
+            'status': ureq.status,
+            'viewer_role': 'REQUESTER',
+            'blood_group': ureq.blood_group or '',
+            'urgency': ureq.urgency or getattr(ureq, 'urgency_level', '') or '',
+            'hospital_name': hosp,
+            'is_standby': False,
+            'support_status': 'CAN_SUPPORT',
+            'created_at': ureq.created_at.isoformat(),
         })
 
     return Response({

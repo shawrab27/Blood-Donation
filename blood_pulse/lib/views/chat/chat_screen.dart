@@ -31,12 +31,14 @@ class ChatScreen extends ConsumerStatefulWidget {
     this.chatRecipientName = 'Chat Contact',
     this.bloodGroup = '',
     this.recipientId = '',
+    this.isClosed = false,
   });
 
   final String chatRoomId;
   final String chatRecipientName;
   final String bloodGroup;
   final String recipientId;
+  final bool isClosed;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -733,7 +735,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               if (_showEmojiPicker) _buildEmojiPicker(),
 
               // Bottom Input Bar
-              _buildBottomInputBar(),
+              widget.isClosed ? _buildReadOnlyBanner() : _buildBottomInputBar(),
             ],
           ),
         ),
@@ -1006,6 +1008,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      color: const Color(0xFFF0EBEB),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFF8E7D7F)),
+          SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              'This request is completed or closed. Chat is read-only.',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF8E7D7F),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
