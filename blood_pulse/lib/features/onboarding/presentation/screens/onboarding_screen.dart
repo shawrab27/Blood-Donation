@@ -7,42 +7,63 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
+import '../../../../core/widgets/language_toggle_button.dart';
+import '../../../../core/localization/locale_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class OnboardingStepData {
   final String title;
+  final String titleBn;
   final String description;
+  final String descriptionBn;
   final String imagePath;
   final String stepBadge;
+  final String stepBadgeBn;
 
   const OnboardingStepData({
     required this.title,
+    required this.titleBn,
     required this.description,
+    required this.descriptionBn,
     required this.imagePath,
     required this.stepBadge,
+    required this.stepBadgeBn,
   });
 }
 
 const List<OnboardingStepData> _onboardingSteps = [
   OnboardingStepData(
     title: 'Donate Blood',
+    titleBn: 'রক্তদান করুন',
     description:
         'Empower life through voluntary donation. Your single contribution can save up to three lives in emergency care.',
+    descriptionBn:
+        'স্বেচ্ছায় রক্তদানে জীবন বাঁচান। আপনার একটি অনুদান জরুরি চিকিৎসায় তিনজনের জীবন বাঁচাতে পারে।',
     imagePath: 'assets/images/onboarding_1.png',
     stepBadge: 'Step 1 of 3',
+    stepBadgeBn: 'ধাপ ১/৩',
   ),
   OnboardingStepData(
     title: 'Save Lives',
+    titleBn: 'জীবন বাঁচান',
     description:
         'Every drop matters. Connect instantly with local hospitals and patients facing critical emergencies to provide life-saving transfusions.',
+    descriptionBn:
+        'প্রতিটি রক্তবিন্দু মূল্যবান। জীবন রক্ষাকারী স্থানান্তরের জন্য সরাসরি স্থানীয় হাসপাতাল ও মুমূর্ষু রোগীর সাথে যুক্ত হন।',
     imagePath: 'assets/images/onboarding_2.png',
     stepBadge: 'Step 2 of 3',
+    stepBadgeBn: 'ধাপ ২/৩',
   ),
   OnboardingStepData(
     title: 'Get Connected in Community',
+    titleBn: 'কমিউনিটিতে যুক্ত হন',
     description:
         "Join Bangladesh's largest network of altruistic blood donors, student clubs, and volunteer organizations working together to save lives.",
+    descriptionBn:
+        'জীবন বাঁচাতে একসাথে কাজ করা রক্তদাতা, শিক্ষার্থী ক্লাব এবং স্বেচ্ছাসেবক সংগঠনের বৃহত্তম নেটওয়ার্কে যোগ দিন।',
     imagePath: 'assets/images/onboarding_3.png',
     stepBadge: 'Step 3 of 3',
+    stepBadgeBn: 'ধাপ ৩/৩',
   ),
 ];
 
@@ -50,16 +71,16 @@ const List<OnboardingStepData> _onboardingSteps = [
 /// 1. Donate Blood
 /// 2. Save Lives
 /// 3. Get Connected in Community
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   final int initialStep;
 
   const OnboardingScreen({super.key, this.initialStep = 0});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late final PageController _pageController;
   int _currentIndex = 0;
 
@@ -95,103 +116,123 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isLastStep = _currentIndex == _onboardingSteps.length - 1;
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F7),
-      body: SafeArea(
-        child: ResponsiveCenterWrapper(
-          child: Column(
-            children: [
-              // ── Top Bar (BloodPulse Brand Title + Skip CTA) ────────────────
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Logo removed per user instruction
-                    const SizedBox.shrink(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_currentIndex > 0) {
+          _pageController.previousPage(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/language');
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFF8F7),
+        body: SafeArea(
+          child: ResponsiveCenterWrapper(
+            child: Column(
+              children: [
+                // ── Top Bar (Language Toggle + Skip CTA) ────────────────
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const LanguageToggleButton(),
 
-                    // Skip CTA Button (fades out on final step)
-                    AnimatedOpacity(
-                      opacity: isLastStep ? 0.0 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: TextButton(
-                        onPressed: isLastStep ? null : _finishOnboarding,
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF667085),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
+                      // Skip CTA Button (fades out on final step)
+                      AnimatedOpacity(
+                        opacity: isLastStep ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: TextButton(
+                          onPressed: isLastStep ? null : _finishOnboarding,
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF667085),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Skip',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF667085),
+                          child: Text(
+                            isBangla ? 'এড়িয়ে যান' : 'Skip',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF667085),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // ── Carousel View of 3 Onboarding Steps ────────────────────────
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _onboardingSteps.length,
-                  onPageChanged: (index) {
-                    setState(() => _currentIndex = index);
-                  },
-                  itemBuilder: (context, index) {
-                    final step = _onboardingSteps[index];
-                    return _buildSlidePage(step, index);
-                  },
+                // ── Carousel View of 3 Onboarding Steps ────────────────────────
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _onboardingSteps.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final step = _onboardingSteps[index];
+                      return _buildSlidePage(step, index, isBangla);
+                    },
+                  ),
                 ),
-              ),
 
-              // ── Bottom Navigation Area (Indicator Dots & Next/Get Started) ─
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Step Indicator Pills
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        _onboardingSteps.length,
-                        (index) => _buildIndicatorDot(index),
+                // ── Bottom Navigation Area (Indicator Dots & Next/Get Started) ─
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Step Indicator Pills
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          _onboardingSteps.length,
+                          (index) => _buildIndicatorDot(index),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Primary Action Button
-                    CapsuleButton(
-                      label: isLastStep ? 'Get Started' : 'Next',
-                      showGlow: true,
-                      onPressed: _onNext,
-                    ),
+                      // Primary Action Button
+                      CapsuleButton(
+                        label: isLastStep
+                            ? (isBangla ? 'শুরু করুন' : 'Get Started')
+                            : (isBangla ? 'পরবর্তী' : 'Next'),
+                        showGlow: true,
+                        onPressed: _onNext,
+                      ),
 
-                    const SizedBox(height: 12),
-                  ],
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSlidePage(OnboardingStepData step, int index) {
+  Widget _buildSlidePage(OnboardingStepData step, int index, bool isBangla) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isSmall = constraints.maxHeight < 460;
@@ -240,7 +281,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       borderRadius: BorderRadius.circular(50),
                     ),
                     child: Text(
-                      step.stepBadge.toUpperCase(),
+                      isBangla ? step.stepBadgeBn : step.stepBadge.toUpperCase(),
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 11,
@@ -255,7 +296,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   // Title (Georgia font, bold, dark charcoal)
                   Text(
-                    step.title,
+                    isBangla ? step.titleBn : step.title,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Georgia',
@@ -271,7 +312,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 320),
                     child: Text(
-                      step.description,
+                      isBangla ? step.descriptionBn : step.description,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontFamily: 'Inter',

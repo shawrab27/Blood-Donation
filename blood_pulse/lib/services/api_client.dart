@@ -134,7 +134,10 @@ class ApiClient {
         _client = client ?? http.Client(),
         _secureStorage = secureStorage ??
             const FlutterSecureStorage(
-              aOptions: AndroidOptions(resetOnError: true),
+              aOptions: AndroidOptions(
+                resetOnError: true,
+                encryptedSharedPreferences: true,
+              ),
               iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
               webOptions: WebOptions(
                 dbName: 'BloodPulseSecureStorage',
@@ -148,10 +151,7 @@ class ApiClient {
     _cachedAccessToken = access;
     _cachedRefreshToken = refresh;
 
-    _cachedAccessToken = access;
-    _cachedRefreshToken = refresh;
-
-    // Phase 1: Store access and refresh tokens in flutter_secure_storage only
+    // Persist to FlutterSecureStorage
     try {
       await _secureStorage.write(key: _kAccessToken, value: access);
       await _secureStorage.write(key: _kRefreshToken, value: refresh);
@@ -159,12 +159,14 @@ class ApiClient {
       debugPrint('[ApiClient] SecureStorage save error: $e');
     }
 
-    // Clean up any legacy tokens stored in SharedPreferences
+    // Dual-write to SharedPreferences as backup
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kAccessToken);
-      await prefs.remove(_kRefreshToken);
-    } catch (_) {}
+      await prefs.setString(_kAccessToken, access);
+      await prefs.setString(_kRefreshToken, refresh);
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences backup save error: $e');
+    }
   }
 
   Future<String?> getAccessToken() async {
@@ -172,7 +174,7 @@ class ApiClient {
       return _cachedAccessToken;
     }
 
-    // Read exclusively from FlutterSecureStorage
+    // 1. Read from FlutterSecureStorage
     try {
       final token = await _secureStorage.read(key: _kAccessToken);
       if (token != null && token.isNotEmpty) {
@@ -182,6 +184,19 @@ class ApiClient {
     } catch (e) {
       debugPrint('[ApiClient] SecureStorage read error: $e');
     }
+
+    // 2. Read from SharedPreferences backup
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_kAccessToken);
+      if (token != null && token.isNotEmpty) {
+        _cachedAccessToken = token;
+        return token;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences read error: $e');
+    }
+
     return null;
   }
 
@@ -190,7 +205,7 @@ class ApiClient {
       return _cachedRefreshToken;
     }
 
-    // Read exclusively from FlutterSecureStorage
+    // 1. Read from FlutterSecureStorage
     try {
       final token = await _secureStorage.read(key: _kRefreshToken);
       if (token != null && token.isNotEmpty) {
@@ -200,6 +215,19 @@ class ApiClient {
     } catch (e) {
       debugPrint('[ApiClient] SecureStorage read error: $e');
     }
+
+    // 2. Read from SharedPreferences backup
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_kRefreshToken);
+      if (token != null && token.isNotEmpty) {
+        _cachedRefreshToken = token;
+        return token;
+      }
+    } catch (e) {
+      debugPrint('[ApiClient] SharedPreferences read error: $e');
+    }
+
     return null;
   }
 
@@ -215,11 +243,12 @@ class ApiClient {
       debugPrint('[ApiClient] SecureStorage clear error: $e');
     }
 
-    // Clean up any legacy SharedPreferences keys
+    // Clear backup keys from SharedPreferences
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_kAccessToken);
       await prefs.remove(_kRefreshToken);
+      await prefs.remove('bp_cached_user_profile');
     } catch (_) {}
   }
 
@@ -855,9 +884,8 @@ class ApiClient {
         }
 
         if (response.statusCode == 401) {
-          onSessionExpired?.call();
           throw ApiException(
-            'Session expired. Please log in again.',
+            'Session expired or unauthorized. Please log in again.',
             statusCode: 401,
             rawError: response.body,
           );

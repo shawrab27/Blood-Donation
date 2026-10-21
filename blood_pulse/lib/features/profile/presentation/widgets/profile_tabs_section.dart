@@ -512,9 +512,20 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
             ),
           ),
           error: (_, __) => Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
             alignment: Alignment.center,
-            child: const Text('No recent activity records.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E))),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('No recent activity records or network unavailable.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E))),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () => ref.invalidate(profileActivityProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFC30121)),
+                  label: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFFC30121))),
+                ),
+              ],
+            ),
           ),
           data: (items) {
             if (items.isEmpty) {
@@ -621,9 +632,20 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
         ),
       ),
       error: (_, __) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         alignment: Alignment.center,
-        child: const Text('Could not load donation history.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E))),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Could not load donation history.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E))),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => ref.invalidate(profileDonationsProvider),
+              icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFC30121)),
+              label: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFFC30121))),
+            ),
+          ],
+        ),
       ),
       data: (donations) {
         if (donations.isEmpty) {

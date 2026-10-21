@@ -151,7 +151,7 @@ class ProfileDrawer extends ConsumerWidget {
                         photoUrl: photoUrl,
                         onViewProfile: () {
                           Navigator.of(context).pop();
-                          context.go('/profile');
+                          context.push('/profile');
                         },
                       ),
                       const SizedBox(height: 12),

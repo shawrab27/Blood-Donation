@@ -309,21 +309,13 @@ BD_DISTRICT_UPAZILAS = {'Bagerhat': ['Bagerhat Sadar',
                 'Mirzaganj',
                 'Patuakhali Sadar',
                 'Rangabali'],
- 'Pirojpur': ['Bangladesh',
-              'Bhandaria',
-              'For a real application, I recommend that we do not manually hard-code this list '
-              'from a random website. The best approach is to use the current government '
-              'hierarchy:',
+ 'Pirojpur': ['Bhandaria',
               'Indurkani',
               'Kawkhali',
               'Mathbaria',
               'Nazirpur',
               'Nesarabad',
-              'Pirojpur Sadar',
-              'There is an important data-version issue here. The Bangladesh National Portal '
-              'currently reports 499 upazilas, while some other government pages/documents still '
-              'contain older counts such as 489, 492, or 495.',
-              '⚠️ Important for your Blood Pulse database'],
+              'Pirojpur Sadar'],
  'Rajbari': ['Baliakandi', 'Goalanda', 'Kalukhali', 'Pangsha', 'Rajbari Sadar'],
  'Rajshahi': ['Bagha',
               'Bagmara',

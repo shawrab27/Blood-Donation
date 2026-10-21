@@ -49,8 +49,18 @@ class SettingsScreen extends ConsumerWidget {
       }
     });
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8F7),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/feed');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFF8F7),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFF8F7),
         elevation: 0,
@@ -132,6 +142,7 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

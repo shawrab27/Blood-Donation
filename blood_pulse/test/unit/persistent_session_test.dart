@@ -298,5 +298,112 @@ void main() {
       expect(access, isNull);
       expect(refresh, isNull);
     });
+
+    test('8. Cold Start with Valid Refresh Token: missing access token successfully refreshes and restores session', () async {
+      int refreshCalls = 0;
+      int profileCalls = 0;
+
+      final mockClient = MockClient((request) async {
+        final path = request.url.path;
+        if (path.contains('token/refresh')) {
+          refreshCalls++;
+          return http.Response(jsonEncode({
+            'access': 'brand_new_access_token',
+            'refresh': 'valid_refresh_token_retained',
+          }), 200);
+        } else if (path.contains('profile/me')) {
+          profileCalls++;
+          return http.Response(jsonEncode({
+            'first_name': 'Fatima',
+            'last_name': 'Begum',
+            'email': 'fatima@example.com',
+            'phone_number': '+8801811223344',
+            'blood_group': 'B+',
+            'is_profile_complete': true,
+          }), 200);
+        }
+        return http.Response('Not Found', 404);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'https://bloodpulse-backend.onrender.com/api/',
+        client: mockClient,
+      );
+
+      // Pre-seed storage with ONLY refresh token (access token expired/missing)
+      const storage = FlutterSecureStorage();
+      await storage.write(key: 'bp_jwt_refresh_token', value: 'valid_refresh_token');
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(() => AuthNotifier(apiClient: apiClient)),
+        ],
+      );
+
+      final notifier = container.read(authProvider.notifier);
+      await notifier.restoreSession();
+
+      final authState = container.read(authProvider);
+
+      expect(refreshCalls, 1, reason: 'Cold start must proactively refresh when access is null');
+      expect(profileCalls, 1, reason: 'Profile must be loaded after successful refresh');
+      expect(authState.status, AuthStatus.authenticated, reason: 'User must remain logged in');
+      expect(authState.user?.fullName, 'Fatima Begum');
+    });
+
+    test('9. Profile Sub-Call 403: permission/sub-endpoint failure does NOT log out the user', () async {
+      bool sessionExpiredFired = false;
+      ApiClient.onSessionExpired = () {
+        sessionExpiredFired = true;
+      };
+
+      final mockClient = MockClient((request) async {
+        final path = request.url.path;
+        if (path.contains('profile/me/stories')) {
+          return http.Response('{"detail": "Forbidden permission"}', 403);
+        }
+        return http.Response('{"success": true}', 200);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'https://bloodpulse-backend.onrender.com/api/',
+        client: mockClient,
+      );
+
+      await apiClient.saveTokens(access: 'active_access', refresh: 'active_refresh');
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(() => AuthNotifier(apiClient: apiClient)),
+        ],
+      );
+
+      // Ensure notifier is active and user is authenticated
+      final notifier = container.read(authProvider.notifier);
+      notifier.updateUser(const UserProfile(
+        fullName: 'Test Donor',
+        email: 'test@donor.org',
+        primaryPhone: '+8801900000000',
+        age: 25,
+        gender: 'Male',
+        bloodGroup: 'AB+',
+        category: 'civilian',
+        categoryDetails: {},
+        neverDonated: true,
+        totalBagsDonated: 0,
+        isProfileComplete: true,
+      ));
+
+      // Make a call that returns 403
+      await expectLater(
+        apiClient.get('profile/me/stories/'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 403)),
+      );
+
+      // Verify onSessionExpired was NOT called and auth status is still authenticated
+      expect(sessionExpiredFired, isFalse, reason: '403 on sub-call must not fire onSessionExpired');
+      final authState = container.read(authProvider);
+      expect(authState.status, AuthStatus.authenticated, reason: 'Sub-endpoint 403 must not log out user');
+    });
   });
 }

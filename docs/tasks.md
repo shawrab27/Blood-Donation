@@ -207,6 +207,13 @@ Working style: **one task at a time**, short steps, evidence required.
   - Flutter Fix: Removed fake local registration fallback; now stays on form with `AuthStatus.error` and friendly message; guarded `FcmService.instance.updateFCMToken` until access token is present, eliminating 401 at startup.
   - Seed & Location: Added canonical 496 upazilas across 64 districts in `api/data/bd_upazilas.py` and updated `seed_bd_locations --apply` to seed them idempotently.
   - Verification: `test_h01_registration.py` (6/6 PASS), `h01_registration_test.dart` (6/6 PASS), `scripts/gate.ps1` 100% PASS (flutter analyze PASS, flutter test PASS, manage.py check PASS, makemigrations PASS, manage.py test PASS).
+- [x] **H-02 (Combined Blocker) | Fix session, navigation, localization, and seed bugs on physical Android 11 (`fix/h02-stability`)**:
+  - Root cause S1: `ApiClient._sendWithRetry` fired `onSessionExpired` unconditionally on any 401 from any endpoint, redirecting user to `/login` when Profile sub-endpoints (5 parallel calls) failed. Fixed: `onSessionExpired` only fires on 401 from `/token/refresh/`.
+  - Root cause S2: Sub-screens lacked `PopScope` handlers or used `context.go` instead of `context.push`, causing Android OS back button to exit the app. Fixed: Added `PopScope` fallbacks across `UserProfileScreen`, `DonorSearchScreen`, `SettingsScreen`, `NotificationCenterScreen`, `AssistantScreen`, `OnboardingScreen`, `RegistrationScreen`, updated `ProfileDrawer` to `context.push('/profile')`, and added `_tabHistory` in `MainShellScreen`.
+  - Root cause S3: Keystore drop on Android 11 cold start. Fixed: Added `encryptedSharedPreferences: true` in `AndroidOptions`, dual-storage persistence (SecureStorage + SharedPreferences fallback), and proactive token refresh in `restoreSession()`.
+  - Root cause S4: Missing language toggle and hardcoded English strings. Fixed: Created `LanguageToggleButton` component wired to `localeProvider` on Login, Onboarding, and Registration; translated registration fields, options, dropdowns, and validators to Bangla.
+  - Root cause S5: DataError "value too long for type character varying(100)" in `seed_bd_locations.py` line 179 caused by 4 malformed prompt notes in `api/data/bd_upazilas.py` under Pirojpur. Fixed: Sanitized dataset to 7 canonical Pirojpur upazilas (492 canonical total), added `transaction.atomic()`, pre-validation (`len <= 100`, no tree characters), and comprehensive unit tests.
+  - Verification: `test_seed_bd_locations.py` (8/8 PASS), `persistent_session_test.dart` (9/9 PASS), `h02_regression_test.dart` (3/3 PASS), `scripts/gate.ps1` 100% PASS.
 
 ## Phase 8 — Final Gate
 - [ ] All tests green, `flutter analyze` clean, device test evidence saved

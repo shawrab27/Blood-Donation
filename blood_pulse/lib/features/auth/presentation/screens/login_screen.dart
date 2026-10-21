@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/language_toggle_button.dart';
 import '../providers/auth_notifier.dart';
 
 /// Login Screen — Phone/Username + Password.
@@ -171,7 +172,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const SizedBox(height: 24),
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: const LanguageToggleButton(),
+                        ),
+                        const SizedBox(height: 12),
                         // ── Official BloodPulse Logo & Brand Name ─────────
                         const BloodPulseLogo(
                           direction: Axis.vertical,

@@ -56,8 +56,18 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
     final searchPageAsync = ref.watch(donorSearchNotifierProvider);
     final filter = ref.watch(bloodHubFilterProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFDF3F3),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/blood-hub');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFDF3F3),
       appBar: CustomAppBar(
         showBackButton: true,
         onBack: () {
@@ -385,6 +395,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 

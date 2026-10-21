@@ -174,8 +174,18 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
       }
     });
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFDF3F3), // Light pink background matching mockup
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/feed');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFDF3F3), // Light pink background matching mockup
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -464,6 +474,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 

@@ -45,8 +45,18 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
       l10n?.notifTabProfile ?? 'Profile',
     ];
 
-    return Scaffold(
-      appBar: BloodPulseAppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/feed');
+        }
+      },
+      child: Scaffold(
+        appBar: BloodPulseAppBar(
         subtitle: l10n?.notifTitle ?? 'Notifications',
         showBackButton: true,
         onBack: () => context.pop(),
@@ -109,6 +119,7 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
           ],
         ),
       ),
+    ),
     );
   }
 

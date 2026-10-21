@@ -18,6 +18,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/language_toggle_button.dart';
+import '../../../../core/localization/locale_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../providers/auth_notifier.dart';
 import '../widgets/institution_autocomplete.dart';
@@ -388,25 +390,26 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Future<void> _onCreateAccount() async {
+    final isBangla = ref.read(localeProvider).languageCode == 'bn';
     if (_nameCtrl.text.trim().isEmpty) {
-      _showError('Please enter your full name.');
+      _showError(isBangla ? 'আপনার পূর্ণ নাম লিখুন।' : 'Please enter your full name.');
       return;
     }
     if (_phoneCtrl.text.trim().isEmpty) {
-      _showError('Please enter your phone number.');
+      _showError(isBangla ? 'আপনার ফোন নম্বর লিখুন।' : 'Please enter your phone number.');
       return;
     }
     if (!_isExistingUser) {
       if (_pwCtrl.text.isEmpty) {
-        _showError('Please enter a password.');
+        _showError(isBangla ? 'অনুগ্রহ করে একটি পাসওয়ার্ড দিন।' : 'Please enter a password.');
         return;
       }
       if (_pwCtrl.text.length < 6) {
-        _showError('Password must be at least 6 characters.');
+        _showError(isBangla ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' : 'Password must be at least 6 characters.');
         return;
       }
       if (_pwCtrl.text != _confirmPwCtrl.text) {
-        _showError('Passwords do not match. Please re-enter your password.');
+        _showError(isBangla ? 'পাসওয়ার্ড দুটি মিলছে না। আবার দিন।' : 'Passwords do not match. Please re-enter your password.');
         return;
       }
     }
@@ -415,15 +418,17 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     final isOnlyReq = _userIntent == _UserIntent.onlyRequest;
     if (!isOnlyReq) {
       if (_bloodGroup == null) {
-        _showError('Please select your blood group.');
+        _showError(isBangla ? 'আপনার রক্তের গ্রুপ নির্বাচন করুন।' : 'Please select your blood group.');
         return;
       }
       if (_confirmBloodGroup != _bloodGroup) {
-        _showError('Blood group confirmation does not match! Please verify your blood type.');
+        _showError(isBangla ? 'রক্তের গ্রুপের নিশ্চিতকরণ মেলেনি!' : 'Blood group confirmation does not match! Please verify your blood type.');
         return;
       }
       if (!_neverDonated && _lastDonationDate == null) {
-        _showError('Please specify your last donation date or check "I have never donated blood before".');
+        _showError(isBangla
+            ? 'অনুগ্রহ করে শেষ রক্তদানের তারিখ দিন অথবা "আমি আগে কখনো রক্তদান করিনি" চিহ্নিত করুন।'
+            : 'Please specify your last donation date or check "I have never donated blood before".');
         return;
       }
     }
@@ -494,8 +499,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     // Clear guest mode upon registration
     ref.read(isGuestProvider.notifier).state = false;
 
-    // Immediately authenticate and navigate to target feature or dashboard
-    ref.read(authProvider.notifier).setUserForTesting(profile.copyWith(
+    // Ensure user state is complete
+    ref.read(authProvider.notifier).updateUser(profile.copyWith(
       isProfileComplete: true,
       isOtpVerified: true,
     ));
@@ -550,7 +555,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _buildMobile();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/login');
+        }
+      },
+      child: _buildMobile(),
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -558,6 +574,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildMobile() {
     final auth = ref.watch(authProvider);
+    final l10n = AppLocalizations.of(context);
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
@@ -579,7 +597,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 const SizedBox(height: 28),
 
                 // Basic Information
-                _buildSectionTitle('Basic Information'),
+                _buildSectionTitle(isBangla ? 'প্রাথমিক তথ্য' : 'Basic Information'),
                 const SizedBox(height: 12),
                 _buildPersonalDetailsFields(isMobile: true),
                 const SizedBox(height: 24),
@@ -601,7 +619,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
 
                 // Identity Type
-                _buildSectionTitle('Identity Type'),
+                _buildSectionTitle(l10n?.regCategory ?? (isBangla ? 'ব্যবহারকারীর ধরন' : 'Identity Type')),
                 const SizedBox(height: 12),
                 _buildIdentityTypeToggle(),
                 const SizedBox(height: 16),
@@ -631,20 +649,26 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 // Submit Button
                 CapsuleButton(
                   label: auth.isLoading
-                      ? (_isExistingUser ? 'Saving Profile...' : 'Creating Account...')
-                      : (_isExistingUser ? 'Complete Registration' : 'Create Account'),
+                      ? (_isExistingUser
+                          ? (isBangla ? 'প্রোফাইল সংরক্ষণ হচ্ছে...' : 'Saving Profile...')
+                          : (isBangla ? 'অ্যাকাউন্ট তৈরি হচ্ছে...' : 'Creating Account...'))
+                      : (_isExistingUser
+                          ? (isBangla ? 'নিবন্ধন সম্পন্ন করুন' : 'Complete Registration')
+                          : (isBangla ? 'অ্যাকাউন্ট তৈরি করুন' : (l10n?.regSubmit ?? 'Create Account'))),
                   icon: Icons.arrow_forward_rounded,
                   isLoading: auth.isLoading,
                   showGlow: true,
                   onPressed: auth.isLoading ? null : _onCreateAccount,
                 ),
                 if (auth.isLoading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
                     child: Center(
                       child: Text(
-                        'Please wait up to 60 seconds. The server might be waking up.',
-                        style: TextStyle(
+                        isBangla
+                            ? 'অনুগ্রহ করে অপেক্ষা করুন। সার্ভার যুক্ত হতে পারে।'
+                            : 'Please wait up to 60 seconds. The server might be waking up.',
+                        style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
                           color: Color(0xFFC30121),
@@ -656,13 +680,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 const SizedBox(height: 16),
 
                 // Footer Terms
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
-                      'By creating an account, you agree to our Terms of Service and Privacy Policy.',
+                      isBangla
+                          ? 'অ্যাকাউন্ট তৈরি করে আপনি আমাদের পরিষেবার শর্তাবলী এবং গোপনীয়তা নীতিতে সম্মত হচ্ছেন।'
+                          : 'By creating an account, you agree to our Terms of Service and Privacy Policy.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 11,
                         color: Color(0xFF888888),
@@ -699,13 +725,24 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   PreferredSizeWidget _buildMobileAppBar() {
+    final l10n = AppLocalizations.of(context);
     return BloodPulseAppBar(
       showBackButton: true,
-      onBack: () => context.go('/login'),
-      subtitle: 'Register',
+      onBack: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/login');
+        }
+      },
+      subtitle: l10n?.authRegister ?? 'Register',
       showNotification: false,
       showProfile: false,
       actions: [
+        const Padding(
+          padding: EdgeInsets.only(right: 6),
+          child: LanguageToggleButton(),
+        ),
         if (kDebugMode)
           IconButton(
             key: const ValueKey('debug_quick_fill_btn'),
@@ -724,35 +761,39 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _buildHeaderSection() {
+    final l10n = AppLocalizations.of(context);
     return Column(
-      children: const [
+      children: [
         Text(
-          'Join the Lifeline',
-          style: TextStyle(
+          l10n?.regTitle ?? 'Join the Lifeline',
+          style: const TextStyle(
             fontFamily: 'Georgia',
-            fontSize: 32,
+            fontSize: 30,
             fontWeight: FontWeight.bold,
             color: Color(0xFF2B2B2B),
           ),
+          textAlign: TextAlign.center,
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         Text(
-          'Complete your profile to start saving lives.',
-          style: TextStyle(
+          l10n?.regSubtitle ?? 'Complete your profile to start saving lives.',
+          style: const TextStyle(
             fontFamily: 'Inter',
             fontSize: 14,
             color: Color(0xFF666666),
           ),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
   Widget _buildIntentSelector() {
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('I want to:'),
+        _fieldLabel(isBangla ? 'আমার উদ্দেশ্য:' : 'I want to:'),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(4),
@@ -784,7 +825,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        'Donate & Request Blood',
+                        isBangla ? 'রক্তদান ও অনুরোধ' : 'Donate & Request Blood',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Inter',
@@ -821,7 +862,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        'Only Request Blood',
+                        isBangla ? 'শুধুমাত্র অনুরোধ' : 'Only Request Blood',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Inter',
@@ -843,13 +884,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8, left: 4),
             child: Row(
-              children: const [
-                Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF0D68AA)),
-                SizedBox(width: 6),
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF0D68AA)),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'You can request blood when needed. Your profile will not appear in donor searches or maps.',
-                    style: TextStyle(
+                    isBangla
+                        ? 'প্রয়োজনে আপনি রক্তের অনুরোধ করতে পারবেন। আপনার প্রোফাইল সাধারণ রক্তদাতা খোঁজে দেখানো হবে না।'
+                        : 'You can request blood when needed. Your profile will not appear in donor searches or maps.',
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
                       color: Color(0xFF0D68AA),
@@ -1160,61 +1203,78 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildPersonalDetailsFields({required bool isMobile}) {
+    final l10n = AppLocalizations.of(context);
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel('Full Name'),
+        _fieldLabel(l10n?.regFullName ?? 'Full Name'),
         const SizedBox(height: 6),
         CustomInputField(
           controller: _nameCtrl,
-          hint: 'Enter your full name',
+          hint: isBangla ? 'আপনার পূর্ণ নাম লিখুন' : 'Enter your full name',
           prefixIcon: Icons.person_outline_rounded,
-          validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter your full name' : null,
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? (isBangla ? 'অনুগ্রহ করে পূর্ণ নাম লিখুন' : 'Please enter your full name')
+              : null,
         ),
         const SizedBox(height: 16),
 
-        _fieldLabel('Email Address'),
+        _fieldLabel(l10n?.regEmail ?? 'Email Address'),
         const SizedBox(height: 6),
         CustomInputField(
           controller: _emailCtrl,
-          hint: 'Enter your email',
+          hint: isBangla ? 'আপনার ইমেইল ঠিকানা লিখুন' : 'Enter your email',
           prefixIcon: Icons.mail_outline_rounded,
           keyboardType: TextInputType.emailAddress,
           readOnly: _isExistingUser && _emailCtrl.text.isNotEmpty,
           validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Please enter your email';
-            if (!v.contains('@') || !v.contains('.')) return 'Please enter a valid email';
+            if (v == null || v.trim().isEmpty) {
+              return isBangla ? 'অনুগ্রহ করে ইমেইল লিখুন' : 'Please enter your email';
+            }
+            if (!v.contains('@') || !v.contains('.')) {
+              return isBangla ? 'সঠিক ইমেইল ঠিকানা লিখুন' : 'Please enter a valid email';
+            }
             return null;
           },
         ),
         const SizedBox(height: 16),
 
         if (!_isExistingUser) ...[
-          _fieldLabel('Password'),
+          _fieldLabel(l10n?.regPassword ?? 'Password'),
           const SizedBox(height: 6),
           CustomInputField(
             controller: _pwCtrl,
-            hint: 'Create a strong password',
+            hint: isBangla ? 'একটি শক্তিশালী পাসওয়ার্ড দিন' : 'Create a strong password',
             prefixIcon: Icons.lock_outline_rounded,
             isPassword: true,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Please enter a password';
-              if (v.length < 6) return 'Password must be at least 6 characters';
+              if (v == null || v.trim().isEmpty) {
+                return isBangla ? 'পাসওয়ার্ড প্রদান করুন' : 'Please enter a password';
+              }
+              if (v.length < 6) {
+                return isBangla ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে' : 'Password must be at least 6 characters';
+              }
               return null;
             },
           ),
           const SizedBox(height: 16),
 
-          _fieldLabel('Confirm Password'),
+          _fieldLabel(l10n?.regConfirmPassword ?? 'Confirm Password'),
           const SizedBox(height: 6),
           CustomInputField(
             controller: _confirmPwCtrl,
-            hint: 'Re-enter your password',
+            hint: isBangla ? 'পাসওয়ার্ড পুনরায় লিখুন' : 'Re-enter your password',
             prefixIcon: Icons.lock_outline_rounded,
             isPassword: true,
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Please confirm your password';
-              if (v != _pwCtrl.text) return 'Passwords do not match';
+              if (v == null || v.trim().isEmpty) {
+                return isBangla ? 'পাসওয়ার্ড নিশ্চিত করুন' : 'Please confirm your password';
+              }
+              if (v != _pwCtrl.text) {
+                return isBangla ? 'পাসওয়ার্ড দুটি মিলছে না' : 'Passwords do not match';
+              }
               return null;
             },
           ),
@@ -1223,22 +1283,24 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
         // Age & Gender
         if (isMobile) ...[
-          _fieldLabel('Age'),
+          _fieldLabel(l10n?.regAge ?? 'Age'),
           const SizedBox(height: 6),
           CustomInputField(
             controller: _ageCtrl,
-            hint: 'Age (e.g. 25)',
+            hint: isBangla ? 'বয়স (যেমন ২৫)' : 'Age (e.g. 25)',
             prefixIcon: Icons.cake_outlined,
             keyboardType: TextInputType.number,
             validator: (v) {
               final n = int.tryParse(v ?? '');
-              if (n == null || n < 18 || n > 65) return 'Age must be between 18 and 65';
+              if (n == null || n < 18 || n > 65) {
+                return isBangla ? 'বয়স ১৮ থেকে ৬৫ এর মধ্যে হতে হবে' : 'Age must be between 18 and 65';
+              }
               return null;
             },
           ),
           const SizedBox(height: 16),
 
-          _fieldLabel('Gender'),
+          _fieldLabel(l10n?.regGender ?? 'Gender'),
           const SizedBox(height: 6),
           _buildGenderToggle(),
         ] else ...[
@@ -1249,16 +1311,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _fieldLabel('Age'),
+                    _fieldLabel(l10n?.regAge ?? 'Age'),
                     const SizedBox(height: 6),
                     CustomInputField(
                       controller: _ageCtrl,
-                      hint: 'Age',
+                      hint: isBangla ? 'বয়স' : 'Age',
                       prefixIcon: Icons.cake_outlined,
                       keyboardType: TextInputType.number,
                       validator: (v) {
                         final n = int.tryParse(v ?? '');
-                        if (n == null || n < 18 || n > 65) return '18-65 only';
+                        if (n == null || n < 18 || n > 65) {
+                          return isBangla ? '১৮-৬৫ গ্রহণযোগ্য' : '18-65 only';
+                        }
                         return null;
                       },
                     ),
@@ -1271,7 +1335,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _fieldLabel('Gender'),
+                    _fieldLabel(l10n?.regGender ?? 'Gender'),
                     const SizedBox(height: 6),
                     _buildGenderToggle(),
                   ],
@@ -1282,18 +1346,20 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         ],
         const SizedBox(height: 16),
 
-        _fieldLabel('Primary Phone'),
+        _fieldLabel(l10n?.regPhonePrimary ?? 'Primary Phone'),
         const SizedBox(height: 6),
         CustomInputField(
           controller: _phoneCtrl,
           hint: '+880 1XX XXX XXXX',
           prefixIcon: Icons.phone_android_rounded,
           keyboardType: TextInputType.phone,
-          validator: (v) => (v == null || v.trim().length < 11) ? 'Please enter a valid phone number' : null,
+          validator: (v) => (v == null || v.trim().length < 11)
+              ? (isBangla ? 'সঠিক ফোন নম্বর লিখুন' : 'Please enter a valid phone number')
+              : null,
         ),
         const SizedBox(height: 16),
 
-        _fieldLabel('Alternative Phone (Optional)'),
+        _fieldLabel(l10n?.regAltPhone ?? 'Alternative Phone (Optional)'),
         const SizedBox(height: 6),
         CustomInputField(
           controller: _altPhoneCtrl,
@@ -1306,6 +1372,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildGenderToggle() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -1325,7 +1392,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Male',
+                  l10n?.regMale ?? 'Male',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
@@ -1346,7 +1413,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Female',
+                  l10n?.regFemale ?? 'Female',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
@@ -1363,6 +1430,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildIdentityTypeToggle() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -1382,7 +1450,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Student',
+                  l10n?.regStudent ?? 'Student',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
@@ -1403,7 +1471,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Civilian',
+                  l10n?.regCivilian ?? 'Civilian',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
@@ -1420,39 +1488,45 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildLocationAndIdentityFields() {
+    final l10n = AppLocalizations.of(context);
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
+
     if (_category == _UserCategory.student) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _fieldLabel('Institution / University'),
+          _fieldLabel(isBangla ? 'শিক্ষা প্রতিষ্ঠান / বিশ্ববিদ্যালয়' : 'Institution / University'),
           const SizedBox(height: 6),
           InstitutionAutocomplete(
             controller: _instituteCtrl,
             apiClient: _apiClient,
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Institution is required' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? (isBangla ? 'শিক্ষা প্রতিষ্ঠান নির্বাচন আবশ্যক' : 'Institution is required')
+                : null,
             onSelected: (suggestion) {
               _selectedInstitutionId = suggestion?['id']?.toString();
             },
           ),
           const SizedBox(height: 16),
 
-
-          _fieldLabel('Department / Subject'),
+          _fieldLabel(isBangla ? 'বিভাগ / বিষয়' : 'Department / Subject'),
           const SizedBox(height: 6),
           CustomInputField(
             controller: _deptCtrl,
-            hint: 'e.g. Computer Science / BBA',
+            hint: isBangla ? 'যেমন: কম্পিউটার সায়েন্স / বিবিএ' : 'e.g. Computer Science / BBA',
             prefixIcon: Icons.menu_book_outlined,
           ),
           const SizedBox(height: 16),
 
-          _fieldLabel('Student ID / Roll'),
+          _fieldLabel(isBangla ? 'শিক্ষার্থী আইডি / রোল' : 'Student ID / Roll'),
           const SizedBox(height: 6),
           CustomInputField(
             controller: _studentIdCtrl,
-            hint: 'Enter Student ID',
+            hint: isBangla ? 'শিক্ষার্থী আইডি লিখুন' : 'Enter Student ID',
             prefixIcon: Icons.badge_outlined,
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Student ID is required' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? (isBangla ? 'শিক্ষার্থী আইডি আবশ্যক' : 'Student ID is required')
+                : null,
           ),
           const SizedBox(height: 16),
 
@@ -1468,7 +1542,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         _buildDivisionAndZilaDropdowns(),
         const SizedBox(height: 16),
 
-        _fieldLabel('Upazila (Optional)'),
+        _fieldLabel(l10n?.regUpazila ?? (isBangla ? 'উপজেলা (ঐচ্ছিক)' : 'Upazila (Optional)')),
         const SizedBox(height: 6),
         TypeAheadField<Map<String, dynamic>>(
           controller: _upazilaCtrl,
@@ -1476,7 +1550,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             return CustomInputField(
               controller: controller,
               focusNode: focusNode,
-              hint: 'Search Upazila',
+              hint: isBangla ? 'উপজেলা খুঁজুন' : 'Search Upazila',
               prefixIcon: Icons.location_city_outlined,
             );
           },
@@ -1495,18 +1569,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             _upazilaCtrl.text = suggestion['name'] ?? '';
             _selectedUpazilaId = suggestion['id']?.toString();
           },
-          emptyBuilder: (context) => const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('No upazilas found.'),
+          emptyBuilder: (context) => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(isBangla ? 'কোনো উপজেলা পাওয়া যায়নি' : 'No upazilas found.'),
           ),
         ),
         const SizedBox(height: 16),
 
-        _fieldLabel('Village / Area (Optional)'),
+        _fieldLabel(isBangla ? 'গ্রাম / এলাকা (ঐচ্ছিক)' : 'Village / Area (Optional)'),
         const SizedBox(height: 6),
         CustomInputField(
           controller: _villageCtrl,
-          hint: 'Enter village or area name',
+          hint: isBangla ? 'গ্রাম বা এলাকার নাম লিখুন' : 'Enter village or area name',
           prefixIcon: Icons.home_outlined,
         ),
       ],
@@ -1514,6 +1588,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildDivisionAndZilaDropdowns() {
+    final l10n = AppLocalizations.of(context);
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
     final List<String> districts = _selectedDivision != null ? (_divisionDistricts[_selectedDivision] ?? <String>[]) : <String>[];
 
     return Column(
@@ -1525,7 +1601,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _fieldLabel('Division'),
+                  _fieldLabel(l10n?.regDivision ?? (isBangla ? 'বিভাগ' : 'Division')),
                   const SizedBox(height: 6),
                   Container(
                     height: 52,
@@ -1538,7 +1614,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         isExpanded: true,
-                        hint: const Text('Select Division', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888))),
+                        hint: Text(
+                          isBangla ? 'বিভাগ নির্বাচন করুন' : 'Select Division',
+                          style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888)),
+                        ),
                         value: _selectedDivision,
                         items: _divisionDistricts.keys.map<DropdownMenuItem<String>>((String div) {
                           return DropdownMenuItem<String>(value: div, child: Text(div, style: const TextStyle(fontFamily: 'Inter', fontSize: 13)));
@@ -1560,7 +1639,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _fieldLabel('Zila / District'),
+                  _fieldLabel(l10n?.regDistrict ?? (isBangla ? 'জেলা' : 'Zila / District')),
                   const SizedBox(height: 6),
                   Container(
                     height: 52,
@@ -1573,7 +1652,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         isExpanded: true,
-                        hint: const Text('Select Zila', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888))),
+                        hint: Text(
+                          isBangla ? 'জেলা নির্বাচন করুন' : 'Select Zila',
+                          style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888)),
+                        ),
                         value: _selectedZila,
                         items: districts.map<DropdownMenuItem<String>>((String zila) {
                           return DropdownMenuItem<String>(value: zila, child: Text(zila, style: const TextStyle(fontFamily: 'Inter', fontSize: 13)));
@@ -1593,6 +1675,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   // ── Blood Profile Card ──
   Widget _buildBloodProfileCard() {
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4F4),
@@ -1604,13 +1687,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.water_drop_rounded, color: Color(0xFFC30121), size: 20),
-              SizedBox(width: 8),
+            children: [
+              const Icon(Icons.water_drop_rounded, color: Color(0xFFC30121), size: 20),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Blood Profile',
-                  style: TextStyle(
+                  isBangla ? 'রক্তের তথ্য' : 'Blood Profile',
+                  style: const TextStyle(
                     fontFamily: 'Georgia',
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1622,19 +1705,19 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           ),
           const SizedBox(height: 16),
 
-          _fieldLabel('Select Blood Group'),
+          _fieldLabel(isBangla ? 'রক্তের গ্রুপ নির্বাচন করুন' : 'Select Blood Group'),
           const SizedBox(height: 6),
           _buildBloodGroupDropdown(
-            hint: 'Choose your blood type',
+            hint: isBangla ? 'রক্তের গ্রুপ বেছে নিন' : 'Choose your blood type',
             value: _bloodGroup,
             onChanged: (val) => setState(() => _bloodGroup = val),
           ),
           const SizedBox(height: 14),
 
-          _fieldLabel('Confirm Blood Group'),
+          _fieldLabel(isBangla ? 'রক্তের গ্রুপ নিশ্চিত করুন' : 'Confirm Blood Group'),
           const SizedBox(height: 6),
           _buildBloodGroupDropdown(
-            hint: 'Confirm your blood type',
+            hint: isBangla ? 'রক্তের গ্রুপ নিশ্চিত করুন' : 'Confirm your blood type',
             value: _confirmBloodGroup,
             onChanged: (val) => setState(() => _confirmBloodGroup = val),
           ),
@@ -1649,13 +1732,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFC30121)),
-                SizedBox(width: 8),
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFC30121)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Blood Group can ONLY be edited by an Admin once saved.',
-                    style: TextStyle(
+                    isBangla
+                        ? 'সংরক্ষণ করার পর রক্তের গ্রুপ কেবল অ্যাডমিন পরিবর্তন করতে পারবেন।'
+                        : 'Blood Group can ONLY be edited by an Admin once saved.',
+                    style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -1707,6 +1792,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   // ── Donation History Card ──
   Widget _buildDonationHistoryCard() {
+    final isBangla = ref.watch(localeProvider).languageCode == 'bn';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4F4),
@@ -1717,9 +1803,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Donation History',
-            style: TextStyle(
+          Text(
+            isBangla ? 'রক্তদানের ইতিহাস' : 'Donation History',
+            style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1734,9 +1820,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             child: CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               dense: true,
-              title: const Text(
-                'I have never donated blood before',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF2B2B2B), fontWeight: FontWeight.w500),
+              title: Text(
+                isBangla ? 'আমি আগে কখনো রক্তদান করিনি' : 'I have never donated blood before',
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF2B2B2B), fontWeight: FontWeight.w500),
               ),
               value: _neverDonated,
               activeColor: const Color(0xFFC30121),
@@ -1755,7 +1841,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
           if (!_neverDonated) ...[
             const SizedBox(height: 12),
-            _fieldLabel('Last Donation Date'),
+            _fieldLabel(isBangla ? 'সর্বশেষ রক্তদানের তারিখ' : 'Last Donation Date'),
             const SizedBox(height: 6),
             GestureDetector(
               onTap: _pickDonationDate,
@@ -1773,7 +1859,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     Text(
                       _lastDonationDate != null
                           ? '${_lastDonationDate!.day.toString().padLeft(2, '0')}/${_lastDonationDate!.month.toString().padLeft(2, '0')}/${_lastDonationDate!.year}'
-                          : 'mm/dd/yyyy',
+                          : (isBangla ? 'দিন/মাস/বছর' : 'mm/dd/yyyy'),
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13,
@@ -1787,7 +1873,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             ),
             const SizedBox(height: 14),
 
-            _fieldLabel('Total Bags Donated'),
+            _fieldLabel(isBangla ? 'মোট রক্তদানের সংখ্যা (ব্যাগ)' : 'Total Bags Donated'),
             const SizedBox(height: 6),
             Container(
               height: 50,

@@ -6,6 +6,7 @@ import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../constants/app_config.dart';
@@ -436,7 +437,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final double progressPercent = (AppConfig.donorCooldownDays - daysRemaining).clamp(0, AppConfig.donorCooldownDays) /
         AppConfig.donorCooldownDays;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
       appBar: widget.showAppBar ? const BloodPulseAppBar(showBackButton: true) : null,
       body: ResponsiveCenterWrapper(
@@ -751,6 +752,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           ],
         ),
       ),
+    );
+
+    if (!widget.showAppBar) {
+      return scaffold;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/feed');
+        }
+      },
+      child: scaffold,
     );
   }
 }

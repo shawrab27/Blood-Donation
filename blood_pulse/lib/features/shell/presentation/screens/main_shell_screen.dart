@@ -30,6 +30,7 @@ class MainShellScreen extends ConsumerStatefulWidget {
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   late final PageController _pageController;
   DateTime? _lastBackPressTime;
+  final List<int> _tabHistory = [0];
 
   @override
   void initState() {
@@ -71,6 +72,9 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         ref: ref,
         feature: feature,
         onAllowed: () {
+          if (_tabHistory.isEmpty || _tabHistory.last != index) {
+            _tabHistory.add(index);
+          }
           ref.read(shellTabProvider.notifier).state = index;
           if (_pageController.hasClients) {
             _pageController.animateToPage(
@@ -125,6 +129,9 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                 ref: ref,
                 feature: feature,
                 onAllowed: () {
+                  if (_tabHistory.isEmpty || _tabHistory.last != index) {
+                    _tabHistory.add(index);
+                  }
                   ref.read(shellTabProvider.notifier).state = index;
                 },
               );
@@ -148,7 +155,24 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           return;
         }
 
-        // 1. If not on Feed tab (index 0), navigate to Feed tab first
+        // 1. Pop tab history if user navigated between tabs
+        while (_tabHistory.isNotEmpty && _tabHistory.last == activeTabIndex) {
+          _tabHistory.removeLast();
+        }
+        if (_tabHistory.isNotEmpty) {
+          final targetTab = _tabHistory.removeLast();
+          ref.read(shellTabProvider.notifier).state = targetTab;
+          if (_pageController.hasClients) {
+            _pageController.animateToPage(
+              targetTab,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+          return;
+        }
+
+        // 2. If not on Feed tab (index 0), navigate to Feed tab first
         if (activeTabIndex != 0) {
           ref.read(shellTabProvider.notifier).state = 0;
           if (_pageController.hasClients) {

@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../services/api_client.dart';
 import '../../../../services/chat_service.dart';
 import '../../../../services/tracking_service.dart';
@@ -183,13 +184,32 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     try {
-      final token = await _apiClient.getAccessToken();
-      if (token == null || token.isEmpty) {
+      var token = await _apiClient.getAccessToken();
+      final refresh = await _apiClient.getRefreshToken();
+
+      // If neither access nor refresh token exists, user is unauthenticated
+      if ((token == null || token.isEmpty) && (refresh == null || refresh.isEmpty)) {
         state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
         return;
       }
 
       state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+
+      // If access token is missing but a valid refresh token exists, refresh first
+      if (token == null || token.isEmpty) {
+        token = await _apiClient.refreshToken();
+        if (token == null || token.isEmpty) {
+          // Check if refresh token was cleared because of a 401
+          final stillRefresh = await _apiClient.getRefreshToken();
+          if (stillRefresh == null || stillRefresh.isEmpty) {
+            state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+            return;
+          }
+          // Refresh failed due to network / gateway - preserve session offline
+          await _loadOfflineCachedProfile();
+          return;
+        }
+      }
 
       final response = await _apiClient.get('profile/me/').timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
@@ -232,10 +252,13 @@ class AuthNotifier extends Notifier<AuthState> {
           ref.invalidate(profileProvider);
         } catch (_) {}
 
-        // Cache last known profile to secure storage for offline resilience
+        // Cache last known profile to secure storage and SharedPreferences for offline resilience
         try {
+          final pStr = jsonEncode(pData);
           const storage = FlutterSecureStorage();
-          await storage.write(key: 'bp_cached_user_profile', value: jsonEncode(pData));
+          await storage.write(key: 'bp_cached_user_profile', value: pStr);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('bp_cached_user_profile', pStr);
         } catch (_) {}
 
         state = state.copyWith(
@@ -252,7 +275,7 @@ class AuthNotifier extends Notifier<AuthState> {
           errorMessage: 'Session expired. Please log in again.',
         );
       } else {
-        // 5xx server gateway or temporary error: preserve session, do NOT clear tokens!
+        // 5xx server gateway, 403, 404 or temporary error: preserve session, do NOT clear tokens!
         debugPrint('[AuthNotifier] restoreSession non-200 non-401 status: ${response.statusCode}. Retaining session.');
         await _loadOfflineCachedProfile();
       }
@@ -264,11 +287,16 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  /// Restores cached user profile from FlutterSecureStorage when offline
+  /// Restores cached user profile from FlutterSecureStorage / SharedPreferences when offline
   Future<void> _loadOfflineCachedProfile() async {
     try {
       const storage = FlutterSecureStorage();
-      final cachedJson = await storage.read(key: 'bp_cached_user_profile');
+      var cachedJson = await storage.read(key: 'bp_cached_user_profile');
+      if (cachedJson == null || cachedJson.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        cachedJson = prefs.getString('bp_cached_user_profile');
+      }
+
       if (cachedJson != null && cachedJson.isNotEmpty) {
         final pData = jsonDecode(cachedJson) as Map<String, dynamic>;
         final bool isComp = pData['is_profile_complete'] == true ||
@@ -306,9 +334,10 @@ class AuthNotifier extends Notifier<AuthState> {
       }
     } catch (_) {}
 
-    // If no cached JSON is available but a token exists, retain authenticated session
+    // If no cached JSON is available but a token or refresh token exists, retain authenticated session
     final token = await _apiClient.getAccessToken();
-    if (token != null && token.isNotEmpty) {
+    final refresh = await _apiClient.getRefreshToken();
+    if ((token != null && token.isNotEmpty) || (refresh != null && refresh.isNotEmpty)) {
       state = state.copyWith(
         status: AuthStatus.authenticated,
         errorMessage: null,
