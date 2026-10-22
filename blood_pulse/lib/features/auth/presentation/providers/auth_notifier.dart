@@ -266,6 +266,11 @@ class AuthNotifier extends Notifier<AuthState> {
           user: user,
           errorMessage: null,
         );
+        if (statusEnum == AuthStatus.authenticated) {
+          try {
+            FcmService.instance.updateFCMToken();
+          } catch (_) {}
+        }
       } else if (response.statusCode == 401) {
         // Token is genuinely invalid and refresh failed with 401 → clear session
         await _apiClient.clearTokens();

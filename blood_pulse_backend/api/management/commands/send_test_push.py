@@ -127,6 +127,6 @@ class Command(BaseCommand):
             self.stdout.write(f"Tokens targeted: {result['tokens_count']}")
             self.stdout.write(f"Sent successfully: {result.get('sent', 0)}")
             self.stdout.write(f"Failed deliveries: {result.get('failed', 0)}")
-            self.stdout.write(f"Raw FCM Response: {result.get('raw_response', result)}")
+            self.stdout.write(f"Raw FCM Response: {result.get('raw_responses') if result.get('raw_responses') is not None else result.get('raw_response', result)}")
             if result.get('invalid_tokens_cleared', 0) > 0:
                 self.stdout.write(self.style.NOTICE(f"Deactivated {result['invalid_tokens_cleared']} invalid/expired tokens."))

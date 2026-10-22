@@ -44,7 +44,7 @@ class HttpPollingChatTransport implements ChatTransport {
   final Map<String, List<ChatMessageModel>> _cache = {};
   final Map<String, int> _idlePollCounts = {};
 
-  static const Duration _activeInterval = Duration(seconds: 2);
+  static const Duration _activeInterval = Duration(seconds: 3);
   static const Duration _idleInterval = Duration(seconds: 5);
   static const Duration _deepIdleInterval = Duration(seconds: 10);
 

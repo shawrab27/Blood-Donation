@@ -104,9 +104,9 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Poll every 15 s for live status + location updates
+    // Poll every 10s fallback for live status + location updates (Part 7)
     if (widget.enablePolling) {
-      _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
         if (mounted) ref.invalidate(journeyDetailProvider(widget.journeyId));
       });
     }

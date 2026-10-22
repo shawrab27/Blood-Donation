@@ -210,6 +210,9 @@ class FcmService {
       );
 
       debugPrint('[FCM] permission: ${settings.authorizationStatus.name}');
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        debugPrint('[FCM] Push notifications denied by user. Silently falling back to in-app polling.');
+      }
 
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
@@ -242,23 +245,9 @@ class FcmService {
         debugPrint('👤 User UID: $userUid');
       }
       debugPrint('🔑 Token: $token');
-      if (token != null) {
-        final accessToken = await ApiClient().getAccessToken();
-        if (accessToken != null && accessToken.isNotEmpty) {
-          try {
-            final response = await ApiClient().post('/api/users/update-fcm/', body: {
-              'token': token,
-              'fcm_token': token,
-            });
-            debugPrint('[DEBUG] FCM token posted: ${response.statusCode}');
-            debugPrint('[FCM] Token registered with Django backend.');
-          } catch (apiErr) {
-            debugPrint('[FCM] Failed to register token with backend: $apiErr');
-          }
-        } else {
-          debugPrint('[FCM] User is unauthenticated; deferring /api/users/update-fcm/ until login/registration.');
-        }
-      }
+      // Pre-login HTTP calls to /api/users/update-fcm/ are strictly forbidden to prevent 401s.
+      // Registration is deferred until after successful authentication in AuthNotifier.
+      debugPrint('[FCM] Token retrieved. Backend registration deferred until authenticated login.');
     } catch (e) {
       debugPrint('[FCM] token fetch error: $e');
     }

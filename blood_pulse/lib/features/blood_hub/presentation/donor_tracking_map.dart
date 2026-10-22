@@ -2,6 +2,8 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:async';
+import 'dart:convert';
+import '../../../services/api_client.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -73,6 +75,7 @@ class DonorTrackingMapScreen extends ConsumerStatefulWidget {
 class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen> {
   final MapController _mapController = MapController();
   StreamSubscription? _trackingSubscription;
+  Timer? _pollTimer;
 
   late LatLng _hospitalLocation;
   late LatLng _donorLocation;
@@ -92,6 +95,8 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
     _calculateInitialDistanceAndEta();
     if (widget.enableLiveTracking) {
       _initLiveTracking();
+      // 10s fallback polling on tracking for network/stream drops (Part 7)
+      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _pollLatestPosition());
     }
   }
 
@@ -149,8 +154,35 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
     _etaMinutes = math.max(2, (transitHours * 60).ceil());
   }
 
+  Future<void> _pollLatestPosition() async {
+    if (!mounted || widget.requestId == null || widget.requestId!.isEmpty) return;
+    try {
+      final res = await ApiClient().get('/api/blood-requests/${widget.requestId}/');
+      if (res.statusCode == 200 && mounted) {
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        final tr = json['tracking'] as Map<String, dynamic>?;
+        if (tr != null) {
+          final lat = (tr['donor_latitude'] ?? tr['latitude'] as num?)?.toDouble();
+          final lng = (tr['donor_longitude'] ?? tr['longitude'] as num?)?.toDouble();
+          if (lat != null && lng != null) {
+            setState(() {
+              _donorLocation = LatLng(lat, lng);
+              if (tr['eta_minutes'] != null) {
+                _etaMinutes = (tr['eta_minutes'] as num).toInt();
+              }
+              if (tr['distance_km'] != null) {
+                _distanceKm = (tr['distance_km'] as num).toDouble();
+              }
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _trackingSubscription?.cancel();
     if (widget.isDonorView) {
       TrackingService.instance.stopTracking();

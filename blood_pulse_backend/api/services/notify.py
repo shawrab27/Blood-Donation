@@ -44,6 +44,7 @@ def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, 
     total_sent = 0
     total_failed = 0
     invalid_tokens_cleared = 0
+    raw_responses = []
 
     batch_size = FCM_BATCH_SIZE or 500
     for i in range(0, len(tokens_with_donors), batch_size):
@@ -65,6 +66,12 @@ def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, 
 
             # Process responses to catch invalid tokens
             for idx, resp in enumerate(response.responses):
+                raw_responses.append({
+                    'index': idx,
+                    'success': resp.success,
+                    'message_id': getattr(resp, 'message_id', None),
+                    'exception': str(resp.exception) if getattr(resp, 'exception', None) else None,
+                })
                 if not resp.success:
                     err_str = str(resp.exception).lower()
                     if any(x in err_str for x in ['unregistered', 'invalid_argument', 'invalid-registration-token', 'not_found']):
@@ -84,6 +91,7 @@ def send_fcm_multicast_batches(tokens_with_donors: list, title: str, body: str, 
         'sent': total_sent,
         'failed': total_failed,
         'invalid_tokens_cleared': invalid_tokens_cleared,
+        'raw_responses': raw_responses,
     }
 
 
@@ -137,6 +145,7 @@ def send_push_to_user(user, title: str, body: str, data_payload: dict = None, dr
         'sent': res['sent'],
         'failed': res['failed'],
         'invalid_tokens_cleared': res['invalid_tokens_cleared'],
+        'raw_responses': res.get('raw_responses', []),
         'dry_run': False,
     }
 

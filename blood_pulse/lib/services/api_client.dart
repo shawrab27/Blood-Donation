@@ -57,8 +57,8 @@ class ApiClient {
   static String get defaultServerUrl => ApiConfig.baseUrl;
   static String get defaultBaseUrl => ApiConfig.baseUrl;
 
-  static const Duration connectTimeout = Duration(seconds: 75);
-  static const Duration receiveTimeout = Duration(seconds: 75);
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   static const String _kAccessToken = 'bp_jwt_access_token';
   static const String _kRefreshToken = 'bp_jwt_refresh_token';
@@ -873,11 +873,18 @@ class ApiClient {
         final authHeaders = await _getAuthHeaders();
         http.Response response = await requestFn(authHeaders).timeout(receiveTimeout);
 
-        // Cold-start / gateway retry for Render / Vercel proxy
-        if ((response.statusCode == 502 || response.statusCode == 503 || response.statusCode == 504) && attempt < maxAttempts) {
-          debugPrint('[ApiClient] Server gateway status ${response.statusCode}. Retrying in 2.5s (attempt $attempt)...');
-          await Future.delayed(const Duration(milliseconds: 2500));
-          continue;
+        // Cold-start / gateway retry for Render / Vercel proxy with exponential backoff
+        if (response.statusCode == 502 || response.statusCode == 503 || response.statusCode == 504) {
+          if (attempt < maxAttempts) {
+            final backoffMs = attempt * 2000;
+            debugPrint('[ApiClient] Server cold-start status ${response.statusCode}. Retrying in ${backoffMs}ms (attempt $attempt/$maxAttempts)...');
+            await Future.delayed(Duration(milliseconds: backoffMs));
+            continue;
+          }
+          throw const ApiException(
+            'Server is waking up, please wait a moment... (সার্ভার চালু হচ্ছে, কিছুক্ষণ অপেক্ষা করুন...)',
+            statusCode: 503,
+          );
         }
 
         if (response.statusCode == 401) {
@@ -937,11 +944,12 @@ class ApiClient {
           continue;
         }
         if (attempt < maxAttempts) {
-          debugPrint('[ApiClient] TimeoutException on attempt $attempt. Retrying in 2.5s...');
-          await Future.delayed(const Duration(milliseconds: 2500));
+          final backoffMs = attempt * 2000;
+          debugPrint('[ApiClient] TimeoutException on attempt $attempt. Retrying in ${backoffMs}ms...');
+          await Future.delayed(Duration(milliseconds: backoffMs));
           continue;
         }
-        throw ApiException('Request timed out. Server did not respond in time.', rawError: e);
+        throw ApiException('Server is waking up, please wait a moment... (সার্ভার চালু হচ্ছে, কিছুক্ষণ অপেক্ষা করুন...)', statusCode: 504, rawError: e);
       } on FormatException catch (e) {
         throw ApiException('Malformed response format received.', rawError: e);
       } on http.ClientException catch (e) {
