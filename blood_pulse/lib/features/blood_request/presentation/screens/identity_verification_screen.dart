@@ -398,8 +398,11 @@ class _IdentityVerificationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F7),
+      // USER RULE - do not change: clean top bar (no extra icons, no AI button, no bell, no profile icon)
       appBar: BloodPulseAppBar(
         showBackButton: true,
+        showNotification: false,
+        showProfile: false,
         onBack: () {
           if (context.canPop()) {
             context.pop();
@@ -419,26 +422,15 @@ class _IdentityVerificationScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title & Subtitle
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Identity Verification',
-                          style: TextStyle(
-                            fontFamily: 'Georgia',
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                        ),
-                      ),
-                      TextButton.icon(
-                        icon: const Icon(Icons.support_agent_rounded, size: 16, color: Color(0xFFC30121)),
-                        label: const Text('Need help?', style: TextStyle(color: Color(0xFFC30121), fontSize: 13, fontWeight: FontWeight.bold)),
-                        onPressed: () => context.push('/assistant', extra: 'IDENTITY_VERIFICATION'),
-                      ),
-                    ],
+                  // USER RULE - do not change: clean title header without AI assistant button
+                  const Text(
+                    'Identity Verification',
+                    style: TextStyle(
+                      fontFamily: 'Georgia',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2B2B2B),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(

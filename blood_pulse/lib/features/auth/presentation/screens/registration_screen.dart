@@ -719,9 +719,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
       backgroundColor: const Color(0xFFFFF8F7),
       appBar: _buildMobileAppBar(),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Form(
+        // USER RULE - do not change: responsive wrap 360-430px+ without horizontal scroll
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 540),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -872,7 +876,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   void _quickFillTestDonor() {
@@ -1092,7 +1098,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               child: InkWell(
                 key: const ValueKey('registration_avatar_tap_target'),
                 customBorder: const CircleBorder(),
-                onTap: _showAvatarPickerModal,
+                // USER RULE - do not change: clicking profile photo on web directly opens file picker
+                onTap: () {
+                  if (kIsWeb) {
+                    _pickAvatarFromGallery();
+                  } else {
+                    _showAvatarPickerModal();
+                  }
+                },
                 child: SizedBox(
                   width: 104,
                   height: 104,

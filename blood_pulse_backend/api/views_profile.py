@@ -9,7 +9,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Sum, Min, Q, F, Window
-from django.db.models.functions import Coalesce, Rank
+from django.db.models.functions import Coalesce, Rank, Greatest
 from django.utils import timezone
 from django.http import HttpResponse
 from rest_framework import status
@@ -438,14 +438,16 @@ class TopDonorsView(APIView):
         if cached_data is not None:
             return Response(cached_data)
 
-        # Donors with verified bags > 0, active, not suspended, show_in_rankings=True
+        # USER RULE - do not change: Dynamic Top Donors from DB by verified bags or registered donation bags
         donors = DonorProfile.objects.filter(
             user__is_active=True,
             is_suspended=False,
             show_in_rankings=True
         ).annotate(
-            verified_bags=Coalesce(Sum('donation_history__bags', filter=Q(donation_history__verified=True)), 0),
+            vh_bags=Coalesce(Sum('donation_history__bags', filter=Q(donation_history__verified=True)), 0),
             first_donation=Min('donation_history__donated_at', filter=Q(donation_history__verified=True))
+        ).annotate(
+            verified_bags=Greatest(F('vh_bags'), F('total_bags_donated'))
         ).filter(verified_bags__gt=0).order_by('-verified_bags', 'first_donation', 'id')
 
         total_count = donors.count()
@@ -483,21 +485,24 @@ class GlobalRankView(APIView):
     def get(self, request):
         caller_profile = DonorProfile.objects.filter(user=request.user).first()
 
-        # Caller verified bags
+        # Caller verified bags (DB dynamic)
         caller_verified_bags = 0
         if caller_profile:
-            caller_verified_bags = DonationHistory.objects.filter(
+            vh_bags = DonationHistory.objects.filter(
                 donor=caller_profile, verified=True
             ).aggregate(total=Coalesce(Sum('bags'), 0))['total']
+            caller_verified_bags = max(vh_bags, caller_profile.total_bags_donated or 0)
 
-        # Eligible donors for leaderboard
+        # Eligible donors for leaderboard (DB dynamic)
         eligible_donors = DonorProfile.objects.filter(
             user__is_active=True,
             is_suspended=False,
             show_in_rankings=True
         ).annotate(
-            verified_bags=Coalesce(Sum('donation_history__bags', filter=Q(donation_history__verified=True)), 0),
+            vh_bags=Coalesce(Sum('donation_history__bags', filter=Q(donation_history__verified=True)), 0),
             first_donation=Min('donation_history__donated_at', filter=Q(donation_history__verified=True))
+        ).annotate(
+            verified_bags=Greatest(F('vh_bags'), F('total_bags_donated'))
         ).filter(verified_bags__gt=0).order_by('-verified_bags', 'first_donation', 'id')
 
         # Compute caller's private rank

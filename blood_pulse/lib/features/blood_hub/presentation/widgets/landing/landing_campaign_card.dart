@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../feed/presentation/providers/feed_provider.dart';
+import 'landing_action_cards.dart';
 
 /// Segment 3 for Blood Hub Landing: Blood Campaigns with Feed navigation and Live Drive Previews.
 class LandingCampaignCard extends ConsumerWidget {
@@ -18,14 +19,14 @@ class LandingCampaignCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // USER RULE - do not change: compact padding and light press zoom
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: PressableCard(
         onTap: onViewAllTap,
-        borderRadius: BorderRadius.circular(24),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),

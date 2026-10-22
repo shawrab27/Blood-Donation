@@ -354,35 +354,7 @@ class ProfileHeroCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // ── Admin-Locked Blood Group Note (Safety Guarantee) ──
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF4E5),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFFFD8A8)),
-            ),
-            child: Row(
-              children: const [
-                Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFFD97706)),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '🔒 Note: Blood Group can ONLY be edited by an Admin for biological safety.',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF92400E),
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // USER RULE - do not change: Admin note hidden from normal profile view (shown only in Edit Profile when requesting change)
         ],
       ),
     );

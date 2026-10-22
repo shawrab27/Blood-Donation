@@ -101,10 +101,13 @@ class DonorTrackingBottomPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
+                  // USER RULE - do not change: launch chat with numeric match ID for real-time Django HTTP transport
                   onPressed: () => context.push('/chat', extra: {
                     'chatRecipientName':
                         isDonorView ? patientName : donorName,
-                    'chatRoomId': chatRoomId,
+                    'chatRoomId': (chatRoomId.isNotEmpty && chatRoomId != 'emergency_chat')
+                        ? chatRoomId
+                        : numericMatchId.toString(),
                   }),
                   icon:
                       const Icon(Icons.chat_bubble_outline_rounded, size: 16),

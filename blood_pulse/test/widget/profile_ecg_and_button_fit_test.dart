@@ -31,7 +31,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Your Stories'), findsOneWidget);
+      expect(find.text('Timeline'), findsOneWidget);
       expect(find.text('Activity Summary'), findsOneWidget);
       expect(find.text('Donation History'), findsOneWidget);
       expect(tester.takeException(), isNull);

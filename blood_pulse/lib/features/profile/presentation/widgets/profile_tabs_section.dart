@@ -75,22 +75,35 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
             ),
             child: Stack(
               children: [
+                // USER RULE - do not change: full red baseline and sliding ECG marker indicator
                 const Positioned.fill(
                   child: CustomPaint(
                     painter: TabBaselinePainter(
-                      color: Color(0xFFF3E5E5),
-                      strokeWidth: 1.0,
+                      color: Color(0xFFC30121),
+                      strokeWidth: 2.0,
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _tabController.animation!,
+                    builder: (context, _) => CustomPaint(
+                      painter: HeartbeatAnimationIndicatorPainter(
+                        animation: _tabController.animation!,
+                        tabCount: 3,
+                        color: const Color(0xFFC30121),
+                        strokeWidth: 3.0,
+                        spikeHeight: 8.0,
+                      ),
                     ),
                   ),
                 ),
                 TabBar(
                   controller: _tabController,
-                  indicator: HeartbeatTabIndicator(
-                    color: const Color(0xFFC30121),
-                    strokeWidth: 2.5,
-                    spikeHeight: 6.0,
-                    animation: _tabController.animation,
-                  ),
+                  indicator: const BoxDecoration(),
+                  dividerColor: Colors.transparent,
+                  indicatorColor: Colors.transparent,
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                   labelColor: const Color(0xFFC30121),
@@ -106,7 +119,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                     fontWeight: FontWeight.w500,
                   ),
                   tabs: const [
-                    Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Your Stories'))),
+                    Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Timeline'))),
                     Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Activity Summary'))),
                     Tab(child: FittedBox(fit: BoxFit.scaleDown, child: Text('Donation History'))),
                   ],
@@ -234,7 +247,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                 const Icon(Icons.error_outline_rounded, size: 32, color: Color(0xFFC30121)),
                 const SizedBox(height: 8),
                 const Text(
-                  'Could not load your stories',
+                  'Could not load your timeline posts',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 13,
@@ -277,7 +290,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                     Icon(Icons.edit_note_rounded, size: 36, color: Color(0xFFE2D6D6)),
                     SizedBox(height: 8),
                     Text(
-                      'No stories shared yet.',
+                      'No timeline posts shared yet.',
                       style: TextStyle(fontFamily: 'Georgia', fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF24191A)),
                     ),
                     SizedBox(height: 4),
