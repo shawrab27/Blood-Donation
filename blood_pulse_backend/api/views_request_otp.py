@@ -159,29 +159,37 @@ def request_otp_send_view(request):
             text_content=text_content,
             html_content=html_content,
         )
-    except (EmailConfigError, EmailProviderError, EmailDeliveryError) as exc:
-        logger.error("Email service error dispatching OTP to %s: %s", mask_email(email), exc)
+    except EmailConfigError as exc:
+        logger.error("Email config error dispatching OTP to %s: %s", mask_email(email), exc)
         return Response(
             {
-                'code': 'EMAIL_UNAVAILABLE',
-                'error': 'Email delivery service temporarily unavailable. Please try again shortly.',
-                'detail': 'Email delivery service temporarily unavailable. Please try again shortly.',
+                "code": "EMAIL_NOT_CONFIGURED",
+                "error": f"Email provider not configured on server: {exc}",
+                "detail": str(exc),
             },
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except (EmailProviderError, EmailDeliveryError) as exc:
+        logger.error("Email provider error dispatching OTP to %s: %s", mask_email(email), exc)
+        return Response(
+            {
+                "code": "EMAIL_DELIVERY_FAILED",
+                "error": f"Email delivery failed: {exc}",
+                "detail": str(exc),
+            },
+            status=status.HTTP_400_BAD_REQUEST,
         )
     except Exception as exc:
         logger.error("Failed to send request OTP email to %s: %s", mask_email(email), exc)
         return Response(
             {
-                'code': 'EMAIL_UNAVAILABLE',
-                'error': 'Failed to send verification code. Please try again shortly.',
-                'detail': 'Failed to send verification code. Please try again shortly.',
+                "code": "EMAIL_SEND_ERROR",
+                "error": f"Failed to send verification code: {exc}",
+                "detail": str(exc),
             },
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
-
-    # Invalidate older unused OTPs for this user and purpose
     EmailOTP.objects.filter(
         user=user,
         purpose='blood_request_submit',

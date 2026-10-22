@@ -21,6 +21,25 @@ import '../providers/feed_provider.dart';
 import '../providers/user_location_provider.dart';
 
 /// Comprehensive Feed View supporting both Mobile and Desktop layout parity.
+
+String _resolveMediaUrl(String rawUrl) {
+  if (rawUrl.isEmpty) return '';
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+    if (rawUrl.contains('storage.bloodpulse.local')) {
+      final base = ApiClient().baseUrl.endsWith('/')
+          ? ApiClient().baseUrl.substring(0, ApiClient().baseUrl.length - 1)
+          : ApiClient().baseUrl;
+      return rawUrl.replaceFirst('https://storage.bloodpulse.local', base);
+    }
+    return rawUrl;
+  }
+  final base = ApiClient().baseUrl.endsWith('/')
+      ? ApiClient().baseUrl.substring(0, ApiClient().baseUrl.length - 1)
+      : ApiClient().baseUrl;
+  final path = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
+  return '$base$path';
+}
+
 class FeedView extends ConsumerStatefulWidget {
   const FeedView({super.key});
 
@@ -1264,7 +1283,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: CachedNetworkImage(
-                    imageUrl: post.media.first['url']?.toString().replaceFirst('/upload/', '/upload/w_600,q_auto,f_auto/') ?? '',
+                    imageUrl: _resolveMediaUrl(post.media.first['url']?.toString().replaceFirst('/upload/', '/upload/w_600,q_auto,f_auto/') ?? ''),
                     memCacheWidth: 600,
                     width: double.infinity,
                     height: 220,
@@ -1296,7 +1315,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                   ),
                   itemCount: post.media.length,
                   itemBuilder: (context, mIdx) {
-                    final itemUrl = post.media[mIdx]['url']?.toString().replaceFirst('/upload/', '/upload/w_400,q_auto,f_auto/') ?? '';
+                    final itemUrl = _resolveMediaUrl(post.media[mIdx]['url']?.toString().replaceFirst('/upload/', '/upload/w_400,q_auto,f_auto/') ?? '');
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(

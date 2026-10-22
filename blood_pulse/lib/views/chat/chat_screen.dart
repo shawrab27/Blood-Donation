@@ -701,6 +701,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       );
                     }
 
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Color(0xFFC30121)),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Unable to load live messages (${snapshot.error})',
+                                style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF666666)),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
                     final messages = snapshot.data ?? [];
                     if (messages.isEmpty) {
                       return _buildEmptyState();

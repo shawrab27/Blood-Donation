@@ -5,6 +5,8 @@
 /// Exclusively persists to canonical path: `chat_rooms/{roomId}/messages/{messageId}`.
 library;
 
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -232,14 +234,12 @@ class ChatService {
 
   /// Real-time stream of [ChatMessageModel] from `chat_rooms/{chatId}/messages`.
   Stream<List<ChatMessageModel>> getMessagesStream(String chatId, {String? currentUserId}) {
-    if (int.tryParse(chatId) != null) {
+    final hasFirebaseAuth = FirebaseAuth.instance.currentUser != null;
+    if (!hasFirebaseAuth || int.tryParse(chatId) != null) {
       return transport.getMessagesStream(chatId, currentUserId: currentUserId);
     }
     final roomMessagesRef = _roomMessages(chatId);
     if (roomMessagesRef == null) {
-      if (_localMessageCache.isNotEmpty) {
-        return _getMockStream(chatId);
-      }
       return transport.getMessagesStream(chatId, currentUserId: currentUserId);
     }
 
@@ -344,9 +344,9 @@ class ChatService {
     _mockStreamController.close();
   }
 
-  Stream<List<ChatMessageModel>> _getMockStream(String chatId) {
-    Future.microtask(() => _mockStreamController.add(List.from(_localMessageCache)));
-    return _mockStreamController.stream;
+  Stream<List<ChatMessageModel>> _getMockStream(String chatId) async* {
+    yield List.from(_localMessageCache);
+    yield* _mockStreamController.stream;
   }
 
   void _addToMockCache(ChatMessageModel msg) {

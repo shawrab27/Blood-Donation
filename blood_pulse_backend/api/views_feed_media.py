@@ -41,9 +41,10 @@ class MediaUploadView(APIView):
         if ext not in allowed_extensions:
             return Response({'error': f'Invalid file extension {ext}. Allowed: jpg, jpeg, png, webp.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate MIME type
+        # Validate MIME type & file extension (support JPEG, PNG, WEBP, HEIC/HEIF and octet-stream)
         content_type = getattr(file_obj, 'content_type', '').lower()
-        allowed_mimes = {'image/jpeg', 'image/png', 'image/webp'}
+        ext = os.path.splitext(filename)[1].lower()
+        allowed_mimes = {'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/octet-stream', ''}
         if content_type and content_type not in allowed_mimes:
             return Response({'error': f'Invalid content type {content_type}. Allowed: image/jpeg, image/png, image/webp.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -194,3 +195,29 @@ class UserLocationSyncView(APIView):
             'source': state_obj.source,
             'changed': False,
         })
+
+
+import mimetypes
+from django.http import HttpResponse, Http404
+
+class MediaFileServeView(APIView):
+    """Serves local uploaded media files cross-platform when remote CDN is unconfigured."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, filename):
+        import os
+        from django.conf import settings
+        media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
+        file_path = os.path.join(media_root, 'uploads', filename)
+        if not os.path.exists(file_path):
+            file_path = os.path.join(media_root, filename)
+        if not os.path.exists(file_path):
+            raise Http404("Media file not found")
+
+        content_type, _ = mimetypes.guess_type(file_path)
+        content_type = content_type or 'image/jpeg'
+        with open(file_path, 'rb') as f:
+            resp = HttpResponse(f.read(), content_type=content_type)
+            resp['Access-Control-Allow-Origin'] = '*'
+            resp['Cache-Control'] = 'public, max-age=86400'
+            return resp

@@ -132,8 +132,17 @@ class LocalStorage(MediaStorage):
         self.store = {}
 
     def upload_image(self, file_bytes: bytes, filename: str, folder: str = "test") -> Dict[str, Any]:
-        public_id = f"{folder}/{filename}"
-        url = f"https://storage.bloodpulse.local/{public_id}"
+        import os
+        from django.conf import settings
+        media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
+        target_dir = os.path.join(media_root, 'uploads')
+        os.makedirs(target_dir, exist_ok=True)
+        safe_name = os.path.basename(filename)
+        dest_path = os.path.join(target_dir, safe_name)
+        with open(dest_path, 'wb') as f:
+            f.write(file_bytes)
+        public_id = f"uploads/{safe_name}"
+        url = f"/api/media/files/{safe_name}"
         self.store[public_id] = file_bytes
         return {
             "url": url,

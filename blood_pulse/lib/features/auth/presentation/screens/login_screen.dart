@@ -34,6 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _idFocus = FocusNode();
   final _pwFocus = FocusNode();
   bool _isGoogleSigningIn = false;
+  String? _loginErrorMessage;
 
   // Subtle slide-up entry animation
   late final AnimationController _entryCtrl = AnimationController(
@@ -80,13 +81,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           err.toLowerCase().contains('no active account') ||
           err.toLowerCase().contains('401') ||
           err.toLowerCase().contains('invalid');
+      final errMsg = isCredentialFailure
+          ? 'Invalid credentials. Please check your phone number/username or password.'
+          : err;
+      setState(() => _loginErrorMessage = errMsg);
+      final bottomMargin = MediaQuery.of(context).viewInsets.bottom + 84.0;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          margin: EdgeInsets.only(left: 16, right: 16, bottom: bottomMargin),
           content: Text(
-            isCredentialFailure
-                ? 'Invalid credentials. Please check your phone number/username or password.'
-                : err,
-            style: const TextStyle(fontFamily: 'Inter'),
+            errMsg,
+            style: const TextStyle(fontFamily: 'Inter', color: Colors.white, fontWeight: FontWeight.w500),
           ),
           action: isCredentialFailure
               ? SnackBarAction(
@@ -105,7 +111,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Future<void> _onGoogleSignIn() async {
     if (_isGoogleSigningIn || ref.read(authProvider).isLoading) return;
-    setState(() => _isGoogleSigningIn = true);
+    setState(() {
+      _isGoogleSigningIn = true;
+      _loginErrorMessage = null;
+    });
     _idFocus.unfocus();
     _pwFocus.unfocus();
 
@@ -229,18 +238,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     ? (l10n?.usernameOrPhone ?? 'Please enter your username or phone')
                                     : null,
                               ),
-                              const SizedBox(height: 6),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 4),
-                                child: Text(
-                                  'Enter your 11-digit phone number (e.g., 01712345678) or username.',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 12,
-                                    color: Color(0xFF6E6E6E),
-                                  ),
-                                ),
-                              ),
+
                               const SizedBox(height: 16),
                               // ── Password ────────────────────────────────
                               _SectionLabel(l10n?.authPassword ?? 'Password'),
@@ -328,6 +326,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 },
                               ),
                               const SizedBox(height: 16),
+                              if (_loginErrorMessage != null) ...[
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.error.withOpacity(0.4)),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _loginErrorMessage!,
+                                          style: const TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontSize: 13,
+                                            color: AppColors.error,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               // ── Sign In Button ──────────────────────────
                               CapsuleButton(
                                 label: l10n?.signIn ?? 'Sign In',

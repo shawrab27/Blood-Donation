@@ -153,48 +153,7 @@ class _SplashVideoScreenState extends ConsumerState<SplashVideoScreen> {
               // ── Seamless Background Color Canvas ────────────────────────
               const ColoredBox(color: splashBgColor),
 
-              // ── Fallback / Loading Brand Logo (shown immediately so no blank wait) ──
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          'assets/images/launcher_icon_transparent.png',
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'BloodPulse',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFC30121),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Every Drop Counts',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF5C3F3D),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+
 
               // ── Responsive Video Player (centered, zero cropping on ANY screen) ──
               if (isInitialized)

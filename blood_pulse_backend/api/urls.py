@@ -16,7 +16,7 @@ from .views_devices import (
 )
 from .views_leaderboard import LeaderboardAPIView
 from .views_certificates import CertificateIssueAPIView, CertificateVerifyAPIView
-from .views_feed_media import MediaUploadView, UserLocationSyncView
+from .views_feed_media import MediaUploadView, UserLocationSyncView, MediaFileServeView
 from .views_feed import FeedListCreateAPIView, FeedPostDetailAPIView, FeedPostReportAPIView
 from .views_products import ProductViewSet
 from .views_profile import (
@@ -206,6 +206,7 @@ urlpatterns = [
 
     # Feed & Media Endpoints (Step 10D)
     path('media/upload/', MediaUploadView.as_view(), name='media-upload'),
+    path('media/files/<str:filename>/', MediaFileServeView.as_view(), name='media-file-serve'),
     path('users/location/', UserLocationSyncView.as_view(), name='user-location-sync'),
     path('feed/', FeedListCreateAPIView.as_view(), name='feed-list-create'),
     path('feed/<int:pk>/', FeedPostDetailAPIView.as_view(), name='feed-post-detail'),

@@ -1,12 +1,15 @@
 importScripts("https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js");
 
-// Default Firebase config for background push messaging worker
+// Canonical Firebase config for BloodPulse Web Push
 firebase.initializeApp({
-  apiKey: "AIzaSyBloodPulseWebClientPlaceholder",
-  projectId: "bloodpulse-app",
-  messagingSenderId: "1056586036128",
-  appId: "1:1056586036128:web:bloodpulse"
+  apiKey: "AIzaSyCShzXhwOg-dzviWjcXMylDyWREU-HrVcU",
+  authDomain: "bloodpulse-283dc.firebaseapp.com",
+  projectId: "bloodpulse-283dc",
+  storageBucket: "bloodpulse-283dc.firebasestorage.app",
+  messagingSenderId: "404989190662",
+  appId: "1:404989190662:web:d93054d0554ce384e25987",
+  measurementId: "G-YF60Y0LHDB"
 });
 
 const messaging = firebase.messaging();
@@ -30,18 +33,25 @@ messaging.onBackgroundMessage(function(payload) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  const data = (event.notification && event.notification.data) || {};
+  let targetUrl = '/feed';
+  if (data.requestId || data.request_id) {
+    targetUrl = '/blood-hub?requestId=' + (data.requestId || data.request_id);
+  } else if (data.chatId || data.chat_id || data.chatRoomId) {
+    targetUrl = '/chat?roomId=' + (data.chatId || data.chat_id || data.chatRoomId);
+  }
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if (client.url && 'focus' in client) {
+          if ('navigate' in client) client.navigate(targetUrl);
+          return client.focus();
         }
-        return client.focus();
       }
-      return clients.openWindow('/');
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
     })
   );
 });

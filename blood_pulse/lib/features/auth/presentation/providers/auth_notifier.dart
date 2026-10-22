@@ -171,6 +171,7 @@ class AuthNotifier extends Notifier<AuthState> {
     };
     final cached = ApiClient.cachedAccessToken;
     final hasStoredToken = cached != null && cached.isNotEmpty;
+    Future.microtask(() => restoreSession());
     return _initialState ?? AuthState(
       status: hasStoredToken ? AuthStatus.loading : AuthStatus.unauthenticated,
     );
@@ -602,8 +603,10 @@ class AuthNotifier extends Notifier<AuthState> {
         msg = 'Google account email is not verified.';
       } else if (kIsWeb && msg.contains('Null check operator')) {
         msg = 'Google Sign-In on Web requires a Google Cloud Web Client ID. Please test Google Sign-In on your mobile device (flutter run), or log in with Username/Password.';
+      } else if (msg.contains('origin_mismatch') || msg.contains('400')) {
+        msg = 'Google OAuth Error (origin_mismatch): Authorized JavaScript origin missing in Google Cloud Console. Please add https://bloodpulse-283dc.web.app to the OAuth 2.0 Web Client ID.';
       } else if (msg.contains('ApiException: 10') || msg.contains('Api10')) {
-        msg = 'Google Sign-In configuration mismatch (ApiException 10). The app signing certificate must be registered in Firebase Console.';
+        msg = 'Google Sign-In configuration mismatch (ApiException 10). The Android SHA-1 fingerprint must be registered in Firebase / Google Cloud Console for com.bloodpulse.app.';
       } else if (msg.contains('network_error') ||
           msg.contains('7:') ||
           msg.contains('SocketException') ||

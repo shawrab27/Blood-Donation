@@ -5,6 +5,7 @@ import '../features/auth/presentation/providers/auth_notifier.dart';
 import '../core/access/access_guard.dart';
 
 class RouterNotifier extends ChangeNotifier {
+  static bool skipIntroToLogin = false;
   RouterNotifier(this.ref) {
     ref.listen<AuthState>(
       authProvider,
@@ -52,6 +53,9 @@ class RouterNotifier extends ChangeNotifier {
     }
 
     if (authState.status == AuthStatus.unauthenticated) {
+      if (!isGuest && (path == '/' || path == '/splash') && RouterNotifier.skipIntroToLogin) {
+        return '/login';
+      }
       if (isGuest) {
         // Guest allowlist is exactly Welcome, Feed (read-only), Health Hub, National Emergency / Drill, and pre-auth flows
         final isGuestAllowed = path == '/guest-welcome' ||
@@ -81,6 +85,8 @@ class RouterNotifier extends ChangeNotifier {
                          path == '/verify-otp' ||
                          path == '/onboarding' || 
                          path == '/splash' ||
+                         path == '/' ||
+                         path == '/language' ||
                          path == '/guest-welcome';
       if (isAuthFlow) {
         return '/feed'; // Feed is the default; logged-in users never stay on /guest-welcome

@@ -111,6 +111,9 @@
         navigator.serviceWorker.register('bloodpulse_sw.js', {scope: './'})
           .then((reg) => { console.log('[SW] registered:', reg.scope); })
           .catch((err) => { console.warn('[SW] registration failed:', err); });
+        navigator.serviceWorker.register('firebase-messaging-sw.js', {scope: './'})
+          .then((reg) => { console.log('[FCM SW] registered:', reg.scope); })
+          .catch((err) => { console.warn('[FCM SW] registration failed:', err); });
       });
     }
 

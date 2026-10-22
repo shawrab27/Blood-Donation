@@ -88,15 +88,29 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         inst_id = data.get('institution')
         if inst_id:
             from api.models import Institution
-            if not Institution.objects.filter(pk=inst_id).exists():
-                data['institution'] = None
+            try:
+                inst_int = int(inst_id)
+                if not Institution.objects.filter(pk=inst_int).exists():
+                    data['institution'] = None
+                else:
+                    data['institution'] = inst_int
+            except (ValueError, TypeError):
+                matched_inst = Institution.objects.filter(name__iexact=str(inst_id).strip()).first()
+                data['institution'] = matched_inst.id if matched_inst else None
 
         # Sanitize upazila_linked FK
         upazila_id = data.get('upazila_linked')
         if upazila_id:
             from api.models import Upazila
-            if not Upazila.objects.filter(pk=upazila_id).exists():
-                data['upazila_linked'] = None
+            try:
+                up_int = int(upazila_id)
+                if not Upazila.objects.filter(pk=up_int).exists():
+                    data['upazila_linked'] = None
+                else:
+                    data['upazila_linked'] = up_int
+            except (ValueError, TypeError):
+                matched_up = Upazila.objects.filter(name__iexact=str(upazila_id).strip()).first()
+                data['upazila_linked'] = matched_up.id if matched_up else None
 
         phone = data.get('phone_number') or data.get('username')
         from api.phone_utils import normalize_phone_number, get_phone_variants, is_valid_phone

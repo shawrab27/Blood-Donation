@@ -1,3 +1,4 @@
+import 'package:http_parser/http_parser.dart' as http_parser;
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -174,6 +175,19 @@ class ApiClient {
       return _cachedAccessToken;
     }
 
+    if (kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString(_kAccessToken);
+        if (token != null && token.isNotEmpty) {
+          _cachedAccessToken = token;
+          return token;
+        }
+      } catch (e) {
+        debugPrint('[ApiClient] Web SharedPreferences read error: $e');
+      }
+    }
+
     // 1. Read from FlutterSecureStorage
     try {
       final token = await _secureStorage.read(key: _kAccessToken);
@@ -203,6 +217,19 @@ class ApiClient {
   Future<String?> getRefreshToken() async {
     if (_cachedRefreshToken != null && _cachedRefreshToken!.isNotEmpty) {
       return _cachedRefreshToken;
+    }
+
+    if (kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString(_kRefreshToken);
+        if (token != null && token.isNotEmpty) {
+          _cachedRefreshToken = token;
+          return token;
+        }
+      } catch (e) {
+        debugPrint('[ApiClient] Web SharedPreferences read error: $e');
+      }
     }
 
     // 1. Read from FlutterSecureStorage
@@ -562,11 +589,22 @@ class ApiClient {
       request.fields.addAll(additionalFields);
     }
 
+    final ext = filename.split('.').last.toLowerCase();
+    http_parser.MediaType mediaType;
+    if (ext == 'png') {
+      mediaType = http_parser.MediaType('image', 'png');
+    } else if (ext == 'webp') {
+      mediaType = http_parser.MediaType('image', 'webp');
+    } else {
+      mediaType = http_parser.MediaType('image', 'jpeg');
+    }
+
     request.files.add(
       http.MultipartFile.fromBytes(
         fieldName,
         fileBytes,
         filename: filename,
+        contentType: mediaType,
       ),
     );
 
@@ -873,12 +911,13 @@ class ApiClient {
         final authHeaders = await _getAuthHeaders();
         http.Response response = await requestFn(authHeaders).timeout(receiveTimeout);
 
-        // Cold-start / gateway retry for Render / Vercel proxy with exponential backoff
-        if (response.statusCode == 502 || response.statusCode == 503 || response.statusCode == 504) {
-          if (attempt < maxAttempts) {
-            final backoffMs = attempt * 2000;
-            debugPrint('[ApiClient] Server cold-start status ${response.statusCode}. Retrying in ${backoffMs}ms (attempt $attempt/$maxAttempts)...');
-            await Future.delayed(Duration(milliseconds: backoffMs));
+        // Cold-start / gateway retry for Render proxy (only retry once if non-JSON gateway error)
+        final isGatewayError = (response.statusCode == 502 || response.statusCode == 503 || response.statusCode == 504);
+        final isAppJson = response.headers['content-type']?.contains('application/json') ?? response.body.trim().startsWith('{');
+        if (isGatewayError && !isAppJson) {
+          if (attempt < 2) {
+            debugPrint('[ApiClient] Server cold-start gateway status ${response.statusCode}. Auto-retrying once in 2000ms...');
+            await Future.delayed(const Duration(milliseconds: 2000));
             continue;
           }
           throw const ApiException(

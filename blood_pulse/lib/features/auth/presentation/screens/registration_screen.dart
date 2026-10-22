@@ -119,6 +119,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   String? _selectedDivision;
   String? _selectedZila;
+  String? _formErrorMessage;
 
   bool _neverDonated = false;
   DateTime? _lastDonationDate;
@@ -506,6 +507,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Future<void> _onCreateAccount() async {
+    setState(() => _formErrorMessage = null);
     final isBangla = ref.read(localeProvider).languageCode == 'bn';
     if (_nameCtrl.text.trim().isEmpty) {
       _showError(isBangla ? 'আপনার পূর্ণ নাম লিখুন।' : 'Please enter your full name.');
@@ -529,7 +531,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         return;
       }
     }
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _showError(isBangla
+          ? 'অনুগ্রহ করে প্রয়োজনীয় ঘরগুলো সঠিকভাবে পূরণ করুন।'
+          : 'Please complete all required fields correctly.');
+      return;
+    }
 
     final isOnlyReq = _userIntent == _UserIntent.onlyRequest;
     if (!isOnlyReq) {
@@ -660,12 +667,26 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   void _showError(String msg) {
+    if (mounted) {
+      setState(() => _formErrorMessage = msg);
+    }
+    final bottomMargin = MediaQuery.of(context).viewInsets.bottom + 84.0;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: const TextStyle(fontFamily: 'Inter')),
+        content: Text(
+          msg,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: const StadiumBorder(),
+        margin: EdgeInsets.only(left: 16, right: 16, bottom: bottomMargin),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -762,6 +783,37 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 // Intent Selector (directly ABOVE CapsuleButton submit)
                 _buildIntentSelector(),
                 const SizedBox(height: 24),
+
+                if (_formErrorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.error.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _formErrorMessage!,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // Submit Button
                 CapsuleButton(

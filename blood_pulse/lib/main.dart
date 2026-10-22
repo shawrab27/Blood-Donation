@@ -8,6 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:blood_pulse/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'services/api_client.dart';
+import 'core/router_notifier.dart';
 import 'firebase_options.dart';
 import 'services/fcm_service.dart';
 import 'core/localization/locale_provider.dart';
@@ -32,6 +35,21 @@ Future<void> main() async {
     ]);
   } catch (e) {
     debugPrint('Startup initialization warning: ');
+  }
+
+  // Pre-load session tokens and check 24h launch cooldown
+  try {
+    await ApiClient().getAccessToken();
+    final prefs = await SharedPreferences.getInstance();
+    final lastOpenMs = prefs.getInt('bp_last_open_time');
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    await prefs.setInt('bp_last_open_time', nowMs);
+
+    if (lastOpenMs != null && (nowMs - lastOpenMs) < const Duration(hours: 24).inMilliseconds) {
+      RouterNotifier.skipIntroToLogin = true;
+    }
+  } catch (e) {
+    debugPrint('[main] Session pre-load error: $e');
   }
 
   FlutterError.onError = (FlutterErrorDetails details) {
