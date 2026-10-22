@@ -999,16 +999,21 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           : null,
                     ),
                     child: Center(
-                      child: Text(
-                        isBangla ? 'রক্তদান ও অনুরোধ' : 'Donate & Request Blood',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _userIntent == _UserIntent.donateAndRequest
-                              ? Colors.white
-                              : const Color(0xFF2B2B2B),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isBangla ? 'রক্তদান ও অনুরোধ' : 'Donate & Request Blood',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _userIntent == _UserIntent.donateAndRequest
+                                ? Colors.white
+                                : const Color(0xFF2B2B2B),
+                          ),
                         ),
                       ),
                     ),
@@ -1036,16 +1041,21 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           : null,
                     ),
                     child: Center(
-                      child: Text(
-                        isBangla ? 'শুধুমাত্র অনুরোধ' : 'Only Request Blood',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _userIntent == _UserIntent.onlyRequest
-                              ? Colors.white
-                              : const Color(0xFF2B2B2B),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isBangla ? 'শুধুমাত্র অনুরোধ' : 'Only Request Blood',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: _userIntent == _UserIntent.onlyRequest
+                                ? Colors.white
+                                : const Color(0xFF2B2B2B),
+                          ),
                         ),
                       ),
                     ),

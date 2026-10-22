@@ -19,6 +19,8 @@ import '../providers/auth_notifier.dart';
 ///   • Validation via Flutter [Form]
 ///   • Navigates to /dashboard on success
 ///   • "Create an Account" link → /register
+enum _LoginButtonType { none, google, signIn, guest }
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -33,7 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _pwCtrl = TextEditingController();
   final _idFocus = FocusNode();
   final _pwFocus = FocusNode();
-  bool _isGoogleSigningIn = false;
+  _LoginButtonType _loadingButton = _LoginButtonType.none;
   String? _loginErrorMessage;
 
   // Subtle slide-up entry animation
@@ -63,9 +65,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _onSignIn() async {
+    if (_loadingButton != _LoginButtonType.none) return;
     if (!_formKey.currentState!.validate()) return;
     _idFocus.unfocus();
     _pwFocus.unfocus();
+    setState(() {
+      _loadingButton = _LoginButtonType.signIn;
+      _loginErrorMessage = null;
+    });
 
     final success = await ref.read(authProvider.notifier).loginWithCredentials(
           identifier: _idCtrl.text.trim(),
@@ -73,6 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         );
 
     if (!mounted) return;
+    setState(() => _loadingButton = _LoginButtonType.none);
     if (success) {
       context.go('/feed');
     } else {
@@ -110,9 +118,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   Future<void> _onGoogleSignIn() async {
-    if (_isGoogleSigningIn || ref.read(authProvider).isLoading) return;
+    if (_loadingButton != _LoginButtonType.none) return;
     setState(() {
-      _isGoogleSigningIn = true;
+      _loadingButton = _LoginButtonType.google;
       _loginErrorMessage = null;
     });
     _idFocus.unfocus();
@@ -148,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
     } finally {
       if (mounted) {
-        setState(() => _isGoogleSigningIn = false);
+        setState(() => _loadingButton = _LoginButtonType.none);
       }
     }
   }
@@ -298,32 +306,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ],
                               ),
                               const SizedBox(height: 18),
-                              // ── Continue with Google ─────────────────────
-                              CapsuleButton(
-                                label: l10n?.continueWithGoogle ?? 'Continue with Google',
-                                leading: Image.asset(
-                                  'assets/images/google_logo.png',
-                                  width: 20,
-                                  height: 20,
+                              // USER RULE - do not change: tapped button shows white ECG loader and stays red; other buttons look unchanged; IgnorePointer prevents touch
+                              IgnorePointer(
+                                ignoring: _loadingButton != _LoginButtonType.none,
+                                child: Column(
+                                  children: [
+                                    // ── Continue with Google ─────────────────────
+                                    CapsuleButton(
+                                      label: l10n?.continueWithGoogle ?? 'Continue with Google',
+                                      leading: _loadingButton == _LoginButtonType.google
+                                          ? null
+                                          : Image.asset(
+                                              'assets/images/google_logo.png',
+                                              width: 20,
+                                              height: 20,
+                                            ),
+                                      backgroundColor: _loadingButton == _LoginButtonType.google
+                                          ? AppColors.primary
+                                          : const Color(0xFFFDEAEB),
+                                      foregroundColor: _loadingButton == _LoginButtonType.google
+                                          ? Colors.white
+                                          : AppColors.secondary,
+                                      isLoading: _loadingButton == _LoginButtonType.google,
+                                      height: 50,
+                                      onPressed: _onGoogleSignIn,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    // ── Continue as Guest ────────────────────────
+                                    CapsuleButton(
+                                      label: l10n?.continueAsGuest ?? 'Continue as Guest',
+                                      icon: _loadingButton == _LoginButtonType.guest ? null : Icons.person_outline_rounded,
+                                      backgroundColor: _loadingButton == _LoginButtonType.guest
+                                          ? AppColors.primary
+                                          : const Color(0xFFFDEAEB),
+                                      foregroundColor: _loadingButton == _LoginButtonType.guest
+                                          ? Colors.white
+                                          : AppColors.secondary,
+                                      isLoading: _loadingButton == _LoginButtonType.guest,
+                                      height: 50,
+                                      onPressed: () {
+                                        if (_loadingButton != _LoginButtonType.none) return;
+                                        setState(() => _loadingButton = _LoginButtonType.guest);
+                                        ref.read(authProvider.notifier).continueAsGuest();
+                                        context.go('/guest-welcome');
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                backgroundColor: const Color(0xFFFDEAEB),
-                                foregroundColor: AppColors.secondary,
-                                isLoading: _isGoogleSigningIn,
-                                height: 50,
-                                onPressed: (_isGoogleSigningIn || auth.isLoading) ? null : _onGoogleSignIn,
-                              ),
-                              const SizedBox(height: 12),
-                              // ── Continue as Guest ────────────────────────
-                              CapsuleButton(
-                                label: l10n?.continueAsGuest ?? 'Continue as Guest',
-                                icon: Icons.person_outline_rounded,
-                                backgroundColor: const Color(0xFFFDEAEB),
-                                foregroundColor: AppColors.secondary,
-                                height: 50,
-                                onPressed: () {
-                                  ref.read(authProvider.notifier).continueAsGuest();
-                                  context.go('/guest-welcome');
-                                },
                               ),
                               const SizedBox(height: 16),
                               if (_loginErrorMessage != null) ...[
@@ -357,13 +386,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 const SizedBox(height: 12),
                               ],
                               // ── Sign In Button ──────────────────────────
-                              CapsuleButton(
-                                label: l10n?.signIn ?? 'Sign In',
-                                icon: Icons.arrow_forward_rounded,
-                                isLoading: auth.isLoading,
-                                showGlow: true,
-                                height: 50,
-                                onPressed: auth.isLoading ? null : _onSignIn,
+                              IgnorePointer(
+                                ignoring: _loadingButton != _LoginButtonType.none,
+                                child: CapsuleButton(
+                                  label: l10n?.signIn ?? 'Sign In',
+                                  icon: Icons.arrow_forward_rounded,
+                                  isLoading: _loadingButton == _LoginButtonType.signIn,
+                                  showGlow: true,
+                                  height: 50,
+                                  onPressed: _onSignIn,
+                                ),
                               ),
 
                             ],

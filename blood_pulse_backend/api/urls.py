@@ -249,6 +249,8 @@ urlpatterns = [
 
     # Real-Time Requester-Donor Chat & Voice (#37, #39)
     path('chat/<int:acceptance_id>/messages/', JourneyMessageListCreateAPIView.as_view(), name='chat-message-list-create'),
+    path('blood-hub/chat/<int:acceptance_id>/messages/', JourneyMessageListCreateAPIView.as_view(), name='bloodhub-chat-message-list-create'),
+    path('v1/blood-hub/chat/<int:acceptance_id>/messages/', JourneyMessageListCreateAPIView.as_view(), name='v1-bloodhub-chat-message-list-create'),
     path('chat/<int:acceptance_id>/messages/<int:pk>/', MessageDeleteAPIView.as_view(), name='chat-message-delete'),
     path('chat/<int:acceptance_id>/messages/<int:pk>/read/', MessageMarkReadAPIView.as_view(), name='chat-message-mark-read'),
     path('chat/<int:acceptance_id>/messages/<int:pk>/report/', MessageReportAPIView.as_view(), name='chat-message-report'),

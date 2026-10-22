@@ -148,6 +148,12 @@ class FcmService {
   /// Explicit helper to retrieve or refresh the device FCM token.
   Future<String?> getDeviceToken() async {
     try {
+      if (kIsWeb) {
+        const vapidKey = String.fromEnvironment('FCM_VAPID_KEY', defaultValue: '');
+        if (vapidKey.isNotEmpty) {
+          return await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+        }
+      }
       return await FirebaseMessaging.instance.getToken();
     } catch (e) {
       debugPrint('[FCM] getDeviceToken error: $e');
@@ -279,8 +285,8 @@ class FcmService {
         debugPrint('[FCM] updateFCMToken skipped: user is unauthenticated.');
         return;
       }
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
+      final token = await getDeviceToken();
+      if (token != null && token.isNotEmpty) {
         final response = await ApiClient().post(
           '/api/users/update-fcm/',
           body: {'fcm_token': token, 'token': token},

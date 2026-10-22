@@ -2,12 +2,14 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/pressable_card.dart';
 
 // USER RULE - do not change: 4 profile stat boxes in primary red tone
-// Box 1: Total Donations
-// Box 2: Lives Saved (3 lives per donation)
+// Box 1: Bags Donated
+// Box 2: Eligible today
 // Box 3: Last Donation
-// Box 4: Pause Emergency Alerts
+// Box 4: Pause Emergency Alerts (slide toggle)
+// All wrapped in shared PressableCard for light press zoom
 class ProfileStatsRow extends StatelessWidget {
   final int totalBags;
   final int daysRemaining;
@@ -39,233 +41,225 @@ class ProfileStatsRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 600;
+        final isEligible = daysRemaining <= 0;
 
         final tiles = [
-          // ── Box 1: Total Donations ──
-          _buildTile(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '$totalBags',
-                    style: const TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFC30121),
-                      height: 1.0,
+          // ── Box 1: Bags Donated ──
+          PressableCard(
+            child: _buildTile(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '$totalBags',
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFC30121),
+                        height: 1.0,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'Total Donations',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF24191A),
-                      height: 1.1,
+                  const SizedBox(height: 6),
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Bags Donated',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
+                        height: 1.1,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'donations completed',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      color: Color(0xFF7F2228),
-                      height: 1.1,
+                  const SizedBox(height: 2),
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'units given',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        color: Color(0xFF7F2228),
+                        height: 1.1,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // ── Box 2: Lives Saved ──
-          _buildTile(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    '${totalBags * 3}',
-                    style: const TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFC30121),
-                      height: 1.0,
+          // ── Box 2: Eligible today ──
+          PressableCard(
+            child: _buildTile(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      isEligible ? 'Yes' : 'No',
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFC30121),
+                        height: 1.0,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'Lives Saved',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF24191A),
-                      height: 1.1,
+                  const SizedBox(height: 6),
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Eligible today',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
+                        height: 1.1,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'patients helped',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      color: Color(0xFF7F2228),
-                      height: 1.1,
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      isEligible ? 'Ready to donate' : '$daysRemaining days left',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        color: Color(0xFF7F2228),
+                        height: 1.1,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
           // ── Box 3: Last Donation ──
-          _buildTile(
-            child: Stack(
-              children: [
-                if (onEditLastDonation != null)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: onEditLastDonation,
-                      behavior: HitTestBehavior.opaque,
-                      child: const Padding(
-                        padding: EdgeInsets.all(2),
-                        child: Icon(Icons.edit_outlined, size: 14, color: Color(0xFFC30121)),
+          PressableCard(
+            child: _buildTile(
+              child: Stack(
+                children: [
+                  if (onEditLastDonation != null)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: onEditLastDonation,
+                        behavior: HitTestBehavior.opaque,
+                        child: const Padding(
+                          padding: EdgeInsets.all(2),
+                          child: Icon(Icons.edit_outlined, size: 14, color: Color(0xFFC30121)),
+                        ),
                       ),
                     ),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            lastDonationDateFormatted ?? 'None',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFC30121),
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Last Donation',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF24191A),
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            hospitalName?.isNotEmpty == true ? hospitalName! : 'Clinic / Direct',
+                            maxLines: 1,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 10,
+                              color: Color(0xFF7F2228),
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          lastDonationDateFormatted ?? 'None',
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFC30121),
-                            height: 1.1,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          'Last Donation',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF24191A),
-                            height: 1.1,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          hospitalName?.isNotEmpty == true ? hospitalName! : 'Clinic / Direct',
-                          maxLines: 1,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 10,
-                            color: Color(0xFF7F2228),
-                            height: 1.1,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // ── Box 4: Pause Emergency Alerts ──
-          _buildTile(
+          // ── Box 4: Pause Emergency Alerts (slide toggle) ──
+          PressableCard(
             onTap: onTogglePause,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isAlertsPaused ? Icons.notifications_paused_rounded : Icons.notifications_active_rounded,
-                        size: 20,
-                        color: const Color(0xFFC30121),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isAlertsPaused ? 'Paused' : 'Active',
-                        style: const TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFC30121),
-                          height: 1.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    'Emergency Alerts',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF24191A),
-                      height: 1.1,
+            child: _buildTile(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch.adaptive(
+                      value: isAlertsPaused,
+                      onChanged: onTogglePause != null ? (_) => onTogglePause!() : null,
+                      activeColor: const Color(0xFFC30121),
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    isAlertsPaused ? 'Tap to resume' : 'Tap to pause',
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      color: Color(0xFF7F2228),
-                      height: 1.1,
+                  const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Pause Alerts',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF24191A),
+                        height: 1.1,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      isAlertsPaused ? 'Paused' : 'Active',
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        color: Color(0xFF7F2228),
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ];
@@ -294,8 +288,8 @@ class ProfileStatsRow extends StatelessWidget {
     );
   }
 
-  Widget _buildTile({required Widget child, VoidCallback? onTap}) {
-    final tile = Container(
+  Widget _buildTile({required Widget child}) {
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8F7),
@@ -311,14 +305,5 @@ class ProfileStatsRow extends StatelessWidget {
       ),
       child: child,
     );
-
-    if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: tile,
-      );
-    }
-    return tile;
   }
 }

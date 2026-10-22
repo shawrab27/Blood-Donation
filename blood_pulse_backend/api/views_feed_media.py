@@ -61,6 +61,36 @@ class MediaUploadView(APIView):
         clean_file = strip_image_exif(file_obj)
         clean_bytes = clean_file.read() if hasattr(clean_file, 'read') else file_obj.read()
 
+        # Compress and resize to max ~300KB (G-8)
+        try:
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(clean_bytes))
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+
+            # Downscale if exceeding 1280x1280
+            max_dim = 1280
+            if img.width > max_dim or img.height > max_dim:
+                img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+
+            # Iteratively compress quality to max ~300KB
+            quality = 85
+            out_io = io.BytesIO()
+            img.save(out_io, format='JPEG', quality=quality, optimize=True)
+            while out_io.tell() > 300 * 1024 and quality > 30:
+                quality -= 10
+                out_io = io.BytesIO()
+                img.save(out_io, format='JPEG', quality=quality, optimize=True)
+
+            clean_bytes = out_io.getvalue()
+        except Exception as compress_err:
+            logger.warning("[MediaUploadView] Image compression failed, using original: %s", compress_err)
+
         storage = get_media_storage()
         try:
             upload_res = storage.upload_image(clean_bytes, filename=filename, folder='bloodpulse/feed')

@@ -2,7 +2,9 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
@@ -94,10 +96,24 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       }
     });
 
+    // USER RULE - do not change: white translucent glass (BackdropFilter blur) header with top safe-area padding on all pages so no solid red band appears behind time/battery
     return AppBar(
-      backgroundColor: backgroundColor ?? AppColors.surface,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            color: (backgroundColor ?? Colors.white).withValues(alpha: 0.85),
+          ),
+        ),
+      ),
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
       automaticallyImplyLeading: false,
       titleSpacing: 8,
       centerTitle: centerTitle,

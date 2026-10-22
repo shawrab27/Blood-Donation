@@ -98,19 +98,20 @@ class _CapsuleButtonState extends State<CapsuleButton>
 
   @override
   Widget build(BuildContext context) {
-    final bool disabled = widget.onPressed == null || widget.isLoading;
-    final Color bg = widget.backgroundColor ?? AppColors.primary;
+    // USER RULE - do not change: button stays red during loading; other buttons use IgnorePointer
+    final bool disabled = widget.onPressed == null && !widget.isLoading;
+    final Color bg = widget.isLoading ? AppColors.primary : (widget.backgroundColor ?? AppColors.primary);
     final Color fg = widget.foregroundColor ?? AppColors.onPrimary;
 
     Widget child;
     if (widget.isLoading) {
-      // USER RULE - do not change: ONE shared ECG-heartbeat loader (white ECG on red button)
-      child = SizedBox(
-        width: 24,
+      // USER RULE - do not change: ONE shared animated white ECG-heartbeat loader
+      child = const SizedBox(
+        width: 32,
         height: 24,
         child: AppLoader(
           size: AppLoaderSize.small,
-          color: widget.isOutlined ? bg : Colors.white,
+          color: Colors.white,
         ),
       );
     } else {
