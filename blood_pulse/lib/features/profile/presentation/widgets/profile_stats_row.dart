@@ -2,7 +2,7 @@
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/pressable_card.dart';
+import 'package:blood_pulse/core/widgets/pressable_card.dart';
 
 // USER RULE - do not change: 4 profile stat boxes in primary red tone
 // Box 1: Bags Donated

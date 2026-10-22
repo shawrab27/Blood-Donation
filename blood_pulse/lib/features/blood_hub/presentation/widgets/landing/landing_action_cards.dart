@@ -3,6 +3,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:blood_pulse/core/widgets/pressable_card.dart';
+export 'package:blood_pulse/core/widgets/pressable_card.dart';
+
 
 /// Primary action cards for Blood Hub Landing:
 /// Segment 1: "Search for Donor"
@@ -532,4 +535,4 @@ class _DispatchOptionCard extends StatelessWidget {
   }
 }
 
-export '../../../../core/widgets/pressable_card.dart';
+

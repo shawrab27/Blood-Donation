@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../feed/presentation/providers/feed_provider.dart';
 import 'landing_action_cards.dart';
+import 'package:blood_pulse/core/widgets/pressable_card.dart';
+
 
 /// Segment 3 for Blood Hub Landing: Blood Campaigns with Feed navigation and Live Drive Previews.
 class LandingCampaignCard extends ConsumerWidget {
