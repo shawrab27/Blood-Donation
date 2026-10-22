@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -134,6 +135,12 @@ class AppTheme {
 
       // ── AppBar ──
       appBarTheme: AppBarTheme(
+        // USER RULE - do not change: transparent status bar with dark icons
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textLight,
         elevation: 0,

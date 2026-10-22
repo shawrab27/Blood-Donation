@@ -3,6 +3,11 @@
 
 import 'package:flutter/material.dart';
 
+// USER RULE - do not change
+// The ONLY brand slogan across BloodPulse is "You give today, they live today".
+// Do not invent or introduce any alternative slogans.
+const String kAppSlogan = 'You give today, they live today';
+
 class AppColors {
   static const Color primaryRed = Color(0xFFC32121);
   static const Color secondaryNavy = Color(0xFF1A1A2E);
@@ -27,4 +32,6 @@ class AppConstants {
   static const double borderRadius = 12.0;
   static const double buttonHeight = 56.0;
   static const String appName = 'Blood Pulse';
+  // USER RULE - do not change
+  static const String slogan = kAppSlogan;
 }

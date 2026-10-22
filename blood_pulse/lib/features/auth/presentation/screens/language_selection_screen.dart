@@ -114,8 +114,8 @@ class LanguageSelectionScreen extends ConsumerWidget {
                           // ── Official BloodPulse Logo & Brand Name ─────────
                           const BloodPulseLogo(
                             direction: Axis.vertical,
-                            iconSize: 58.0,
-                            fontSize: 30.0,
+                            iconSize: 110.0,
+                            fontSize: 36.0,
                             spacing: 12.0,
                           ),
                           const SizedBox(height: 28),

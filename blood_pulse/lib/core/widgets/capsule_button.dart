@@ -81,7 +81,7 @@ class _CapsuleButtonState extends State<CapsuleButton>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 100),
-    lowerBound: 0.96,
+    lowerBound: 0.97,
     upperBound: 1.0,
     value: 1.0,
   );
@@ -104,12 +104,24 @@ class _CapsuleButtonState extends State<CapsuleButton>
 
     Widget child;
     if (widget.isLoading) {
-      child = const SizedBox(
-        width: 22,
-        height: 22,
-        child: AppLoader(),
+      // USER RULE - do not change: ONE shared ECG-heartbeat loader (white ECG on red button)
+      child = SizedBox(
+        width: 24,
+        height: 24,
+        child: AppLoader(
+          size: AppLoaderSize.small,
+          color: widget.isOutlined ? bg : Colors.white,
+        ),
       );
     } else {
+      final bool isArrow = widget.icon != null && (
+        widget.icon == Icons.arrow_forward ||
+        widget.icon == Icons.arrow_forward_rounded ||
+        widget.icon == Icons.arrow_right_alt_rounded ||
+        widget.icon == Icons.arrow_forward_ios_rounded
+      );
+
+      // USER RULE - do not change: arrow icon inside capsule buttons must come AFTER the label
       child = Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -117,7 +129,7 @@ class _CapsuleButtonState extends State<CapsuleButton>
           if (widget.leading != null) ...[
             widget.leading!,
             const SizedBox(width: 10),
-          ] else if (widget.icon != null) ...[
+          ] else if (widget.icon != null && !isArrow) ...[
             Icon(widget.icon, size: 20, color: fg),
             const SizedBox(width: 8),
           ],
@@ -135,6 +147,10 @@ class _CapsuleButtonState extends State<CapsuleButton>
               ),
             ),
           ),
+          if (isArrow) ...[
+            const SizedBox(width: 8),
+            Icon(widget.icon, size: 20, color: fg),
+          ],
         ],
       );
     }

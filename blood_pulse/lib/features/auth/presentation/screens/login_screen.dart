@@ -189,8 +189,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         // ── Official BloodPulse Logo & Brand Name ─────────
                         const BloodPulseLogo(
                           direction: Axis.vertical,
-                          iconSize: 64.0,
-                          fontSize: 32.0,
+                          iconSize: 110.0,
+                          fontSize: 36.0,
                           spacing: 12.0,
                         ),
                         const SizedBox(height: 8),
