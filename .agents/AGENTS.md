@@ -32,4 +32,9 @@ Before executing any prompt or command, strictly enforce these mandatory BloodPu
 ### 5. TARGET SCOPE & INSTITUTION
 - Product scope is nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
 
-
+### 6. SHARED CORE WIDGETS & PATTERNS (USER RULES)
+- **S1 (PrimaryButton)**: Label never clips or wraps at 320dp/360dp with textScale 1.3 (Flexible + FittedBox, min height 48). Arrow icon strictly AFTER button text. Press-zoom scale 0.97. Loading shows ONLY white ECG loader on red; other buttons use IgnorePointer without changing appearance.
+- **S2 (PressableScale)**: Scale 0.97 over 120ms with Curves.easeOutCubic on press for all tappable cards, tiles, and boxes.
+- **S3 (AppError)**: Every API error mapped to one short human sentence. Never show raw JSON, ApiException, status codes, or model field names.
+- **S4 (PulseAI FAB Allowlist)**: Floating button visible strictly on allowlist: Feed, Blood Hub, Communities, Health Hub, Profile main tabs. Hidden everywhere else (chat, OTP, auth, registration, poster, emergency request, splash).
+- **S5 (PulseMotion)**: Standard durations (fast 120ms, normal 300ms, slow 600ms) and curves in `PulseMotion`; honors `MediaQuery.disableAnimations`; custom painters wrapped in `RepaintBoundary`.

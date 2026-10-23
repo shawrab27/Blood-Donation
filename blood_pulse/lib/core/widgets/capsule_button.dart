@@ -6,23 +6,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
-/// A pill-shaped (full-capsule) button matching the BloodPulse brand identity.
-///
-/// Features:
-///   • Tap-scale animation (scale down to 0.96 on press, bounce back on release)
-///   • Optional red glow shadow (`showGlow: true`)
-///   • Supports primary (filled) and outlined variants
-///   • `isLoading` state shows a circular progress indicator
-///   • Strictly null-safe with `const` constructor support
-///
-/// Example:
-/// ```dart
-/// CapsuleButton(
-///   label: 'Donate Blood',
-///   onPressed: () {},
-///   showGlow: true,
-/// )
-/// ```
+// USER RULE - do not change: S1 PrimaryButton / CapsuleButton label never clips or wraps at 320dp/360dp with textScale 1.3, arrow AFTER text, press-zoom, loading shows ONLY white ECG loader on red
 class CapsuleButton extends StatefulWidget {
   const CapsuleButton({
     super.key,
@@ -80,7 +64,7 @@ class _CapsuleButtonState extends State<CapsuleButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 100),
+    duration: const Duration(milliseconds: 120),
     lowerBound: 0.97,
     upperBound: 1.0,
     value: 1.0,
@@ -135,16 +119,20 @@ class _CapsuleButtonState extends State<CapsuleButton>
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Text(
-              widget.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: fg,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: fg,
+                ),
               ),
             ),
           ),
@@ -188,7 +176,7 @@ class _CapsuleButtonState extends State<CapsuleButton>
             scale: _controller,
             child: Container(
               width: effectiveWidth,
-              height: widget.height,
+              height: widget.height < 48.0 ? 48.0 : widget.height,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(kCapsuleRadius),

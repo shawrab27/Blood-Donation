@@ -111,21 +111,17 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
     );
   }
 
+  // USER RULE - do not change: S4 PulseAI floating button ALLOWLIST only (Feed, Blood Hub, Communities, Health Hub, Profile main tabs). Hidden everywhere else (chat, OTP, auth, registration, poster, emergency request, splash).
   bool _isRouteAllowed() {
-    if (_currentRoute.isEmpty) return true; // Default to true in tests/unmatched shells
-    const hiddenRoutes = [
-      '/',
-      '/splash',
-      '/language',
-      '/login',
-      '/register',
-      '/onboarding',
-      '/forgot-password',
-      '/verify-otp',
-      '/privacy-policy',
-      '/assistant',
-    ];
-    return !hiddenRoutes.any((r) => _currentRoute == r || _currentRoute.startsWith('$r/'));
+    const allowedExactRoutes = {
+      '/feed',
+      '/blood-hub',
+      '/communities',
+      '/health-hub',
+      '/profile',
+      '/dashboard',
+    };
+    return allowedExactRoutes.contains(_currentRoute);
   }
 
   bool _hasBottomNav() {
