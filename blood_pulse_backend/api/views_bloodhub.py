@@ -82,19 +82,28 @@ def donor_search_view(request):
     offset = int(request.query_params.get('offset', 0))
 
     from api.services.eligibility import get_eligible_donors_base_queryset
+    from api.data.bd_locations import DISTRICT_ALIASES
 
-    # Use single shared eligible donors base queryset
-    queryset = get_eligible_donors_base_queryset(
-        blood_group=blood_group,
-        component=component,
-        for_search=True,
-    ).select_related('user', 'upazila_linked__district__division')
-
+    # USER RULE - do not change: Exact blood group match when selected (B1)
+    exact_match = request.query_params.get('exact_match', 'true').lower() in ('true', '1')
+    if exact_match and blood_group and blood_group != 'Any':
+        queryset = get_eligible_donors_base_queryset(
+            blood_group=None,
+            component=component,
+            for_search=True,
+        ).filter(blood_group__iexact=blood_group).select_related('user', 'upazila_linked__district__division')
+    else:
+        queryset = get_eligible_donors_base_queryset(
+            blood_group=blood_group,
+            component=component,
+            for_search=True,
+        ).select_related('user', 'upazila_linked__district__division')
 
     if district and district != 'Any':
+        canonical_dist = DISTRICT_ALIASES.get(district, district)
         queryset = queryset.filter(
-            Q(district__iexact=district) |
-            Q(upazila_linked__district__name__iexact=district)
+            Q(district__iexact=canonical_dist) |
+            Q(upazila_linked__district__name__iexact=canonical_dist)
         )
 
     if division and division != 'Any':

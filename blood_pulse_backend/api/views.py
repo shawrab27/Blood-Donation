@@ -1,4 +1,5 @@
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -42,6 +43,49 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
     ]
     queryset = DonorProfile.objects.all()
     serializer_class = DonorProfileSerializer
+
+    # USER RULE - do not change: Server-side filtering via query params (/api/donors/) (B1)
+    def get_queryset(self):
+        qs = DonorProfile.objects.all()
+        req = getattr(self, 'request', None)
+        if not req:
+            return qs
+
+        blood_group = req.query_params.get('blood_group', '').replace(' ', '+').strip()
+        if blood_group and blood_group != 'Any':
+            exact = req.query_params.get('exact_match', 'true').lower() in ('true', '1')
+            if exact:
+                qs = qs.filter(blood_group__iexact=blood_group)
+            else:
+                from api.services.compat import get_compatible_donor_groups
+                qs = qs.filter(blood_group__in=get_compatible_donor_groups(blood_group))
+
+        district = req.query_params.get('district', '').strip()
+        if district and district != 'Any':
+            from api.data.bd_locations import DISTRICT_ALIASES
+            canonical_district = DISTRICT_ALIASES.get(district, district)
+            qs = qs.filter(
+                Q(district__iexact=canonical_district) |
+                Q(upazila_linked__district__name__iexact=canonical_district)
+            )
+
+        division = req.query_params.get('division', '').strip()
+        if division and division != 'Any':
+            from api.models import District
+            districts_in_div = list(District.objects.filter(division__name__iexact=division).values_list('name', flat=True))
+            qs = qs.filter(
+                Q(upazila_linked__district__division__name__iexact=division) |
+                Q(district__in=districts_in_div)
+            )
+
+        upazila = req.query_params.get('upazila', '').strip()
+        if upazila and upazila != 'Any':
+            qs = qs.filter(
+                Q(upazila__iexact=upazila) |
+                Q(upazila_linked__name__iexact=upazila)
+            )
+
+        return qs
 
     def get_permissions(self):
         if self.action in ['create', 'retrieve', 'list']:

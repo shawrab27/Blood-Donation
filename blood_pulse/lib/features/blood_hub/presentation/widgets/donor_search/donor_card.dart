@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -36,12 +37,15 @@ class DonorCard extends StatelessWidget {
     final districtText = donor.district.isNotEmpty ? donor.district : 'Bangladesh';
     final tierBadge = donor.badge.isNotEmpty ? donor.badge : 'Donor';
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _handleTap(context),
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
+    // USER RULE - do not change: S2 PressableScale on donor cards (B4)
+    return PressableScale(
+      onTap: () => _handleTap(context),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _handleTap(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
           decoration: BoxDecoration(
             color: kDonorCardDarkRed,
             borderRadius: BorderRadius.circular(16),
@@ -198,6 +202,7 @@ class DonorCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
