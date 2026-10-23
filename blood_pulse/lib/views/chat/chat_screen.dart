@@ -1,3 +1,5 @@
+import 'package:blood_pulse/core/errors/app_error_mapper.dart';
+import '../../core/widgets/capsule_button.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -711,9 +713,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               const Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Color(0xFFC30121)),
                               const SizedBox(height: 12),
                               Text(
-                                'Unable to load live messages (${snapshot.error})',
+                                AppError.toHumanMessage(snapshot.error),
                                 style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF666666)),
                                 textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              CapsuleButton(
+                                label: 'Retry',
+                                icon: Icons.refresh_rounded,
+                                height: 44,
+                                width: 140,
+                                onPressed: () {
+                                  setState(() {});
+                                },
                               ),
                             ],
                           ),

@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:blood_pulse/core/errors/app_error_mapper.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
 import 'package:blood_pulse/core/widgets/blood_pulse_app_bar.dart';
 import 'package:blood_pulse/core/widgets/responsive_layout.dart';
@@ -14,6 +15,7 @@ import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poste
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_generator_widget.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_share_sheet.dart';
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_style_selectors.dart';
+import 'package:blood_pulse/features/feed/presentation/providers/feed_provider.dart';
 
 /// Full-screen poster studio: live-preview, size/colour pickers, export & share.
 class PosterGeneratorScreen extends ConsumerStatefulWidget {
@@ -52,7 +54,7 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
     try {
       final png = await _generatorKey.currentState?.exportPNG();
       if (png == null) throw Exception('Could not capture poster.');
-      final savedPath = await ref.read(posterRepositoryProvider).exportToGallery(png);
+      await ref.read(posterRepositoryProvider).exportToGallery(png);
       if (mounted) {
         _snack(
           isBangla
@@ -62,7 +64,59 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
         );
       }
     } catch (e) {
-      if (mounted) _snack('${isBangla ? 'ব্যর্থ' : 'Failed'}: $e', AppColors.error);
+      if (mounted) _snack(AppError.toHumanMessage(e, isBangla: isBangla), AppColors.error);
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _shareToBloodPulseFeed(bool isBangla) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+    try {
+      final png = await _generatorKey.currentState?.exportPNG();
+      if (png == null) throw Exception('Could not capture poster.');
+
+      final caption = isBangla
+          ? '🚨 জরুরি রক্ত প্রয়োজন (${_posterData.bloodGroup})\n'
+              'স্থান: ${_posterData.location}\n'
+              'পরিমাণ: ${_posterData.unitsNeeded} ব্যাগ\n'
+              'জরুরি মাত্রা: ${_posterData.urgencyLevel}\n'
+              'কারণ: ${_posterData.condition}'
+          : '🚨 Urgent Blood Request (${_posterData.bloodGroup})\n'
+              'Location: ${_posterData.location}\n'
+              'Units: ${_posterData.unitsNeeded} Bag(s)\n'
+              'Urgency: ${_posterData.urgencyLevel}\n'
+              'Reason: ${_posterData.condition}';
+
+      final author = _posterData.patientName.isNotEmpty ? _posterData.patientName : 'Emergency Requester';
+      final success = await ref.read(feedProvider.notifier).addPost(
+        authorName: author,
+        content: caption,
+        imageBytes: png,
+        location: _posterData.location,
+        kind: 'emergency',
+        urgentNeedBadge: _posterData.urgencyLevel,
+        bloodGroupBadge: _posterData.bloodGroup,
+      );
+
+      if (mounted) {
+        if (success) {
+          _snack(
+            isBangla ? '✓ BloodPulse ফিডে পোস্ট করা হয়েছে!' : '✓ Shared to BloodPulse Feed!',
+            AppColors.success,
+          );
+        } else {
+          _snack(
+            isBangla ? 'ফিডে পোস্ট করতে ব্যর্থ হয়েছে' : 'Failed to post to Feed',
+            AppColors.error,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _snack(AppError.toHumanMessage(e, isBangla: isBangla), AppColors.error);
+      }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -70,6 +124,7 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
 
   Future<void> _sharePoster(bool isBangla, {String? platform}) async {
     if (platform == 'gallery') { await _exportToGallery(isBangla); return; }
+    if (platform == 'bloodpulse') { await _shareToBloodPulseFeed(isBangla); return; }
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
     try {
@@ -78,7 +133,7 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
       await ref.read(posterRepositoryProvider)
           .sharePoster(png, _posterData, platform: platform, isBangla: isBangla);
     } catch (e) {
-      if (mounted) _snack('${isBangla ? 'ব্যর্থ' : 'Failed'}: $e', AppColors.error);
+      if (mounted) _snack(AppError.toHumanMessage(e, isBangla: isBangla), AppColors.error);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }

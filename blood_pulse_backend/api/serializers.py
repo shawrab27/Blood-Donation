@@ -84,8 +84,23 @@ class DonorProfileSerializer(serializers.ModelSerializer):
         validated_data.pop('password', None)
         return super().create(validated_data)
 
+    def validate(self, attrs):
+        # USER RULE: blood_group is editable until registration complete, then locked
+        if self.instance and (self.instance.registration_complete or self.instance.is_profile_complete):
+            if 'blood_group' in attrs and self.instance.blood_group:
+                new_bg = (attrs['blood_group'] or '').strip().upper()
+                old_bg = self.instance.blood_group.strip().upper()
+                if new_bg and new_bg != old_bg:
+                    raise serializers.ValidationError({
+                        'blood_group': 'Blood group is permanently locked once registration is complete.'
+                    })
+        return super().validate(attrs)
+
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
+        # Silently ignore read-only / privileged fields from client
+        validated_data.pop('is_verified', None)
+        validated_data.pop('is_profile_complete', None)
         if password and instance.user:
             instance.user.set_password(password)
             instance.user.save()
@@ -268,6 +283,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class SocialPostSerializer(serializers.ModelSerializer):
+    text_content = serializers.CharField(required=False, allow_blank=True, default='')
     author_name = serializers.SerializerMethodField()
     author_photo = serializers.SerializerMethodField()
     google_photo_url = serializers.SerializerMethodField()
@@ -315,6 +331,14 @@ class SocialPostSerializer(serializers.ModelSerializer):
             if not isinstance(item, dict) or 'url' not in item:
                 raise serializers.ValidationError("Each media item must be an object with a 'url' property.")
         return value
+
+    def validate(self, attrs):
+        text = (attrs.get('text_content') or '').strip()
+        media = attrs.get('media') or []
+        original_post = attrs.get('original_post')
+        if not text and not media and not original_post:
+            raise serializers.ValidationError("Post must contain text or at least one image.")
+        return attrs
 
     def get_author_name(self, obj):
         if obj.author and obj.author.user:

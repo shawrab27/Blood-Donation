@@ -330,7 +330,7 @@ else:
 EMAIL_PROVIDER = os.getenv('EMAIL_PROVIDER', '').strip().lower()
 DJANGO_ENV = os.getenv('DJANGO_ENV', '').strip().lower()
 
-VALID_EMAIL_PROVIDERS = ('mailjet', 'resend', 'brevo', 'brevo_api', 'console', 'locmem')
+VALID_EMAIL_PROVIDERS = ('mailjet', 'resend', 'brevo', 'brevo_api', 'console', 'locmem', 'smtp')
 
 if DJANGO_ENV == 'test' or 'test' in sys.argv or IS_TESTING:
     EMAIL_PROVIDER = 'locmem'
@@ -363,6 +363,14 @@ RESEND_SENDER_NAME = os.getenv('RESEND_SENDER_NAME', 'BloodPulse')
 BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
 BREVO_SENDER_EMAIL = os.getenv('BREVO_SENDER_EMAIL', os.getenv('EMAIL_FROM', ''))
 BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'BloodPulse')
+
+# SMTP Standard Provider (Gmail App Password / Custom SMTP Relay)
+SMTP_HOST = os.getenv('SMTP_HOST', '')
+SMTP_PORT = int(os.getenv('SMTP_PORT', '587') or 587)
+SMTP_USER = os.getenv('SMTP_USER', '')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
+SMTP_FROM = os.getenv('SMTP_FROM', os.getenv('DEFAULT_FROM_EMAIL', ''))
+SMTP_USE_TLS = os.getenv('SMTP_USE_TLS', 'true').strip().lower() in ('true', '1', 't')
 
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',

@@ -44,12 +44,31 @@ class BloodPulseTokenObtainPairSerializer(TokenObtainPairSerializer):
             )
 
         clean_id = str(login_id).strip()
-        attrs['username'] = clean_id
+        from django.contrib.auth.models import User
+        from api.models import DonorProfile
+        from api.phone_utils import normalize_phone_number, get_phone_variants, is_valid_phone
+
+        matched_user = User.objects.filter(username__iexact=clean_id).first()
+        if not matched_user and '@' in clean_id:
+            matched_user = User.objects.filter(email__iexact=clean_id).first()
+
+        if not matched_user and is_valid_phone(clean_id):
+            try:
+                canonical = normalize_phone_number(clean_id)
+                variants = get_phone_variants(canonical)
+                matched_user = User.objects.filter(username__in=variants).first()
+                if not matched_user:
+                    profile = DonorProfile.objects.filter(phone_number__in=variants).select_related('user').first()
+                    if profile and profile.user:
+                        matched_user = profile.user
+            except Exception:
+                pass
+
+        attrs['username'] = matched_user.username if matched_user else clean_id
 
         try:
             data = super().validate(attrs)
         except exceptions.AuthenticationFailed:
-            # Guarantee generic 'Invalid credentials' message for any auth failure
             raise exceptions.AuthenticationFailed(
                 self.error_messages['no_active_account'],
                 'no_active_account',

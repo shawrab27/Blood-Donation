@@ -354,6 +354,60 @@ class LocMemEmailProvider(BaseEmailProvider):
         return {'success': True, 'status_code': 200, 'provider': self.provider_name}
 
 
+class SmtpEmailProvider(BaseEmailProvider):
+    """Standard SMTP Provider (e.g. Gmail App Password, Custom SMTP Relay)."""
+    provider_name = "smtp"
+
+    def send_email(
+        self,
+        to_email: str,
+        subject: str,
+        text_content: str,
+        html_content: Optional[str] = None,
+    ) -> dict:
+        host = getattr(settings, 'SMTP_HOST', '') or os.getenv('SMTP_HOST', '')
+        user = getattr(settings, 'SMTP_USER', '') or os.getenv('SMTP_USER', '')
+        password = getattr(settings, 'SMTP_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
+        port = int(getattr(settings, 'SMTP_PORT', 0) or os.getenv('SMTP_PORT', 587))
+        from_email = (
+            getattr(settings, 'SMTP_FROM', '')
+            or os.getenv('SMTP_FROM', '')
+            or getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+            or user
+        )
+        use_tls = getattr(settings, 'SMTP_USE_TLS', True)
+
+        if not host or not user or not password:
+            raise EmailConfigError("SMTP configuration incomplete: SMTP_HOST, SMTP_USER, and SMTP_PASSWORD are required.")
+
+        try:
+            from django.core.mail.backends.smtp import EmailBackend
+            connection = EmailBackend(
+                host=host,
+                port=port,
+                username=user,
+                password=password,
+                use_tls=use_tls,
+                fail_silently=False,
+                timeout=10,
+            )
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=from_email,
+                to=[to_email],
+                connection=connection,
+            )
+            if html_content:
+                msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+            logger.info("[SmtpEmailProvider] Dispatched email to %s via %s:%s", mask_email(to_email), host, port)
+            return {'success': True, 'status_code': 200, 'provider': self.provider_name}
+        except Exception as exc:
+            logger.error("[SmtpEmailProvider] Failed sending to %s: %s", mask_email(to_email), exc)
+            raise EmailProviderError(f"SMTP send failed: {exc}", status_code=500)
+
+
 def get_email_provider() -> BaseEmailProvider:
     """
     Instantiates the configured BaseEmailProvider based on EMAIL_PROVIDER setting/env.
@@ -374,6 +428,8 @@ def get_email_provider() -> BaseEmailProvider:
         return ConsoleEmailProvider()
     elif provider_str == 'locmem':
         return LocMemEmailProvider()
+    elif provider_str in ('smtp', 'smtp_backend'):
+        return SmtpEmailProvider()
 
     # Default fallback: if running tests or unset in dev
     if getattr(settings, 'IS_TESTING', False) or 'test' in os.sys.argv:

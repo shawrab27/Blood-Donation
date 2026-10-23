@@ -1524,7 +1524,7 @@ class SocialPost(models.Model):
 
     author = models.ForeignKey(DonorProfile, on_delete=models.CASCADE)
 
-    text_content = models.TextField()
+    text_content = models.TextField(blank=True, default='')
 
     created_at = models.DateTimeField(auto_now_add=True)
 

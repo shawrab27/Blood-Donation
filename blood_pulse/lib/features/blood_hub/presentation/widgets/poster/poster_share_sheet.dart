@@ -165,12 +165,22 @@ class PosterShareSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
+          // Share to BloodPulse Feed
+          _actionCard(
+            icon: Icons.bloodtype_rounded,
+            color: AppColors.primary,
+            title: isBangla ? 'BloodPulse ফিডে শেয়ার করুন' : 'Share to BloodPulse Feed',
+            subtitle: isBangla ? 'টাইমলাইন ও সবার আপডেটে পোস্ট হবে' : 'Broadcast to Timeline and All Updates',
+            onTap: () => onSelectChannel('bloodpulse'),
+          ),
+          const SizedBox(height: 10),
+
           // Save high-res
           _actionCard(
             icon: Icons.download_rounded,
             color: AppColors.primary,
-            title: isBangla ? 'হাই-রেজ ছবি গ্যালারিতে সেভ করুন' : 'Save High-Res Image to Gallery',
-            subtitle: isBangla ? 'PNG · 3× রেজোলিউশন' : 'PNG · 3× pixel density',
+            title: isBangla ? 'ছবি গ্যালারিতে সেভ করুন' : 'Save Image to Gallery',
+            subtitle: isBangla ? 'PNG · হাই রেজোলিউশন' : 'PNG · High resolution copy',
             onTap: () => onSelectChannel('gallery'),
           ),
           const SizedBox(height: 10),
@@ -200,64 +210,34 @@ class PosterShareSheet extends StatelessWidget {
     );
   }
 
-  void _copyCaption(BuildContext context) {
-    final caption = _buildCaption(posterData, isBangla);
-    Clipboard.setData(ClipboardData(text: caption));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(
-        isBangla ? 'ক্যাপশন ক্লিপবোর্ডে কপি হয়েছে!' : 'Caption copied!',
-        style: const TextStyle(fontFamily: 'Inter'),
-      ),
-      backgroundColor: AppColors.success,
-      behavior: SnackBarBehavior.floating,
-      shape: const StadiumBorder(),
-      duration: const Duration(seconds: 2),
-    ));
-    onCopyCaption?.call();
-  }
-
-  String _buildCaption(PosterData data, bool isBangla) {
-    if (isBangla) {
-      return '🩸 ${data.bloodGroup} রক্ত জরুরি প্রয়োজন!\n'
-          'রোগী: ${data.patientName} | ${data.condition}\n'
-          'হাসপাতাল: ${data.hospitalName ?? 'জরুরি বিভাগ'} — ${data.location}\n'
-          'প্রয়োজন: ${data.unitsNeeded} ব্যাগ | জরুরি: ${data.urgencyLevel}\n'
-          'যোগাযোগ: ${data.contactNumber ?? 'হটলাইনে কল করুন'}\n\n'
-          '"আজ আপনি দিলে, কাল তারা বাঁচবে।"\n'
-          '🔗 https://bloodpulse.app';
-    }
-    return '🩸 URGENT ${data.bloodGroup} Blood Needed!\n'
-        'Patient: ${data.patientName} | ${data.condition}\n'
-        'Hospital: ${data.hospitalName ?? 'Emergency Dept'} — ${data.location}\n'
-        'Need: ${data.unitsNeeded} bag(s) | Urgency: ${data.urgencyLevel}\n'
-        'Contact: ${data.contactNumber ?? 'Emergency Hotline'}\n\n'
-        '"You give today, They live today."\n'
-        '🔗 https://bloodpulse.app';
-  }
-
   Widget _channelBtn({
     required IconData icon,
     required Color color,
     required String label,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: color.withAlpha(28),
-            child: Icon(icon, color: color, size: 26),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withAlpha(24),
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withAlpha(60), width: 1.5),
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
             label,
             style: const TextStyle(
               fontFamily: 'Inter',
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
               color: AppColors.secondary,
             ),
           ),
@@ -273,53 +253,96 @@ class PosterShareSheet extends StatelessWidget {
     required String subtitle,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF8F7),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF0E0E0)),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: color.withAlpha(24),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.secondary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      color: AppColors.neutral,
-                    ),
-                  ),
-                ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8F7),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFF0E0E0), width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(24),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 20),
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: color, size: 20),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        color: AppColors.neutral,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Color(0xFFC0A0A0),
+                size: 14,
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  void _copyCaption(BuildContext context) {
+    final caption = isBangla
+        ? 'জরুরি রক্তের প্রয়োজন!\n\n'
+            'রক্তের গ্রুপ: ${posterData.bloodGroup}\n'
+            'রোগীর অবস্থা: ${posterData.condition}\n'
+            'স্থান: ${posterData.location}\n'
+            'প্রয়োজনীয় পরিমাণ: ${posterData.unitsNeeded} ব্যাগ\n'
+            'যোগাযোগ: ${posterData.contactNumber ?? "BloodPulse অ্যাপের মাধ্যমে"}\n\n'
+            'রক্তদান করুন, জীবন বাঁচান। #BloodPulse'
+        : 'URGENT BLOOD NEEDED!\n\n'
+            'Blood Group: ${posterData.bloodGroup}\n'
+            'Condition: ${posterData.condition}\n'
+            'Location: ${posterData.location}\n'
+            'Units Needed: ${posterData.unitsNeeded} bag(s)\n'
+            'Contact: ${posterData.contactNumber ?? "via BloodPulse App"}\n\n'
+            'You give today, they live today. #BloodPulse';
+
+    Clipboard.setData(ClipboardData(text: caption));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isBangla ? '✓ ক্যাপশন কপি করা হয়েছে' : '✓ Caption copied to clipboard',
+          style: const TextStyle(fontFamily: 'Inter'),
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: const StadiumBorder(),
+      ),
+    );
+    Navigator.of(context).pop();
   }
 }

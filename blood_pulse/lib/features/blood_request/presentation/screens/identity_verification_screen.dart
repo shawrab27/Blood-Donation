@@ -1,3 +1,4 @@
+import '../../../../core/errors/app_error_mapper.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -86,6 +87,9 @@ class _IdentityVerificationScreenState
     _smsCtrl = TextEditingController(text: initialPhone);
 
     _startCountdown();
+
+    // Warm-up ping to wake up Render backend early
+    _apiClient.get('health/').then<void>((_) {}, onError: (_) {});
 
     // Auto-dispatch verification OTP upon arriving at verification gate
     if (widget.autoSend) {
@@ -243,37 +247,57 @@ class _IdentityVerificationScreenState
       _statusMessage = null;
     });
 
-    try {
-      final res = await _apiClient.sendRequestOtp(email: email);
-      final cooldown = (res['cooldown_seconds'] as num?)?.toInt() ?? 60;
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _statusMessage = 'Verification code dispatched to $email';
-        _errorMessage = null;
-      });
-      _startCountdown(cooldown);
-    } on RequestOtpException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _errorMessage = e.message;
-      });
-      if (e.cooldownSeconds != null && e.cooldownSeconds! > 0) {
-        _startCountdown(e.cooldownSeconds!);
+    int attempt = 0;
+    while (attempt < 2) {
+      attempt++;
+      try {
+        final res = await _apiClient
+            .sendRequestOtp(email: email)
+            .timeout(const Duration(seconds: 8));
+        final cooldown = (res['cooldown_seconds'] as num?)?.toInt() ?? 60;
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _statusMessage = 'Verification code dispatched to $email';
+          _errorMessage = null;
+        });
+        _startCountdown(cooldown);
+        return;
+      } on TimeoutException {
+        if (attempt == 1) {
+          continue; // Auto-retry once on timeout
+        }
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _errorMessage = 'Connection timed out. Server is starting up, please try again in a moment.';
+        });
+        return;
+      } on RequestOtpException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _errorMessage = AppError.toHumanMessage(e.message);
+        });
+        if (e.cooldownSeconds != null && e.cooldownSeconds! > 0) {
+          _startCountdown(e.cooldownSeconds!);
+        }
+        return;
+      } on ApiException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _errorMessage = AppError.toHumanMessage(e.message);
+        });
+        return;
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _errorMessage = AppError.toHumanMessage(e);
+        });
+        return;
       }
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _errorMessage = 'Network connection failed. Please check your internet connection.';
-      });
     }
   }
 
@@ -602,9 +626,8 @@ class _IdentityVerificationScreenState
                     width: double.infinity,
                     height: 52,
                     child: CapsuleButton(
-                      label: _isVerifying
-                          ? 'Verifying...'
-                          : 'Verify & Submit Request ➔',
+                      label: _isVerifying ? 'Verifying...' : 'Verify & Submit Request',
+                      icon: Icons.arrow_forward_rounded,
                       isLoading: _isVerifying,
                       showGlow: true,
                       onPressed: _isVerifying ? () {} : _verifyAndSubmit,

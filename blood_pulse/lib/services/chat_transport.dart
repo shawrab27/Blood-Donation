@@ -84,9 +84,17 @@ class HttpPollingChatTransport implements ChatTransport {
     final controller = _controllers[chatId];
     if (controller == null || controller.isClosed) return;
 
+    // USER RULE - do not change: handle non-numeric or uninitialized room by emitting empty list immediately
+    if (int.tryParse(chatId) == null) {
+      if (!controller.isClosed) {
+        controller.add(const <ChatMessageModel>[]);
+      }
+      return;
+    }
+
     try {
-      final endpoint = '/api/chat/$chatId/messages/?limit=100${markRead ? '&mark_read=true' : ''}';
-      final response = await _api.get(endpoint);
+      final endpoint = '/api/chat/$chatId/messages/?limit=30${markRead ? '&mark_read=true' : ''}';
+      final response = await _api.get(endpoint).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -116,9 +124,20 @@ class HttpPollingChatTransport implements ChatTransport {
             _startPolling(chatId, _idleInterval);
           }
         }
+      } else if (response.statusCode == 404) {
+        if (!controller.isClosed) {
+          controller.add(const <ChatMessageModel>[]);
+        }
+      } else {
+        if (!controller.isClosed && (_cache[chatId] == null)) {
+          controller.addError('Failed to load messages (${response.statusCode})');
+        }
       }
     } catch (e) {
       debugPrint('[HttpPollingChatTransport] Fetch error: $e');
+      if (!controller.isClosed && (_cache[chatId] == null)) {
+        controller.addError('Connection timed out. Please check your internet connection.');
+      }
     }
   }
 

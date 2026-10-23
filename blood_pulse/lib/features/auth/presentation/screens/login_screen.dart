@@ -189,17 +189,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: const LanguageToggleButton(),
-                        ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         // ── Official BloodPulse Logo & Brand Name ─────────
                         const BloodPulseLogo(
                           direction: Axis.vertical,
-                          iconSize: 110.0,
-                          fontSize: 36.0,
-                          spacing: 12.0,
+                          iconSize: 72.0,
+                          fontSize: 28.0,
+                          spacing: 10.0,
                         ),
                         const SizedBox(height: 8),
                         Text(

@@ -117,7 +117,6 @@ class _FeedViewState extends ConsumerState<FeedView> {
                     const GuestPulseAICard(),
                     const GuestLockCard(),
                   ] else ...[
-                    const _ProfileCompletionBanner(),
                     _PostCreatorCard(picker: _picker),
                   ],
                   const SizedBox(height: 12),
@@ -405,8 +404,11 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
       return;
     }
 
-    if (ref.read(isGuestProvider)) {
-      RegistrationGatePopup.show(context, isGuest: true);
+    final authState = ref.read(authProvider);
+    final isGuest = ref.read(isGuestProvider);
+    final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+    if (isGuest || isIncomplete) {
+      RegistrationGatePopup.show(context, isGuest: isGuest);
       return;
     }
 
@@ -957,8 +959,11 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
   }
 
   void _onSendComment() async {
-    if (ref.read(isGuestProvider)) {
-      RegistrationGatePopup.show(context, isGuest: true);
+    final authState = ref.read(authProvider);
+    final isGuest = ref.read(isGuestProvider);
+    final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+    if (isGuest || isIncomplete) {
+      RegistrationGatePopup.show(context, isGuest: isGuest);
       return;
     }
     final text = _commentCtrl.text.trim();
@@ -1397,6 +1402,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                         authorName: post.authorName,
                         content: post.content,
                         media: post.media,
+                        imageBytes: post.imageBytes,
+                        imageUrl: post.imageUrl,
+                        bloodGroupBadge: post.bloodGroupBadge,
+                        urgentNeedBadge: post.urgentNeedBadge,
                         location: post.location,
                         kind: post.kind,
                       );

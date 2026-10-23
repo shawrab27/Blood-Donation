@@ -314,14 +314,11 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          side: const BorderSide(color: AppColors.primary, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                      child: CapsuleButton(
+                        label: 'Create Poster',
+                        icon: Icons.palette_outlined,
+                        isOutlined: true,
+                        height: 52,
                         onPressed: () {
                           final patientName = _patientNameCtrl.text.trim();
                           final district = _districtCtrl.text.trim();
@@ -347,16 +344,6 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
                           );
                           context.push('/blood-hub/poster', extra: posterData);
                         },
-                        icon: const Icon(Icons.palette_outlined, color: AppColors.primary, size: 18),
-                        label: const Text(
-                          'Create Poster',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 12),

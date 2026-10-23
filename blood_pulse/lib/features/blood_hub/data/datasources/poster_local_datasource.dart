@@ -1,8 +1,9 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-import 'dart:io';
+import 'dart:io' if (dart.library.js_interop) 'dart:html';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -29,7 +30,18 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
   Future<String> exportToGallery(Uint8List pngBytes, {String? filename}) async {
     final name = filename ?? 'BloodPulse_Poster_${DateTime.now().millisecondsSinceEpoch}';
 
-    // 1. Save directly to native Gallery via Gal
+    // 1. Web browser download via cross_file
+    if (kIsWeb) {
+      try {
+        final xfile = XFile.fromData(pngBytes, mimeType: 'image/png', name: '$name.png');
+        await xfile.saveTo('$name.png');
+        return '$name.png';
+      } catch (e) {
+        return 'downloaded';
+      }
+    }
+
+    // 2. Native Mobile (Android / iOS): Save directly to native Gallery via Gal
     try {
       final hasAccess = await Gal.hasAccess();
       if (!hasAccess) {
@@ -37,26 +49,22 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
       }
       await Gal.putImageBytes(pngBytes, name: name);
     } catch (_) {
-      // Fallback if Gal is unavailable in the environment (e.g. desktop/unit test)
+      // Fallback if Gal is denied or unavailable in environment
     }
 
-    // 2. Write to persistent local directory as reliable file path return
-    Directory? baseDir;
+    // 3. Write to persistent local directory as reliable file path return
     try {
-      baseDir = await getExternalStorageDirectory();
+      final baseDir = await getApplicationDocumentsDirectory();
+      final posterDir = Directory('${baseDir.path}/BloodPulse/Posters');
+      if (!await posterDir.exists()) {
+        await posterDir.create(recursive: true);
+      }
+      final targetPath = '${posterDir.path}/$name.png';
+      await File(targetPath).writeAsBytes(pngBytes);
+      return targetPath;
     } catch (_) {
-      baseDir = null;
+      return name;
     }
-    baseDir ??= await getApplicationDocumentsDirectory();
-
-    final posterDir = Directory('${baseDir.path}/BloodPulse/Posters');
-    if (!await posterDir.exists()) {
-      await posterDir.create(recursive: true);
-    }
-
-    final targetPath = '${posterDir.path}/$name.png';
-    await File(targetPath).writeAsBytes(pngBytes);
-    return targetPath;
   }
 
   @override
@@ -74,46 +82,65 @@ class PosterLocalDataSourceImpl implements PosterLocalDataSource {
       );
       if (await canLaunchUrl(whatsappUrl)) {
         await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+        return;
       }
     } else if (platform == 'sms') {
       final smsUrl = Uri.parse('sms:?body=${Uri.encodeComponent(caption)}');
       if (await canLaunchUrl(smsUrl)) {
         await launchUrl(smsUrl, mode: LaunchMode.externalApplication);
+        return;
       }
     }
 
-    // Write bytes to a temp file for share_plus
-    final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/bloodpulse_poster_share.png');
-    await tempFile.writeAsBytes(pngBytes);
+    if (kIsWeb) {
+      final xfile = XFile.fromData(pngBytes, mimeType: 'image/png', name: 'bloodpulse_poster.png');
+      await Share.shareXFiles(
+        [xfile],
+        text: caption,
+        subject: isBangla
+            ? 'জরুরি রক্ত প্রয়োজন: ${data.bloodGroup}'
+            : 'Urgent Blood Needed: ${data.bloodGroup}',
+      );
+      return;
+    }
 
-    // Default to native multi-channel share sheet with file attached
-    await Share.shareXFiles(
-      [XFile(tempFile.path)],
-      text: caption,
-      subject: isBangla
-          ? 'জরুরি রক্ত প্রয়োজন: ${data.bloodGroup}'
-          : 'Urgent Blood Needed: ${data.bloodGroup}',
-    );
+    // Mobile file writing for share_plus
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/bloodpulse_poster_share.png');
+      await tempFile.writeAsBytes(pngBytes);
+
+      await Share.shareXFiles(
+        [XFile(tempFile.path)],
+        text: caption,
+        subject: isBangla
+            ? 'জরুরি রক্ত প্রয়োজন: ${data.bloodGroup}'
+            : 'Urgent Blood Needed: ${data.bloodGroup}',
+      );
+    } catch (_) {
+      // Fallback to text share if file sharing fails
+      await Share.share(caption);
+    }
   }
 
   String _buildShareCaption(PosterData data, bool isBangla) {
     if (isBangla) {
-      return '🩸 ${data.bloodGroup} রক্ত প্রয়োজন | ${data.location}\n'
-          'রোগীর নাম: ${data.patientName}\n'
-          'হাসপাতাল: ${data.hospitalName ?? 'জরুরি বিভাগ'}\n'
-          'ইউনিট: ${data.unitsNeeded} ব্যাগ | জরুরি অবস্থা: ${data.urgencyLevel}\n'
-          'যোগাযোগ: ${data.contactNumber ?? 'জরুরি হটলাইন'}\n\n'
-          '"আজ আপনি দিলে, কাল তারা বাঁচবে।"\n'
-          'অ্যাপে দেখুন: https://bloodpulse.app';
+      return '🚨 জরুরি রক্ত প্রয়োজন (${data.bloodGroup})\n'
+          'রোগী: ${data.patientName}\n'
+          'স্থান: ${data.location}\n'
+          'রক্তের পরিমাণ: ${data.unitsNeeded} ব্যাগ\n'
+          'জরুরি মাত্রা: ${data.urgencyLevel}\n'
+          'কারণ: ${data.condition}\n'
+          'যোগাযোগ: ${data.contactNumber ?? "BloodPulse অ্যাপে দেখুন"}\n'
+          'রক্তদানে এগিয়ে আসুন — BloodPulse';
     }
-
-    return '🩸 Urgent ${data.bloodGroup} Blood Needed | ${data.location}\n'
+    return '🚨 URGENT BLOOD NEEDED (${data.bloodGroup})\n'
         'Patient: ${data.patientName}\n'
-        'Hospital: ${data.hospitalName ?? 'Emergency Clinic'}\n'
-        'Units Needed: ${data.unitsNeeded} bag(s) | Urgency: ${data.urgencyLevel}\n'
-        'Contact: ${data.contactNumber ?? 'Direct Attendant'}\n\n'
-        '"You give today, They live today."\n'
-        'Details: https://bloodpulse.app';
+        'Location: ${data.location}\n'
+        'Units Needed: ${data.unitsNeeded} Bag(s)\n'
+        'Urgency: ${data.urgencyLevel}\n'
+        'Reason: ${data.condition}\n'
+        'Contact: ${data.contactNumber ?? "See BloodPulse App"}\n'
+        'Please donate blood today — BloodPulse';
   }
 }
