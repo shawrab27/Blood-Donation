@@ -332,10 +332,67 @@ DJANGO_ENV = os.getenv('DJANGO_ENV', '').strip().lower()
 
 VALID_EMAIL_PROVIDERS = ('mailjet', 'resend', 'brevo', 'brevo_api', 'console', 'locmem', 'smtp')
 
-if DJANGO_ENV == 'test' or 'test' in sys.argv or IS_TESTING:
-    EMAIL_PROVIDER = 'locmem'
-elif not EMAIL_PROVIDER:
-    if DJANGO_ENV == 'production':
+def configure_smtp_settings(env=None):
+    """
+    Validates and configures SMTP settings when EMAIL_PROVIDER='smtp'.
+    Returns a dict with configured settings:
+    EMAIL_BACKEND, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD,
+    EMAIL_USE_TLS, DEFAULT_FROM_EMAIL, USE_SMTP_EMAIL.
+    Raises ImproperlyConfigured if any required SMTP_* variable is missing or invalid.
+    """
+    get_var = (lambda k, default='': env.get(k, default)) if env is not None else (lambda k, default='': os.getenv(k, default))
+
+    smtp_host = (get_var('SMTP_HOST') or '').strip()
+    smtp_user = (get_var('SMTP_USER') or '').strip()
+    smtp_password = (get_var('SMTP_PASSWORD') or '').strip()
+
+    missing = []
+    if not smtp_host:
+        missing.append('SMTP_HOST')
+    if not smtp_user:
+        missing.append('SMTP_USER')
+    if not smtp_password:
+        missing.append('SMTP_PASSWORD')
+    if missing:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            f"EMAIL_PROVIDER=smtp requires missing environment variable(s): {', '.join(missing)}."
+        )
+
+    raw_port = str(get_var('SMTP_PORT', '587')).strip()
+    try:
+        smtp_port = int(raw_port) if raw_port else 587
+    except ValueError:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(f"Invalid SMTP_PORT: '{raw_port}'. Must be an integer.")
+
+    raw_tls = str(get_var('SMTP_USE_TLS', 'true')).strip().lower()
+    smtp_use_tls = raw_tls in ('true', '1', 'yes')
+
+    default_from = (get_var('DEFAULT_FROM_EMAIL') or '').strip() or smtp_user
+
+    return {
+        'EMAIL_BACKEND': 'django.core.mail.backends.smtp.EmailBackend',
+        'EMAIL_HOST': smtp_host,
+        'EMAIL_PORT': smtp_port,
+        'EMAIL_HOST_USER': smtp_user,
+        'EMAIL_HOST_PASSWORD': smtp_password,
+        'EMAIL_USE_TLS': smtp_use_tls,
+        'DEFAULT_FROM_EMAIL': default_from,
+        'USE_SMTP_EMAIL': True,
+        'SMTP_HOST': smtp_host,
+        'SMTP_PORT': smtp_port,
+        'SMTP_USER': smtp_user,
+        'SMTP_PASSWORD': smtp_password,
+        'SMTP_USE_TLS': smtp_use_tls,
+        'SMTP_FROM': default_from,
+    }
+
+
+if not EMAIL_PROVIDER:
+    if DJANGO_ENV == 'test' or 'test' in sys.argv or IS_TESTING:
+        EMAIL_PROVIDER = 'locmem'
+    elif DJANGO_ENV == 'production':
         EMAIL_PROVIDER = 'mailjet' if os.getenv('MAILJET_API_KEY') else 'brevo_api'
     else:
         EMAIL_PROVIDER = 'console'
@@ -364,28 +421,50 @@ BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
 BREVO_SENDER_EMAIL = os.getenv('BREVO_SENDER_EMAIL', os.getenv('EMAIL_FROM', ''))
 BREVO_SENDER_NAME = os.getenv('BREVO_SENDER_NAME', 'BloodPulse')
 
-# SMTP Standard Provider (Gmail App Password / Custom SMTP Relay)
-SMTP_HOST = os.getenv('SMTP_HOST', '')
-SMTP_PORT = int(os.getenv('SMTP_PORT', '587') or 587)
-SMTP_USER = os.getenv('SMTP_USER', '')
-SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
-SMTP_FROM = os.getenv('SMTP_FROM', os.getenv('DEFAULT_FROM_EMAIL', ''))
-SMTP_USE_TLS = os.getenv('SMTP_USE_TLS', 'true').strip().lower() in ('true', '1', 't')
-
-DEFAULT_FROM_EMAIL = os.getenv(
-    'DEFAULT_FROM_EMAIL',
-    MAILJET_SENDER_EMAIL or BREVO_SENDER_EMAIL or RESEND_SENDER_EMAIL or f"{BREVO_SENDER_NAME} <noreply@bloodpulse.app>",
-)
-
-if EMAIL_PROVIDER == 'locmem':
-    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-    USE_SMTP_EMAIL = False
-elif EMAIL_PROVIDER == 'console':
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    USE_SMTP_EMAIL = False
+if EMAIL_PROVIDER == 'smtp':
+    _smtp_cfg = configure_smtp_settings()
+    EMAIL_BACKEND = _smtp_cfg['EMAIL_BACKEND']
+    EMAIL_HOST = _smtp_cfg['EMAIL_HOST']
+    EMAIL_PORT = _smtp_cfg['EMAIL_PORT']
+    EMAIL_HOST_USER = _smtp_cfg['EMAIL_HOST_USER']
+    EMAIL_HOST_PASSWORD = _smtp_cfg['EMAIL_HOST_PASSWORD']
+    EMAIL_USE_TLS = _smtp_cfg['EMAIL_USE_TLS']
+    DEFAULT_FROM_EMAIL = _smtp_cfg['DEFAULT_FROM_EMAIL']
+    USE_SMTP_EMAIL = _smtp_cfg['USE_SMTP_EMAIL']
+    SMTP_HOST = _smtp_cfg['SMTP_HOST']
+    SMTP_PORT = _smtp_cfg['SMTP_PORT']
+    SMTP_USER = _smtp_cfg['SMTP_USER']
+    SMTP_PASSWORD = _smtp_cfg['SMTP_PASSWORD']
+    SMTP_USE_TLS = _smtp_cfg['SMTP_USE_TLS']
+    SMTP_FROM = _smtp_cfg['SMTP_FROM']
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
-    USE_SMTP_EMAIL = False
+    # SMTP Standard Provider (Gmail App Password / Custom SMTP Relay)
+    SMTP_HOST = os.getenv('SMTP_HOST', '')
+    raw_port = os.getenv('SMTP_PORT', '587').strip()
+    try:
+        SMTP_PORT = int(raw_port) if raw_port else 587
+    except ValueError:
+        SMTP_PORT = 587
+    SMTP_USER = os.getenv('SMTP_USER', '')
+    SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
+    SMTP_FROM = os.getenv('SMTP_FROM', os.getenv('DEFAULT_FROM_EMAIL', ''))
+    raw_tls = os.getenv('SMTP_USE_TLS', 'true').strip().lower()
+    SMTP_USE_TLS = raw_tls in ('true', '1', 'yes')
+
+    DEFAULT_FROM_EMAIL = os.getenv(
+        'DEFAULT_FROM_EMAIL',
+        MAILJET_SENDER_EMAIL or BREVO_SENDER_EMAIL or RESEND_SENDER_EMAIL or f"{BREVO_SENDER_NAME} <noreply@bloodpulse.app>",
+    )
+
+    if EMAIL_PROVIDER == 'locmem':
+        EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+        USE_SMTP_EMAIL = False
+    elif EMAIL_PROVIDER == 'console':
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+        USE_SMTP_EMAIL = False
+    else:
+        EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+        USE_SMTP_EMAIL = False
 
 
 

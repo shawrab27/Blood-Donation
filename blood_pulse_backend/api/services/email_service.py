@@ -365,43 +365,30 @@ class SmtpEmailProvider(BaseEmailProvider):
         text_content: str,
         html_content: Optional[str] = None,
     ) -> dict:
-        host = getattr(settings, 'SMTP_HOST', '') or os.getenv('SMTP_HOST', '')
-        user = getattr(settings, 'SMTP_USER', '') or os.getenv('SMTP_USER', '')
-        password = getattr(settings, 'SMTP_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
-        port = int(getattr(settings, 'SMTP_PORT', 0) or os.getenv('SMTP_PORT', 587))
+        host = getattr(settings, 'EMAIL_HOST', '') or getattr(settings, 'SMTP_HOST', '') or os.getenv('SMTP_HOST', '')
+        user = getattr(settings, 'EMAIL_HOST_USER', '') or getattr(settings, 'SMTP_USER', '') or os.getenv('SMTP_USER', '')
+        password = getattr(settings, 'EMAIL_HOST_PASSWORD', '') or getattr(settings, 'SMTP_PASSWORD', '') or os.getenv('SMTP_PASSWORD', '')
         from_email = (
-            getattr(settings, 'SMTP_FROM', '')
+            getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+            or getattr(settings, 'SMTP_FROM', '')
             or os.getenv('SMTP_FROM', '')
-            or getattr(settings, 'DEFAULT_FROM_EMAIL', '')
             or user
         )
-        use_tls = getattr(settings, 'SMTP_USE_TLS', True)
 
         if not host or not user or not password:
             raise EmailConfigError("SMTP configuration incomplete: SMTP_HOST, SMTP_USER, and SMTP_PASSWORD are required.")
 
         try:
-            from django.core.mail.backends.smtp import EmailBackend
-            connection = EmailBackend(
-                host=host,
-                port=port,
-                username=user,
-                password=password,
-                use_tls=use_tls,
-                fail_silently=False,
-                timeout=10,
-            )
-            msg = EmailMultiAlternatives(
+            from django.core.mail import send_mail
+            send_mail(
                 subject=subject,
-                body=text_content,
+                message=text_content,
                 from_email=from_email,
-                to=[to_email],
-                connection=connection,
+                recipient_list=[to_email],
+                html_message=html_content,
+                fail_silently=False,
             )
-            if html_content:
-                msg.attach_alternative(html_content, "text/html")
-            msg.send(fail_silently=False)
-            logger.info("[SmtpEmailProvider] Dispatched email to %s via %s:%s", mask_email(to_email), host, port)
+            logger.info("[SmtpEmailProvider] Dispatched email to %s via SMTP (%s)", mask_email(to_email), host)
             return {'success': True, 'status_code': 200, 'provider': self.provider_name}
         except Exception as exc:
             logger.error("[SmtpEmailProvider] Failed sending to %s: %s", mask_email(to_email), exc)

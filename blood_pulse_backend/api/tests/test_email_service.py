@@ -142,6 +142,84 @@ class EmailServiceAndProviderTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].subject, 'Test LocMem')
 
+    # ── SMTP Provider Tests ─────────────────────────────────────────────
+
+    def test_smtp_provider_with_all_vars_loads_and_missing_var_raises_improperly_configured(self):
+        """
+        Verify that:
+        1. When EMAIL_PROVIDER=smtp with all vars provided, SMTP settings load correctly:
+           - EMAIL_BACKEND is 'django.core.mail.backends.smtp.EmailBackend'
+           - EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS are configured.
+           - Case-insensitive TLS parsing works ('yes', 'true', '1' -> True; '0', 'false' -> False).
+           - DEFAULT_FROM_EMAIL defaults to SMTP_USER unless already set.
+        2. When EMAIL_PROVIDER=smtp with a missing var, ImproperlyConfigured is raised naming the missing var.
+        """
+        from django.core.exceptions import ImproperlyConfigured
+        from blood_pulse_backend.settings import configure_smtp_settings
+
+        full_env = {
+            'EMAIL_PROVIDER': 'smtp',
+            'SMTP_HOST': 'smtp.gmail.com',
+            'SMTP_PORT': '587',
+            'SMTP_USER': 'bloodpulse.alerts@gmail.com',
+            'SMTP_PASSWORD': 'app-specific-password',
+            'SMTP_USE_TLS': 'YES',
+        }
+        cfg = configure_smtp_settings(full_env)
+        self.assertEqual(cfg['EMAIL_BACKEND'], 'django.core.mail.backends.smtp.EmailBackend')
+        self.assertEqual(cfg['EMAIL_HOST'], 'smtp.gmail.com')
+        self.assertEqual(cfg['EMAIL_PORT'], 587)
+        self.assertEqual(cfg['EMAIL_HOST_USER'], 'bloodpulse.alerts@gmail.com')
+        self.assertEqual(cfg['EMAIL_HOST_PASSWORD'], 'app-specific-password')
+        self.assertTrue(cfg['EMAIL_USE_TLS'])
+        self.assertEqual(cfg['DEFAULT_FROM_EMAIL'], 'bloodpulse.alerts@gmail.com')
+        self.assertTrue(cfg['USE_SMTP_EMAIL'])
+
+        # Case-insensitive TLS parsing checks
+        self.assertTrue(configure_smtp_settings({**full_env, 'SMTP_USE_TLS': 'true'})['EMAIL_USE_TLS'])
+        self.assertTrue(configure_smtp_settings({**full_env, 'SMTP_USE_TLS': '1'})['EMAIL_USE_TLS'])
+        self.assertFalse(configure_smtp_settings({**full_env, 'SMTP_USE_TLS': 'false'})['EMAIL_USE_TLS'])
+        self.assertFalse(configure_smtp_settings({**full_env, 'SMTP_USE_TLS': '0'})['EMAIL_USE_TLS'])
+
+        # DEFAULT_FROM_EMAIL already set check
+        env_with_from = {**full_env, 'DEFAULT_FROM_EMAIL': 'custom@bloodpulse.app'}
+        self.assertEqual(configure_smtp_settings(env_with_from)['DEFAULT_FROM_EMAIL'], 'custom@bloodpulse.app')
+
+        # Failure cases: Missing required vars raise ImproperlyConfigured naming missing var
+        for missing_var in ('SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD'):
+            bad_env = {k: v for k, v in full_env.items() if k != missing_var}
+            with self.assertRaises(ImproperlyConfigured) as ctx:
+                configure_smtp_settings(bad_env)
+            self.assertIn(missing_var, str(ctx.exception))
+
+    @override_settings(
+        EMAIL_PROVIDER='smtp',
+        EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+        EMAIL_HOST='smtp.gmail.com',
+        EMAIL_PORT=587,
+        EMAIL_HOST_USER='test@example.com',
+        EMAIL_HOST_PASSWORD='password',
+        DEFAULT_FROM_EMAIL='test@example.com',
+    )
+    def test_smtp_provider_dispatch_uses_django_send_mail(self):
+        from django.core import mail
+        from api.services.email_service import SmtpEmailProvider
+        mail.outbox.clear()
+
+        provider = SmtpEmailProvider()
+        res = provider.send_email(
+            to_email='recipient@example.com',
+            subject='SMTP OTP Subject',
+            text_content='OTP code: 123456',
+            html_content='<p>123456</p>',
+        )
+        self.assertTrue(res['success'])
+        self.assertEqual(res['provider'], 'smtp')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'SMTP OTP Subject')
+        self.assertEqual(mail.outbox[0].to, ['recipient@example.com'])
+        self.assertEqual(mail.outbox[0].from_email, 'test@example.com')
+
 
 class ManagementCommandTests(TestCase):
     @override_settings(EMAIL_PROVIDER='locmem')
