@@ -44,12 +44,20 @@ def check_submit_token(user, submit_token: str, purpose: str = 'blood_request_su
 
     token_hash = hashlib.sha256(submit_token.strip().encode('utf-8')).hexdigest()
     now = timezone.now()
-    return RequestSubmitToken.objects.filter(
+    valid_token = RequestSubmitToken.objects.filter(
         token_hash=token_hash,
         user=user,
         purpose=purpose,
         is_used=False,
         expires_at__gte=now,
+    ).exists()
+    if not valid_token:
+        return False
+
+    return EmailOTP.objects.filter(
+        user=user,
+        purpose=purpose,
+        is_used=False,
     ).exists()
 
 
@@ -80,6 +88,18 @@ def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'b
         if not token_obj:
             return False
 
+        # Ensure the underlying OTP has not already been consumed
+        has_active_otp = EmailOTP.objects.filter(
+            user=user,
+            purpose=purpose,
+            is_used=False,
+        ).exists()
+        if not has_active_otp:
+            token_obj.is_used = True
+            token_obj.used_at = now
+            token_obj.save(update_fields=['is_used', 'used_at'])
+            return False
+
         token_obj.is_used = True
         token_obj.used_at = now
         token_obj.save(update_fields=['is_used', 'used_at'])
@@ -87,9 +107,16 @@ def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'b
         # Atomically consume the EmailOTP now that request payload is validated and token is consumed
         EmailOTP.objects.filter(
             user=user,
-            purpose='blood_request_submit',
+            purpose=purpose,
             is_used=False,
         ).update(is_used=True)
+
+        # Invalidate any other submit tokens minted for this user/purpose since the OTP is now consumed
+        RequestSubmitToken.objects.filter(
+            user=user,
+            purpose=purpose,
+            is_used=False,
+        ).update(is_used=True, used_at=now)
 
         return True
 
@@ -302,13 +329,6 @@ def request_otp_verify_view(request):
     # Verification successful: Do NOT mark OTP as is_used here.
     # The OTP is consumed when the request payload is validated and created
     # via validate_and_consume_submit_token, so a 400 validation error does not burn the OTP.
-
-    # Invalidate older unused submit tokens for this user
-    RequestSubmitToken.objects.filter(
-        user=user,
-        purpose='blood_request_submit',
-        is_used=False,
-    ).update(is_used=True)
 
     # Issue single-use 15-minute submit_token
     raw_token = secrets.token_urlsafe(32)

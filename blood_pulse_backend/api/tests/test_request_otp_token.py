@@ -256,6 +256,54 @@ class RequestOTPAndSubmitTokenTests(TestCase):
         self.assertEqual(res_v3.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Invalid or expired', res_v3.data['error'])
 
+    def test_verify_same_otp_twice_second_token_rejected_after_first_succeeds(self):
+        """Verify the same OTP twice to mint two submit tokens; after the first emergency request succeeds, the second token must be rejected (OTP already consumed)."""
+        self.client.force_authenticate(user=self.user)
+
+        # 1. Dispatch OTP
+        self.client.post('/api/requests/otp/send/', {'email': 'requester@example.com'}, format='json')
+        otp_rec = EmailOTP.objects.filter(user=self.user, purpose='blood_request_submit', is_used=False).first()
+        test_code = '556677'
+        otp_rec.otp_hash = hash_otp(test_code, otp_rec.email)
+        otp_rec.save()
+
+        # 2. Verify the same OTP twice to mint two submit tokens
+        res_v1 = self.client.post('/api/requests/otp/verify/', {'code': test_code}, format='json')
+        self.assertEqual(res_v1.status_code, status.HTTP_200_OK)
+        token1 = res_v1.data['submit_token']
+
+        res_v2 = self.client.post('/api/requests/otp/verify/', {'code': test_code}, format='json')
+        self.assertEqual(res_v2.status_code, status.HTTP_200_OK)
+        token2 = res_v2.data['submit_token']
+        self.assertNotEqual(token1, token2)
+
+        # 3. First emergency request succeeds using token1
+        emergency_payload = {
+            'patient_name': 'Emergency Patient',
+            'blood_group': 'B+',
+            'units_needed': 1,
+            'hospital_name_other': 'Dhaka Medical',
+            'contact_phone': '+8801700000000',
+            'urgency': 'CRITICAL_2H',
+            'ward_bed': 'Ward 5, Bed 12',
+            'submit_token': token1,
+        }
+        res_req1 = self.client.post('/api/emergency/requests/', emergency_payload, format='json')
+        self.assertEqual(res_req1.status_code, status.HTTP_201_CREATED)
+
+        # OTP is now consumed
+        otp_rec.refresh_from_db()
+        self.assertTrue(otp_rec.is_used, "OTP must be marked as used after first emergency request succeeds.")
+
+        # 4. Second emergency request using token2 must be rejected (OTP already consumed)
+        second_payload = {
+            **emergency_payload,
+            'patient_name': 'Second Emergency Patient',
+            'submit_token': token2,
+        }
+        res_req2 = self.client.post('/api/emergency/requests/', second_payload, format='json')
+        self.assertEqual(res_req2.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_forgot_password_google_only_account(self):
         """Google user without usable password receives 'Please use Google sign-in.'."""
         google_user = User.objects.create_user(
