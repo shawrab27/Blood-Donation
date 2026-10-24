@@ -171,11 +171,15 @@ class AppError {
   static bool _isTechnicalJargon(String text) {
     final lower = text.toLowerCase();
     return lower.contains('<!doctype html>') ||
-        lower.contains('traceback (most recent call last)') ||
+        lower.contains('traceback') ||
         lower.contains('internal server error') ||
+        lower.contains('internalservererror') ||
         lower.contains('syntaxerror') ||
         lower.contains('null check operator') ||
         lower.contains('typeerror') ||
-        lower.contains('stacktrace');
+        lower.contains('stacktrace') ||
+        lower.contains('databaseerror') ||
+        lower.contains('attributeerror') ||
+        lower.contains('keyerror');
   }
 }
