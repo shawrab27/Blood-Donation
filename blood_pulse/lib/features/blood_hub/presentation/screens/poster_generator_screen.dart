@@ -161,7 +161,10 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
         titleColor: AppColors.primary,
         onBack: () => Navigator.of(context).pop(),
       ),
-      body: ResponsiveLayout(
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: ResponsiveLayout(
         maxWidth: 600,
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -195,6 +198,7 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
             ],
           ),
         ),
+      ),
       ),
       bottomNavigationBar: Container(
         color: Colors.white,

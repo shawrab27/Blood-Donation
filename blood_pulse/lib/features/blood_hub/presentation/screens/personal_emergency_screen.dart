@@ -903,7 +903,7 @@ class _PersonalEmergencyScreenState
               Expanded(
 
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.viewInsetsOf(context).bottom > 0 ? 12 : 32),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -1078,7 +1078,7 @@ class _PersonalEmergencyScreenState
         ),
       ),
       Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.viewInsetsOf(context).bottom > 0 ? 12 : 32),
         decoration: BoxDecoration(
           color: const Color(0xFFFFF8F7), // same as _kSurface
           boxShadow: [

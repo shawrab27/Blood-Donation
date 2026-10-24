@@ -3,6 +3,7 @@ import '../../../../core/widgets/success_pulse.dart';
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blood_pulse/l10n/app_localizations.dart';
@@ -40,6 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   _LoginButtonType _loadingButton = _LoginButtonType.none;
   bool _showSuccessPulse = false;
   String? _loginErrorMessage;
+  DateTime? _lastBackPressTime;
 
   // Subtle slide-up entry animation
   late final AnimationController _entryCtrl = AnimationController(
@@ -175,9 +177,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final auth = ref.watch(authProvider);
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBackPressTime != null &&
+            now.difference(_lastBackPressTime!) < const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+        } else {
+          _lastBackPressTime = now;
+          final isBangla = Localizations.localeOf(context).languageCode == 'bn';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isBangla
+                    ? 'অ্যাপ থেকে বের হতে আবার ব্যাক প্রেস করুন'
+                    : 'Press back again to exit BloodPulse',
+                style: const TextStyle(fontFamily: 'Inter'),
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: const StadiumBorder(),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFFDF3F3),
-      body: SafeArea(
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnim,
           child: SlideTransition(
@@ -186,6 +221,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   child: Form(
                     key: _formKey,
@@ -448,6 +484,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           ),
         ),
+      ),
+      ),
       ),
     );
   }

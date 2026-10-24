@@ -158,6 +158,7 @@ class _PriorityBloodRequisitionScreenState
         child: ResponsiveCenterWrapper(
           maxWidth: 600,
           child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             child: Form(

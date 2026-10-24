@@ -674,6 +674,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
       child: ResponsiveCenterWrapper(
         maxWidth: 560,
         child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Form(
             key: _formKey,

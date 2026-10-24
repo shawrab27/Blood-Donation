@@ -65,14 +65,19 @@ class _CapsuleButtonState extends State<CapsuleButton>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 120),
-    lowerBound: 0.97,
-    upperBound: 1.0,
-    value: 1.0,
   );
 
-  void _onTapDown(TapDownDetails _) => _controller.reverse();
-  void _onTapUp(TapUpDetails _) => _controller.forward();
-  void _onTapCancel() => _controller.forward();
+  late final Animation<double> _scaleAnimation = Tween<double>(
+    begin: 1.0,
+    end: 0.97,
+  ).animate(CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOutCubic,
+  ));
+
+  void _onTapDown(TapDownDetails _) => _controller.forward();
+  void _onTapUp(TapUpDetails _) => _controller.reverse();
+  void _onTapCancel() => _controller.reverse();
 
   @override
   void dispose() {
@@ -173,7 +178,7 @@ class _CapsuleButtonState extends State<CapsuleButton>
           onTapCancel: disabled ? null : _onTapCancel,
           onTap: disabled ? null : widget.onPressed,
           child: ScaleTransition(
-            scale: _controller,
+            scale: _scaleAnimation,
             child: Container(
               width: effectiveWidth,
               height: widget.height < 48.0 ? 48.0 : widget.height,
