@@ -187,14 +187,31 @@ def parse_blood_report(text: str, locale: str = 'en') -> dict:
             'status': status
         })
 
-    # Fallback if no specific values were parsed
+    # USER RULE - do not change: Strict rejection of non-reports. Never fake demo numbers (C1)
     if not results:
-        results = [
-            {'test_name': 'Hemoglobin', 'value': '13.5', 'unit': 'g/dL', 'reference_range': '12.5 - 17.5 g/dL', 'status': 'Normal'},
-            {'test_name': 'Platelets', 'value': '220,000', 'unit': '/mcL', 'reference_range': '150,000 - 450,000 /mcL', 'status': 'Normal'},
-            {'test_name': 'WBC', 'value': '6,800', 'unit': '/mcL', 'reference_range': '4,000 - 11,000 /mcL', 'status': 'Normal'},
-            {'test_name': 'RBC', 'value': '4.8', 'unit': 'million/mcL', 'reference_range': '4.0 - 5.9 million/mcL', 'status': 'Normal'},
-        ]
+        rejection_en = 'This image or text does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report with visible test values.'
+        rejection_bn = 'প্রদত্ত তথ্য থেকে কোনো বৈধ রক্তের রিপোর্ট প্যারামিটার পাওয়া যায়নি। অনুগ্রহ করে একটি সুস্পষ্ট ল্যাব রিপোর্টের ছবি আপলোড করুন।'
+        disclaimer_en = '⚠️ Medical Disclaimer: Automated screening only. Please consult a licensed physician.'
+        disclaimer_bn = '⚠️ সতর্কবার্তা: এটি শুধুমাত্র প্রাথমিক তথ্যমূলক স্ক্রিনিং। চিকিৎসকের পরামর্শ নিন।'
+        return {
+            'is_blood_report': False,
+            'is_donor_ready': False,
+            'results': [],
+            'summary': rejection_bn if is_bn else rejection_en,
+            'donor_readiness': '❌ UNABLE TO EVALUATE' if not is_bn else '❌ মূল্যায়ন সম্ভব হয়নি',
+            'dietary_action_plan': [],
+            'disclaimer': disclaimer_bn if is_bn else disclaimer_en,
+            'reply': rejection_bn if is_bn else rejection_en,
+            'response': rejection_bn if is_bn else rejection_en,
+            'language': 'bn' if is_bn else 'en',
+            'source': 'blood_report_analyzer',
+            'confidence': 0.0,
+            'emergency': False,
+            'not_a_report': True,
+            'error': rejection_bn if is_bn else rejection_en,
+            'actions': [],
+            'flags': ['NON_REPORT_REJECTED']
+        }
 
     # Evaluate Donor Readiness
     is_donor_ready = (len(reasons_ineligible_en) == 0)

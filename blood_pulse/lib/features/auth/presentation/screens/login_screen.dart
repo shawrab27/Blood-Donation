@@ -1,3 +1,4 @@
+import '../../../../core/widgets/success_pulse.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -9,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/hero_reveal_logo.dart';
 import '../../../../core/widgets/language_toggle_button.dart';
 import '../providers/auth_notifier.dart';
 
@@ -36,6 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _idFocus = FocusNode();
   final _pwFocus = FocusNode();
   _LoginButtonType _loadingButton = _LoginButtonType.none;
+  bool _showSuccessPulse = false;
   String? _loginErrorMessage;
 
   // Subtle slide-up entry animation
@@ -82,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     if (!mounted) return;
     setState(() => _loadingButton = _LoginButtonType.none);
     if (success) {
-      context.go('/feed');
+      setState(() => _showSuccessPulse = true);
     } else {
       final err = ref.read(authProvider).errorMessage ?? 'Login failed.';
       final isCredentialFailure = err.toLowerCase().contains('credential') ||
@@ -131,7 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
       if (!mounted) return;
       if (success) {
-        context.go('/feed');
+        setState(() => _showSuccessPulse = true);
       } else {
         final err = ref.read(authProvider).errorMessage;
         if (err != null && err.isNotEmpty) {
@@ -189,17 +192,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: const LanguageToggleButton(),
-                        ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         // ── Official BloodPulse Logo & Brand Name ─────────
-                        const BloodPulseLogo(
-                          direction: Axis.vertical,
-                          iconSize: 110.0,
-                          fontSize: 36.0,
-                          spacing: 12.0,
+                        // USER RULE - do not change: E3 Hero reveal (ECG line draws into logo once on Login)
+                        const HeroRevealLogo(
+                          child: BloodPulseLogo(
+                            direction: Axis.vertical,
+                            iconSize: 72.0,
+                            fontSize: 28.0,
+                            spacing: 10.0,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -386,17 +388,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 const SizedBox(height: 12),
                               ],
                               // ── Sign In Button ──────────────────────────
-                              IgnorePointer(
-                                ignoring: _loadingButton != _LoginButtonType.none,
-                                child: CapsuleButton(
-                                  label: l10n?.signIn ?? 'Sign In',
-                                  icon: Icons.arrow_forward_rounded,
-                                  isLoading: _loadingButton == _LoginButtonType.signIn,
-                                  showGlow: true,
-                                  height: 50,
-                                  onPressed: _onSignIn,
-                                ),
-                              ),
+                              _showSuccessPulse
+                                  ? SuccessPulse(
+                                      onComplete: () {
+                                        if (mounted) context.go('/feed');
+                                      },
+                                    )
+                                  : IgnorePointer(
+                                      ignoring: _loadingButton != _LoginButtonType.none,
+                                      child: CapsuleButton(
+                                        label: l10n?.signIn ?? 'Sign In',
+                                        icon: Icons.arrow_forward_rounded,
+                                        isLoading: _loadingButton == _LoginButtonType.signIn,
+                                        showGlow: true,
+                                        height: 50,
+                                        onPressed: _onSignIn,
+                                      ),
+                                    ),
 
                             ],
                           ),

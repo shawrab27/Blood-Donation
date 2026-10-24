@@ -73,7 +73,7 @@ class _ReportScannerScreenState extends State<ReportScannerScreen> {
                             const SizedBox(height: 16),
                             Text('Report Verified Securely', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.success)),
                             const SizedBox(height: 8),
-                            const Text('Hemoglobin: 14.2 g/dL\nDiseases: Negative', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                            const Text('Analysis Complete', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                           ],
                         )
                       : Center(

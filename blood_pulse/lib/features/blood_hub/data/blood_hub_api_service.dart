@@ -192,6 +192,7 @@ class BloodHubApiService {
   }) async {
     final params = <String, String>{
       'page_size': pageSize.toString(),
+      'exact_match': 'true',
       if (bloodGroup != null && bloodGroup.isNotEmpty && bloodGroup != 'Any')
         'blood_group': bloodGroup,
       if (component != null && component.isNotEmpty && component != 'Any')

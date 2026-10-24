@@ -227,8 +227,9 @@ def verify_otp(request):
 
         max_attempts = int(os.environ.get('OTP_MAX_ATTEMPTS', 5))
         if otp_record.attempts >= max_attempts:
-            otp_record.is_used = True
-            otp_record.save()
+            if not otp_record.is_used:
+                otp_record.is_used = True
+                otp_record.save()
             return Response(
                 {'detail': 'Too many attempts. Request a new code.'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -307,8 +308,9 @@ def confirm_reset(request):
 
         max_attempts = int(os.environ.get('OTP_MAX_ATTEMPTS', 5))
         if otp_record.attempts >= max_attempts:
-            otp_record.is_used = True
-            otp_record.save()
+            if not otp_record.is_used:
+                otp_record.is_used = True
+                otp_record.save()
             return Response(
                 {'detail': 'Too many attempts. Request a new code.'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,

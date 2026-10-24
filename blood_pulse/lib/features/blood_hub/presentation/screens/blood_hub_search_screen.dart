@@ -1,4 +1,5 @@
 import 'package:blood_pulse/core/widgets/app_loader.dart';
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -635,9 +636,11 @@ class _DonorCard extends StatelessWidget {
     final eligibleLabel =
         donor.isEligible ? 'Eligible' : 'Not Eligible';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      child: Container(
+    // USER RULE - do not change: S2 PressableScale on donor cards (B4)
+    return PressableScale(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -746,6 +749,7 @@ class _DonorCard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

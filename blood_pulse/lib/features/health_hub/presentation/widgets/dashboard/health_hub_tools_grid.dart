@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../../core/widgets/bento_stagger.dart';
 
 /// Tools & Insights Grid for Health Hub matching Stitch Screen 8b78385103a7437189984b21b2fd2ce3:
 /// 1. AI Analysis
@@ -78,7 +79,11 @@ class HealthHubToolsGrid extends StatelessWidget {
           itemCount: tools.length,
           itemBuilder: (context, index) {
             final tool = tools[index];
-            return _HealthHubToolCard(tool: tool);
+            // USER RULE - do not change: E6 BentoStagger (40ms stagger per card, 300ms duration)
+            return BentoStagger(
+              index: index,
+              child: _HealthHubToolCard(tool: tool),
+            );
           },
         );
       },

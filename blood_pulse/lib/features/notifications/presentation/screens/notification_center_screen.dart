@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../../../../services/api_client.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -33,6 +35,32 @@ class NotificationCenterScreen extends ConsumerStatefulWidget {
 
 class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScreen> {
   int _selectedFilterIndex = 0; // 0: Feed, 1: Request, 2: Messages, 3: Profile
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchServerNotifications();
+    // G1: If push is unavailable the bell list polls every 30s
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _fetchServerNotifications();
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchServerNotifications() async {
+    try {
+      final res = await ApiClient().get('notifications/');
+      if (res.statusCode == 200 && mounted) {
+        setState(() {});
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {

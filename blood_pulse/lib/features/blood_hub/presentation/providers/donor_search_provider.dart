@@ -104,7 +104,7 @@ final donorSearchFilterProvider = StateProvider<DonorSearchFilter>((ref) {
 });
 
 class DonorSearchNotifier extends StateNotifier<AsyncValue<List<DonorSearchResult>>> {
-  DonorSearchNotifier() : super(const AsyncValue.loading()) { search(const DonorSearchFilter()); }
+  DonorSearchNotifier() : super(const AsyncValue.loading());
 
   Future<void> search(DonorSearchFilter filter) async {
     state = const AsyncValue.loading();
@@ -113,11 +113,14 @@ class DonorSearchNotifier extends StateNotifier<AsyncValue<List<DonorSearchResul
       if (filter.bloodGroup != null && filter.bloodGroup!.isNotEmpty && filter.bloodGroup != 'Any') {
         queryParams['blood_group'] = filter.bloodGroup!;
       }
-      if (filter.campus != null && filter.campus!.isNotEmpty && filter.campus != 'All Campuses') {
-        queryParams['campus'] = filter.campus!;
+      if (filter.division != null && filter.division!.isNotEmpty && filter.division != 'All Divisions') {
+        queryParams['division'] = filter.division!;
       }
       if (filter.zila != null && filter.zila!.isNotEmpty && filter.zila != 'All Zilas') {
         queryParams['district'] = filter.zila!;
+      }
+      if (filter.campus != null && filter.campus!.isNotEmpty && filter.campus != 'All Campuses') {
+        queryParams['campus'] = filter.campus!;
       }
       
       final uri = Uri(path: 'donors/search/', queryParameters: queryParams.isEmpty ? null : queryParams);
@@ -138,7 +141,7 @@ class DonorSearchNotifier extends StateNotifier<AsyncValue<List<DonorSearchResul
                  donor.zila.toLowerCase().contains(q);
         }).toList();
       }
-      if (filter.division != null && filter.division!.isNotEmpty) {
+      if (filter.division != null && filter.division!.isNotEmpty && filter.division != 'All Divisions') {
          donors = donors.where((d) => d.division == filter.division).toList();
       }
       if (filter.onlyAvailable) {
@@ -154,7 +157,13 @@ class DonorSearchNotifier extends StateNotifier<AsyncValue<List<DonorSearchResul
 
 final donorSearchProvider =
     StateNotifierProvider<DonorSearchNotifier, AsyncValue<List<DonorSearchResult>>>((ref) {
-  return DonorSearchNotifier();
+  final notifier = DonorSearchNotifier();
+  ref.listen<DonorSearchFilter>(donorSearchFilterProvider, (_, next) {
+    notifier.search(next);
+  });
+  final initialFilter = ref.read(donorSearchFilterProvider);
+  notifier.search(initialFilter);
+  return notifier;
 });
 
 final filteredDonorsProvider = Provider<AsyncValue<List<DonorSearchResult>>>((ref) {

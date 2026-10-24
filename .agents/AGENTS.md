@@ -32,4 +32,23 @@ Before executing any prompt or command, strictly enforce these mandatory BloodPu
 ### 5. TARGET SCOPE & INSTITUTION
 - Product scope is nationwide Bangladesh (64 districts). Do not reference or hard-code any single institution in product copy, defaults or logic. The Student institution field is a normal data feature.
 
+### 6. SHARED CORE WIDGETS & PATTERNS (USER RULES)
+- **S1 (PrimaryButton)**: Label never clips or wraps at 320dp/360dp with textScale 1.3 (Flexible + FittedBox, min height 48). Arrow icon strictly AFTER button text. Press-zoom scale 0.97. Loading shows ONLY white ECG loader on red; other buttons use IgnorePointer without changing appearance.
+- **S2 (PressableScale)**: Scale 0.97 over 120ms with Curves.easeOutCubic on press for all tappable cards, tiles, and boxes.
+- **S3 (AppError)**: Every API error mapped to one short human sentence. Never show raw JSON, ApiException, status codes, or model field names.
+- **S4 (PulseAI FAB Allowlist)**: Floating button visible strictly on allowlist: Feed, Blood Hub, Communities, Health Hub, Profile main tabs. Hidden everywhere else (chat, OTP, auth, registration, poster, emergency request, splash).
+- **S5 (PulseMotion)**: Standard durations (fast 120ms, normal 300ms, slow 600ms) and curves in `PulseMotion`; honors `MediaQuery.disableAnimations`; custom painters wrapped in `RepaintBoundary`.
 
+### 7. PHASE E BUILT-IN ANIMATION TOKENS
+- **E1 (EcgLoader)**: White ECG heartbeat wave on #C30121 red. Spinners and circular progress indicators forbidden in primary buttons.
+- **E2 (SuccessPulse)**: Button morphs, draws continuous ECG line, resolves to checkmark (duration <= 900ms, non-blocking).
+- **E3 (HeroRevealLogo)**: Single-run ECG lead line drawing into BloodPulse logo on Login screen (duration <= 1.2s).
+- **E4 (CountUpText)**: Smooth 600ms numerical counter for profile donation counts, rank, and hydration tracker.
+- **E5 (ProcessDrawLine)**: Horizontal and vertical active timeline connectors drawing as journey status advances.
+- **E6 (BentoStagger)**: 40ms stagger offset, 300ms fade-and-slide duration for Health Hub tools grid.
+- **E7 (PingRipple)**: Double-wave radial ECG ripple behind live donation alert banners (2 repeats, 600ms).
+
+### 8. BECOME A GUIDE (PHASE F)
+- Available strictly to complete, verified donor profiles. Gated accounts view a prompt to complete profile.
+- 4 Button States via S1 PrimaryButton: Apply Now / Pending review / Approved (Manage) / Rejected (Apply again on <date>).
+- Rejection locks re-application for 14 days from review date.

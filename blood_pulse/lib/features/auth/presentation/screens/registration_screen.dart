@@ -1,3 +1,4 @@
+import '../../../../core/widgets/location_cascade_selector.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -1780,88 +1781,21 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   Widget _buildDivisionAndZilaDropdowns() {
-    final l10n = AppLocalizations.of(context);
     final isBangla = ref.watch(localeProvider).languageCode == 'bn';
-    final List<String> districts = _selectedDivision != null ? (_divisionDistricts[_selectedDivision] ?? <String>[]) : <String>[];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _fieldLabel(l10n?.regDivision ?? (isBangla ? 'বিভাগ' : 'Division')),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 52,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(50),
-                      border: Border.all(color: const Color(0xFFE2E2E2)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        hint: Text(
-                          isBangla ? 'বিভাগ নির্বাচন করুন' : 'Select Division',
-                          style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888)),
-                        ),
-                        value: _selectedDivision,
-                        items: _divisionDistricts.keys.map<DropdownMenuItem<String>>((String div) {
-                          return DropdownMenuItem<String>(value: div, child: Text(div, style: const TextStyle(fontFamily: 'Inter', fontSize: 13)));
-                        }).toList(),
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedDivision = val;
-                            _selectedZila = null;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _fieldLabel(l10n?.regDistrict ?? (isBangla ? 'জেলা' : 'Zila / District')),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 52,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(50),
-                      border: Border.all(color: const Color(0xFFE2E2E2)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        hint: Text(
-                          isBangla ? 'জেলা নির্বাচন করুন' : 'Select Zila',
-                          style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF888888)),
-                        ),
-                        value: _selectedZila,
-                        items: districts.map<DropdownMenuItem<String>>((String zila) {
-                          return DropdownMenuItem<String>(value: zila, child: Text(zila, style: const TextStyle(fontFamily: 'Inter', fontSize: 13)));
-                        }).toList(),
-                        onChanged: (val) => setState(() => _selectedZila = val),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
+    return LocationCascadeSelector(
+      initialDivision: _selectedDivision,
+      initialDistrict: _selectedZila,
+      initialUpazila: _upazilaCtrl.text.isNotEmpty ? _upazilaCtrl.text : null,
+      isBangla: isBangla,
+      onChanged: (division, district, upazila) {
+        setState(() {
+          _selectedDivision = division;
+          _selectedZila = district;
+          if (upazila != null && upazila.isNotEmpty) {
+            _upazilaCtrl.text = upazila;
+          }
+        });
+      },
     );
   }
 

@@ -225,7 +225,13 @@ class AuthRolesIntentTests(TestCase):
         self.assertEqual(res_bg.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('blood_group', res_bg.data)
 
-        # Third PATCH: user cannot change admin-locked field is_verified
+        # Third PATCH: user cannot set admin-locked is_verified (silently ignored per D3 intent, profile remains unverified)
         res_locked = self.client.patch('/api/donors/me/', {'is_verified': True}, format='json')
-        self.assertEqual(res_locked.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('is_verified', res_locked.data)
+        self.assertEqual(res_locked.status_code, status.HTTP_200_OK)
+        profile.refresh_from_db()
+        self.assertFalse(profile.is_verified)
+
+        # Admin-only field modification (e.g. total_bags_donated) is rejected with 400
+        res_admin = self.client.patch('/api/donors/me/', {'total_bags_donated': 5}, format='json')
+        self.assertEqual(res_admin.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('total_bags_donated', res_admin.data)

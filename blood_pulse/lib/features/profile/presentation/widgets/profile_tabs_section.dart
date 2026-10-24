@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/profile_models.dart';
 import '../../domain/providers/profile_provider.dart';
-import 'heartbeat_tab_indicator.dart';
+import '../../../../core/widgets/ecg_tab_indicator.dart';
 import 'modals/donation_detail_sheet.dart';
 
 /// Stitch Screen 1: Profile Tabs Section
@@ -75,31 +75,26 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
             ),
             child: Stack(
               children: [
-                // USER RULE - do not change: full red baseline and sliding ECG marker indicator
-                const Positioned.fill(
-                  child: CustomPaint(
-                    painter: TabBaselinePainter(
-                      color: Color(0xFFC30121),
-                      strokeWidth: 2.0,
-                    ),
-                  ),
-                ),
+                // USER RULE - do not change: ONE fully red line with 60dp traveling ECG pulse blip (D1/D17)
                 Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: _tabController.animation!,
-                    builder: (context, _) => CustomPaint(
-                      painter: HeartbeatAnimationIndicatorPainter(
-                        animation: _tabController.animation!,
-                        tabCount: 3,
-                        color: const Color(0xFFC30121),
-                        strokeWidth: 3.0,
-                        spikeHeight: 8.0,
-                      ),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: EcgTabIndicator(
+                      controller: _tabController,
+                      tabCount: 3,
+                      color: const Color(0xFFC30121),
                     ),
                   ),
                 ),
                 TabBar(
                   controller: _tabController,
+                  onTap: (index) {
+                    _tabController.animateTo(
+                      index,
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeInOutCubic,
+                    );
+                  },
                   indicator: const BoxDecoration(),
                   dividerColor: Colors.transparent,
                   indicatorColor: Colors.transparent,

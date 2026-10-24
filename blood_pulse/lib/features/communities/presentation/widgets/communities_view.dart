@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
+import 'guide_application_modal.dart';
 import '../../domain/providers/communities_provider.dart';
 import '../../domain/models/community_models.dart';
 
@@ -1265,8 +1266,11 @@ class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Guide application submitted for review!'), backgroundColor: AppColors.primary),
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const GuideApplicationModal(),
                   );
                 },
                 child: const Text('Apply Now', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),

@@ -3,6 +3,7 @@
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:blood_pulse/features/blood_hub/domain/entities/poster_template.dart';
@@ -10,6 +11,9 @@ import 'poster_blank_template.dart';
 import 'poster_photo_template.dart';
 import 'poster_style_selectors.dart';
 import 'poster_text_template.dart';
+
+/// Maximum allowed rasterization pixel ratio to prevent OOM/GPU texture allocation crashes.
+const double kMaxPosterPixelRatio = 2.0;
 
 /// Reusable widget rendering the chosen BloodPulse emergency poster template.
 /// Uses [RepaintBoundary] to support raster PNG export.
@@ -46,16 +50,17 @@ class PosterGeneratorWidgetState extends State<PosterGeneratorWidget> {
     _repaintKey = GlobalKey();
   }
 
-  /// Exports the current visual state of the poster into high-res PNG bytes.
-  /// Returns raw [Uint8List] — no file I/O here; storage is the data layer's job.
-  Future<Uint8List> exportPNG({double pixelRatio = 3.0}) async {
+  /// Exports the current visual state of the poster into PNG bytes.
+  /// Caps pixelRatio to <= 2.0 (1.5 on web) to prevent OOM/GPU crashes on Vivo Y20 and Web.
+  Future<Uint8List> exportPNG({double pixelRatio = 2.0}) async {
     try {
       final boundary = effectiveRepaintKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;
       if (boundary == null) {
         throw Exception('Repaint boundary context is not attached yet.');
       }
-      final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+      final double effectiveRatio = pixelRatio.clamp(1.0, kMaxPosterPixelRatio);
+      final ui.Image image = await boundary.toImage(pixelRatio: effectiveRatio);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {

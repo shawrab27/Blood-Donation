@@ -1,4 +1,5 @@
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -42,6 +43,48 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
     ]
     queryset = DonorProfile.objects.all()
     serializer_class = DonorProfileSerializer
+
+    # USER RULE - do not change: Server-side filtering via query params (/api/donors/) (B1)
+    def get_queryset(self):
+        qs = DonorProfile.objects.all()
+        req = getattr(self, 'request', None)
+        if not req:
+            return qs
+
+        blood_group = req.query_params.get('blood_group', '').replace(' ', '+').strip()
+        if blood_group and blood_group != 'Any':
+            exact = req.query_params.get('exact_match', 'true').lower() in ('true', '1')
+            if exact:
+                qs = qs.filter(blood_group__iexact=blood_group)
+            else:
+                from api.services.compat import get_compatible_donor_groups
+                qs = qs.filter(blood_group__in=get_compatible_donor_groups(blood_group))
+
+        district = req.query_params.get('district', '').strip()
+        division = req.query_params.get('division', '').strip()
+        if district and district != 'Any':
+            from api.data.bd_locations import DISTRICT_ALIASES
+            canonical_district = DISTRICT_ALIASES.get(district, district)
+            qs = qs.filter(
+                Q(district__iexact=canonical_district) |
+                Q(upazila_linked__district__name__iexact=canonical_district)
+            )
+        elif division and division != 'Any':
+            from api.models import District
+            districts_in_div = list(District.objects.filter(division__name__iexact=division).values_list('name', flat=True))
+            qs = qs.filter(
+                Q(upazila_linked__district__division__name__iexact=division) |
+                Q(district__in=districts_in_div)
+            )
+
+        upazila = req.query_params.get('upazila', '').strip()
+        if upazila and upazila != 'Any':
+            qs = qs.filter(
+                Q(upazila__iexact=upazila) |
+                Q(upazila_linked__name__iexact=upazila)
+            )
+
+        return qs
 
     def get_permissions(self):
         if self.action in ['create', 'retrieve', 'list']:
@@ -895,144 +938,266 @@ class GeminiReportAnalyzeView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        # Reject raw image uploads
-        if 'report' in request.FILES or 'image' in request.FILES:
-            return Response(
-                {'error': 'Raw image uploads are not supported. Run on-device OCR (ML Kit) and send report_text.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        # USER RULE - do not change: Strict C1 blood report pipeline with vision schema and no guessed values
+        uploaded_image = request.FILES.get('report') or request.FILES.get('image')
+        image_b64 = request.data.get('image_base64')
         report_text = request.data.get('report_text', '').strip()
-        if not report_text:
+
+        if not uploaded_image and not image_b64 and not report_text:
             return Response(
-                {'error': 'report_text is required. On-device OCR text must be provided.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 1. Redact sensitive info (PII, phone numbers, NID)
-        from assistant.pipeline.redact import redact_text
-        safe_text = redact_text(report_text)
-
-        # Check for medical keywords before calling LLM
-        medical_keywords = [
-            'hemoglobin', 'hb', 'cbc', 'complete blood count', 'platelet', 'wbc', 'rbc',
-            'white blood', 'red blood', 'blood group', 'neutrophil', 'lymphocyte',
-            'eosinophil', 'monocyte', 'basophil', 'esr', 'hematocrit', 'hct',
-            'mcv', 'mch', 'mchc', 'serum', 'pathology', 'lab', 'reference range',
-            'result', 'glucose', 'cholesterol', 'urea', 'creatinine', 'bilirubin'
-        ]
-        text_lower = safe_text.lower()
-        has_medical_marker = any(kw in text_lower for kw in medical_keywords)
-
-        if not has_medical_marker or len(safe_text.strip()) < 15:
-            return Response(
-                {
-                    'not_a_report': True,
-                    'error': 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report (such as CBC, Hemoglobin, or Blood Group report) with visible laboratory values.'
-                },
+                {'error': 'A report image or report_text is required. Please upload a photo of your CBC report.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         api_key = os.environ.get("GEMINI_API_KEY") or getattr(settings, 'GEMINI_API_KEY', None)
+
+        # 1. Image analysis via Gemini Vision if image is present
+        pil_image = None
+        if uploaded_image:
+            try:
+                from PIL import Image
+                pil_image = Image.open(uploaded_image)
+            except Exception:
+                return Response(
+                    {'not_a_report': True, 'error': 'This does not look like a blood report. Please upload a clear photo of your CBC report.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        elif image_b64:
+            try:
+                import base64
+                from io import BytesIO
+                from PIL import Image
+                if ',' in image_b64:
+                    image_b64 = image_b64.split(',', 1)[1]
+                img_data = base64.b64decode(image_b64)
+                pil_image = Image.open(BytesIO(img_data))
+            except Exception:
+                return Response(
+                    {'not_a_report': True, 'error': 'This does not look like a blood report. Please upload a clear photo of your CBC report.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # If text is provided, redact sensitive PII first
+        safe_text = ""
+        if report_text:
+            from assistant.pipeline.redact import redact_text
+            safe_text = redact_text(report_text)
+
+        # If no Gemini API key is available, use our deterministic offline analyzer on text
         if not api_key:
+            if not safe_text:
+                return Response({
+                    'is_blood_report': False,
+                    'confidence': 0.0,
+                    'not_a_report': True,
+                    'error': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                    'results': [],
+                    'parameters': [],
+                    'summary': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                    'donor_readiness': '❌ UNABLE TO EVALUATE',
+                    'dietary_action_plan': [],
+                    'disclaimer': '⚠️ Medical Disclaimer: Automated screening only. Please consult a licensed physician.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             from assistant.pipeline.report_analyzer import parse_blood_report
             parsed = parse_blood_report(safe_text)
+            if parsed.get('not_a_report') or not parsed.get('results'):
+                return Response({
+                    'is_blood_report': False,
+                    'confidence': 0.0,
+                    'not_a_report': True,
+                    'error': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                    'results': [],
+                    'parameters': [],
+                    'summary': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                    'donor_readiness': '❌ UNABLE TO EVALUATE',
+                    'dietary_action_plan': [],
+                    'disclaimer': '⚠️ Medical Disclaimer: Automated screening only. Please consult a licensed physician.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             return Response({
+                'is_blood_report': True,
+                'confidence': 0.95,
                 'summary': parsed['summary'],
                 'dietary_action_plan': parsed['dietary_action_plan'],
                 'results': parsed['results'],
+                'parameters': [{'name': r['test_name'], 'value': r['value'], 'unit': r['unit']} for r in parsed['results']],
                 'donor_readiness': parsed['donor_readiness'],
                 'disclaimer': parsed['disclaimer'],
             })
 
+        # Gemini Vision / Multimodal Prompt with strict JSON schema
         prompt = """
-        You are a medical AI assistant that only analyzes blood and lab reports.
+        You are a clinical laboratory AI assistant specializing in Complete Blood Count (CBC) analysis.
         
-        FIRST: Determine if the text represents actual medical blood report or lab report data.
-        Look for: test names (WBC, Hemoglobin, Platelets, RBC, etc.), reference ranges, lab values, or medical terminology.
-        
-        If the text does NOT appear to be a medical blood or lab report, return ONLY this JSON:
-        {"not_a_report": true, "error": "This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report."}
-        
-        If it IS a valid blood/lab report, extract:
-        - All test values (WBC, Hemoglobin, Platelets, RBC, etc.)
-        - Compare each with standard reference ranges
-        - Flag them as 'Normal', 'Low', or 'High'
-        - Provide a short summary of overall health status
-        - Suggest a dietary action plan for abnormal values
-        
-        Return the result strictly as a JSON object (no markdown blocks):
+        Strict JSON output schema (strictly valid JSON only, no markdown markers):
         {
-          "summary": "Overall health summary string...",
-          "dietary_action_plan": ["Spinach", "Red Meat", "Vitamin C"],
-          "results": [
-            {
-              "test_name": "Hemoglobin",
-              "value": "11.8",
-              "unit": "g/dL",
-              "reference_range": "12.0 - 15.5",
-              "status": "Low"
-            }
+          "is_blood_report": true,
+          "confidence": 0.95,
+          "parameters": [
+            {"name": "Hemoglobin", "value": "13.5", "unit": "g/dL"}
           ]
         }
+
+        CRITICAL EVALUATION RULES:
+        1. Examine the image or text. Determine if it is a genuine medical laboratory blood report (such as CBC, pathology, hematology, blood group).
+        2. If it is NOT a blood report (e.g. photos of people, scenery, general documents, donor list, text without lab tests) or confidence is low (< 0.6):
+           Set "is_blood_report": false, "confidence": 0.0, "parameters": [].
+        3. NEVER guess, synthesize, or invent missing parameters. Only extract parameters that are explicitly printed.
+        4. If parameters are missing, do NOT add them.
         """
-        
+
         try:
+            from google import genai
             client = genai.Client(api_key=api_key)
+            contents = [prompt]
+            if pil_image:
+                contents.append(pil_image)
+            if safe_text:
+                contents.append(safe_text)
+
             response = client.models.generate_content(
-                model='gemini-3.6-flash',
-                contents=[prompt, safe_text],
+                model='gemini-2.5-flash',
+                contents=contents,
             )
-            text = response.text.strip()
-            if text.startswith("```json"):
-                text = text[7:].strip()
-                if text.endswith("```"):
-                    text = text[:-3].strip()
-            elif text.startswith("```"):
-                text = text[3:].strip()
-                if text.endswith("```"):
-                    text = text[:-3].strip()
-                
-            data = json.loads(text)
-            
-            # Handle the non-medical case
-            if data.get('not_a_report'):
-                return Response(
-                    {'error': data.get('error', 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report.')},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            return Response(data)
-        except json.JSONDecodeError:
-            from assistant.pipeline.report_analyzer import parse_blood_report
-            parsed = parse_blood_report(safe_text)
-            return Response({
-                'summary': parsed['summary'],
-                'dietary_action_plan': parsed['dietary_action_plan'],
-                'results': parsed['results'],
-                'donor_readiness': parsed['donor_readiness'],
-                'disclaimer': parsed['disclaimer'],
-            })
-        except Exception as e:
-            try:
-                from assistant.pipeline.report_analyzer import parse_blood_report
-                parsed = parse_blood_report(safe_text)
-                if parsed.get('results'):
-                    return Response({
-                        'summary': parsed['summary'],
-                        'dietary_action_plan': parsed['dietary_action_plan'],
-                        'results': parsed['results'],
-                        'donor_readiness': parsed['donor_readiness'],
-                        'disclaimer': parsed['disclaimer'],
-                    })
-            except Exception:
-                pass
-            return Response(
-                {
+            raw_text = response.text.strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:].strip()
+            if raw_text.startswith("```"):
+                raw_text = raw_text[3:].strip()
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3].strip()
+
+            data = json.loads(raw_text)
+            is_report = data.get('is_blood_report', False)
+            confidence = float(data.get('confidence', 0.0))
+            raw_params = data.get('parameters', [])
+
+            if not is_report or confidence < 0.6 or not raw_params:
+                return Response({
+                    'is_blood_report': False,
+                    'confidence': confidence,
                     'not_a_report': True,
-                    'error': 'This image does not appear to be a valid blood or lab report. Please upload a clear photo of an actual medical report (such as CBC, Hemoglobin, or Blood Group report) with visible laboratory values.'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+                    'error': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                    'summary': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                    'donor_readiness': '❌ UNABLE TO EVALUATE',
+                    'results': [],
+                    'parameters': [],
+                    'dietary_action_plan': [],
+                    'disclaimer': '⚠️ Medical Disclaimer: Automated screening only. Please consult a licensed physician.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Evaluate donor readiness strictly from extracted values
+            reasons_ineligible = []
+            hb_found = False
+            results = []
+            dietary_plan = []
+
+            for p in raw_params:
+                name = str(p.get('name', '')).strip()
+                val_str = str(p.get('value', '')).strip()
+                unit = str(p.get('unit', '')).strip()
+                status_str = "Normal"
+
+                # Check Hemoglobin threshold (>= 12.5 g/dL)
+                if any(k in name.lower() for k in ['hemoglobin', 'hb', 'hgb']):
+                    hb_found = True
+                    try:
+                        import re
+                        num_match = re.search(r"(\d+(?:\.\d+)?)", val_str)
+                        if num_match:
+                            val_num = float(num_match.group(1))
+                            if val_num < 12.5:
+                                status_str = "Low"
+                                reasons_ineligible.append(f"Hemoglobin ({val_num} {unit}) is below safe donation threshold (12.5 g/dL)")
+                                dietary_plan.extend(["Iron-rich foods (spinach, lentils, red meat)", "Vitamin C to boost iron absorption"])
+                            elif val_num > 18.0:
+                                status_str = "High"
+                    except Exception:
+                        pass
+
+                # Check Platelets threshold (>= 150,000 /mcL)
+                if 'platelet' in name.lower() or 'plt' in name.lower():
+                    try:
+                        import re
+                        cleaned = val_str.replace(',', '')
+                        num_match = re.search(r"(\d+(?:\.\d+)?)", cleaned)
+                        if num_match:
+                            val_num = float(num_match.group(1))
+                            if val_num < 150000 and val_num > 1000:
+                                status_str = "Low"
+                                reasons_ineligible.append(f"Platelet count ({val_str}) is below recommended range (150,000 - 450,000 /mcL)")
+                    except Exception:
+                        pass
+
+                results.append({
+                    'test_name': name,
+                    'value': val_str,
+                    'unit': unit,
+                    'reference_range': p.get('reference_range', ''),
+                    'status': status_str
+                })
+
+            if not hb_found:
+                donor_readiness = "❌ UNABLE TO EVALUATE: Hemoglobin measurement is required to determine donation eligibility."
+                summary = "Blood report analyzed. Hemoglobin was not detected in the provided report."
+            elif reasons_ineligible:
+                donor_readiness = f"⚠️ NOT CURRENTLY ELIGIBLE: {'; '.join(reasons_ineligible)}"
+                summary = f"Blood report requires clinical review: {'; '.join(reasons_ineligible)}"
+            else:
+                donor_readiness = "✅ ELIGIBLE: CBC metrics meet blood donation criteria."
+                summary = "All extracted blood report parameters are within safe clinical ranges. You appear eligible for blood donation."
+
+            if not dietary_plan:
+                dietary_plan = [
+                    "Maintain balanced hydration (8-10 glasses of water daily)",
+                    "Nutritious balanced diet with seasonal vegetables and fruits",
+                    "Adequate restful sleep before and after donating"
+                ]
+
+            return Response({
+                'is_blood_report': True,
+                'confidence': confidence,
+                'summary': summary,
+                'donor_readiness': donor_readiness,
+                'dietary_action_plan': dietary_plan,
+                'results': results,
+                'parameters': raw_params,
+                'disclaimer': '⚠️ Medical Disclaimer: Automated screening only. Please consult a licensed physician.'
+            })
+
+        except Exception as e:
+            # Fallback to offline regex analyzer if text exists
+            if safe_text:
+                try:
+                    from assistant.pipeline.report_analyzer import parse_blood_report
+                    parsed = parse_blood_report(safe_text)
+                    if parsed.get('results'):
+                        return Response({
+                            'is_blood_report': True,
+                            'confidence': 0.85,
+                            'summary': parsed['summary'],
+                            'dietary_action_plan': parsed['dietary_action_plan'],
+                            'results': parsed['results'],
+                            'parameters': [{'name': r['test_name'], 'value': r['value'], 'unit': r['unit']} for r in parsed['results']],
+                            'donor_readiness': parsed['donor_readiness'],
+                            'disclaimer': parsed['disclaimer'],
+                        })
+                except Exception:
+                    pass
+
+            return Response({
+                'is_blood_report': False,
+                'confidence': 0.0,
+                'not_a_report': True,
+                'error': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                'summary': 'This does not look like a blood report. Please upload a clear photo of your CBC report.',
+                'donor_readiness': '❌ UNABLE TO EVALUATE',
+                'results': [],
+                'parameters': [],
+                'dietary_action_plan': [],
+                'disclaimer': '⚠️ Medical Disclaimer: Automated screening only. Please consult a licensed physician.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 class GoogleAuthView(APIView):
     """
@@ -1415,22 +1580,21 @@ class FirebaseAuthView(APIView):
 class UnreadNotificationCountView(APIView):
     """
     GET /api/notifications/unread-count/
-    Returns real-time unread notification count for the authenticated user.
+    Returns real-time unread notification count for the authenticated user derived from rows.
     
     POST /api/notifications/mark-read/
-    Resets unread notification count to 0 when user views notifications.
+    Marks notifications as read and synchronizes unread notification count.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        state, _ = UserNotificationState.objects.get_or_create(user=request.user)
-        return Response({'unread_count': state.unread_count}, status=status.HTTP_200_OK)
+        count = UserNotificationState.get_unread_for_user(request.user)
+        return Response({'unread_count': count}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        state, _ = UserNotificationState.objects.get_or_create(user=request.user)
-        state.unread_count = 0
-        state.save(update_fields=['unread_count', 'updated_at'])
-        return Response({'unread_count': 0, 'status': 'marked_read'}, status=status.HTTP_200_OK)
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        count = UserNotificationState.get_unread_for_user(request.user)
+        return Response({'unread_count': count, 'status': 'marked_read'}, status=status.HTTP_200_OK)
 
 
 class SendVerificationEmailView(APIView):

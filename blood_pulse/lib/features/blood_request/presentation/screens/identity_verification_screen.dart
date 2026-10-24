@@ -1,3 +1,4 @@
+import '../../../../core/errors/app_error_mapper.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -13,6 +14,9 @@ import '../../../../services/api_client.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../blood_hub/data/blood_hub_api_service.dart';
 import '../providers/blood_request_provider.dart';
+
+import '../../../../core/enums/otp_delivery_state.dart';
+export '../../../../core/enums/otp_delivery_state.dart';
 
 enum VerificationMethod { email, whatsapp, sms }
 
@@ -32,6 +36,7 @@ class IdentityVerificationScreen extends ConsumerStatefulWidget {
     this.returnRoute = '/live-dispatch',
     this.apiClient,
     this.autoSend = true,
+    this.initialDeliveryState,
   });
 
   final String? patientName;
@@ -45,6 +50,7 @@ class IdentityVerificationScreen extends ConsumerStatefulWidget {
   final String returnRoute;
   final ApiClient? apiClient;
   final bool autoSend;
+  final OtpDeliveryState? initialDeliveryState;
 
   @override
   ConsumerState<IdentityVerificationScreen> createState() =>
@@ -68,13 +74,25 @@ class _IdentityVerificationScreenState
   int _countdown = 60;
   Timer? _timer;
   bool _isSending = false;
+  late OtpDeliveryState _deliveryState;
   bool _isVerifying = false;
   String? _statusMessage;
   String? _errorMessage;
 
+  String _maskEmail(String email) {
+    if (!email.contains('@')) return email;
+    final parts = email.split('@');
+    final user = parts[0];
+    final domain = parts[1];
+    if (user.isEmpty) return '***@$domain';
+    return '${user[0]}***@$domain';
+  }
+
   @override
   void initState() {
     super.initState();
+    _deliveryState = widget.initialDeliveryState ??
+        (widget.autoSend ? OtpDeliveryState.sending : OtpDeliveryState.sent);
     _apiClient = widget.apiClient ?? ApiClient();
     final authUser = ref.read(authProvider).user;
     final initialEmail = widget.email ??
@@ -86,6 +104,9 @@ class _IdentityVerificationScreenState
     _smsCtrl = TextEditingController(text: initialPhone);
 
     _startCountdown();
+
+    // Warm-up ping to wake up Render backend early
+    _apiClient.get('health/').then<void>((_) {}, onError: (_) {});
 
     // Auto-dispatch verification OTP upon arriving at verification gate
     if (widget.autoSend) {
@@ -232,6 +253,7 @@ class _IdentityVerificationScreenState
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       setState(() {
+        _deliveryState = OtpDeliveryState.failure;
         _errorMessage = 'Please enter a valid email address.';
       });
       return;
@@ -239,41 +261,67 @@ class _IdentityVerificationScreenState
 
     setState(() {
       _isSending = true;
+      _deliveryState = OtpDeliveryState.sending;
       _errorMessage = null;
       _statusMessage = null;
     });
 
-    try {
-      final res = await _apiClient.sendRequestOtp(email: email);
-      final cooldown = (res['cooldown_seconds'] as num?)?.toInt() ?? 60;
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _statusMessage = 'Verification code dispatched to $email';
-        _errorMessage = null;
-      });
-      _startCountdown(cooldown);
-    } on RequestOtpException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _errorMessage = e.message;
-      });
-      if (e.cooldownSeconds != null && e.cooldownSeconds! > 0) {
-        _startCountdown(e.cooldownSeconds!);
+    int attempt = 0;
+    while (attempt < 2) {
+      attempt++;
+      try {
+        final res = await _apiClient
+            .sendRequestOtp(email: email)
+            .timeout(const Duration(seconds: 8));
+        final cooldown = (res['cooldown_seconds'] as num?)?.toInt() ?? 60;
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _deliveryState = OtpDeliveryState.sent;
+          _statusMessage = 'Verification code dispatched to $email';
+          _errorMessage = null;
+        });
+        _startCountdown(cooldown);
+        return;
+      } on TimeoutException {
+        if (attempt == 1) {
+          continue; // Auto-retry once on timeout
+        }
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _deliveryState = OtpDeliveryState.failure;
+          _errorMessage = 'Connection timed out. Server is starting up, please try again in a moment.';
+        });
+        return;
+      } on RequestOtpException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _deliveryState = OtpDeliveryState.failure;
+          _errorMessage = AppError.toHumanMessage(e.message);
+        });
+        if (e.cooldownSeconds != null && e.cooldownSeconds! > 0) {
+          _startCountdown(e.cooldownSeconds!);
+        }
+        return;
+      } on ApiException catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _deliveryState = OtpDeliveryState.failure;
+          _errorMessage = AppError.toHumanMessage(e.message);
+        });
+        return;
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _isSending = false;
+          _deliveryState = OtpDeliveryState.failure;
+          _errorMessage = AppError.toHumanMessage(e);
+        });
+        return;
       }
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSending = false;
-        _errorMessage = 'Network connection failed. Please check your internet connection.';
-      });
     }
   }
 
@@ -555,45 +603,118 @@ class _IdentityVerificationScreenState
 
                   const SizedBox(height: 24),
 
-                  // 6-Digit PIN Boxes
-                  const Center(
-                    child: Text(
-                      'Enter 6-Digit OTP',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF5C3F3D),
+                  if (_deliveryState == OtpDeliveryState.sending) ...[
+                    Container(
+                      key: const Key('otp_state_sending'),
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      alignment: Alignment.center,
+                      child: const Column(
+                        children: [
+                          AppLoader.small(),
+                          SizedBox(height: 12),
+                          Text(
+                            'Sending verification code...',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              color: Color(0xFF666666),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPinRow(),
-
-                  const SizedBox(height: 12),
-
-                  // Resend Timer
-                  Center(
-                    child: GestureDetector(
-                      onTap: (_countdown == 0 && !_isSending) ? _sendOtp : null,
-                      child: Text(
-                        _countdown > 0
-                            ? 'Resend code in 00:${_countdown.toString().padLeft(2, '0')}'
-                            : 'Didn’t receive code? Resend Code',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _countdown > 0
-                              ? const Color(0xFF004B7E)
-                              : const Color(0xFFC30121),
-                          decoration: _countdown == 0
-                              ? TextDecoration.underline
-                              : TextDecoration.none,
+                  ] else if (_deliveryState == OtpDeliveryState.failure) ...[
+                    Container(
+                      key: const Key('otp_state_failure'),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFECEE),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFF5C8D0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: Color(0xFFC30121), size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage ?? 'Failed to send OTP code. Please try again.',
+                                  style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFFC30121)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            key: const Key('otp_retry_button'),
+                            onPressed: _sendOtp,
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC30121),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Column(
+                      key: const Key('otp_state_sent'),
+                      children: [
+                        Center(
+                          child: Text(
+                            'Code sent to ${_maskEmail(_emailCtrl.text)}',
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2B2B2B),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Center(
+                          child: GestureDetector(
+                            onTap: (_countdown == 0 && !_isSending) ? _sendOtp : null,
+                            child: Text(
+                              _countdown > 0
+                                  ? 'Resend code in 00:${_countdown.toString().padLeft(2, '0')}s'
+                                  : 'Didn’t receive code? Resend Code',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _countdown > 0
+                                    ? const Color(0xFF004B7E)
+                                    : const Color(0xFFC30121),
+                                decoration: _countdown == 0
+                                    ? TextDecoration.underline
+                                    : TextDecoration.none,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Center(
+                          child: Text(
+                            'Enter 6-Digit OTP',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF5C3F3D),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildPinRow(),
+                      ],
                     ),
-                  ),
+                  ],
 
                   const SizedBox(height: 24),
 
@@ -602,9 +723,8 @@ class _IdentityVerificationScreenState
                     width: double.infinity,
                     height: 52,
                     child: CapsuleButton(
-                      label: _isVerifying
-                          ? 'Verifying...'
-                          : 'Verify & Submit Request ➔',
+                      label: _isVerifying ? 'Verifying...' : 'Verify & Submit Request',
+                      icon: Icons.arrow_forward_rounded,
                       isLoading: _isVerifying,
                       showGlow: true,
                       onPressed: _isVerifying ? () {} : _verifyAndSubmit,

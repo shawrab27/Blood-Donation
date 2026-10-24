@@ -166,11 +166,12 @@ class ProfileMeView(APIView):
         if not profile:
             return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Blood group modification is strictly admin-only once set
+        # Blood group modification is strictly admin-only once registered
         if 'blood_group' in request.data and profile.blood_group and request.data['blood_group'] != profile.blood_group:
-            return Response({
-                "blood_group": ["Blood group cannot be directly modified. Please submit a Blood Group Change Request."]
-            }, status=status.HTTP_400_BAD_REQUEST)
+            if not (user and user.is_staff):
+                return Response({
+                    "blood_group": ["Blood group cannot be directly modified. Please submit a Blood Group Change Request."]
+                }, status=status.HTTP_400_BAD_REQUEST)
         elif 'blood_group' in request.data and not profile.blood_group:
             profile.blood_group = request.data['blood_group']
 
@@ -290,6 +291,15 @@ class ProfileMeView(APIView):
             profile.profile_picture = pic
 
         profile.save()
+        if not profile.is_profile_complete:
+            return Response({
+                "id": profile.id,
+                "blood_group": profile.blood_group,
+                "phone_number": profile.phone_number,
+                "district": profile.district,
+                "is_profile_complete": False,
+                "missing_fields": profile.check_is_complete()[1],
+            }, status=status.HTTP_200_OK)
         return self.get(request)
 
     def delete(self, request):

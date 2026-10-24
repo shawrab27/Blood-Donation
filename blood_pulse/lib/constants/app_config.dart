@@ -25,7 +25,7 @@ class AppConfig {
 
   /// Application branding
   static const String appName = 'BloodPulse';
-  static const String appSubtitle = 'Every Drop Connects Life';
+  static const String appSubtitle = 'You give today, they live today';
 
   /// Primary Brand Colors (Stitch UI Spec)
   static const Color primaryColor = Color(0xFFC30121);

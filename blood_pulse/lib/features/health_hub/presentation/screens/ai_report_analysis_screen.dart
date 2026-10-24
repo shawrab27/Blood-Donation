@@ -86,8 +86,8 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
       debugPrint('[AiReportAnalysis] Analysis error: $e');
       if (mounted) {
         final errText = e.toString().replaceAll('Exception: ', '').trim();
-        final displayError = errText.contains('incorrect image or not a blood report')
-            ? 'incorrect image or not a blood report'
+        final displayError = (errText.contains('incorrect image') || errText.contains('blood report') || errText.contains('not a report'))
+            ? 'This does not look like a blood report. Please upload a clear photo of your CBC report.'
             : errText;
 
         setState(() {
@@ -129,8 +129,8 @@ class _AiReportAnalysisScreenState extends State<AiReportAnalysisScreen> {
       debugPrint('[AiReportAnalysis] Text analysis error: $e');
       if (mounted) {
         final errText = e.toString().replaceAll('Exception: ', '').trim();
-        final displayError = errText.contains('incorrect image or not a blood report')
-            ? 'incorrect image or not a blood report'
+        final displayError = (errText.contains('incorrect image') || errText.contains('blood report') || errText.contains('not a report'))
+            ? 'This does not look like a blood report. Please upload a clear photo of your CBC report.'
             : errText;
 
         setState(() {

@@ -12,6 +12,8 @@ import 'package:http/http.dart' as http;
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/config/api_config.dart';
+import '../core/constants/bd_locations.dart';
+import 'institution_service.dart';
 
 /// Typed exception representing API, network, or decoding failures in BloodPulse.
 class ApiException implements Exception {
@@ -681,7 +683,7 @@ class ApiClient {
   
   // ─── Search ───
 
-  static List<Map<String, dynamic>>? _cachedLocalInstitutions;
+
 
   Future<List<Map<String, dynamic>>> searchInstitutions(String query) async {
     final cleanQuery = query.trim();
@@ -708,45 +710,38 @@ class ApiClient {
 
   Future<List<Map<String, dynamic>>> _searchLocalInstitutions(String query) async {
     try {
-      if (_cachedLocalInstitutions == null) {
-        final jsonString = await rootBundle.loadString('assets/data/institutions.json');
-        final List<dynamic> raw = jsonDecode(jsonString);
-        _cachedLocalInstitutions = raw.cast<Map<String, dynamic>>();
-      }
-      final matches = _cachedLocalInstitutions!.where((item) {
-        final name = (item['name'] as String? ?? '').toLowerCase();
-        return name.contains(query);
-      }).toList();
-
-      matches.sort((a, b) {
-        final nameA = (a['name'] as String? ?? '').toLowerCase();
-        final nameB = (b['name'] as String? ?? '').toLowerCase();
-        final aStarts = nameA.startsWith(query);
-        final bStarts = nameB.startsWith(query);
-        if (aStarts && !bStarts) return -1;
-        if (!aStarts && bStarts) return 1;
-        return nameA.compareTo(nameB);
-      });
-
-      return matches.take(10).toList();
+      return await InstitutionService.instance.search(query);
     } catch (e) {
       debugPrint('[ApiClient] Failed to load local institutions: $e');
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>> searchUpazilas(String query) async {
-    final response = await _client
-        .get(Uri.parse(_normalizeUrl('locations/upazila-search/?q=${Uri.encodeComponent(query)}')))
-        .timeout(connectTimeout);
-    
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
+  Future<List<Map<String, dynamic>>> searchUpazilas(String query, {String? district}) async {
+    try {
+      final qParam = Uri.encodeComponent(query);
+      final distParam = (district != null && district.isNotEmpty) ? '&district=${Uri.encodeComponent(district)}' : '';
+      final response = await _client
+          .get(Uri.parse(_normalizeUrl('locations/upazila-search/?q=$qParam$distParam')))
+          .timeout(connectTimeout);
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final list = data.cast<Map<String, dynamic>>();
+        if (list.isNotEmpty) return list;
+      }
+    } catch (_) {}
+
+    if (district != null && district.isNotEmpty) {
+      final localUpz = getUpazilasForDistrict(district);
+      final qLower = query.toLowerCase();
+      final filtered = qLower.isEmpty
+          ? localUpz
+          : localUpz.where((u) => u.toLowerCase().contains(qLower)).toList();
+      return filtered.map((u) => {'id': null, 'name': u, 'district_id': null}).toList();
     }
     return [];
   }
-
   // ─── Forgot Password (Email OTP) ───
 
   Future<void> requestOtp(String email) async {

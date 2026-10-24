@@ -138,6 +138,7 @@ from .views_national_emergency import (
     NationalEmergencyRequestsAPIView,
 )
 from .views_public_stats import public_stats_view
+from .views_health_guide import RecoveryStatusView, HydrationView, GuideApplicationView
 
 urlpatterns = [
     # Blood Hub v2 Permanent Lifecycle Endpoints
@@ -270,6 +271,10 @@ urlpatterns = [
     path('donors-nearby/', NearbyDonorsView.as_view(), name='donors-nearby'),
     path('clubs/register/', RegisterClubView.as_view(), name='register-club'),
     path('health-hub/analyze-report/', GeminiReportAnalyzeView.as_view(), name='analyze-report'),
+    path('health-hub/recovery-status/', RecoveryStatusView.as_view(), name='recovery-status'),
+    path('health-hub/hydration/', HydrationView.as_view(), name='hydration-view'),
+    path('communities/guide-application/', GuideApplicationView.as_view(), name='guide-application'),
+    path('v1/communities/guide-application/', GuideApplicationView.as_view(), name='v1-guide-application'),
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     path('auth/firebase/', FirebaseAuthView.as_view(), name='firebase-auth'),
 

@@ -1,3 +1,5 @@
+import '../../../../core/widgets/bento_stagger.dart';
+import '../../../../core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -740,8 +742,14 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                   style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
                 ),
                 const SizedBox(height: 12),
-                for (final donor in donors) ...[
-                  _buildDonorCard(donor),
+                for (int i = 0; i < donors.length; i++) ...[
+                  BentoStagger(
+                    index: i,
+                    child: PressableScale(
+                      onTap: () {},
+                      child: _buildDonorCard(donors[i]),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                 ],
                 const SizedBox(height: 20),
@@ -1617,58 +1625,41 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
+                  child: CapsuleButton(
+                    label: 'Create Poster',
+                    icon: Icons.palette_outlined,
+                    isOutlined: true,
+                    height: 52,
                     onPressed: () {
                       final patientName = _patientNameCtrl.text.trim();
                       final posterData = PosterData(
                         patientName: patientName.isNotEmpty
-                            ? patientName
-                            : 'Emergency Patient',
+                            ? patientName : 'Emergency Patient',
                         bloodGroup: _selectedBloodType ?? 'B+',
                         location: _hospitalLocationCtrl.text.trim().isNotEmpty
-                            ? _hospitalLocationCtrl.text.trim()
-                            : 'Dhaka, Bangladesh',
+                            ? _hospitalLocationCtrl.text.trim() : 'Dhaka, Bangladesh',
                         unitsNeeded: 1,
                         urgencyLevel: _urgencyLevel,
                         condition: _conditionCtrl.text.trim().isNotEmpty
-                            ? _conditionCtrl.text.trim()
-                            : 'Urgent Transfusion',
+                            ? _conditionCtrl.text.trim() : 'Urgent Transfusion',
                         hospitalName: _hospitalLocationCtrl.text.trim().isNotEmpty
-                            ? _hospitalLocationCtrl.text.trim()
-                            : null,
+                            ? _hospitalLocationCtrl.text.trim() : null,
                         contactNumber: _contactPhoneCtrl.text.trim().isNotEmpty
-                            ? _contactPhoneCtrl.text.trim()
-                            : null,
+                            ? _contactPhoneCtrl.text.trim() : null,
                         dateNeeded: _dateTimeCtrl.text.trim(),
                         photoBytes: _patientPhotoBytes,
                       );
                       context.push('/blood-hub/poster', extra: posterData);
                     },
-                    icon: const Icon(Icons.palette_outlined,
-                        color: Color(0xFFC30121), size: 18),
-                    label: const Text(
-                      'Create Poster',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFC30121),
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: CapsuleButton(
-                    label: 'Submit Request ➔',
+                    label: 'Submit Request',
+                    icon: Icons.arrow_forward_rounded,
                     showGlow: true,
+                    height: 52,
                     onPressed: _submitRequest,
                   ),
                 ),
