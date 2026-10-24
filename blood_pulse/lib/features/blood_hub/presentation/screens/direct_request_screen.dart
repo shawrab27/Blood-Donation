@@ -816,10 +816,11 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                     Expanded(
                       child: SizedBox(
                         height: 52,
-                        child: OutlinedButton.icon(
+                        child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             shape: const StadiumBorder(),
                             side: const BorderSide(color: _kPrimary, width: 1.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           onPressed: () {
                             final patientName = _patientNameController.text.trim();
@@ -846,16 +847,30 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                             );
                             context.push('/blood-hub/poster', extra: posterData);
                           },
-                          icon: const Icon(Icons.palette_outlined,
-                              color: _kPrimary, size: 18),
-                          label: const Text(
-                            'Create Poster',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              color: _kPrimary,
-                            ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.palette_outlined,
+                                  color: _kPrimary, size: 18),
+                              SizedBox(width: 6),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Create Poster',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                      color: _kPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -869,6 +884,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                             backgroundColor: _kPrimary,
                             foregroundColor: Colors.white,
                             shape: const StadiumBorder(),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                             elevation: 0,
                           ),
                           onPressed: _submitting ? null : _submit,
@@ -878,12 +894,17 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                                   height: 22,
                                   child: AppLoader(),
                                 )
-                              : const Text(
-                                  'Submit Request',
-                                  style: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
+                              : const FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Submit Request',
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ),
                         ),

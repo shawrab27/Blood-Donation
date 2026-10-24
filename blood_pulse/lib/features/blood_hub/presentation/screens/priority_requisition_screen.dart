@@ -229,10 +229,11 @@ class _PriorityBloodRequisitionScreenState
         Expanded(
           child: SizedBox(
             height: 52,
-            child: OutlinedButton.icon(
+            child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
                 shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               onPressed: () {
                 final hospital = _selectedHospital?.name ?? _hospitalController.text.trim();
@@ -255,15 +256,29 @@ class _PriorityBloodRequisitionScreenState
                 );
                 context.push('/blood-hub/poster', extra: posterData);
               },
-              icon: const Icon(Icons.palette_outlined, color: Color(0xFFC30121), size: 18),
-              label: const Text(
-                'Create Poster',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: Color(0xFFC30121),
-                ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.palette_outlined, color: Color(0xFFC30121), size: 18),
+                  SizedBox(width: 6),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Create Poster',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: Color(0xFFC30121),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -278,6 +293,7 @@ class _PriorityBloodRequisitionScreenState
                 backgroundColor: const Color(0xFFC30121),
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 elevation: 0,
               ),
               child: _isSubmitting
@@ -286,12 +302,17 @@ class _PriorityBloodRequisitionScreenState
                       width: 20,
                       child: AppLoader(),
                     )
-                  : const Text(
-                      'Confirm Submit',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                  : const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Confirm Submit',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
             ),
