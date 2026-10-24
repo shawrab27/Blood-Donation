@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/count_up_text.dart';
 
 class HydrationTrackerCard extends StatelessWidget {
   final int glasses;
@@ -61,9 +62,18 @@ class HydrationTrackerCard extends StatelessWidget {
                   ),
                 ],
               ),
-              Text(
-                '$glasses / $targetGlasses glasses',
-                style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CountUpText(
+                    endValue: glasses,
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                  ),
+                  Text(
+                    ' / $targetGlasses glasses',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                  ),
+                ],
               ),
             ],
           ),

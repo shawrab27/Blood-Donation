@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/hero_reveal_logo.dart';
 import '../../../../core/widgets/language_toggle_button.dart';
 import '../providers/auth_notifier.dart';
 
@@ -191,11 +192,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       children: [
                         const SizedBox(height: 16),
                         // ── Official BloodPulse Logo & Brand Name ─────────
-                        const BloodPulseLogo(
-                          direction: Axis.vertical,
-                          iconSize: 72.0,
-                          fontSize: 28.0,
-                          spacing: 10.0,
+                        // USER RULE - do not change: E3 Hero reveal (ECG line draws into logo once on Login)
+                        const HeroRevealLogo(
+                          child: BloodPulseLogo(
+                            direction: Axis.vertical,
+                            iconSize: 72.0,
+                            fontSize: 28.0,
+                            spacing: 10.0,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(

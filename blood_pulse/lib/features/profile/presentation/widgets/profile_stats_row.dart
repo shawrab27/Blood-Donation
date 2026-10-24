@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/widgets/pressable_card.dart';
+import 'package:blood_pulse/core/widgets/count_up_text.dart';
 
 // USER RULE - do not change: 4 profile stat boxes in primary red tone
 // Box 1: Bags Donated
@@ -52,8 +53,8 @@ class ProfileStatsRow extends StatelessWidget {
                 children: [
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(
-                      '$totalBags',
+                    child: CountUpText(
+                      endValue: totalBags,
                       style: const TextStyle(
                         fontFamily: 'Georgia',
                         fontSize: 28,

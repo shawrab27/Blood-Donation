@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/blood_hub_api_service.dart';
+import '../../../../core/widgets/ping_ripple.dart';
 
 class GlobalLiveBanner extends ConsumerStatefulWidget {
   const GlobalLiveBanner({super.key});
@@ -41,12 +42,14 @@ class _GlobalLiveBannerState extends ConsumerState<GlobalLiveBanner>
       data: (event) {
         if (event == null || !event.isActive) return const SizedBox.shrink();
         
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            context.push('/emergency/national');
-          },
-          child: Container(
+        // USER RULE - do not change: E7 PingRipple on emergency in-app banner
+        return PingRipple(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              context.push('/emergency/national');
+            },
+            child: Container(
             width: double.infinity,
             decoration: const BoxDecoration(
               color: Color(0xFF2B2B2B), // Secondary
@@ -112,7 +115,7 @@ class _GlobalLiveBannerState extends ConsumerState<GlobalLiveBanner>
               ],
             ),
           ),
-        );
+        ));
       },
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
