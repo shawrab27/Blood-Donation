@@ -1,3 +1,4 @@
+import '../../../../core/widgets/location_cascade_selector.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -31,6 +32,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   bool _showInRankings = true;
   bool _isLoading = false;
+  String? _selectedDivision;
+  String? _selectedDistrict;
+  String? _selectedUpazila;
 
   @override
   void initState() {
@@ -44,6 +48,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _weightController.text = profile.weightKg != null ? profile.weightKg.toString() : '';
         _phoneController.text = profile.phoneNumber ?? '';
         _emailController.text = profile.email ?? '';
+        _selectedDistrict = profile.district;
+        _selectedUpazila = profile.upazila;
         _showInRankings = profile.showInRankings;
         if (mounted) setState(() {});
       }
@@ -73,6 +79,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       'phone_number': _phoneController.text.trim(),
       'email': _emailController.text.trim(),
       'show_in_rankings': _showInRankings,
+      if (_selectedDistrict != null) 'district': _selectedDistrict,
+      if (_selectedUpazila != null) 'upazila': _selectedUpazila,
+      if (_selectedDivision != null) 'division': _selectedDivision,
     };
 
     final weightText = _weightController.text.trim();
@@ -249,6 +258,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   _buildTextField('Phone Number', _phoneController),
                   const SizedBox(height: 14),
                   _buildTextField('Email Address', _emailController),
+                  const SizedBox(height: 14),
+
+                  LocationCascadeSelector(
+                    initialDivision: _selectedDivision,
+                    initialDistrict: _selectedDistrict,
+                    initialUpazila: _selectedUpazila,
+                    onChanged: (div, dist, upz) {
+                      _selectedDivision = div;
+                      _selectedDistrict = dist;
+                      _selectedUpazila = upz;
+                    },
+                  ),
                   const SizedBox(height: 20),
 
                   // Show in rankings toggle

@@ -96,4 +96,5 @@ failures/
 /blood_pulse/*.png
 /view_dump.xml
 
+/google-services.json
 screenshots/

@@ -1,3 +1,5 @@
+import '../../../../core/widgets/bento_stagger.dart';
+import '../../../../core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -740,8 +742,14 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                   style: const TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
                 ),
                 const SizedBox(height: 12),
-                for (final donor in donors) ...[
-                  _buildDonorCard(donor),
+                for (int i = 0; i < donors.length; i++) ...[
+                  BentoStagger(
+                    index: i,
+                    child: PressableScale(
+                      onTap: () {},
+                      child: _buildDonorCard(donors[i]),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                 ],
                 const SizedBox(height: 20),

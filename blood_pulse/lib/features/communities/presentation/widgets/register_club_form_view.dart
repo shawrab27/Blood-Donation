@@ -1,3 +1,4 @@
+import '../../../../core/widgets/location_cascade_selector.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -302,42 +303,20 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
               ),
               const SizedBox(height: 12),
 
-              // Division * Dropdown
-              divisionsAsync.when(
-                loading: () => const LinearProgressIndicator(color: AppColors.primary),
-                error: (err, _) => const SizedBox.shrink(),
-                data: (divisions) => DropdownButtonFormField<int>(
-                  initialValue: _selectedDivisionId,
-                  decoration: InputDecoration(
-                    labelText: 'Division *',
-                    labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14),
-                    prefixIcon: const Icon(Icons.location_city_rounded, color: AppColors.neutral),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(50)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  items: divisions.map((d) => DropdownMenuItem(value: d.id, child: Text(d.name, style: const TextStyle(fontFamily: 'Inter')))).toList(),
-                  onChanged: (val) => setState(() => _selectedDivisionId = val),
-                  validator: (val) => val == null ? 'Please select a Division' : null,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Upazila Dropdown
-              upazilasAsync.when(
-                loading: () => const SizedBox.shrink(),
-                error: (err, _) => const SizedBox.shrink(),
-                data: (upazilas) => DropdownButtonFormField<int>(
-                  initialValue: _selectedUpazilaId,
-                  decoration: InputDecoration(
-                    labelText: 'Upazila',
-                    labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14),
-                    prefixIcon: const Icon(Icons.map_rounded, color: AppColors.neutral),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(50)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  items: upazilas.map((u) => DropdownMenuItem(value: u.id, child: Text(u.name, style: const TextStyle(fontFamily: 'Inter')))).toList(),
-                  onChanged: (val) => setState(() => _selectedUpazilaId = val),
-                ),
+              // Unified Location Cascade (Division -> District -> Upazila)
+              LocationCascadeSelector(
+                onChanged: (div, dist, upa) {
+                  setState(() {
+                    if (div != null && divisionsAsync.valueOrNull != null) {
+                      final match = divisionsAsync.valueOrNull!.where(
+                        (d) => d.name.toLowerCase() == div.toLowerCase()
+                      ).firstOrNull;
+                      _selectedDivisionId = match?.id;
+                    } else {
+                      _selectedDivisionId = null;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 28),
 

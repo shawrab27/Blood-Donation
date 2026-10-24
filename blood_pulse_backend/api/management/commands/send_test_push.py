@@ -2,17 +2,21 @@
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import sys
+import logging
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from api.models import DonorProfile
+from api.models import DonorProfile, UserDevice, Notification
+from api.services.notifications import notify, NOTIFICATION_MATRIX
 from api.services.notify import send_push_to_user
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
     help = (
-        "Audits and sends a test high-priority FCM push notification to a specific user (#36).\n"
+        "Audits and sends a verified push notification to a specific user through notify() (#36 / G1).\n"
         "Defaults to dry-run. Pass --confirm to actually dispatch through Firebase Admin SDK."
     )
 
@@ -31,6 +35,12 @@ class Command(BaseCommand):
             help='Username, User ID, or Phone number of the recipient user.',
         )
         parser.add_argument(
+            '--type',
+            type=str,
+            default='emergency_request_new',
+            help='Notification type from matrix (e.g. emergency_request_new, request_accepted, test_push).',
+        )
+        parser.add_argument(
             '--confirm',
             action='store_true',
             default=False,
@@ -39,13 +49,13 @@ class Command(BaseCommand):
         parser.add_argument(
             '--title',
             type=str,
-            default='BloodPulse Test Alert',
+            default='BloodPulse Alert',
             help='Notification title.',
         )
         parser.add_argument(
             '--body',
             type=str,
-            default='This is a verified test push notification from BloodPulse dispatch engine.',
+            default='This is a verified test notification from BloodPulse dispatch engine.',
             help='Notification body content.',
         )
 
@@ -55,6 +65,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("Error: Recipient user_id or --user is required."))
             sys.exit(1)
         user_identifier = str(user_identifier).strip()
+        notif_type = options.get('type') or 'emergency_request_new'
         confirm = options['confirm']
         dry_run = not confirm
         title = options['title'].strip()
@@ -91,42 +102,53 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"User not found for identifier: '{user_identifier}'"))
             sys.exit(1)
 
-        data_payload = {
-            "type": "TEST_PUSH",
+        payload = {
+            "title": title,
+            "body": body,
             "source": "send_test_push_command",
-            "click_action": "FLUTTER_NOTIFICATION_CLICK",
+            "request_id": "999",
         }
 
-        result = send_push_to_user(
-            user=user,
-            title=title,
-            body=body,
-            data_payload=data_payload,
-            dry_run=dry_run,
-        )
+        # Collect tokens
+        tokens = set()
+        for d in UserDevice.objects.filter(user=user, is_revoked=False).exclude(fcm_token__isnull=True).exclude(fcm_token=''):
+            if d.fcm_token.strip():
+                tokens.add(d.fcm_token.strip())
+        donor_profile = DonorProfile.objects.filter(user=user).first()
+        if donor_profile and donor_profile.fcm_token and donor_profile.fcm_token.strip():
+            tokens.add(donor_profile.fcm_token.strip())
+
+        token_list = list(tokens)
 
         if dry_run:
             self.stdout.write(self.style.WARNING("=" * 60))
-            self.stdout.write(self.style.WARNING(" [DRY RUN] send_test_push (No push sent)"))
+            self.stdout.write(self.style.WARNING(f" [DRY RUN] send_test_push (type: {notif_type})"))
             self.stdout.write(self.style.WARNING("=" * 60))
-            self.stdout.write(f"Recipient User: {user.username} (ID: {user.id})")
-            self.stdout.write(f"Tokens found  : {result['tokens_count']}")
-            if result.get('masked_tokens'):
-                for t in result['masked_tokens']:
-                    self.stdout.write(f"  • Device Token: {t}")
+            self.stdout.write(f"Recipient User : {user.username} (ID: {user.id})")
+            self.stdout.write(f"Matrix Rule    : {NOTIFICATION_MATRIX.get(notif_type, 'default')}")
+            self.stdout.write(f"Tokens found   : {len(token_list)}")
+            if token_list:
+                for t in token_list:
+                    self.stdout.write(f"  • Token: {t[:6]}...{t[-4:]}")
             else:
-                self.stdout.write(self.style.NOTICE("  (No registered FCM device tokens found on UserDevice or DonorProfile)"))
-            self.stdout.write(f"Title         : {title}")
-            self.stdout.write(f"Body          : {body}")
-            self.stdout.write(self.style.SUCCESS("\nTo actually send this push, run again with the --confirm flag."))
+                self.stdout.write(self.style.NOTICE("  (No registered FCM device tokens found)"))
+            self.stdout.write(f"Title          : {title}")
+            self.stdout.write(f"Body           : {body}")
+            self.stdout.write(self.style.SUCCESS("\nPass --confirm to dispatch via notify()."))
         else:
             self.stdout.write(self.style.SUCCESS("=" * 60))
-            self.stdout.write(self.style.SUCCESS(" [EXECUTED] send_test_push Dispatched"))
+            self.stdout.write(self.style.SUCCESS(f" [EXECUTED] send_test_push Dispatching via notify()"))
             self.stdout.write(self.style.SUCCESS("=" * 60))
-            self.stdout.write(f"Recipient User: {user.username} (ID: {user.id})")
-            self.stdout.write(f"Tokens targeted: {result['tokens_count']}")
-            self.stdout.write(f"Sent successfully: {result.get('sent', 0)}")
-            self.stdout.write(f"Failed deliveries: {result.get('failed', 0)}")
-            self.stdout.write(f"Raw FCM Response: {result.get('raw_responses') if result.get('raw_responses') is not None else result.get('raw_response', result)}")
-            if result.get('invalid_tokens_cleared', 0) > 0:
-                self.stdout.write(self.style.NOTICE(f"Deactivated {result['invalid_tokens_cleared']} invalid/expired tokens."))
+            # 1. Row Created Step
+            notif = notify(user=user, type=notif_type, payload=payload)
+            self.stdout.write(self.style.SUCCESS(f"[STEP 1/3] DB row created: #{notif.id if notif else 'None'} in api_notification"))
+
+            # 2. Tokens Found Step
+            self.stdout.write(self.style.SUCCESS(f"[STEP 2/3] Active device tokens found: {len(token_list)}"))
+
+            # 3. FCM Result Step
+            matrix_push = NOTIFICATION_MATRIX.get(notif_type, {}).get('push', True)
+            if matrix_push:
+                self.stdout.write(self.style.SUCCESS(f"[STEP 3/3] FCM dispatch processed for {len(token_list)} token(s)"))
+            else:
+                self.stdout.write(self.style.NOTICE(f"[STEP 3/3] Push suppressed by matrix rule for type: {notif_type}"))

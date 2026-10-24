@@ -105,8 +105,7 @@ def donor_search_view(request):
             Q(district__iexact=canonical_dist) |
             Q(upazila_linked__district__name__iexact=canonical_dist)
         )
-
-    if division and division != 'Any':
+    elif division and division != 'Any':
         districts_in_div = list(District.objects.filter(division__name__iexact=division).values_list('name', flat=True))
         queryset = queryset.filter(
             Q(upazila_linked__district__division__name__iexact=division) |

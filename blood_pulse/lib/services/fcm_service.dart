@@ -461,20 +461,24 @@ class FcmService {
 
     debugPrint('[FCM] Routing payload: type=$type, chatId=$chatId, journeyId=$journeyId');
 
-    switch (type) {
-      case 'BLOOD_EMERGENCY':
-      case 'EMERGENCY_REQUEST':
-      case 'STANDBY_OFFER':
-      case 'REQUEST_CLOSED':
+    switch (type.toLowerCase()) {
+      case 'emergency_request_new':
+      case 'blood_emergency':
+      case 'emergency_request':
+      case 'donor_cancelled':
+      case 'standby_offer':
+      case 'request_closed':
         context.go('/blood-hub');
         break;
 
-      case 'CHAT_MESSAGE':
+      case 'chat_message':
         _navigateToChat(chatId ?? 'chat_999', context);
         break;
 
-      case 'DONOR_ACCEPTED':
-      case 'JOURNEY_UPDATE':
+      case 'request_accepted':
+      case 'donor_accepted':
+      case 'journey_update':
+      case 'tracking_update':
         if (journeyId != null && journeyId.isNotEmpty) {
           context.push('/journeys/$journeyId');
         } else {
@@ -482,11 +486,24 @@ class FcmService {
         }
         break;
 
-      case 'DONOR_THANKS':
+      case 'donation_confirmed':
+      case 'thanks_letter':
+      case 'donor_thanks':
         context.go('/profile');
         break;
 
-      case 'TEST_PUSH':
+      case 'guide_application_status':
+      case 'guide_approved':
+      case 'guide_rejected':
+        context.go('/communities');
+        break;
+
+      case 'post_like':
+      case 'comment':
+        context.go('/feed');
+        break;
+
+      case 'test_push':
       default:
         if (chatId != null && chatId.isNotEmpty) {
           _navigateToChat(chatId, context);

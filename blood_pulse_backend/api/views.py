@@ -61,6 +61,7 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(blood_group__in=get_compatible_donor_groups(blood_group))
 
         district = req.query_params.get('district', '').strip()
+        division = req.query_params.get('division', '').strip()
         if district and district != 'Any':
             from api.data.bd_locations import DISTRICT_ALIASES
             canonical_district = DISTRICT_ALIASES.get(district, district)
@@ -68,9 +69,7 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
                 Q(district__iexact=canonical_district) |
                 Q(upazila_linked__district__name__iexact=canonical_district)
             )
-
-        division = req.query_params.get('division', '').strip()
-        if division and division != 'Any':
+        elif division and division != 'Any':
             from api.models import District
             districts_in_div = list(District.objects.filter(division__name__iexact=division).values_list('name', flat=True))
             qs = qs.filter(
@@ -1581,22 +1580,21 @@ class FirebaseAuthView(APIView):
 class UnreadNotificationCountView(APIView):
     """
     GET /api/notifications/unread-count/
-    Returns real-time unread notification count for the authenticated user.
+    Returns real-time unread notification count for the authenticated user derived from rows.
     
     POST /api/notifications/mark-read/
-    Resets unread notification count to 0 when user views notifications.
+    Marks notifications as read and synchronizes unread notification count.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        state, _ = UserNotificationState.objects.get_or_create(user=request.user)
-        return Response({'unread_count': state.unread_count}, status=status.HTTP_200_OK)
+        count = UserNotificationState.get_unread_for_user(request.user)
+        return Response({'unread_count': count}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        state, _ = UserNotificationState.objects.get_or_create(user=request.user)
-        state.unread_count = 0
-        state.save(update_fields=['unread_count', 'updated_at'])
-        return Response({'unread_count': 0, 'status': 'marked_read'}, status=status.HTTP_200_OK)
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        count = UserNotificationState.get_unread_for_user(request.user)
+        return Response({'unread_count': count, 'status': 'marked_read'}, status=status.HTTP_200_OK)
 
 
 class SendVerificationEmailView(APIView):

@@ -158,6 +158,9 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     def validate_blood_group(self, value):
         if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
             if value and self.instance.blood_group.strip() != value.strip():
+                # Allow unfinished registrations (e.g. Google user completing profile) to alter blood group
+                if not getattr(self.instance, 'is_profile_complete', True):
+                    return value
                 request = self.context.get('request')
                 if not (request and request.user and request.user.is_staff):
                     raise serializers.ValidationError(
@@ -178,11 +181,14 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get('request')
         is_staff = request and request.user and request.user.is_staff
-        if not is_staff and self.instance:
-            admin_locked_fields = ['is_verified', 'is_suspended', 'manual_rank_override', 'total_bags_donated']
-            for field in admin_locked_fields:
-                if field in attrs and getattr(self.instance, field) != attrs[field]:
-                    raise serializers.ValidationError({field: f"Only administrators can modify {field}."})
+        if not is_staff:
+            # G2 (b): Silently ignore is_verified on client submit
+            attrs.pop('is_verified', None)
+            if self.instance:
+                admin_locked_fields = ['is_suspended', 'manual_rank_override', 'total_bags_donated']
+                for field in admin_locked_fields:
+                    if field in attrs and getattr(self.instance, field) != attrs[field]:
+                        raise serializers.ValidationError({field: f"Only administrators can modify {field}."})
         return attrs
 
     def to_representation(self, instance):

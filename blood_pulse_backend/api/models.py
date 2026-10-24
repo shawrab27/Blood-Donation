@@ -2040,36 +2040,28 @@ class GuideApplication(models.Model):
 
 
 class UserNotificationState(models.Model):
-
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='notification_state')
-
     unread_count = models.PositiveIntegerField(default=0)
-
     updated_at = models.DateTimeField(auto_now=True)
 
-
-
     def __str__(self):
-
         return f"{self.user.username}: {self.unread_count} unread"
 
-
+    @classmethod
+    def get_unread_for_user(cls, user):
+        if not user or not getattr(user, 'is_authenticated', True):
+            return 0
+        from api.models import Notification
+        count = Notification.objects.filter(user=user, is_read=False).count()
+        state, _ = cls.objects.get_or_create(user=user)
+        if state.unread_count != count:
+            state.unread_count = count
+            state.save(update_fields=['unread_count', 'updated_at'])
+        return count
 
     @classmethod
-
     def increment_for_user(cls, user, amount=1):
-
-        if not user or not getattr(user, 'is_authenticated', True):
-
-            return 0
-
-        state, _ = cls.objects.get_or_create(user=user)
-
-        state.unread_count += amount
-
-        state.save(update_fields=['unread_count', 'updated_at'])
-
-        return state.unread_count
+        return cls.get_unread_for_user(user)
 
 
 

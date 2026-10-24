@@ -108,17 +108,11 @@ class _FeedViewState extends ConsumerState<FeedView> {
         itemCount: posts.length + (posts.isEmpty ? 2 : 1),
         itemBuilder: (context, index) {
           if (index == 0) {
-            final isGuest = ref.watch(isGuestProvider);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (filter == null) ...[
-                  if (isGuest) ...[
-                    const GuestPulseAICard(),
-                    const GuestLockCard(),
-                  ] else ...[
-                    _PostCreatorCard(picker: _picker),
-                  ],
+                  _PostCreatorCard(picker: _picker),
                   const SizedBox(height: 12),
                 ],
                 _buildSegmentFilterBar(filter),
@@ -343,6 +337,13 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
   }
 
   Future<void> _pickImage() async {
+    final authState = ref.read(authProvider);
+    final isGuest = ref.read(isGuestProvider);
+    final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+    if (isGuest || isIncomplete) {
+      RegistrationGatePopup.show(context, isGuest: isGuest);
+      return;
+    }
     if (_attachedImages.length >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -508,6 +509,13 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
   }
 
   void _openCheckInModal() {
+    final authState = ref.read(authProvider);
+    final isGuest = ref.read(isGuestProvider);
+    final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+    if (isGuest || isIncomplete) {
+      RegistrationGatePopup.show(context, isGuest: isGuest);
+      return;
+    }
     final locationCtrl = TextEditingController(text: _clinicCheckIn ?? '');
     final popularLocations = [
       'General Hospital',
@@ -723,6 +731,15 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                   ),
                   child: TextField(
                     controller: _textCtrl,
+                    onTap: () {
+                      final authState = ref.read(authProvider);
+                      final isGuest = ref.read(isGuestProvider);
+                      final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+                      if (isGuest || isIncomplete) {
+                        FocusScope.of(context).unfocus();
+                        RegistrationGatePopup.show(context, isGuest: isGuest);
+                      }
+                    },
                     cursorColor: const Color(0xFFC30121),
                     cursorWidth: 2.0,
                     cursorRadius: const Radius.circular(2),
@@ -1612,8 +1629,11 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () {
-                    if (ref.read(isGuestProvider)) {
-                      RegistrationGatePopup.show(context, isGuest: true);
+                    final authState = ref.read(authProvider);
+                    final isGuest = ref.read(isGuestProvider);
+                    final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+                    if (isGuest || isIncomplete) {
+                      RegistrationGatePopup.show(context, isGuest: isGuest);
                       return;
                     }
                     final messenger = ScaffoldMessenger.of(context);
@@ -1667,8 +1687,11 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () {
-                    if (ref.read(isGuestProvider)) {
-                      RegistrationGatePopup.show(context, isGuest: true);
+                    final authState = ref.read(authProvider);
+                    final isGuest = ref.read(isGuestProvider);
+                    final isIncomplete = authState.user != null && !authState.user!.isProfileComplete;
+                    if (isGuest || isIncomplete) {
+                      RegistrationGatePopup.show(context, isGuest: isGuest);
                       return;
                     }
                     setState(() => _showComments = !_showComments);
