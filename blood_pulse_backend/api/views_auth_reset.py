@@ -227,6 +227,9 @@ def verify_otp(request):
 
         max_attempts = int(os.environ.get('OTP_MAX_ATTEMPTS', 5))
         if otp_record.attempts >= max_attempts:
+            if not otp_record.is_used:
+                otp_record.is_used = True
+                otp_record.save()
             return Response(
                 {'detail': 'Too many attempts. Request a new code.'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -243,12 +246,14 @@ def verify_otp(request):
         expected_hash = generate_otp_hash(otp_code)
         if not hmac.compare_digest(expected_hash, otp_record.otp_hash):
             otp_record.attempts += 1
-            otp_record.save()
             if otp_record.attempts >= max_attempts:
+                otp_record.is_used = True
+                otp_record.save()
                 return Response(
                     {'detail': 'Too many attempts. Request a new code.'},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
+            otp_record.save()
             return Response(
                 {'detail': 'Invalid or expired OTP.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -303,6 +308,9 @@ def confirm_reset(request):
 
         max_attempts = int(os.environ.get('OTP_MAX_ATTEMPTS', 5))
         if otp_record.attempts >= max_attempts:
+            if not otp_record.is_used:
+                otp_record.is_used = True
+                otp_record.save()
             return Response(
                 {'detail': 'Too many attempts. Request a new code.'},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -319,12 +327,14 @@ def confirm_reset(request):
         expected_hash = generate_otp_hash(otp_code)
         if not hmac.compare_digest(expected_hash, otp_record.otp_hash):
             otp_record.attempts += 1
-            otp_record.save()
             if otp_record.attempts >= max_attempts:
+                otp_record.is_used = True
+                otp_record.save()
                 return Response(
                     {'detail': 'Too many attempts. Request a new code.'},
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
+            otp_record.save()
             return Response(
                 {'detail': 'Invalid or expired OTP.'},
                 status=status.HTTP_400_BAD_REQUEST,

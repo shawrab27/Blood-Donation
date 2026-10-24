@@ -168,12 +168,10 @@ class ProfileMeView(APIView):
 
         # Blood group modification is strictly admin-only once registered
         if 'blood_group' in request.data and profile.blood_group and request.data['blood_group'] != profile.blood_group:
-            if profile.is_profile_complete:
+            if not (user and user.is_staff):
                 return Response({
                     "blood_group": ["Blood group cannot be directly modified. Please submit a Blood Group Change Request."]
                 }, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                profile.blood_group = request.data['blood_group']
         elif 'blood_group' in request.data and not profile.blood_group:
             profile.blood_group = request.data['blood_group']
 

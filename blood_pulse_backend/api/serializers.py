@@ -158,9 +158,6 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     def validate_blood_group(self, value):
         if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
             if value and self.instance.blood_group.strip() != value.strip():
-                # Allow unfinished registrations (e.g. Google user completing profile) to alter blood group
-                if not getattr(self.instance, 'is_profile_complete', True):
-                    return value
                 request = self.context.get('request')
                 if not (request and request.user and request.user.is_staff):
                     raise serializers.ValidationError(
