@@ -234,45 +234,80 @@ class _FeedViewState extends ConsumerState<FeedView> {
   }
 
   Widget _buildSegmentFilterBar(String? currentFilter) {
+    // USER RULE - do not change: D2 soft red pill sliding between chips with AnimatedAlign (250ms)
     const segments = [
       {'id': null, 'label': 'All Updates'},
       {'id': 'campaign', 'label': 'Campaign'},
       {'id': 'emergency', 'label': 'Emergency'},
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: segments.map((seg) {
-          final isSelected = currentFilter == seg['id'];
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(seg['label'] as String),
-              selected: isSelected,
-              onSelected: (selected) {
-                ref.read(feedFilterProvider.notifier).state = seg['id'];
-                ref.read(feedProvider.notifier).fetchPosts(kind: seg['id'], reset: true);
-              },
-              selectedColor: const Color(0xFF2B2B2B),
-              backgroundColor: Colors.white,
-              labelStyle: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF2B2B2B),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
-                side: BorderSide(
-                  color: isSelected ? const Color(0xFF2B2B2B) : const Color(0xFFE5D5D5),
+    final selectedIndex = currentFilter == null
+        ? 0
+        : (currentFilter == 'campaign' ? 1 : 2);
+    final alignmentX = selectedIndex == 0 ? -1.0 : (selectedIndex == 1 ? 0.0 : 1.0);
+
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8F7),
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: const Color(0xFFF3E5E5)),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Stack(
+        children: [
+          // Sliding soft red pill (AnimatedAlign, 250ms)
+          AnimatedAlign(
+            alignment: Alignment(alignmentX, 0.0),
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            child: FractionallySizedBox(
+              widthFactor: 1.0 / segments.length,
+              heightFactor: 1.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDE8E9),
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(color: const Color(0xFFF0B8BC), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFC30121).withValues(alpha: 0.08),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1.5),
+                    ),
+                  ],
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             ),
-          );
-        }).toList(),
+          ),
+          // Interactive tab labels (No tick icon, selected red, unselected gray)
+          Row(
+            children: segments.map((seg) {
+              final isSelected = currentFilter == seg['id'];
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(feedFilterProvider.notifier).state = seg['id'];
+                    ref.read(feedProvider.notifier).fetchPosts(kind: seg['id'], reset: true);
+                  },
+                  child: Center(
+                    child: Text(
+                      seg['label'] as String,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12.5,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? const Color(0xFFC30121) : const Color(0xFF757575),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
