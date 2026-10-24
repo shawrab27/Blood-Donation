@@ -71,22 +71,22 @@ class AiReportUploadCard extends StatelessWidget {
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 36),
+                      const Icon(Icons.description_outlined, color: AppColors.primary, size: 36),
                       const SizedBox(height: 8),
                       Text(
-                        reportFile!.name.isNotEmpty ? reportFile!.name : 'Blood Report Selected',
+                        reportFile!.name.isNotEmpty ? reportFile!.name : 'Blood Report Photo Attached',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.success,
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Tap to choose a different photo',
+                        'Ready for analysis • Tap to choose a different photo',
                         style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral),
                       ),
                     ],

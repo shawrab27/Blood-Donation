@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../../../../core/config/api_config.dart';
+import '../../../../services/api_client.dart';
 import '../models/health_hub_models.dart';
 
 final scienceArticlesProvider = FutureProvider<List<BloodScienceArticle>>((ref) async {
@@ -63,6 +64,67 @@ final recoveryTimelineProvider = FutureProvider<List<RecoveryTimelineStep>>((ref
   throw Exception('Failed to load recovery timeline');
 });
 
+// USER RULE - do not change: Strict C2 dynamic recovery status computed from real backend timestamp
+class RecoveryStatus {
+  final bool hasDonated;
+  final String? lastDonationDate;
+  final int? recoveryPercentage;
+  final int? elapsedDays;
+  final int? elapsedHours;
+  final String? stage;
+  final String statusTitle;
+  final String statusMessage;
+  final int hydrationGlasses;
+  final bool isEligible;
+
+  const RecoveryStatus({
+    required this.hasDonated,
+    this.lastDonationDate,
+    this.recoveryPercentage,
+    this.elapsedDays,
+    this.elapsedHours,
+    this.stage,
+    required this.statusTitle,
+    required this.statusMessage,
+    this.hydrationGlasses = 0,
+    this.isEligible = true,
+  });
+
+  factory RecoveryStatus.fromJson(Map<String, dynamic> json) {
+    return RecoveryStatus(
+      hasDonated: json['has_donated'] as bool? ?? false,
+      lastDonationDate: json['last_donation_date'] as String?,
+      recoveryPercentage: json['recovery_percentage'] as int?,
+      elapsedDays: json['elapsed_days'] as int?,
+      elapsedHours: json['elapsed_hours'] as int?,
+      stage: json['stage'] as String?,
+      statusTitle: json['status_title'] as String? ?? 'Recovery Tracker',
+      statusMessage: json['status_message'] as String? ?? 'Your recovery tracker starts after your first donation.',
+      hydrationGlasses: json['hydration_glasses'] as int? ?? 0,
+      isEligible: json['is_eligible'] as bool? ?? true,
+    );
+  }
+}
+
+final recoveryStatusProvider = FutureProvider<RecoveryStatus>((ref) async {
+  try {
+    final res = await ApiClient().get('health-hub/recovery-status/');
+    if (res.statusCode == 200) {
+      final decoded = json.decode(res.body);
+      if (decoded is Map<String, dynamic>) {
+        return RecoveryStatus.fromJson(decoded);
+      }
+    }
+  } catch (e) {
+    debugPrint('[recoveryStatusProvider] Error: $e');
+  }
+  return const RecoveryStatus(
+    hasDonated: false,
+    statusTitle: 'No Active Recovery Cycle',
+    statusMessage: 'Your recovery tracker starts after your first donation.',
+  );
+});
+
 class AiAnalysisService {
   static const List<String> medicalKeywords = [
     'hemoglobin', 'hb', 'cbc', 'complete blood count', 'platelet', 'wbc', 'rbc',
@@ -74,26 +136,20 @@ class AiAnalysisService {
   ];
 
   static Future<AiReportResult> analyzeReport(XFile imageFile) async {
-    // 1. Run on-device OCR via platform-agnostic OcrService.
-    //    On web, createOcrService() returns WebOcrService which yields ''.
+    // USER RULE - do not change: Strict C1 multimodal blood report pipeline
+    final imageBytes = await imageFile.readAsBytes();
+    final base64Image = base64Encode(imageBytes);
+
     String extractedText = '';
     try {
       extractedText = await createOcrService().extractText(imageFile.path);
     } catch (e) {
-      debugPrint('[AiAnalysisService] OCR error: $e');
+      debugPrint('[AiAnalysisService] OCR hint error: ');
     }
 
-    final textLower = extractedText.toLowerCase();
-    final hasMedicalMarker = medicalKeywords.any((kw) => textLower.contains(kw));
-
-    // Mandatory image report validation guard
-    if (extractedText.isEmpty || extractedText.length < 15 || !hasMedicalMarker) {
-      throw Exception('incorrect image or not a blood report');
-    }
-
-    // 2. Transmit extracted OCR text to Django AI Analysis backend
     final jsonPayload = jsonEncode({
       'report_text': extractedText,
+      'image_base64': base64Image,
       'filename': imageFile.name.isNotEmpty ? imageFile.name : 'report.jpg',
     });
 
@@ -112,18 +168,26 @@ class AiAnalysisService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is Map<String, dynamic> && data['not_a_report'] == true) {
-          throw Exception('incorrect image or not a blood report');
+          throw Exception(data['error'] ?? 'This does not look like a blood report. Please upload a clear photo of your CBC report.');
         }
         return AiReportResult.fromJson(data);
       } else if (response.statusCode == 400) {
-        throw Exception('incorrect image or not a blood report');
+        try {
+          final data = json.decode(response.body);
+          if (data is Map<String, dynamic> && data['error'] != null) {
+            throw Exception(data['error']);
+          }
+        } catch (_) {}
+        throw Exception('This does not look like a blood report. Please upload a clear photo of your CBC report.');
       } else {
-        throw Exception('Server returned error ${response.statusCode}');
+        throw Exception('Server returned error ');
       }
     } catch (e) {
-      final errStr = e.toString();
-      if (errStr.contains('incorrect image or not a blood report')) {
-        rethrow;
+      final errStr = e.toString().replaceAll('Exception: ', '').trim();
+      if (errStr.contains('This does not look like a blood report') ||
+          errStr.contains('not appear to be a valid') ||
+          errStr.contains('incorrect image')) {
+        throw Exception('This does not look like a blood report. Please upload a clear photo of your CBC report.');
       }
       if (errStr.contains('ClientException') ||
           errStr.contains('Failed to fetch') ||
@@ -132,7 +196,7 @@ class AiAnalysisService {
           errStr.contains('SocketException')) {
         throw Exception('Unable to reach AI analysis server. Please check your connection and try again.');
       }
-      throw Exception('incorrect image or not a blood report');
+      rethrow;
     }
   }
 

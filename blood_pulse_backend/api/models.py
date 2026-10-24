@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 import django.utils.timezone
+from django.utils import timezone
 from django.core.validators import MaxLengthValidator, MinValueValidator, MaxValueValidator
 
 from django.contrib.auth.models import User
@@ -69,6 +70,8 @@ class DonorProfile(models.Model):
     is_available = models.BooleanField(default=True)
 
     email_verified = models.BooleanField(default=False)
+
+    is_guide = models.BooleanField(default=False)
 
     
 
@@ -1984,6 +1987,53 @@ class RecoveryTimelineStep(models.Model):
 
 
     def __str__(self): return f"{self.hour_mark}h: {self.title}"
+
+
+class DailyHydrationLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='hydration_logs')
+    date = models.DateField(default=timezone.now)
+    glasses = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'date')
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}: {self.glasses} glasses"
+
+
+class GuideApplication(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending Review'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='guide_applications')
+    division = models.ForeignKey(Division, on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
+    upazila = models.ForeignKey(Upazila, on_delete=models.SET_NULL, null=True, blank=True)
+    area_name = models.CharField(max_length=150, blank=True)
+    intro = models.CharField(max_length=200)
+    allow_calls = models.BooleanField(default=False)
+    proof_photo = models.URLField(max_length=500, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    rejection_reason = models.TextField(blank=True, null=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_guide_applications')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status} ({self.area_name or self.district})"
 
 
 

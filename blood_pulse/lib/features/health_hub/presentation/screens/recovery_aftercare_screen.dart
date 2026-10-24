@@ -12,6 +12,7 @@ import '../../domain/providers/health_hub_provider.dart';
 import '../../domain/models/health_hub_models.dart';
 import '../providers/hydration_provider.dart';
 import '../widgets/calculators/hydration_tracker_card.dart';
+import '../../../../core/widgets/ring_ecg_progress.dart';
 
 class RecoveryAftercareScreen extends ConsumerStatefulWidget {
   const RecoveryAftercareScreen({super.key});
@@ -52,6 +53,7 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
   @override
   Widget build(BuildContext context) {
     final timelineAsync = ref.watch(recoveryTimelineProvider);
+    final recoveryAsync = ref.watch(recoveryStatusProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -78,46 +80,16 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
             const SizedBox(height: 14),
 
 
-            // ── 3. 24-Hour Progress Dial Card ───────────────────────────
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                children: [
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 108,
-                        height: 108,
-                        child: const AppLoader(),
-                      ),
-                      const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('85%', style: TextStyle(fontFamily: 'Georgia', fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                          Text('Recovered', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: AppColors.neutral)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'You are doing great!',
-                    style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'It has been 24 hours since your donation. Plasma volume is 95% restored.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4),
-                  ),
-                ],
-              ),
+            // ── 3. Dynamic Recovery Dial or Empty State (C2 USER RULE) ──
+            recoveryAsync.when(
+              loading: () => const Center(child: Padding(padding: EdgeInsets.all(32), child: AppLoader())),
+              error: (_, __) => _buildEmptyState(),
+              data: (recovery) {
+                if (!recovery.hasDonated || recovery.recoveryPercentage == null) {
+                  return _buildEmptyState();
+                }
+                return _buildActiveRecoveryDial(recovery);
+              },
             ),
             const SizedBox(height: 20),
 
@@ -142,8 +114,8 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
             const SizedBox(height: 12),
             timelineAsync.when(
               loading: () => const Center(child: AppLoader()),
-              error: (_, __) => _buildTimelineSteps(_fallbackTimeline),
-              data: (steps) => _buildTimelineSteps(steps.isNotEmpty ? steps : _fallbackTimeline),
+              error: (_, __) => _buildTimelineSteps(_fallbackTimeline, recoveryAsync.valueOrNull),
+              data: (steps) => _buildTimelineSteps(steps.isNotEmpty ? steps : _fallbackTimeline, recoveryAsync.valueOrNull),
             ),
 
             const SizedBox(height: 36),
@@ -153,10 +125,111 @@ class _RecoveryAftercareScreenState extends ConsumerState<RecoveryAftercareScree
     );
   }
 
-  Widget _buildTimelineSteps(List<RecoveryTimelineStep> steps) {
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFDF3F3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.favorite_border_rounded, color: AppColors.primary, size: 32),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Your recovery tracker starts after your first donation.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Once you complete a blood donation, your 56-day biological plasma restoration, red blood cell synthesis, and iron reserve recovery will track here in real time.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.neutral, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveRecoveryDial(RecoveryStatus status) {
+    final pct = status.recoveryPercentage ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          // USER RULE - do not change: RingEcgProgress orbits ring, never overlapping text
+          RingEcgProgress(
+            progress: pct / 100.0,
+            size: 120,
+            centerChild: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$pct%',
+                  style: const TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const Text(
+                  'Recovered',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    color: AppColors.neutral,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            status.statusTitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.secondary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            status.statusMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              color: AppColors.neutral,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineSteps(List<RecoveryTimelineStep> steps, [RecoveryStatus? recovery]) {
     return Column(
       children: steps.map((step) {
-        final isCompleted = step.hourMark <= 24;
+        final isCompleted = recovery != null && recovery.hasDonated && recovery.elapsedHours != null && recovery.elapsedHours! >= step.hourMark;
         final timeframe = step.hourMark > 0 ? '${step.hourMark} Hours' : 'Immediate';
 
         return Container(

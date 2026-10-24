@@ -112,6 +112,85 @@ class RecoveryTimelineStepAdmin(admin.ModelAdmin):
     list_display = ('hour_mark', 'title')
     ordering = ('hour_mark',)
 
+from api.models import DailyHydrationLog, GuideApplication, AreaGuide
+from api.services.notifications import notify
+
+@admin.register(DailyHydrationLog)
+class DailyHydrationLogAdmin(admin.ModelAdmin):
+    list_display = ('user', 'date', 'glasses', 'updated_at')
+    list_filter = ('date',)
+    search_fields = ('user__username', 'user__email')
+
+@admin.register(GuideApplication)
+class GuideApplicationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'status', 'area_name', 'district', 'upazila', 'allow_calls', 'created_at')
+    list_filter = ('status', 'district', 'allow_calls')
+    search_fields = ('user__username', 'area_name', 'intro')
+    actions = ['approve_applications', 'reject_applications']
+
+    def approve_applications(self, request, queryset):
+        for app in queryset.filter(status=GuideApplication.STATUS_PENDING):
+            app.status = GuideApplication.STATUS_APPROVED
+            app.reviewed_at = timezone.now()
+            app.reviewed_by = request.user
+            app.save()
+
+            if hasattr(app.user, 'donorprofile'):
+                app.user.donorprofile.is_guide = True
+                app.user.donorprofile.save(update_fields=['is_guide'])
+
+            area_str = app.area_name or (f"{app.upazila.name}, {app.district.name}" if app.upazila and app.district else (app.district.name if app.district else "Bangladesh"))
+            contact_phone = app.user.donorprofile.phone_number if app.allow_calls and hasattr(app.user, 'donorprofile') else ""
+            AreaGuide.objects.update_or_create(
+                division=app.division,
+                district=app.district,
+                upazila=app.upazila,
+                name=app.user.get_full_name() or app.user.username,
+                defaults={
+                    'title': 'Local Blood Guide',
+                    'area_name': area_str,
+                    'phone': contact_phone,
+                    'is_active': True,
+                }
+            )
+
+            try:
+                notify(
+                    user=app.user,
+                    type='guide_approved',
+                    payload={
+                        'title': 'Guide Application Approved! 🎉',
+                        'body': f'Congratulations! You are now an official BloodPulse Local Area Guide for {area_str}.',
+                    }
+                )
+            except Exception:
+                pass
+        self.message_user(request, f"Approved {queryset.count()} guide applications.")
+    approve_applications.short_description = "Approve selected guide applications"
+
+    def reject_applications(self, request, queryset):
+        for app in queryset.filter(status=GuideApplication.STATUS_PENDING):
+            app.status = GuideApplication.STATUS_REJECTED
+            app.reviewed_at = timezone.now()
+            app.reviewed_by = request.user
+            if not app.rejection_reason:
+                app.rejection_reason = "Application requirements not fulfilled."
+            app.save()
+
+            try:
+                notify(
+                    user=app.user,
+                    type='guide_rejected',
+                    payload={
+                        'title': 'Guide Application Update',
+                        'body': 'Your guide application was not approved. You can re-apply in 14 days.',
+                    }
+                )
+            except Exception:
+                pass
+        self.message_user(request, f"Rejected {queryset.count()} guide applications.")
+    reject_applications.short_description = "Reject selected guide applications" 
+
 @admin.register(HealthAccessory)
 class HealthAccessoryAdmin(admin.ModelAdmin):
     list_display = ('name_en', 'category', 'is_active', 'display_order', 'price_range_text')
