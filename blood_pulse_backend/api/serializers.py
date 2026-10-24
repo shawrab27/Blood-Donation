@@ -158,11 +158,12 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     def validate_blood_group(self, value):
         if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
             if value and self.instance.blood_group.strip() != value.strip():
-                request = self.context.get('request')
-                if not (request and request.user and request.user.is_staff):
-                    raise serializers.ValidationError(
-                        "Blood group cannot be altered once registered. Only an authorized administrator can modify clinical blood records."
-                    )
+                if getattr(self.instance, 'is_profile_complete', True):
+                    request = self.context.get('request')
+                    if not (request and request.user and request.user.is_staff):
+                        raise serializers.ValidationError(
+                            "Blood group cannot be altered once registered. Only an authorized administrator can modify clinical blood records."
+                        )
         return value
 
     def validate_nid_hash(self, value):

@@ -88,13 +88,18 @@ def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'b
         if not token_obj:
             return False
 
-        # Ensure the underlying OTP has not already been consumed
-        has_active_otp = EmailOTP.objects.filter(
-            user=user,
-            purpose=purpose,
-            is_used=False,
-        ).exists()
-        if not has_active_otp:
+        # Ensure the underlying OTP has not already been consumed using row locking (select_for_update)
+        active_otp = (
+            EmailOTP.objects
+            .select_for_update()
+            .filter(
+                user=user,
+                purpose=purpose,
+                is_used=False,
+            )
+            .first()
+        )
+        if not active_otp:
             token_obj.is_used = True
             token_obj.used_at = now
             token_obj.save(update_fields=['is_used', 'used_at'])
@@ -104,7 +109,9 @@ def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'b
         token_obj.used_at = now
         token_obj.save(update_fields=['is_used', 'used_at'])
 
-        # Atomically consume the EmailOTP now that request payload is validated and token is consumed
+        # Atomically consume the locked EmailOTP now that request payload is validated and token is consumed
+        active_otp.is_used = True
+        active_otp.save(update_fields=['is_used'])
         EmailOTP.objects.filter(
             user=user,
             purpose=purpose,
@@ -209,10 +216,10 @@ def request_otp_send_view(request):
         return Response(
             {
                 "code": "EMAIL_DELIVERY_FAILED",
-                "error": f"Email delivery failed: {exc}",
+                "error": "Email delivery service is currently unavailable. Please try again shortly.",
                 "detail": str(exc),
             },
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
     except Exception as exc:
         logger.error("Failed to send request OTP email to %s: %s", mask_email(email), exc)
