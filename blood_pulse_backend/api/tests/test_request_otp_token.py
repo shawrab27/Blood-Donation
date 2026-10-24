@@ -194,6 +194,68 @@ class RequestOTPAndSubmitTokenTests(TestCase):
         res_reuse = self.client.post('/api/requests/', good_payload, format='json')
         self.assertEqual(res_reuse.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_otp_not_burned_when_emergency_request_missing_ward_bed_400(self):
+        """When an emergency request fails with 400 (missing Ward/Bed), OTP is not burned."""
+        self.client.force_authenticate(user=self.user)
+
+        # 1. Dispatch OTP
+        self.client.post('/api/requests/otp/send/', {'email': 'requester@example.com'}, format='json')
+        otp_rec = EmailOTP.objects.filter(user=self.user, purpose='blood_request_submit', is_used=False).first()
+        test_code = '778899'
+        otp_rec.otp_hash = hash_otp(test_code, otp_rec.email)
+        otp_rec.save()
+
+        # 2. Verify OTP -> Issues submit_token, but does NOT consume the OTP
+        res_v = self.client.post('/api/requests/otp/verify/', {'code': test_code}, format='json')
+        self.assertEqual(res_v.status_code, status.HTTP_200_OK)
+        token = res_v.data['submit_token']
+
+        otp_rec.refresh_from_db()
+        self.assertFalse(otp_rec.is_used, "OTP should not be consumed until request payload is validated.")
+
+        # 3. Post emergency request with missing Ward/Bed -> 400 Bad Request
+        bad_emergency_payload = {
+            'patient_name': 'Emergency Patient',
+            'blood_group': 'B+',
+            'units_needed': 1,
+            'hospital_name_other': 'Dhaka Medical',
+            'contact_phone': '+8801700000000',
+            'urgency': 'CRITICAL_2H',
+            'submit_token': token,
+            # 'ward_bed' is missing!
+        }
+        res_fail = self.client.post('/api/emergency/requests/', bad_emergency_payload, format='json')
+        self.assertEqual(res_fail.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('ward_bed', res_fail.data)
+        self.assertEqual(res_fail.data['ward_bed'], ['Ward/Bed information is required.'])
+
+        # Confirm OTP is STILL not marked used
+        otp_rec.refresh_from_db()
+        self.assertFalse(otp_rec.is_used)
+
+        # 4. User verifies OTP again -> Still succeeds (not locked out with 'Invalid or expired verification code')
+        res_v2 = self.client.post('/api/requests/otp/verify/', {'code': test_code}, format='json')
+        self.assertEqual(res_v2.status_code, status.HTTP_200_OK)
+        token2 = res_v2.data['submit_token']
+
+        # 5. Post emergency request with valid Ward/Bed -> 201 Created
+        good_emergency_payload = {
+            **bad_emergency_payload,
+            'ward_bed': 'Ward 5, Bed 12',
+            'submit_token': token2,
+        }
+        res_ok = self.client.post('/api/emergency/requests/', good_emergency_payload, format='json')
+        self.assertEqual(res_ok.status_code, status.HTTP_201_CREATED)
+
+        # 6. Check that BOTH submit_token AND OTP are now consumed
+        otp_rec.refresh_from_db()
+        self.assertTrue(otp_rec.is_used, "OTP must be marked as used after request is created successfully.")
+
+        # 7. Further attempt to verify the same code -> 400 Invalid or expired code
+        res_v3 = self.client.post('/api/requests/otp/verify/', {'code': test_code}, format='json')
+        self.assertEqual(res_v3.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Invalid or expired', res_v3.data['error'])
+
     def test_forgot_password_google_only_account(self):
         """Google user without usable password receives 'Please use Google sign-in.'."""
         google_user = User.objects.create_user(

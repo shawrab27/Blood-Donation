@@ -226,6 +226,10 @@ class _PersonalEmergencyScreenState
       _showError('Attendant contact phone is required.');
       return;
     }
+    if (_wardBedController.text.trim().isEmpty) {
+      _showError('Ward/Bed information is required.');
+      return;
+    }
 
     // Enforce authentication gate
     final authState = ref.read(authProvider);
@@ -265,8 +269,7 @@ class _PersonalEmergencyScreenState
         'patient_name': _patientNameController.text.trim(),
         'attendant_name': _attendantController.text.trim(),
         'contact_phone': _contactController.text.trim(),
-        if (_wardBedController.text.trim().isNotEmpty)
-          'ward_bed': _wardBedController.text.trim(),
+        'ward_bed': _wardBedController.text.trim(),
         if (_selectedHospital != null)
           'hospital': _selectedHospital!.id
         else if (_hospitalController.text.trim().isNotEmpty)
@@ -973,9 +976,8 @@ class _PersonalEmergencyScreenState
 
                 _textField(
                   controller: _wardBedController,
-                  label: 'Ward / Bed',
-                  hint: 'e.g. Ward 4, Bed 12 (optional)',
-                  optional: true,
+                  label: 'Ward / Bed *',
+                  hint: 'e.g. Ward 4, Bed 12',
                 ),
                 const SizedBox(height: 12),
 

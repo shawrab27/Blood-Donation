@@ -64,6 +64,8 @@ class _IdentityVerificationScreenState
   late final TextEditingController _emailCtrl;
   late final TextEditingController _whatsappCtrl;
   late final TextEditingController _smsCtrl;
+  late final TextEditingController _wardBedCtrl;
+  String? _submitToken;
 
   final List<TextEditingController> _pinControllers =
       List.generate(6, (_) => TextEditingController());
@@ -102,6 +104,8 @@ class _IdentityVerificationScreenState
     _emailCtrl = TextEditingController(text: initialEmail);
     _whatsappCtrl = TextEditingController(text: initialPhone);
     _smsCtrl = TextEditingController(text: initialPhone);
+    final initialWardBed = widget.emergencyPayload?['ward_bed']?.toString().trim() ?? '';
+    _wardBedCtrl = TextEditingController(text: initialWardBed);
 
     _startCountdown();
 
@@ -124,6 +128,7 @@ class _IdentityVerificationScreenState
     _emailCtrl.dispose();
     _whatsappCtrl.dispose();
     _smsCtrl.dispose();
+    _wardBedCtrl.dispose();
     for (final c in _pinControllers) {
       c.dispose();
     }
@@ -190,6 +195,7 @@ class _IdentityVerificationScreenState
   }
 
   void _onKeypadTap(String value) {
+    _submitToken = null;
     for (int i = 0; i < 6; i++) {
       if (_pinControllers[i].text.isEmpty) {
         _pinControllers[i].text = value;
@@ -208,6 +214,7 @@ class _IdentityVerificationScreenState
   }
 
   void _onKeypadBackspace() {
+    _submitToken = null;
     for (int i = 5; i >= 0; i--) {
       if (_pinControllers[i].text.isNotEmpty) {
         _pinControllers[i].clear();
@@ -219,6 +226,7 @@ class _IdentityVerificationScreenState
   }
 
   void _handlePinChanged(int index, String value) {
+    _submitToken = null;
     if (value.length > 1) {
       // Paste support: user pasted a 6-digit code or text containing digits
       final digits = value.replaceAll(RegExp(r'\D'), '');
@@ -250,6 +258,21 @@ class _IdentityVerificationScreenState
 
   Future<void> _sendOtp() async {
     if (_isSending) return;
+
+    // Validate Ward/Bed only where backend requires it (emergency requests)
+    if (widget.emergencyPayload != null) {
+      final wardBed = _wardBedCtrl.text.trim().isNotEmpty
+          ? _wardBedCtrl.text.trim()
+          : (widget.emergencyPayload!['ward_bed']?.toString().trim() ?? '');
+      if (wardBed.isEmpty) {
+        setState(() {
+          _deliveryState = OtpDeliveryState.failure;
+          _errorMessage = 'Ward/Bed information is required.';
+        });
+        return;
+      }
+    }
+
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       setState(() {
@@ -327,6 +350,20 @@ class _IdentityVerificationScreenState
 
   Future<void> _verifyAndSubmit() async {
     if (_isVerifying) return;
+
+    // Validate Ward/Bed only where backend requires it (emergency requests)
+    if (widget.emergencyPayload != null) {
+      final wardBed = _wardBedCtrl.text.trim().isNotEmpty
+          ? _wardBedCtrl.text.trim()
+          : (widget.emergencyPayload!['ward_bed']?.toString().trim() ?? '');
+      if (wardBed.isEmpty) {
+        setState(() {
+          _errorMessage = 'Ward/Bed information is required.';
+        });
+        return;
+      }
+    }
+
     final code = _currentPin;
     if (code.length < 6) {
       setState(() {
@@ -341,14 +378,16 @@ class _IdentityVerificationScreenState
     });
 
     final email = _emailCtrl.text.trim();
-    String? submitToken;
+    String? submitToken = _submitToken;
 
-    try {
-      submitToken = await _apiClient.verifyRequestOtp(
-        code: code,
-        email: email,
-      );
-    } on RequestOtpException catch (e) {
+    if (submitToken == null) {
+      try {
+        submitToken = await _apiClient.verifyRequestOtp(
+          code: code,
+          email: email,
+        );
+        _submitToken = submitToken;
+      } on RequestOtpException catch (e) {
       if (!mounted) return;
       setState(() {
         _isVerifying = false;
@@ -378,12 +417,17 @@ class _IdentityVerificationScreenState
       });
       return;
     }
+    }
 
     // After the correct email OTP, the request is sent with the submit_token
     try {
       bool submitSuccess = false;
       if (widget.emergencyPayload != null) {
         final payload = Map<String, dynamic>.from(widget.emergencyPayload!);
+        final wardBed = _wardBedCtrl.text.trim().isNotEmpty
+            ? _wardBedCtrl.text.trim()
+            : (payload['ward_bed']?.toString().trim() ?? '');
+        payload['ward_bed'] = wardBed;
         payload['submit_token'] = submitToken;
         final res = await ref.read(bloodHubApiServiceProvider).createEmergencyRequest(payload);
         submitSuccess = res.containsKey('id');
@@ -795,6 +839,60 @@ class _IdentityVerificationScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (widget.emergencyPayload != null) ...[
+          const Text(
+            'Ward / Bed *',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF5C3F3D),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(color: const Color(0xFFE6BDBA)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.hotel_outlined, size: 20, color: Color(0xFF888888)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _wardBedCtrl,
+                    key: const Key('ward_bed_field'),
+                    onChanged: (val) {
+                      if (_errorMessage == 'Ward/Bed information is required.' && val.trim().isNotEmpty) {
+                        setState(() => _errorMessage = null);
+                      }
+                    },
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      color: Color(0xFF2B2B2B),
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. Ward 4, Bed 12',
+                      hintStyle: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: Color(0xFF999999),
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         const Text(
           'Email Address',
           style: TextStyle(

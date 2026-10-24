@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -6,6 +7,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blood_pulse/features/blood_request/presentation/screens/identity_verification_screen.dart';
 import 'package:blood_pulse/core/widgets/capsule_button.dart';
+import 'package:blood_pulse/services/api_client.dart';
+
+class FakeOtpApiClient extends ApiClient {
+  int sendOtpCalls = 0;
+  String? sentEmail;
+
+  @override
+  Future<Map<String, dynamic>> sendRequestOtp({String? email}) async {
+    sendOtpCalls++;
+    sentEmail = email;
+    return {'cooldown_seconds': 60};
+  }
+
+  @override
+  Future<http.Response> get(String endpoint, {Map<String, String>? headers}) async {
+    return http.Response('{"status": "ok"}', 200);
+  }
+}
 
 void main() {
   Widget buildScreen({String email = 'requester@example.com', bool autoSend = false}) {
@@ -131,5 +150,87 @@ void main() {
 
     final textFields = find.byType(TextField);
     expect(tester.widget<TextField>(textFields.at(1)).controller?.text, '5');
+  });
+
+
+  testWidgets('Emergency request without Ward/Bed stops OTP dispatch with clear inline error', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final fakeClient = FakeOtpApiClient();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: IdentityVerificationScreen(
+            email: 'guest@example.com',
+            emergencyPayload: const {
+              'patient_name': 'Emergency Patient',
+              'blood_group': 'O+',
+              'hospital_name_other': 'Dhaka Medical',
+              // 'ward_bed' is intentionally omitted/missing
+            },
+            apiClient: fakeClient,
+            autoSend: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Verify OTP was NOT dispatched
+    expect(fakeClient.sendOtpCalls, 0);
+
+    // Verify clear inline error message is shown
+    expect(find.text('Ward/Bed information is required.'), findsAtLeastNWidgets(1));
+
+    // Verify Ward / Bed input field is rendered
+    expect(find.byKey(const Key('ward_bed_field')), findsOneWidget);
+
+    // Now enter Ward/Bed and tap retry button
+    await tester.enterText(find.byKey(const Key('ward_bed_field')), 'Ward 3, Bed 12');
+    await tester.pump();
+
+    final retryBtn = find.byKey(const Key('otp_retry_button'));
+    expect(retryBtn, findsOneWidget);
+    await tester.tap(retryBtn);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Now OTP should be dispatched!
+    expect(fakeClient.sendOtpCalls, 1);
+    expect(fakeClient.sentEmail, 'guest@example.com');
+  });
+
+  testWidgets('Standard non-emergency request does not require Ward/Bed to dispatch OTP', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final fakeClient = FakeOtpApiClient();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: IdentityVerificationScreen(
+            email: 'regular@example.com',
+            emergencyPayload: null, // standard request
+            apiClient: fakeClient,
+            autoSend: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Ward/Bed field is NOT rendered for standard requests
+    expect(find.byKey(const Key('ward_bed_field')), findsNothing);
+
+    // OTP was dispatched normally
+    expect(fakeClient.sendOtpCalls, 1);
+    expect(fakeClient.sentEmail, 'regular@example.com');
   });
 }

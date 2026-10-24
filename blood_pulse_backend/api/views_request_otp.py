@@ -83,6 +83,14 @@ def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'b
         token_obj.is_used = True
         token_obj.used_at = now
         token_obj.save(update_fields=['is_used', 'used_at'])
+
+        # Atomically consume the EmailOTP now that request payload is validated and token is consumed
+        EmailOTP.objects.filter(
+            user=user,
+            purpose='blood_request_submit',
+            is_used=False,
+        ).update(is_used=True)
+
         return True
 
 
@@ -291,9 +299,9 @@ def request_otp_verify_view(request):
             'remaining_attempts': remaining_attempts,
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Verification successful: consume OTP
-    otp_record.is_used = True
-    otp_record.save(update_fields=['is_used'])
+    # Verification successful: Do NOT mark OTP as is_used here.
+    # The OTP is consumed when the request payload is validated and created
+    # via validate_and_consume_submit_token, so a 400 validation error does not burn the OTP.
 
     # Invalidate older unused submit tokens for this user
     RequestSubmitToken.objects.filter(

@@ -67,6 +67,7 @@ void main() {
             patientName: 'Test Patient',
             bloodGroup: 'A+',
             email: 'patient@example.com',
+            autoSend: false,
           ),
         ),
       ),
