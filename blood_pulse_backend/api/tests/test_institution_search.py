@@ -5,7 +5,13 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 from api.models import Institution, District, Division, InstitutionAlias
-from api.management.commands.institution_import_utils import load_institution_aliases_from_csv
+from api.management.commands.institution_import_utils import (
+    load_institution_aliases_from_csv,
+    get_district_cache,
+    match_district,
+    normalize_district_key,
+    DISTRICT_ALIAS_MAP,
+)
 
 
 class InstitutionSearchTests(TestCase):
@@ -156,3 +162,19 @@ class InstitutionSearchTests(TestCase):
     def test_throttling_enforced(self, mock_allow, mock_wait):
         res = self.client.get('/api/institutions/search/?q=TEST')
         self.assertEqual(res.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_nawabganj_district_alias_resolves_to_chapai_nawabganj(self):
+        chapai = District.objects.create(name='Chapai Nawabganj', division=self.division)
+        dmap = get_district_cache()
+
+        # Direct normalization check
+        self.assertEqual(normalize_district_key('Chapai Nawabganj'), 'chapainawabganj')
+        self.assertEqual(normalize_district_key('chapainawabganj'), 'chapainawabganj')
+        self.assertEqual(normalize_district_key(DISTRICT_ALIAS_MAP['nawabganj']), 'chapainawabganj')
+
+        # Matching resolution checks
+        self.assertEqual(match_district('Nawabganj', dmap), chapai)
+        self.assertEqual(match_district('nawabganj', dmap), chapai)
+        self.assertEqual(match_district('chapainawabganj', dmap), chapai)
+        self.assertEqual(match_district('Chapai Nawabganj', dmap), chapai)
+

@@ -25,8 +25,47 @@ def normalize_val(val):
     return s if s else None
 
 
+def normalize_district_key(val):
+    if val is None:
+        return ''
+    s = unicodedata.normalize('NFC', str(val)).strip().lower()
+    return re.sub(r'[\s\-]+', '', s)
+
+
 def get_district_cache():
-    return {d.name.strip().lower(): d for d in District.objects.exclude(name__contains='\u2502')}
+    cache = {}
+    for d in District.objects.exclude(name__contains='\u2502'):
+        cache[d.name.strip().lower()] = d
+        cache[normalize_district_key(d.name)] = d
+    return cache
+
+
+def match_district(dist_name, district_map):
+    """
+    Match a raw district name or alias against cached District objects.
+    Normalizes by lowercasing and removing spaces/hyphens on both sides.
+    """
+    if not dist_name:
+        return None
+    clean_dist = str(dist_name).strip().lower()
+    norm_dist = normalize_district_key(dist_name)
+
+    # 1. Direct match on clean or normalized key
+    matched = district_map.get(clean_dist) or district_map.get(norm_dist)
+    if matched:
+        return matched
+
+    # 2. Alias lookup (check both clean and normalized alias keys)
+    alias_target = DISTRICT_ALIAS_MAP.get(clean_dist) or DISTRICT_ALIAS_MAP.get(norm_dist)
+    if alias_target:
+        matched = (
+            district_map.get(alias_target.strip().lower())
+            or district_map.get(normalize_district_key(alias_target))
+        )
+        if matched:
+            return matched
+
+    return None
 
 
 def parse_banbeis_file(file_path, file_name, itype, district_map):
@@ -80,10 +119,7 @@ def parse_banbeis_file(file_path, file_name, itype, district_map):
         dist_name = normalize_val(raw_dist)
         upazila_name = normalize_val(raw_thana)
 
-        clean_dist = dist_name.lower() if dist_name else ''
-        matched_district = district_map.get(clean_dist)
-        if not matched_district and clean_dist in DISTRICT_ALIAS_MAP:
-            matched_district = district_map.get(DISTRICT_ALIAS_MAP[clean_dist])
+        matched_district = match_district(dist_name, district_map)
 
         if dist_name and not matched_district:
             unmatched_districts[dist_name] += 1

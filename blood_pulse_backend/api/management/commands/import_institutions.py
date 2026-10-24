@@ -9,6 +9,7 @@ from api.management.commands.institution_import_utils import (
     get_district_cache,
     parse_banbeis_file,
     load_institution_aliases_from_csv,
+    match_district,
 )
 
 
@@ -49,7 +50,7 @@ class Command(BaseCommand):
         self.stdout.write("DISTRICT ALIAS MAP & VERIFICATION")
         self.stdout.write("=" * 80)
         for raw_alias, target_name in DISTRICT_ALIAS_MAP.items():
-            matched = district_map.get(target_name)
+            matched = match_district(raw_alias, district_map)
             m_id = matched.id if matched else 'None'
             m_name = matched.name if matched else 'NOT FOUND'
             self.stdout.write(f"  Excel '{raw_alias}' -> DB '{target_name}' (ID: {m_id}, Name: '{m_name}')")
