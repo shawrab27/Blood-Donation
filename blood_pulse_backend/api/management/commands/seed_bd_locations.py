@@ -35,15 +35,21 @@ class Command(BaseCommand):
             action='store_true',
             help='Clean up tree artifact rows. Only permitted in dev/test environment and with explicit flag.',
         )
+        parser.add_argument(
+            '--force-production',
+            action='store_true',
+            help='Explicit authorization required when executing against production database (ep-proud-dew).',
+        )
 
     def handle(self, *args, **options):
-        # Critical Safety Guard: Never run on production (ep-proud-dew)
+        # Critical Safety Guard: Require explicit --force-production if running on production (ep-proud-dew)
+        force_prod = options.get('force_production', False)
         db_settings = settings.DATABASES.get('default', {})
         db_host = db_settings.get('HOST', '') or ''
         database_url = os.environ.get('DATABASE_URL', '') or ''
-        if 'ep-proud-dew' in db_host or 'ep-proud-dew' in database_url:
+        if ('ep-proud-dew' in db_host or 'ep-proud-dew' in database_url) and not force_prod:
             self.stderr.write(self.style.ERROR(
-                "CRITICAL SAFETY VIOLATION: seed_bd_locations is strictly blocked from running on production database (ep-proud-dew)!"
+                "CRITICAL SAFETY VIOLATION: seed_bd_locations on production database (ep-proud-dew) requires explicit --force-production flag!"
             ))
             return
 

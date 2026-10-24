@@ -6,7 +6,8 @@ import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poste
 import 'package:blood_pulse/features/blood_hub/presentation/widgets/poster/poster_style_selectors.dart';
 
 void main() {
-  testWidgets('Poster export caps pixelRatio <= 2.5 to prevent OOM/GPU crash', (tester) async {
+  testWidgets('Poster export caps pixelRatio <= 2.0 to prevent OOM/GPU crash', (tester) async {
+    expect(kMaxPosterPixelRatio, equals(2.0));
     final posterKey = GlobalKey<PosterGeneratorWidgetState>();
     final sampleData = PosterData(
       patientName: 'Test Patient',

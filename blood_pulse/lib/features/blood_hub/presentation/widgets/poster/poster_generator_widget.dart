@@ -12,6 +12,9 @@ import 'poster_photo_template.dart';
 import 'poster_style_selectors.dart';
 import 'poster_text_template.dart';
 
+/// Maximum allowed rasterization pixel ratio to prevent OOM/GPU texture allocation crashes.
+const double kMaxPosterPixelRatio = 2.0;
+
 /// Reusable widget rendering the chosen BloodPulse emergency poster template.
 /// Uses [RepaintBoundary] to support raster PNG export.
 class PosterGeneratorWidget extends StatefulWidget {
@@ -56,7 +59,7 @@ class PosterGeneratorWidgetState extends State<PosterGeneratorWidget> {
       if (boundary == null) {
         throw Exception('Repaint boundary context is not attached yet.');
       }
-      final double effectiveRatio = kIsWeb ? 1.5 : pixelRatio.clamp(1.0, 2.0);
+      final double effectiveRatio = pixelRatio.clamp(1.0, kMaxPosterPixelRatio);
       final ui.Image image = await boundary.toImage(pixelRatio: effectiveRatio);
       final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
