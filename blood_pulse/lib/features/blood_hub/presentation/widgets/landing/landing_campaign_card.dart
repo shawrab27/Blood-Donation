@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../feed/presentation/providers/feed_provider.dart';
@@ -144,7 +145,7 @@ class LandingCampaignCard extends ConsumerWidget {
               // Bottom Button: Crimson capsule "View All Campaigns ->"
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PressableScale(child: ElevatedButton(
                   onPressed: onViewAllTap,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF960017),
@@ -173,7 +174,7 @@ class LandingCampaignCard extends ConsumerWidget {
                       const Icon(Icons.arrow_forward_rounded, size: 16),
                     ],
                   ),
-                ),
+                )),
               ),
             ],
           ),

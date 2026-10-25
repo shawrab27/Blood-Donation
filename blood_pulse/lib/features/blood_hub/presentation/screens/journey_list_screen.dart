@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -388,7 +389,7 @@ class _ErrorRetry extends StatelessWidget {
                     fontSize: 13,
                     color: _kNeutral)),
             const SizedBox(height: 16),
-            ElevatedButton(
+            PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: _kPrimary,
                   foregroundColor: Colors.white,
@@ -396,7 +397,7 @@ class _ErrorRetry extends StatelessWidget {
               onPressed: onRetry,
               child: const Text('Retry',
                   style: TextStyle(fontFamily: 'Inter')),
-            ),
+            )),
           ],
         ),
       ),

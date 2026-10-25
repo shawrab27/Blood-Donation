@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
@@ -121,13 +122,13 @@ class _DeleteAccountConfirmationModalState
               // Close X Button
               Align(
                 alignment: Alignment.topRight,
-                child: IconButton(
+                child: PressableScale(child: IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
                   onPressed: () => Navigator.of(context).pop(),
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                ),
+                )),
               ),
 
               // Danger Exclamation Icon Circle (Double layer soft red)
@@ -280,13 +281,13 @@ class _DeleteAccountConfirmationModalState
                   hintStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12),
                   labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13),
                   prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-                  suffixIcon: IconButton(
+                  suffixIcon: PressableScale(child: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                       size: 20,
                     ),
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                  ),
+                  )),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   filled: true,
                   fillColor: const Color(0xFFFFF8F7),
@@ -310,7 +311,7 @@ class _DeleteAccountConfirmationModalState
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
+                    child: PressableScale(child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFDEAEB),
                         foregroundColor: const Color(0xFF24191A),
@@ -323,11 +324,11 @@ class _DeleteAccountConfirmationModalState
                         'Cancel',
                         style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
-                    ),
+                    )),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
+                    child: PressableScale(child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC30121),
                         foregroundColor: Colors.white,
@@ -346,7 +347,7 @@ class _DeleteAccountConfirmationModalState
                               'Yes, Delete',
                               style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                             ),
-                    ),
+                    )),
                   ),
                 ],
               ),

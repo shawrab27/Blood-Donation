@@ -1,3 +1,5 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
+import '../../../../services/api_client.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -149,7 +151,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
     final urgencyStr = _urgency == UrgencyLevel.critical ? 'Critical' : 'Moderate';
 
     final profile = ref.read(profileProvider).value;
-    final otpRequired = profile?.requestOtpRequired ?? true;
+    final otpRequired = profile != null ? profile.requestOtpRequired : await ApiClient().getRequestOtpRequired();
     if (!otpRequired) {
       final posterData = PosterData(
         patientName: _patientNameCtrl.text.trim().isNotEmpty ? _patientNameCtrl.text.trim() : 'Emergency Patient',
@@ -162,11 +164,13 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
         contactNumber: _contactPhoneCtrl.text.trim().isNotEmpty ? _contactPhoneCtrl.text.trim() : null,
         photoPath: _medicalReportFile?.path,
       );
+      if (!mounted) return;
       context.push('/blood-hub/poster', extra: posterData);
       return;
     }
 
     // Navigate to OTP page with request details (Phase 3 Requirement 5 & 6)
+    if (!mounted) return;
     context.push(
       '/identity-verification',
       extra: {
@@ -221,14 +225,14 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
           style: const TextStyle(fontFamily: 'Inter'),
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               isBangla ? 'চালিয়ে যান' : 'Keep Editing',
               style: const TextStyle(fontFamily: 'Inter', color: AppColors.secondary),
             ),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -238,7 +242,7 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               isBangla ? 'বাতিল করুন' : 'Discard',
               style: const TextStyle(fontFamily: 'Inter'),
             ),
-          ),
+          )),
         ],
       ),
     );
@@ -726,14 +730,14 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
               style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: AppColors.neutral),
             ),
             const SizedBox(height: 14),
-            OutlinedButton.icon(
+            PressableScale(child: OutlinedButton.icon(
               onPressed: _isAnalyzing ? null : _runAiDetection,
               icon: const Icon(Icons.center_focus_strong_rounded),
               label: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text('Scan & Evaluate Documents with AI'),
               ),
-            ),
+            )),
           ] else ...[
             // Score Display
             Row(
@@ -802,10 +806,10 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
             ),
             const SizedBox(height: 10),
 
-            TextButton(
+            PressableScale(child: TextButton(
               onPressed: _runAiDetection,
               child: const Text('Re-evaluate Documents'),
-            ),
+            )),
           ],
         ],
       ),

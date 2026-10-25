@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -69,7 +70,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
         child: SizedBox(
           width: double.infinity,
           height: 48,
-          child: ElevatedButton.icon(
+          child: PressableScale(child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1A7A3F),
               foregroundColor: Colors.white,
@@ -87,7 +88,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
                 'donorName': journey.donorName.isNotEmpty ? journey.donorName : 'Donor',
               });
             },
-          ),
+          )),
         ),
       );
     }
@@ -131,14 +132,14 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
               style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5D4037)),
             ),
             const SizedBox(height: 12),
-            OutlinedButton(
+            PressableScale(child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFE65100)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
               ),
               onPressed: widget.onCancel,
               child: const Text('Cancel Request', style: TextStyle(color: Color(0xFFE65100))),
-            ),
+            )),
           ],
         ),
       );
@@ -161,14 +162,14 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
               style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: _kSecondary),
             ),
             const SizedBox(height: 12),
-            OutlinedButton(
+            PressableScale(child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: _kPrimary),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
               ),
               onPressed: widget.onCancel,
               child: const Text('Cancel Request', style: TextStyle(color: _kPrimary)),
-            ),
+            )),
           ],
         ),
       );
@@ -185,7 +186,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton.icon(
+              child: PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kPrimary,
                   foregroundColor: Colors.white,
@@ -200,7 +201,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
                         'Confirm Donation Received',
                         style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-              ),
+              )),
             ),
             const SizedBox(height: 12),
           ],
@@ -212,7 +213,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
             alignment: WrapAlignment.center,
             children: [
               // Open Chat
-              ElevatedButton.icon(
+              PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kTertiary,
                   foregroundColor: Colors.white,
@@ -233,10 +234,10 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
                     },
                   );
                 },
-              ),
+              )),
 
               // Track Donor
-              ElevatedButton.icon(
+              PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFCC7722),
                   foregroundColor: Colors.white,
@@ -262,11 +263,11 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
                     },
                   );
                 },
-              ),
+              )),
 
               // Call Donor (only once ACCEPTED and phone unmasked)
               if (journey.donorContact.isNotEmpty)
-                OutlinedButton.icon(
+                PressableScale(child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF1A7A3F), width: 1.5),
                     foregroundColor: const Color(0xFF1A7A3F),
@@ -276,7 +277,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
                   icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
                   label: const Text('Call Donor', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () => DeepLinkResolver.instance.makePhoneCall(journey.donorContact),
-                ),
+                )),
             ],
           ),
 
@@ -285,16 +286,16 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
             alignment: WrapAlignment.center,
             spacing: 12,
             children: [
-              TextButton.icon(
+              PressableScale(child: TextButton.icon(
                 onPressed: widget.onIssueReport,
                 icon: const Icon(Icons.report_problem_outlined, color: _kPrimary, size: 16),
                 label: const Text('Report Issue', style: TextStyle(color: _kPrimary, fontSize: 12, fontFamily: 'Inter')),
-              ),
-              TextButton.icon(
+              )),
+              PressableScale(child: TextButton.icon(
                 onPressed: widget.onCancel,
                 icon: const Icon(Icons.cancel_outlined, color: _kNeutral, size: 16),
                 label: const Text('Cancel Request', style: TextStyle(color: _kNeutral, fontSize: 12, fontFamily: 'Inter')),
-              ),
+              )),
             ],
           ),
         ],
@@ -356,7 +357,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
         child: SizedBox(
           width: double.infinity,
           height: 48,
-          child: ElevatedButton.icon(
+          child: PressableScale(child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1A7A3F),
               foregroundColor: Colors.white,
@@ -374,7 +375,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
                 'donorName': journey.donorName.isNotEmpty ? journey.donorName : 'Donor',
               });
             },
-          ),
+          )),
         ),
       );
     }
@@ -388,7 +389,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton.icon(
+              child: PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kPrimary,
                   foregroundColor: Colors.white,
@@ -403,13 +404,13 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
                         "Start Going (Start Tracking)",
                         style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-              ),
+              )),
             )
           else if (status == 'ON_THE_WAY')
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton.icon(
+              child: PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFCC7722),
                   foregroundColor: Colors.white,
@@ -424,13 +425,13 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
                         "Mark Arrived (At Hospital)",
                         style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-              ),
+              )),
             )
           else if (status == 'ARRIVED')
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton.icon(
+              child: PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A7A3F),
                   foregroundColor: Colors.white,
@@ -445,7 +446,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
                         "Mark Donated (Completed Donation)",
                         style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14),
                       ),
-              ),
+              )),
             ),
 
           const SizedBox(height: 12),
@@ -457,7 +458,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
             alignment: WrapAlignment.center,
             children: [
               // Open Chat
-              ElevatedButton.icon(
+              PressableScale(child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kTertiary,
                   foregroundColor: Colors.white,
@@ -478,11 +479,11 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
                     },
                   );
                 },
-              ),
+              )),
 
               // Call Requester (only once ACCEPTED and phone unmasked)
               if (journey.requesterContact.isNotEmpty)
-                OutlinedButton.icon(
+                PressableScale(child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF1A7A3F), width: 1.5),
                     foregroundColor: const Color(0xFF1A7A3F),
@@ -492,20 +493,20 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
                   icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
                   label: const Text('Call Requester', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold)),
                   onPressed: () => DeepLinkResolver.instance.makePhoneCall(journey.requesterContact),
-                ),
+                )),
             ],
           ),
 
           if (status == 'ACCEPTED' || status == 'ON_THE_WAY') ...[
             const SizedBox(height: 8),
-            TextButton.icon(
+            PressableScale(child: TextButton.icon(
               onPressed: widget.onCancel,
               icon: const Icon(Icons.cancel_outlined, color: Colors.black54, size: 16),
               label: const Text(
                 "I Can't Donate (Cancel & Activate Standby)",
                 style: TextStyle(color: Colors.black54, fontSize: 12, fontFamily: 'Inter'),
               ),
-            ),
+            )),
           ],
         ],
       ),

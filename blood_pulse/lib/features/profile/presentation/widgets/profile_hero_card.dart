@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -334,7 +335,7 @@ class ProfileHeroCard extends StatelessWidget {
           SizedBox(
             width: 180,
             height: 44,
-            child: OutlinedButton.icon(
+            child: PressableScale(child: OutlinedButton.icon(
               onPressed: () => context.push('/edit-profile'),
               icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFC30121)),
               label: const Text(
@@ -352,7 +353,7 @@ class ProfileHeroCard extends StatelessWidget {
                 backgroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-            ),
+            )),
           ),
           // USER RULE - do not change: Admin note hidden from normal profile view (shown only in Edit Profile when requesting change)
         ],

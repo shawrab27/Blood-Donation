@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
@@ -462,7 +463,7 @@ class _BloodGroupChangeScreenState extends ConsumerState<BloodGroupChangeScreen>
                                               style: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFC30121)),
                                             ),
                                           ),
-                                          IconButton(
+                                          PressableScale(child: IconButton(
                                             icon: const Icon(Icons.close_rounded, size: 16),
                                             onPressed: () => setState(() {
                                               _selectedReportFile = null;
@@ -470,12 +471,12 @@ class _BloodGroupChangeScreenState extends ConsumerState<BloodGroupChangeScreen>
                                               _reportFileName = null;
                                             }),
                                             visualDensity: VisualDensity.compact,
-                                          ),
+                                          )),
                                         ],
                                       ),
                                     )
                                   else
-                                    OutlinedButton.icon(
+                                    PressableScale(child: OutlinedButton.icon(
                                       onPressed: _pickReportFile,
                                       icon: const Icon(Icons.upload_file_rounded, size: 16, color: Color(0xFFC30121)),
                                       label: const Text('Choose Document'),
@@ -484,7 +485,7 @@ class _BloodGroupChangeScreenState extends ConsumerState<BloodGroupChangeScreen>
                                         foregroundColor: const Color(0xFFC30121),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                                       ),
-                                    ),
+                                    )),
                                 ],
                               ),
                             ),
@@ -516,7 +517,7 @@ class _BloodGroupChangeScreenState extends ConsumerState<BloodGroupChangeScreen>
                             // Submit Button
                             SizedBox(
                               height: 52,
-                              child: ElevatedButton(
+                              child: PressableScale(child: ElevatedButton(
                                 onPressed: _isSubmitting ? null : _submitRequest,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFC30121),
@@ -530,7 +531,7 @@ class _BloodGroupChangeScreenState extends ConsumerState<BloodGroupChangeScreen>
                                         'Submit for Clinical Review',
                                         style: TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.bold),
                                       ),
-                              ),
+                              )),
                             ),
                             const SizedBox(height: 36),
                           ],

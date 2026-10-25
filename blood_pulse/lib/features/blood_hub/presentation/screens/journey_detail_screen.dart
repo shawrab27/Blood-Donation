@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -138,13 +139,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           style: TextStyle(fontFamily: 'Inter', fontSize: 13),
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
               onPressed: () => ctx.pop(false),
-              child: const Text('Keep')),
-          TextButton(
+              child: const Text('Keep'))),
+          PressableScale(child: TextButton(
               onPressed: () => ctx.pop(true),
               child:
-                  const Text('Cancel', style: TextStyle(color: _kPrimary))),
+                  const Text('Cancel', style: TextStyle(color: _kPrimary)))),
         ],
       ),
     );
@@ -903,7 +904,7 @@ class _ActionRow extends StatelessWidget {
         children: [
           if (showReport)
             Expanded(
-              child: OutlinedButton.icon(
+              child: PressableScale(child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: _kPrimary),
                   shape: const StadiumBorder(),
@@ -921,12 +922,12 @@ class _ActionRow extends StatelessWidget {
                   ),
                 ),
                 onPressed: onReport,
-              ),
+              )),
             ),
           if (showReport && showCancel) const SizedBox(width: 8),
           if (showCancel)
             Expanded(
-              child: OutlinedButton.icon(
+              child: PressableScale(child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFDDD0D0)),
                   shape: const StadiumBorder(),
@@ -944,7 +945,7 @@ class _ActionRow extends StatelessWidget {
                   ),
                 ),
                 onPressed: onCancel,
-              ),
+              )),
             ),
         ],
       ),
@@ -1148,7 +1149,7 @@ class _DonationIssueSheetState
           SizedBox(
             width: double.infinity,
             height: 50,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kPrimary,
                 foregroundColor: Colors.white,
@@ -1168,7 +1169,7 @@ class _DonationIssueSheetState
                           fontWeight: FontWeight.w700,
                           fontSize: 14),
                     ),
-            ),
+            )),
           ),
         ],
       ),
@@ -1241,7 +1242,7 @@ class _ErrorRetry extends StatelessWidget {
                   fontFamily: 'Inter', fontSize: 13, color: _kNeutral),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kPrimary,
                 foregroundColor: Colors.white,
@@ -1250,7 +1251,7 @@ class _ErrorRetry extends StatelessWidget {
               onPressed: onRetry,
               child: const Text('Retry',
                   style: TextStyle(fontFamily: 'Inter')),
-            ),
+            )),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
@@ -99,7 +100,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
 
     Widget? suffixIcon;
     if (widget.isPassword) {
-      suffixIcon = IconButton(
+      suffixIcon = PressableScale(child: IconButton(
         icon: Icon(
           _obscured
               ? Icons.visibility_off_outlined
@@ -108,7 +109,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
           color: AppColors.neutral,
         ),
         onPressed: () => setState(() => _obscured = !_obscured),
-      );
+      ));
     } else if (widget.suffixWidget != null) {
       suffixIcon = widget.suffixWidget;
     }

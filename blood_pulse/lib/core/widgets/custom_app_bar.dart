@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -218,7 +219,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    IconButton(
+                    PressableScale(child: IconButton(
                       padding: const EdgeInsets.all(4),
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       icon: Icon(
@@ -246,7 +247,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                           },
                         );
                       },
-                    ),
+                    )),
                     if (effectiveNotificationCount > 0)
                       Positioned(
                         right: 4,

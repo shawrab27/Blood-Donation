@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -79,14 +80,14 @@ class AdminScreen extends StatelessWidget {
                       color: AppColors.secondary,
                     ),
                   ),
-                  TextButton.icon(
+                  PressableScale(child: TextButton.icon(
                     onPressed: () => context.push('/admin-dashboard'),
                     icon: const Icon(Icons.dashboard_outlined, size: 16, color: AppColors.tertiary),
                     label: const Text(
                       'Dashboard',
                       style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.tertiary),
                     ),
-                  ),
+                  )),
                 ],
               ),
               const SizedBox(height: 12),
@@ -200,7 +201,7 @@ class AdminScreen extends StatelessWidget {
                 ],
               ),
             ),
-            IconButton(
+            PressableScale(child: IconButton(
               icon: const Icon(Icons.block_rounded, color: AppColors.primary),
               tooltip: 'Block User',
               onPressed: () {
@@ -213,7 +214,7 @@ class AdminScreen extends StatelessWidget {
                   ),
                 );
               },
-            ),
+            )),
           ],
         ),
       ),

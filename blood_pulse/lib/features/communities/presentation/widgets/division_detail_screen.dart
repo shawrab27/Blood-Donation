@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -55,7 +56,7 @@ class DivisionDetailScreen extends ConsumerWidget {
                     color: AppColors.secondary,
                   ),
                 ),
-                TextButton(
+                PressableScale(child: TextButton(
                   onPressed: () => context.push('/register-club'),
                   child: const Text(
                     '+ Register Club',
@@ -66,7 +67,7 @@ class DivisionDetailScreen extends ConsumerWidget {
                       color: AppColors.primary,
                     ),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 8),
@@ -95,10 +96,10 @@ class DivisionDetailScreen extends ConsumerWidget {
                         style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary),
                       ),
                     ),
-                    TextButton(
+                    PressableScale(child: TextButton(
                       onPressed: () => ref.invalidate(localClubsProvider(filter)),
                       child: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ),
+                    )),
                   ],
                 ),
               ),
@@ -173,10 +174,10 @@ class DivisionDetailScreen extends ConsumerWidget {
                         style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.secondary),
                       ),
                     ),
-                    TextButton(
+                    PressableScale(child: TextButton(
                       onPressed: () => ref.invalidate(localDonorsProvider(divisionName)),
                       child: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ),
+                    )),
                   ],
                 ),
               ),
@@ -312,7 +313,7 @@ class _ClubCardItem extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => context.push('/club-profile', extra: club),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -330,7 +331,7 @@ class _ClubCardItem extends StatelessWidget {
                 Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
               ],
             ),
-          ),
+          )),
         ],
       ),
     );

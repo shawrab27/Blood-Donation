@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -129,7 +130,7 @@ class RegistrationGatePopup extends ConsumerWidget {
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton(
+              child: PressableScale(child: ElevatedButton(
                 key: const Key('registration_gate_button'),
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -177,7 +178,7 @@ class RegistrationGatePopup extends ConsumerWidget {
                     const Icon(Icons.arrow_forward_rounded, size: 18),
                   ],
                 ),
-              ),
+              )),
             ),
             const SizedBox(height: 12),
 

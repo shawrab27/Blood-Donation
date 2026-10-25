@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -283,7 +284,8 @@ class _PersonalEmergencyScreenState
 
       final hospitalLoc = _selectedHospital?.name ?? _hospitalController.text.trim();
       final profile = ref.read(profileProvider).value;
-      if (profile?.requestOtpRequired == false) {
+      final otpRequired = profile != null ? profile.requestOtpRequired : await ApiClient().getRequestOtpRequired();
+      if (!otpRequired) {
         final client = ApiClient();
         final response = await client.post('blood-hub/requests/', body: payload);
         if (response.statusCode == 200 || response.statusCode == 201) {
@@ -295,6 +297,7 @@ class _PersonalEmergencyScreenState
         }
       }
 
+      if (!mounted) return;
       context.push(
         '/identity-verification',
         extra: {
@@ -481,7 +484,7 @@ class _PersonalEmergencyScreenState
   Widget _unitsStepper() {
     return Row(
       children: [
-        IconButton(
+        PressableScale(child: IconButton(
           style: IconButton.styleFrom(
             backgroundColor: const Color(0xFFFEE9EB),
             shape: const CircleBorder(),
@@ -490,7 +493,7 @@ class _PersonalEmergencyScreenState
           onPressed: _unitsNeeded > 1
               ? () => setState(() => _unitsNeeded--)
               : null,
-        ),
+        )),
         const SizedBox(width: 8),
         Text(
           '$_unitsNeeded ${_unitsNeeded == 1 ? 'unit' : 'units'}',
@@ -502,7 +505,7 @@ class _PersonalEmergencyScreenState
           ),
         ),
         const SizedBox(width: 8),
-        IconButton(
+        PressableScale(child: IconButton(
           style: IconButton.styleFrom(
             backgroundColor: const Color(0xFFFEE9EB),
             shape: const CircleBorder(),
@@ -511,7 +514,7 @@ class _PersonalEmergencyScreenState
           onPressed: _unitsNeeded < 10
               ? () => setState(() => _unitsNeeded++)
               : null,
-        ),
+        )),
       ],
     );
   }
@@ -763,11 +766,11 @@ class _PersonalEmergencyScreenState
               ),
             ),
             if (bytes != null)
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded,
                     size: 18, color: _kPrimary),
                 onPressed: onRemove,
-              ),
+              )),
           ],
         ),
       ),
@@ -873,14 +876,14 @@ class _PersonalEmergencyScreenState
           style: const TextStyle(fontFamily: 'Inter'),
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
               isBangla ? 'চালিয়ে যান' : 'Keep Editing',
               style: const TextStyle(fontFamily: 'Inter', color: _kSecondary),
             ),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _kPrimary,
               foregroundColor: Colors.white,
@@ -890,7 +893,7 @@ class _PersonalEmergencyScreenState
               isBangla ? 'বাতিল করুন' : 'Discard',
               style: const TextStyle(fontFamily: 'Inter'),
             ),
-          ),
+          )),
         ],
       ),
     );
@@ -1108,7 +1111,7 @@ class _PersonalEmergencyScreenState
             Expanded(
               child: SizedBox(
                 height: 52,
-                child: OutlinedButton(
+                child: PressableScale(child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     shape: const StadiumBorder(),
                     side: const BorderSide(color: _kPrimary, width: 1.5),
@@ -1163,14 +1166,14 @@ class _PersonalEmergencyScreenState
                       ),
                     ],
                   ),
-                ),
+                )),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: SizedBox(
                 height: 52,
-                child: ElevatedButton(
+                child: PressableScale(child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _kPrimary,
                     foregroundColor: Colors.white,
@@ -1198,7 +1201,7 @@ class _PersonalEmergencyScreenState
                             ),
                           ),
                         ),
-                ),
+                )),
               ),
             ),
           ],

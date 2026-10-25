@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -149,7 +150,7 @@ class _NotificationWallpaperOverlayState
                       ],
                     ),
                   ),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     tooltip: 'Report Broker / Issue',
                     icon: const Icon(
                       Icons.flag_outlined,
@@ -160,7 +161,7 @@ class _NotificationWallpaperOverlayState
                       context,
                       requestId: widget.requestId,
                     ),
-                  ),
+                  )),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: const Icon(
@@ -244,7 +245,7 @@ class _NotificationWallpaperOverlayState
                   if (widget.requesterPhone.isNotEmpty &&
                       !widget.requesterPhone.contains('*')) ...[
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: PressableScale(child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
                             color: AppColors.primary,
@@ -273,7 +274,7 @@ class _NotificationWallpaperOverlayState
                             fontSize: 13,
                           ),
                         ),
-                      ),
+                      )),
                     ),
                     const SizedBox(width: 12),
                   ],

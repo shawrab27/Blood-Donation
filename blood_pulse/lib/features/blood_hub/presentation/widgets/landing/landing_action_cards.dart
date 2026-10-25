@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blood_pulse/core/widgets/pressable_card.dart';
@@ -108,7 +109,7 @@ class LandingActionCards extends StatelessWidget {
                       _bloodGroupBadge('B+'),
                     ],
                   ),
-                  ElevatedButton(
+                  PressableScale(child: ElevatedButton(
                     onPressed: onSearchTap,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF960017),
@@ -134,7 +135,7 @@ class LandingActionCards extends StatelessWidget {
                         const Icon(Icons.arrow_forward_rounded, size: 16),
                       ],
                     ),
-                  ),
+                  )),
                 ],
               ),
             ],
@@ -246,7 +247,7 @@ class LandingActionCards extends StatelessWidget {
               // Bottom Button: White capsule "Broadcast Emergency ->"
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PressableScale(child: ElevatedButton(
                   onPressed: () => _showEmergencyDispatchModal(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -286,7 +287,7 @@ class LandingActionCards extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
+                )),
               ),
             ],
           ),
@@ -363,10 +364,10 @@ class LandingActionCards extends StatelessWidget {
                         color: Color(0xFF24191A),
                       ),
                     ),
-                    IconButton(
+                    PressableScale(child: IconButton(
                       icon: const Icon(Icons.close_rounded, color: Color(0xFF5F5E5E)),
                       onPressed: () => Navigator.pop(ctx),
-                    ),
+                    )),
                   ],
                 ),
                 Text(
@@ -508,7 +509,7 @@ class _DispatchOptionCard extends StatelessWidget {
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               onPressed: onTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF960017),
@@ -527,7 +528,7 @@ class _DispatchOptionCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+            )),
           ),
         ],
       ),

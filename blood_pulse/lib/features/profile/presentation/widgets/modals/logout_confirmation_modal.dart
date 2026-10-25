@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -43,13 +44,13 @@ class LogoutConfirmationModal extends StatelessWidget {
             // Close X Button
             Align(
               alignment: Alignment.topRight,
-              child: IconButton(
+              child: PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20, color: Colors.grey),
                 onPressed: () => Navigator.of(context).pop(),
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-              ),
+              )),
             ),
 
             // Red Icon Circle (Double layer soft red)
@@ -116,7 +117,7 @@ class LogoutConfirmationModal extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: PressableScale(child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFDEAEB),
                       foregroundColor: const Color(0xFF24191A),
@@ -129,11 +130,11 @@ class LogoutConfirmationModal extends StatelessWidget {
                       'Cancel',
                       style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                     ),
-                  ),
+                  )),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
+                  child: PressableScale(child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF8B0015),
                       foregroundColor: Colors.white,
@@ -146,7 +147,7 @@ class LogoutConfirmationModal extends StatelessWidget {
                       'Logout',
                       style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 13.5),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),

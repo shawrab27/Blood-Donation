@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -311,7 +312,7 @@ class _EmailVerificationModalState
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: PressableScale(child: OutlinedButton.icon(
                     onPressed: (_isSendingCode || _countdown > 0 && _codeSent)
                         ? null
                         : _sendCode,
@@ -349,7 +350,7 @@ class _EmailVerificationModalState
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),

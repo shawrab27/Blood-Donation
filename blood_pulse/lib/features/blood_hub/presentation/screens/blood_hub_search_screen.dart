@@ -226,7 +226,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
       child: SizedBox(
         width: double.infinity,
         height: 48,
-        child: ElevatedButton.icon(
+        child: PressableScale(child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: _kPrimary,
             foregroundColor: Colors.white,
@@ -252,7 +252,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
               fontSize: 14,
             ),
           ),
-        ),
+        )),
       ),
     );
   }
@@ -455,7 +455,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
+            PressableScale(child: ElevatedButton.icon(
               onPressed: () =>
                   ref.read(donorSearchNotifierProvider.notifier).refresh(),
               icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
@@ -476,7 +476,7 @@ class _BloodHubSearchScreenState extends ConsumerState<BloodHubSearchScreen>
                 ),
                 elevation: 0,
               ),
-            ),
+            )),
           ],
         ),
       ),

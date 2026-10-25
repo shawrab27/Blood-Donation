@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -141,13 +142,13 @@ class _JourneyLiveTrackerState extends ConsumerState<JourneyLiveTracker> {
               ),
             ),
           ),
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: widget.onStopTracking,
             child: const Text(
               'Stop',
               style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold),
             ),
-          ),
+          )),
         ],
       ),
     );

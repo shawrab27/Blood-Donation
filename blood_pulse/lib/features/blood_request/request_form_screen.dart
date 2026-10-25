@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
@@ -78,7 +79,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            ElevatedButton(
+            PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _agreedToDSA ? AppColors.primaryRed : Colors.grey,
                 foregroundColor: AppColors.white,
@@ -86,7 +87,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
               ),
               onPressed: _agreedToDSA ? () => context.go('/dashboard') : null,
               child: const Text('Submit Request'),
-            ),
+            )),
           ],
         ),
       ),

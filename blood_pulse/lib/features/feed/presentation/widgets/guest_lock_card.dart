@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -86,7 +87,7 @@ class GuestLockCard extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             height: 44,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               onPressed: () => RegistrationGatePopup.show(context, isGuest: true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -115,7 +116,7 @@ class GuestLockCard extends ConsumerWidget {
                   Icon(Icons.arrow_forward_rounded, size: 16),
                 ],
               ),
-            ),
+            )),
           ),
           const SizedBox(height: 12),
 
@@ -216,7 +217,7 @@ class GuestPulseAICard extends StatelessWidget {
                 ],
               ),
             ),
-            OutlinedButton(
+            PressableScale(child: OutlinedButton(
               onPressed: () => context.push('/assistant'),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFD6D6D6)),
@@ -234,7 +235,7 @@ class GuestPulseAICard extends StatelessWidget {
                   color: Color(0xFF2B2B2B),
                 ),
               ),
-            ),
+            )),
           ],
         ),
       ),

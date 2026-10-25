@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -154,7 +155,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       AnimatedOpacity(
                         opacity: isLastStep ? 0.0 : 1.0,
                         duration: const Duration(milliseconds: 200),
-                        child: TextButton(
+                        child: PressableScale(child: TextButton(
                           onPressed: isLastStep ? null : _finishOnboarding,
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFF667085),
@@ -173,7 +174,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               color: Color(0xFF667085),
                             ),
                           ),
-                        ),
+                        )),
                       ),
                     ],
                   ),

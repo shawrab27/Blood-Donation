@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -557,7 +558,7 @@ class _AcceptButton extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         height: 52,
-        child: ElevatedButton.icon(
+        child: PressableScale(child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: _kPrimary,
             foregroundColor: Colors.white,
@@ -579,7 +580,7 @@ class _AcceptButton extends StatelessWidget {
             ),
           ),
           onPressed: responding ? null : onTap,
-        ),
+        )),
       ),
     );
   }
@@ -596,7 +597,7 @@ class _DeclineButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 48,
-      child: OutlinedButton(
+      child: PressableScale(child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: Color(0xFFDDD0D0)),
           shape: const StadiumBorder(),
@@ -611,7 +612,7 @@ class _DeclineButton extends StatelessWidget {
             color: _kNeutral,
           ),
         ),
-      ),
+      )),
     );
   }
 }
@@ -675,7 +676,7 @@ class _ErrorRetry extends StatelessWidget {
                     fontSize: 13,
                     color: _kNeutral)),
             const SizedBox(height: 16),
-            ElevatedButton(
+            PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                   backgroundColor: _kPrimary,
                   foregroundColor: Colors.white,
@@ -683,7 +684,7 @@ class _ErrorRetry extends StatelessWidget {
               onPressed: onRetry,
               child: const Text('Retry',
                   style: TextStyle(fontFamily: 'Inter')),
-            ),
+            )),
           ],
         ),
       ),

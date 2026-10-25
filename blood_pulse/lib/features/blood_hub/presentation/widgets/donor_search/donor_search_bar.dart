@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -98,13 +99,13 @@ class _DonorSearchBarState extends State<DonorSearchBar> {
                 ),
               ),
               if (widget.searchController.text.isNotEmpty)
-                IconButton(
+                PressableScale(child: IconButton(
                   icon: const Icon(Icons.clear_rounded, color: Color(0xFF916F6C), size: 20),
                   onPressed: () {
                     widget.searchController.clear();
                     _onInputChanged('');
                   },
-                )
+                ))
               else
                 const Padding(
                   padding: EdgeInsets.only(right: 16),

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -26,7 +27,7 @@ class ProfileActionsRow extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
+              child: PressableScale(child: OutlinedButton.icon(
                 icon: const Icon(Icons.edit_calendar_rounded, size: 16, color: AppColors.primary),
                 label: const Text('Update Date'),
                 style: OutlinedButton.styleFrom(
@@ -42,11 +43,11 @@ class ProfileActionsRow extends StatelessWidget {
                   ),
                 ),
                 onPressed: onUpdateDate,
-              ),
+              )),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: OutlinedButton.icon(
+              child: PressableScale(child: OutlinedButton.icon(
                 icon: const Icon(Icons.emergency_rounded, size: 16, color: AppColors.primary),
                 label: const Text('Emergency'),
                 style: OutlinedButton.styleFrom(
@@ -64,7 +65,7 @@ class ProfileActionsRow extends StatelessWidget {
                 onPressed: () {
                   context.push('/blood-hub/personal-emergency');
                 },
-              ),
+              )),
             ),
           ],
         ),
@@ -74,7 +75,7 @@ class ProfileActionsRow extends StatelessWidget {
         // Full Width Certificate CTA
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
+          child: PressableScale(child: ElevatedButton.icon(
             icon: const Icon(Icons.download_rounded, size: 17),
             label: const Text('Download Verified Digital Certificate'),
             style: ElevatedButton.styleFrom(
@@ -91,7 +92,7 @@ class ProfileActionsRow extends StatelessWidget {
               ),
             ),
             onPressed: onDownloadCertificate,
-          ),
+          )),
         ),
       ],
     );

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -156,7 +157,7 @@ class ProductCard extends StatelessWidget {
                 // Action Button: Visit [store_name] / Visit Website
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
+                  child: PressableScale(child: ElevatedButton.icon(
                     onPressed: () => onLaunchStore(product.externalUrl),
                     icon: const Icon(Icons.open_in_new_rounded, size: 12),
                     label: FittedBox(
@@ -182,7 +183,7 @@ class ProductCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),

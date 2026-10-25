@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -727,14 +728,14 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                                 ),
                               ],
                               const SizedBox(height: 8),
-                              TextButton.icon(
+                              PressableScale(child: TextButton.icon(
                                 onPressed: () {
                                   _retryTimer?.cancel();
                                   _loadLocationAndGuestMap();
                                 },
                                 icon: const Icon(Icons.refresh_rounded, size: 14),
                                 label: const Text('Retry connection', style: TextStyle(fontFamily: 'Inter')),
-                              ),
+                              )),
                             ],
                           ),
                         ),
@@ -1068,7 +1069,7 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
             ),
           ),
           const SizedBox(width: 6),
-          OutlinedButton(
+          PressableScale(child: OutlinedButton(
             onPressed: () => context.push('/assistant'),
             style: OutlinedButton.styleFrom(
               backgroundColor: const Color(0xFFFDF3F3),
@@ -1088,7 +1089,7 @@ class _GuestWelcomeScreenState extends ConsumerState<GuestWelcomeScreen> {
                 color: AppColors.primary,
               ),
             ),
-          ),
+          )),
         ],
       ),
     );

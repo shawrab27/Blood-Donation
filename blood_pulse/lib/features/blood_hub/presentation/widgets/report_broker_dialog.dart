@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import '../../../../services/api_client.dart';
 
@@ -210,11 +211,11 @@ class _ReportBrokerDialogState extends State<ReportBrokerDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        PressableScale(child: TextButton(
           onPressed: _submitting ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
-        ),
-        ElevatedButton(
+        )),
+        PressableScale(child: ElevatedButton(
           key: const Key('submit_broker_report_btn'),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFC30121),
@@ -225,7 +226,7 @@ class _ReportBrokerDialogState extends State<ReportBrokerDialog> {
           ),
           onPressed: _submitting ? null : _submit,
           child: Text(_submitting ? 'Submitting...' : 'Submit Report'),
-        ),
+        )),
       ],
     );
   }

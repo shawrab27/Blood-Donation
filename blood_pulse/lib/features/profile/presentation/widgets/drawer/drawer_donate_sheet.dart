@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
@@ -75,7 +76,7 @@ class DrawerDonateSheet extends StatelessWidget {
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -87,7 +88,7 @@ class DrawerDonateSheet extends StatelessWidget {
                 _launchUrl(context, 'https://buymeacoffee.com/bloodpulse');
               },
               child: const Text('Donate Online (Buy Us a Coffee)', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-            ),
+            )),
           ),
           const SizedBox(height: 10),
         ],

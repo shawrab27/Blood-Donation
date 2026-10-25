@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blood_pulse/core/errors/app_error_mapper.dart';
@@ -224,7 +225,7 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton.icon(
+            child: PressableScale(child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                 side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -238,11 +239,11 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
                     fontFamily: 'Inter', fontSize: 12,
                     fontWeight: FontWeight.bold, color: AppColors.primary),
               ),
-            ),
+            )),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: ElevatedButton.icon(
+            child: PressableScale(child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -265,7 +266,7 @@ class _PosterGeneratorScreenState extends ConsumerState<PosterGeneratorScreen> {
                     fontFamily: 'Inter', fontSize: 12,
                     fontWeight: FontWeight.bold, color: Colors.white),
               ),
-            ),
+            )),
           ),
         ],
       ),

@@ -174,7 +174,7 @@ class DonorCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 28,
-                    child: ElevatedButton(
+                    child: PressableScale(child: ElevatedButton(
                       onPressed: () => _handleTap(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -194,7 +194,7 @@ class DonorCard extends StatelessWidget {
                           color: kDonorCardDarkRed,
                         ),
                       ),
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -315,7 +315,7 @@ class DonorCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: PressableScale(child: OutlinedButton(
                         onPressed: () => Navigator.pop(ctx),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF5F5E5E),
@@ -326,12 +326,12 @@ class DonorCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 13),
                         ),
                         child: const Text('Close'),
-                      ),
+                      )),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 2,
-                      child: ElevatedButton(
+                      child: PressableScale(child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
                           if (onRequestTap != null) onRequestTap!();
@@ -360,7 +360,7 @@ class DonorCard extends StatelessWidget {
                             Icon(Icons.arrow_forward_rounded, size: 16),
                           ],
                         ),
-                      ),
+                      )),
                     ),
                   ],
                 ),
@@ -590,7 +590,7 @@ void showDonorDetailPopup(
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: PressableScale(child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF5F5E5E),
@@ -601,12 +601,12 @@ void showDonorDetailPopup(
                         padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                       child: const Text('Close'),
-                    ),
+                    )),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: ElevatedButton(
+                    child: PressableScale(child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
                         onRequestTap();
@@ -635,7 +635,7 @@ void showDonorDetailPopup(
                           Icon(Icons.arrow_forward_rounded, size: 16),
                         ],
                       ),
-                    ),
+                    )),
                   ),
                 ],
               ),

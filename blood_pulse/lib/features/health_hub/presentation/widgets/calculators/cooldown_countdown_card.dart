@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import '../../../../../constants/app_config.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -61,7 +62,7 @@ class CooldownCountdownCard extends StatelessWidget {
                   ),
                 ],
               ),
-              IconButton(
+              PressableScale(child: IconButton(
                 tooltip: 'Select Last Donation Date',
                 icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
                 onPressed: () async {
@@ -76,7 +77,7 @@ class CooldownCountdownCard extends StatelessWidget {
                     onDateSelected(picked);
                   }
                 },
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 14),

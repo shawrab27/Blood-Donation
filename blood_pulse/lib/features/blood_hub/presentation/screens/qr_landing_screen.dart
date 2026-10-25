@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -125,14 +126,14 @@ class _QRLandingScreenState extends State<QRLandingScreen> {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
+          leading: PressableScale(child: IconButton(
             icon: const Icon(
               Icons.arrow_back_rounded,
               color: Color(0xFF2B2B2B),
             ),
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/blood-hub'),
-          ),
+          )),
           title: const Text(
             'Requisition QR Status',
             style: TextStyle(
@@ -143,7 +144,7 @@ class _QRLandingScreenState extends State<QRLandingScreen> {
             ),
           ),
           actions: [
-            IconButton(
+            PressableScale(child: IconButton(
               tooltip: 'Report Broker or Issue',
               icon: const Icon(
                 Icons.flag_outlined,
@@ -153,7 +154,7 @@ class _QRLandingScreenState extends State<QRLandingScreen> {
                 context,
                 requestId: widget.requestId,
               ),
-            ),
+            )),
           ],
         ),
         body: SafeArea(
@@ -246,7 +247,7 @@ class _QRLandingScreenState extends State<QRLandingScreen> {
                       SizedBox(
                         width: double.infinity,
                         height: 50,
-                        child: ElevatedButton.icon(
+                        child: PressableScale(child: ElevatedButton.icon(
                           key: const Key('qr_landing_respond_btn'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFC30121),
@@ -274,7 +275,7 @@ class _QRLandingScreenState extends State<QRLandingScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
+                        )),
                       ),
                     ],
                   ),

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/errors/app_error_mapper.dart';
 import '../../core/widgets/capsule_button.dart';
 import 'dart:async';
@@ -238,11 +239,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ],
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel', style: TextStyle(fontFamily: 'Inter', color: Colors.grey)),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -266,7 +267,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               }
             },
             child: const Text('Submit Report', style: TextStyle(fontFamily: 'Inter', color: Colors.white)),
-          ),
+          )),
         ],
       ),
     );
@@ -339,7 +340,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                      child: PressableScale(child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -349,11 +350,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           Navigator.pop(sheetCtx);
                         },
                         child: const Text('Cancel', style: TextStyle(fontFamily: 'Inter', color: Colors.grey)),
-                      ),
+                      )),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton.icon(
+                      child: PressableScale(child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -366,7 +367,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         },
                         icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
                         label: const Text('Send Note', style: TextStyle(fontFamily: 'Inter', color: Colors.white)),
-                      ),
+                      )),
                     ),
                   ],
                 ),
@@ -555,7 +556,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         shadowColor: Colors.black.withAlpha(20),
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF2B2B2B), size: 22),
           onPressed: () {
             if (context.canPop()) {
@@ -564,7 +565,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               context.go('/feed');
             }
           },
-        ),
+        )),
         titleSpacing: 0,
         title: Row(
           children: [
@@ -1096,11 +1097,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               child: Row(
                 children: [
-                  IconButton(
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.attach_file_rounded, color: Color(0xFF6E6E6E), size: 20),
                     onPressed: _handleAttachment,
                     tooltip: 'Attach Document',
-                  ),
+                  )),
                   Expanded(
                     child: TextField(
                       controller: _textController,
@@ -1124,7 +1125,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     icon: Icon(
                       _showEmojiPicker ? Icons.keyboard_rounded : Icons.sentiment_satisfied_rounded,
                       color: const Color(0xFF6E6E6E),
@@ -1132,7 +1133,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                     onPressed: () => setState(() => _showEmojiPicker = !_showEmojiPicker),
                     tooltip: 'Emoji',
-                  ),
+                  )),
                 ],
               ),
             ),
@@ -1140,7 +1141,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const SizedBox(width: 8),
 
           // Mic Button for Voice Note (#39)
-          IconButton(
+          PressableScale(child: IconButton(
             icon: Icon(
               Icons.mic_rounded,
               color: _isVoiceAvailable ? AppColors.primary : const Color(0xFFB0B0B0),
@@ -1157,7 +1158,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     );
                   },
-          ),
+          )),
           const SizedBox(width: 4),
 
           // Red Circular Send Button

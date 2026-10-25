@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -173,12 +174,12 @@ class _DonorRegistrationScreenState extends ConsumerState<DonorRegistrationScree
                 const SizedBox(height: 24),
 
                 // Register Button
-                ElevatedButton(
+                PressableScale(child: ElevatedButton(
                   onPressed: _isLoading || !_agreedToTerms ? null : _register,
                   child: _isLoading
                       ? const SizedBox(height: 20, width: 20, child: AppLoader())
                       : const Text('Register', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ),
+                )),
                 const SizedBox(height: 32),
               ],
             ),

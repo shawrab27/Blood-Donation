@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../domain/models/health_accessory_model.dart';
@@ -112,7 +113,7 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              OutlinedButton(
+              PressableScale(child: OutlinedButton(
                 onPressed: onOpenDetails,
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white70),
@@ -123,8 +124,8 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
                   ),
                 ),
                 child: const Text('View Specs', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold)),
-              ),
-              ElevatedButton.icon(
+              )),
+              PressableScale(child: ElevatedButton.icon(
                 onPressed: () => onOrderNow(item!.affiliateUrl),
                 icon: const Icon(Icons.shopping_cart_outlined, size: 14),
                 label: FittedBox(
@@ -146,7 +147,7 @@ class AccessoryFeaturedSpotlight extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+              )),
             ],
           ),
         ],

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import '../../../../core/errors/app_error_mapper.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
@@ -179,7 +180,7 @@ class _IdentityVerificationScreenState
         ),
         content: Text(message, style: const TextStyle(fontFamily: 'Inter', fontSize: 14)),
         actions: [
-          ElevatedButton(
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -188,7 +189,7 @@ class _IdentityVerificationScreenState
             ),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('OK', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-          ),
+          )),
         ],
       ),
     );
@@ -691,7 +692,7 @@ class _IdentityVerificationScreenState
                             ],
                           ),
                           const SizedBox(height: 12),
-                          ElevatedButton.icon(
+                          PressableScale(child: ElevatedButton.icon(
                             key: const Key('otp_retry_button'),
                             onPressed: _sendOtp,
                             icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -701,7 +702,7 @@ class _IdentityVerificationScreenState
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             ),
-                          ),
+                          )),
                         ],
                       ),
                     ),
@@ -937,7 +938,7 @@ class _IdentityVerificationScreenState
                 ),
               ),
               const SizedBox(width: 8),
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 onPressed: (_isSending || _countdown > 0) ? null : _sendOtp,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF004B7E),
@@ -963,7 +964,7 @@ class _IdentityVerificationScreenState
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-              ),
+              )),
             ],
           ),
         ),

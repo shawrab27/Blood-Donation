@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -204,13 +205,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
+          leading: PressableScale(child: IconButton(
             icon: const Icon(Icons.arrow_back_rounded,
                 color: Color(0xFF2B2B2B)),
             onPressed: () => context.canPop()
                 ? context.pop()
                 : context.go('/blood-hub'),
-          ),
+          )),
           title: const Text(
             'Emergency Hub',
             style: TextStyle(
@@ -241,13 +242,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           appBar: AppBar(
             backgroundColor: Colors.white,
             elevation: 0,
-            leading: IconButton(
+            leading: PressableScale(child: IconButton(
               icon: const Icon(Icons.arrow_back_rounded,
                   color: Color(0xFF2B2B2B)),
               onPressed: () => context.canPop()
                   ? context.pop()
                   : context.go('/emergency'),
-            ),
+            )),
             title: const Text(
               'Personal Emergency',
               style: TextStyle(

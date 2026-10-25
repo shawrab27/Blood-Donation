@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
@@ -82,12 +83,12 @@ class MapScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: PressableScale(child: ElevatedButton.icon(
                           onPressed: () => context.push('/request'),
                           icon: const Icon(Icons.campaign),
                           label: const Text('Broadcast Urgent Need'),
                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.critical),
-                        ),
+                        )),
                       ),
                     ],
                   ),

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../../../services/api_client.dart';
@@ -219,23 +220,23 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          leading: IconButton(
+          leading: PressableScale(child: IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF2B2B2B)),
             onPressed: () => context.canPop() ? context.pop() : context.go('/blood-hub'),
-          ),
+          )),
           title: Text(
             widget.isDonorView ? 'En Route to Hospital' : 'Live Donor Dispatch',
             style: const TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
           ),
           actions: [
-            IconButton(
+            PressableScale(child: IconButton(
               tooltip: 'Report Broker / Issue',
               icon: const Icon(Icons.flag_outlined, color: Color(0xFFC30121)),
               onPressed: () => ReportBrokerDialog.show(
                 context,
                 requestId: int.tryParse(widget.requestId ?? ''),
               ),
-            ),
+            )),
           ],
         ),
         body: Stack(
@@ -296,7 +297,7 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
                           style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF856404)),
                         ),
                       ),
-                      TextButton(onPressed: _initLiveTracking, child: const Text('Allow')),
+                      PressableScale(child: TextButton(onPressed: _initLiveTracking, child: const Text('Allow'))),
                     ],
                   ),
                 ),
@@ -323,14 +324,14 @@ class _DonorTrackingMapScreenState extends ConsumerState<DonorTrackingMapScreen>
                           style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
                         ),
                       ),
-                      TextButton(
+                      PressableScale(child: TextButton(
                         onPressed: () async {
                           await TrackingService.instance.stopTracking();
                           if (!context.mounted) return;
                           context.pop();
                         },
                         child: const Text('Stop', style: TextStyle(color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
-                      ),
+                      )),
                     ],
                   ),
                 ),

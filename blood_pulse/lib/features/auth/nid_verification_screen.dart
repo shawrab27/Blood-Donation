@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -93,7 +94,7 @@ class _NidVerificationScreenState extends State<NidVerificationScreen> {
             if (_isProcessing)
               const Center(child: AppLoader())
             else if (_isVerified)
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: AppColors.white,
@@ -103,9 +104,9 @@ class _NidVerificationScreenState extends State<NidVerificationScreen> {
                   context.go('/donor_reg');
                 },
                 child: const Text('Proceed to Profile Setup'),
-              )
+              ))
             else
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryRed,
                   foregroundColor: AppColors.white,
@@ -113,7 +114,7 @@ class _NidVerificationScreenState extends State<NidVerificationScreen> {
                 ),
                 onPressed: _simulateUploadAndOcr,
                 child: const Text('Upload Images'),
-              ),
+              )),
           ],
         ),
       ),

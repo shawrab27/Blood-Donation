@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -57,8 +58,8 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
         ? profile!.missingFields
         : (user?.missingFields ?? <String>[]);
 
-    final bg = profile?.bloodGroup ?? user?.bloodGroup;
-    if (bg != null && _kBloodGroups.contains(bg)) _selectedBloodGroup = bg;
+    // User must choose explicitly on profile completion; no blood group is pre-selected.
+    _selectedBloodGroup = null;
 
     final phone = profile?.phoneNumber ?? user?.primaryPhone;
     if (phone != null && phone.isNotEmpty && !missing.contains('phone_number')) {
@@ -276,7 +277,7 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
                 SizedBox(
                   width: double.infinity,
                   height: 48,
-                  child: ElevatedButton(
+                  child: PressableScale(child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -288,7 +289,7 @@ class _ProfileCompletionModalState extends ConsumerState<ProfileCompletionModal>
                         ? const SizedBox(width: 20, height: 20, child: AppLoader())
                         : const Text('Save & Complete Registration',
                             style: TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.bold)),
-                  ),
+                  )),
                 ),
               ],
             ),

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -315,7 +316,7 @@ class _DonorMapViewState extends ConsumerState<DonorMapView> {
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: PressableScale(child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push(
@@ -335,7 +336,7 @@ class _DonorMapViewState extends ConsumerState<DonorMapView> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Request Blood from this Donor'),
-                  ),
+                  )),
                 ),
               ],
             ),

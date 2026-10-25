@@ -137,7 +137,7 @@ from .views_national_emergency import (
     NationalEmergencyPledgeAPIView,
     NationalEmergencyRequestsAPIView,
 )
-from .views_public_stats import public_stats_view
+from .views_public_stats import public_stats_view, public_config_view
 from .views_health_guide import RecoveryStatusView, HydrationView, GuideApplicationView
 
 urlpatterns = [
@@ -263,6 +263,8 @@ urlpatterns = [
 
     # Public Real-Time Statistics (Phase 4)
     path('public/stats/', public_stats_view, name='public-stats'),
+    path('public/config/', public_config_view, name='public-config'),
+    path('config/', public_config_view, name='app-config'),
 
     path('', include(router.urls)),
     path('health/', health_check, name='health-check'),

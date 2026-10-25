@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -298,10 +299,10 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.secondary),
           onPressed: () => context.pop(),
-        ),
+        )),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 20),
@@ -437,7 +438,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
                                     ],
                                   ),
                                   const SizedBox(height: 12),
-                                  ElevatedButton.icon(
+                                  PressableScale(child: ElevatedButton.icon(
                                     key: const Key('otp_retry_button'),
                                     onPressed: _resendOtp,
                                     icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -447,7 +448,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                                     ),
-                                  ),
+                                  )),
                                 ],
                               ),
                             ),
@@ -583,7 +584,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
                               hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
                               prefixIcon:
                                   const Icon(Icons.lock_outline_rounded, color: AppColors.tertiary),
-                              suffixIcon: IconButton(
+                              suffixIcon: PressableScale(child: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                                   color: const Color(0xFF888888),
@@ -591,7 +592,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
                                 ),
                                 onPressed: () =>
                                     setState(() => _obscurePassword = !_obscurePassword),
-                              ),
+                              )),
                               filled: true,
                               fillColor: const Color(0xFFFFF8F7),
                               contentPadding:
@@ -649,7 +650,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
                               hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
                               prefixIcon:
                                   const Icon(Icons.lock_outline_rounded, color: AppColors.tertiary),
-                              suffixIcon: IconButton(
+                              suffixIcon: PressableScale(child: IconButton(
                                 icon: Icon(
                                   _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                                   color: const Color(0xFF888888),
@@ -657,7 +658,7 @@ class _VerifyOtpResetScreenState extends ConsumerState<VerifyOtpResetScreen>
                                 ),
                                 onPressed: () =>
                                     setState(() => _obscureConfirm = !_obscureConfirm),
-                              ),
+                              )),
                               filled: true,
                               fillColor: const Color(0xFFFFF8F7),
                               contentPadding:

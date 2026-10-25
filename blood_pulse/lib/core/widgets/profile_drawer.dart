@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:ui';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -168,7 +169,7 @@ class ProfileDrawer extends ConsumerWidget {
                       SizedBox(
                         width: double.infinity,
                         height: 48,
-                        child: ElevatedButton(
+                        child: PressableScale(child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFC30121),
                             foregroundColor: Colors.white,
@@ -196,7 +197,7 @@ class ProfileDrawer extends ConsumerWidget {
                               Icon(Icons.arrow_forward_rounded, size: 16),
                             ],
                           ),
-                        ),
+                        )),
                       ),
                     ],
                   ),

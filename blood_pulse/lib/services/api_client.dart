@@ -1168,4 +1168,28 @@ class ApiClient {
     }
     return responseBody.length > 100 ? '${responseBody.substring(0, 100)}...' : responseBody;
   }
+
+  bool? _cachedRequestOtpRequired;
+  DateTime? _cachedRequestOtpRequiredAt;
+
+  Future<bool> getRequestOtpRequired() async {
+    final now = DateTime.now();
+    if (_cachedRequestOtpRequired != null &&
+        _cachedRequestOtpRequiredAt != null &&
+        now.difference(_cachedRequestOtpRequiredAt!).inMinutes < 5) {
+      return _cachedRequestOtpRequired!;
+    }
+    try {
+      final res = await get('public/config/');
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data is Map<String, dynamic> && data.containsKey('request_otp_required')) {
+          _cachedRequestOtpRequired = data['request_otp_required'] == true;
+          _cachedRequestOtpRequiredAt = now;
+          return _cachedRequestOtpRequired!;
+        }
+      }
+    } catch (_) {}
+    return true;
+  }
 }

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -145,11 +146,11 @@ class _LastDonationDateSheetState extends ConsumerState<LastDonationDateSheet> {
                   color: Color(0xFF24191A),
                 ),
               ),
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
                 visualDensity: VisualDensity.compact,
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 4),
@@ -265,7 +266,7 @@ class _LastDonationDateSheetState extends ConsumerState<LastDonationDateSheet> {
           // Save Button
           SizedBox(
             height: 48,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               onPressed: _isLoading ? null : _handleSave,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
@@ -276,7 +277,7 @@ class _LastDonationDateSheetState extends ConsumerState<LastDonationDateSheet> {
               child: _isLoading
                   ? const SizedBox(width: 20, height: 20, child: AppLoader.small())
                   : const Text('Save Last Donation Date'),
-            ),
+            )),
           ),
         ],
       ),

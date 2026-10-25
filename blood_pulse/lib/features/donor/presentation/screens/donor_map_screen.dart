@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -453,7 +454,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                             ),
                           ),
                         ),
-                        TextButton(
+                        PressableScale(child: TextButton(
                           onPressed: _loadDonors,
                           child: const Text(
                             'Retry',
@@ -462,7 +463,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
+                        )),
                       ],
                     ),
                   ),
@@ -631,13 +632,13 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                       ),
                     )
                   : _searchController.text.isNotEmpty
-                      ? IconButton(
+                      ? PressableScale(child: IconButton(
                           icon: const Icon(Icons.close, color: AppColors.neutral),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _searchResults = []);
                           },
-                        )
+                        ))
                       : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -1127,7 +1128,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
             children: [
               if (donorPhone.isNotEmpty) ...[
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: PressableScale(child: OutlinedButton.icon(
                     onPressed: () => _makePhoneCall(donorPhone),
                     icon: const Icon(Icons.phone_rounded,
                         size: 18, color: AppColors.success),
@@ -1147,7 +1148,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
-                  ),
+                  )),
                 ),
                 const SizedBox(width: 10),
               ],
@@ -1295,13 +1296,13 @@ class _DonorMapScreenState extends State<DonorMapScreen>
           style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Not Yet',
                 style: TextStyle(
                     fontFamily: 'Inter', color: AppColors.neutral)),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               setState(() => _hasArrived = true);
@@ -1323,7 +1324,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.bold,
                     color: Colors.white)),
-          ),
+          )),
         ],
       ),
     );
@@ -1512,7 +1513,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                 ),
                 if (donor.phone != null && donor.phone!.isNotEmpty) ...[
                   const SizedBox(width: 10),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     style: IconButton.styleFrom(
                       backgroundColor: const Color(0xFFE8F8F0),
                       padding: const EdgeInsets.all(12),
@@ -1521,7 +1522,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                         color: AppColors.success),
                     tooltip: 'Call Donor',
                     onPressed: () => _makePhoneCall(donor.phone!),
-                  ),
+                  )),
                 ],
               ],
             ),

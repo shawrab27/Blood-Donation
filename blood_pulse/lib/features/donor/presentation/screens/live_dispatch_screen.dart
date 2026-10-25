@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -822,7 +823,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: PressableScale(child: ElevatedButton.icon(
                   onPressed: _advanceMilestone,
                   icon: const Icon(Icons.check_circle_outline, size: 14),
                   label: Text(
@@ -846,11 +847,11 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     elevation: 0,
                   ),
-                ),
+                )),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
+                child: PressableScale(child: OutlinedButton.icon(
                   onPressed: null,
                   icon: const Icon(Icons.emergency_rounded, size: 14, color: Color(0xFFC30121)),
                   label: const Text(
@@ -870,7 +871,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
-                ),
+                )),
               ),
             ],
           ),
@@ -1369,7 +1370,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: PressableScale(child: ElevatedButton.icon(
                   onPressed: phone.trim().isNotEmpty ? () => _makeCall(phone) : null,
                   icon: const Icon(Icons.call, size: 15),
                   label: Text(
@@ -1389,11 +1390,11 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     elevation: 0,
                   ),
-                ),
+                )),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
+                child: PressableScale(child: OutlinedButton.icon(
                   onPressed: () => _openChat(
                     name: name,
                     bloodGroup: widget.bloodGroup,
@@ -1417,7 +1418,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
-                ),
+                )),
               ),
             ],
           ),

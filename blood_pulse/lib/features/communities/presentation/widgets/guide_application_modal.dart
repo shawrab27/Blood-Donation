@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -190,10 +191,10 @@ class _GuideApplicationModalState extends ConsumerState<GuideApplicationModal> {
                       ),
                     ),
                   ),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.close_rounded, color: AppColors.secondary),
                     onPressed: () => Navigator.of(context).pop(),
-                  ),
+                  )),
                 ],
               ),
               const SizedBox(height: 6),

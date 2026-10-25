@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -121,11 +122,11 @@ class MedicalVerificationCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  TextButton.icon(
+                  PressableScale(child: TextButton.icon(
                     onPressed: () => onFilePicked(null, null),
                     icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
                     label: const Text('Remove', style: TextStyle(color: Colors.red, fontSize: 12)),
-                  ),
+                  )),
                 ] else ...[
                   Container(
                     width: 56,
@@ -165,7 +166,7 @@ class MedicalVerificationCard extends StatelessWidget {
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
                     children: [
-                      OutlinedButton.icon(
+                      PressableScale(child: OutlinedButton.icon(
                         onPressed: _pickFromCamera,
                         icon: const Icon(Icons.photo_camera_rounded, size: 16),
                         label: const Text('Camera'),
@@ -177,8 +178,8 @@ class MedicalVerificationCard extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         ),
-                      ),
-                      OutlinedButton.icon(
+                      )),
+                      PressableScale(child: OutlinedButton.icon(
                         onPressed: _pickFromGallery,
                         icon: const Icon(Icons.folder_open_rounded, size: 16),
                         label: const Text('Files'),
@@ -190,7 +191,7 @@ class MedicalVerificationCard extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ],

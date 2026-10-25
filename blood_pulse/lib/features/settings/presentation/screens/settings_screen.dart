@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFFFFF8F7),
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF24191A)),
           onPressed: () {
             if (context.canPop()) {
@@ -74,7 +75,7 @@ class SettingsScreen extends ConsumerWidget {
               context.go('/feed');
             }
           },
-        ),
+        )),
         title: const Text(
           'Settings',
           style: TextStyle(

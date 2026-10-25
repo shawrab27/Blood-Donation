@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/blood_hub_api_service.dart';
@@ -102,7 +103,7 @@ class _DeferralNoticeCardState extends ConsumerState<DeferralNoticeCard> {
           if (appealStatus == 'NONE' && id != null)
             Align(
               alignment: Alignment.centerRight,
-              child: OutlinedButton(
+              child: PressableScale(child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFC30121),
                   side: const BorderSide(color: Color(0xFFC30121)),
@@ -110,7 +111,7 @@ class _DeferralNoticeCardState extends ConsumerState<DeferralNoticeCard> {
                 ),
                 onPressed: () => _appealDeferral(id),
                 child: const Text('Appeal Deferral'),
-              ),
+              )),
             )
           else if (appealStatus == 'PENDING')
             const Text(

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -95,11 +96,11 @@ class DonationDetailSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
                 visualDensity: VisualDensity.compact,
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 2),
@@ -173,7 +174,7 @@ class DonationDetailSheet extends StatelessWidget {
               Expanded(
                 child: SizedBox(
                   height: 48,
-                  child: OutlinedButton.icon(
+                  child: PressableScale(child: OutlinedButton.icon(
                     onPressed: () {
                       final shareText = 'BloodPulse Donation Record:\n'
                           'Donor: $donorName ($bloodGroup)\n'
@@ -191,14 +192,14 @@ class DonationDetailSheet extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600),
                     ),
-                  ),
+                  )),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: SizedBox(
                   height: 48,
-                  child: ElevatedButton.icon(
+                  child: PressableScale(child: ElevatedButton.icon(
                     onPressed: isVerified
                         ? () {
                             Navigator.of(context).pop();
@@ -220,7 +221,7 @@ class DonationDetailSheet extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold),
                     ),
-                  ),
+                  )),
                 ),
               ),
             ],

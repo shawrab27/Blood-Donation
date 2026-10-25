@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
 
@@ -62,7 +63,7 @@ class ProfileDrawerHeader extends StatelessWidget {
               ),
             ],
           ),
-          IconButton(
+          PressableScale(child: IconButton(
             icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.primary),
             style: IconButton.styleFrom(
               backgroundColor: const Color(0xFFFEE9EB),
@@ -71,7 +72,7 @@ class ProfileDrawerHeader extends StatelessWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             onPressed: onClose,
-          ),
+          )),
         ],
       ),
     );

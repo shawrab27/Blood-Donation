@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/custom_input_field.dart';
@@ -88,10 +89,10 @@ class _EditBioSheetState extends State<EditBioSheet> {
                   color: AppColors.secondary,
                 ),
               ),
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 12),
@@ -104,7 +105,7 @@ class _EditBioSheetState extends State<EditBioSheet> {
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -122,7 +123,7 @@ class _EditBioSheetState extends State<EditBioSheet> {
                 'Save Bio',
                 style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold),
               ),
-            ),
+            )),
           ),
         ],
       ),

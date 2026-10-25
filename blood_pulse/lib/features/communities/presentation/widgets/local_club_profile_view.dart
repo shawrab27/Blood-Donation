@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -96,7 +97,7 @@ class LocalClubProfileView extends StatelessWidget {
                             );
                           },
                         ),
-                        OutlinedButton(
+                        PressableScale(child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.white70, width: 1.5),
                             shape: const StadiumBorder(),
@@ -117,7 +118,7 @@ class LocalClubProfileView extends StatelessWidget {
                               color: Colors.white,
                             ),
                           ),
-                        ),
+                        )),
                       ],
                     ),
                   ],
@@ -388,7 +389,7 @@ class _FeaturedPresidentCard extends StatelessWidget {
           ),
           if (phone.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            OutlinedButton.icon(
+            PressableScale(child: OutlinedButton.icon(
               icon: const Icon(Icons.call_rounded, size: 16, color: Color(0xFF1B8A4E)),
               label: Text(
                 phone,
@@ -419,7 +420,7 @@ class _FeaturedPresidentCard extends StatelessWidget {
                   }
                 }
               },
-            ),
+            )),
           ],
         ],
       ),
@@ -485,7 +486,7 @@ class _EcMemberRow extends StatelessWidget {
             ),
           ),
           if (hasPhone)
-            IconButton(
+            PressableScale(child: IconButton(
               icon: const Icon(Icons.phone_rounded, color: Color(0xFF1B8A4E), size: 20),
               onPressed: () async {
                 final uri = Uri.parse('tel:$phone');
@@ -507,7 +508,7 @@ class _EcMemberRow extends StatelessWidget {
                   }
                 }
               },
-            ),
+            )),
         ],
       ),
     );

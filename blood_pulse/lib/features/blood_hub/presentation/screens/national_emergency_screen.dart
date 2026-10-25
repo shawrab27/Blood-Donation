@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,11 +101,11 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
           style: TextStyle(fontFamily: 'Inter', fontSize: 13.5, color: _kNeutral, height: 1.4),
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.push('/login');
@@ -116,7 +117,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             ),
             child: const Text('Sign In to Donate', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
+          )),
         ],
       ),
     );
@@ -184,7 +185,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
         elevation: 0,
         scrolledUnderElevation: 0,
         leadingWidth: 160,
-        leading: TextButton.icon(
+        leading: PressableScale(child: TextButton.icon(
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -206,7 +207,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
             padding: const EdgeInsets.only(left: 12),
             alignment: Alignment.centerLeft,
           ),
-        ),
+        )),
         title: const Text(
           'National Emergency',
           style: TextStyle(
@@ -537,7 +538,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
             ),
             if (_selectedBloodGroup != 'All' || _selectedDivision != 'All') ...[
               const SizedBox(height: 16),
-              OutlinedButton(
+              PressableScale(child: OutlinedButton(
                 onPressed: () {
                   setState(() {
                     _selectedBloodGroup = 'All';
@@ -550,7 +551,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                 ),
                 child: const Text('Reset Filters'),
-              ),
+              )),
             ],
           ],
         ),
@@ -588,7 +589,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
               style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: _kNeutral),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            PressableScale(child: ElevatedButton(
               onPressed: () => ref.invalidate(nationalEmergencyRequestsProvider),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _kPrimary,
@@ -596,7 +597,7 @@ class _NationalEmergencyScreenState extends ConsumerState<NationalEmergencyScree
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
               ),
               child: const Text('Retry Connection'),
-            ),
+            )),
           ],
         ),
       ),
@@ -832,7 +833,7 @@ class _EmergencyRequestCard extends StatelessWidget {
           // "I Can Donate" Button
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
+            child: PressableScale(child: ElevatedButton.icon(
               onPressed: onDonateTap,
               icon: const Icon(Icons.volunteer_activism_rounded, size: 18),
               label: const Text(
@@ -850,7 +851,7 @@ class _EmergencyRequestCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 elevation: 0,
               ),
-            ),
+            )),
           ),
         ],
       ),
@@ -944,7 +945,7 @@ class _DonateConfirmationSheet extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: PressableScale(child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: _kNeutral,
@@ -953,12 +954,12 @@ class _DonateConfirmationSheet extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Cancel'),
-                  ),
+                  )),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 2,
-                  child: ElevatedButton(
+                  child: PressableScale(child: ElevatedButton(
                     onPressed: onConfirmed,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _kPrimary,
@@ -968,7 +969,7 @@ class _DonateConfirmationSheet extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text('Confirm & Respond', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
+                  )),
                 ),
               ],
             ),

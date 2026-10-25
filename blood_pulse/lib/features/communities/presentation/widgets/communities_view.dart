@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -276,11 +277,11 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                         style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 8),
-                      TextButton.icon(
+                      PressableScale(child: TextButton.icon(
                         onPressed: () => ref.refresh(nationalCommunitiesProvider),
                         icon: const Icon(Icons.refresh, size: 16, color: Color(0xFFC30121)),
                         label: const Text('Retry', style: TextStyle(color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
-                      ),
+                      )),
                     ],
                   ),
                 ),
@@ -326,7 +327,7 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                     ),
                   ),
                 ),
-                TextButton(
+                PressableScale(child: TextButton(
                   onPressed: () => widget.onSubFilterChanged(1),
                   child: const Text(
                     'View All',
@@ -337,7 +338,7 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                       color: AppColors.tertiary,
                     ),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 8),
@@ -373,11 +374,11 @@ class _NationalTabContentState extends ConsumerState<_NationalTabContent> {
                         style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 8),
-                      TextButton.icon(
+                      PressableScale(child: TextButton.icon(
                         onPressed: () => ref.refresh(medicalPartnersProvider),
                         icon: const Icon(Icons.refresh, size: 16, color: Color(0xFFC30121)),
                         label: const Text('Retry', style: TextStyle(color: Color(0xFFC30121), fontWeight: FontWeight.bold)),
-                      ),
+                      )),
                     ],
                   ),
                 ),
@@ -520,7 +521,7 @@ class _NationalOrgCard extends StatelessWidget {
           // Details Button (Outlined Capsule)
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
+            child: PressableScale(child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF8B0014), width: 1.5),
                 shape: const StadiumBorder(),
@@ -539,7 +540,7 @@ class _NationalOrgCard extends StatelessWidget {
                   color: Color(0xFF8B0014),
                 ),
               ),
-            ),
+            )),
           ),
         ],
       ),
@@ -958,7 +959,7 @@ class _MedicalPartnerCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: PressableScale(child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFF8B0014)),
                           shape: const StadiumBorder(),
@@ -971,11 +972,11 @@ class _MedicalPartnerCard extends StatelessWidget {
                         },
                         icon: const Icon(Icons.call_rounded, size: 16, color: Color(0xFF8B0014)),
                         label: const Text('Call', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xFF8B0014))),
-                      ),
+                      )),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: PressableScale(child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Colors.grey.shade400),
                           shape: const StadiumBorder(),
@@ -984,7 +985,7 @@ class _MedicalPartnerCard extends StatelessWidget {
                         onPressed: () => context.push('/chat'),
                         icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16, color: AppColors.secondary),
                         label: const Text('Message', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                      ),
+                      )),
                     ),
                   ],
                 ),
@@ -1259,7 +1260,7 @@ class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
                   ],
                 ),
               ),
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B0014),
                   shape: const StadiumBorder(),
@@ -1274,7 +1275,7 @@ class _LocalTabContentState extends ConsumerState<_LocalTabContent> {
                   );
                 },
                 child: const Text('Apply Now', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
+              )),
             ],
           ),
         ),
@@ -1479,18 +1480,18 @@ class _GuideCard extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
+          PressableScale(child: IconButton(
             icon: const Icon(Icons.call_rounded, color: AppColors.primary, size: 20),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Calling ${guide.name} (${guide.phone})...')),
               );
             },
-          ),
-          IconButton(
+          )),
+          PressableScale(child: IconButton(
             icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.tertiary, size: 20),
             onPressed: () => context.push('/chat'),
-          ),
+          )),
         ],
       ),
     );

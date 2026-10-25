@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'package:blood_pulse/core/widgets/app_loader.dart';
@@ -280,11 +281,11 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                   ),
                 ),
               ),
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded, size: 22),
                 onPressed: () => Navigator.of(context).pop(),
                 visualDensity: VisualDensity.compact,
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 10),
@@ -323,7 +324,7 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: ElevatedButton.icon(
+                                        child: PressableScale(child: ElevatedButton.icon(
                                           icon: const Icon(Icons.download_rounded, size: 18),
                                           label: const Text('Save Image'),
                                           style: ElevatedButton.styleFrom(
@@ -340,11 +341,11 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                                             ),
                                           ),
                                           onPressed: _saveToGallery,
-                                        ),
+                                        )),
                                       ),
                                       const SizedBox(width: 10),
                                       Expanded(
-                                        child: OutlinedButton.icon(
+                                        child: PressableScale(child: OutlinedButton.icon(
                                           icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
                                           label: const Text('Export PDF'),
                                           style: OutlinedButton.styleFrom(
@@ -361,14 +362,14 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                                             ),
                                           ),
                                           onPressed: _downloadPdf,
-                                        ),
+                                        )),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 10),
                                   SizedBox(
                                     width: double.infinity,
-                                    child: TextButton.icon(
+                                    child: PressableScale(child: TextButton.icon(
                                       icon: const Icon(Icons.share_rounded, size: 18, color: AppColors.primary),
                                       label: const Text(
                                         'Share Certificate & Verification Link',
@@ -380,7 +381,7 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
                                         ),
                                       ),
                                       onPressed: _shareCertificate,
-                                    ),
+                                    )),
                                   ),
                                 ],
                               ),
@@ -430,7 +431,7 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton(
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -439,7 +440,7 @@ class _DigitalCertificateSheetState extends State<DigitalCertificateSheet> {
             ),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Back to Profile', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
-          ),
+          )),
         ],
       ),
     );

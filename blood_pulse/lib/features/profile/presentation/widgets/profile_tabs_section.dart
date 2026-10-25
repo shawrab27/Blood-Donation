@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -200,7 +201,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                   else
                     SizedBox(
                       height: 32,
-                      child: ElevatedButton.icon(
+                      child: PressableScale(child: ElevatedButton.icon(
                         onPressed: _postStory,
                         icon: const Icon(Icons.send_rounded, size: 14),
                         label: const Text('Share Story'),
@@ -211,7 +212,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                           textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
                         ),
-                      ),
+                      )),
                     ),
                 ],
               ),
@@ -259,7 +260,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                 const SizedBox(height: 12),
                 SizedBox(
                   height: 34,
-                  child: OutlinedButton.icon(
+                  child: PressableScale(child: OutlinedButton.icon(
                     onPressed: () => ref.read(profileStoriesProvider.notifier).fetchStories(),
                     icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFC30121)),
                     label: const Text('Retry'),
@@ -270,7 +271,7 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
                       textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),
@@ -527,11 +528,11 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
               children: [
                 const Text('No recent activity records or network unavailable.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E))),
                 const SizedBox(height: 8),
-                TextButton.icon(
+                PressableScale(child: TextButton.icon(
                   onPressed: () => ref.invalidate(profileActivityProvider),
                   icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFC30121)),
                   label: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFFC30121))),
-                ),
+                )),
               ],
             ),
           ),
@@ -647,11 +648,11 @@ class _ProfileTabsSectionState extends ConsumerState<ProfileTabsSection>
           children: [
             const Text('Could not load donation history.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E))),
             const SizedBox(height: 8),
-            TextButton.icon(
+            PressableScale(child: TextButton.icon(
               onPressed: () => ref.invalidate(profileDonationsProvider),
               icon: const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFFC30121)),
               label: const Text('Retry', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFFC30121))),
-            ),
+            )),
           ],
         ),
       ),

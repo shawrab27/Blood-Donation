@@ -60,9 +60,8 @@ class _RegistrationCompletionModalState
     super.initState();
     final user = ref.read(authProvider).user;
     if (user != null) {
-      if (user.bloodGroup.isNotEmpty && _kBloodGroups.contains(user.bloodGroup)) {
-        _bloodGroup = user.bloodGroup;
-      }
+      // User must explicitly choose blood group; no blood group is pre-selected.
+      _bloodGroup = null;
       if (user.primaryPhone.isNotEmpty && !user.missingFields.contains('phone_number')) {
         _phoneCtrl.text = user.primaryPhone;
       }

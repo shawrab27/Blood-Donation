@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 
 /// Central Design Tokens for Spacing and Dimensions across BloodPulse.
@@ -58,7 +59,7 @@ class AppButton extends StatelessWidget {
       ),
       child: SizedBox(
         height: height,
-        child: ElevatedButton(
+        child: PressableScale(child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
             foregroundColor: foregroundColor,
@@ -95,7 +96,7 @@ class AppButton extends StatelessWidget {
               ),
             ],
           ),
-        ),
+        )),
       ),
     );
   }

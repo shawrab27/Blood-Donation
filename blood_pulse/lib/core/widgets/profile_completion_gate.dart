@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -159,7 +160,7 @@ class ProfileCompletionGate extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 50,
-                    child: ElevatedButton(
+                    child: PressableScale(child: ElevatedButton(
                       onPressed: () {
                         final auth = ref.read(authProvider);
                         final u = auth.user;
@@ -201,7 +202,7 @@ class ProfileCompletionGate extends ConsumerWidget {
                           ],
                         ),
                       ),
-                    ),
+                    )),
                   ),
                 ],
               ),

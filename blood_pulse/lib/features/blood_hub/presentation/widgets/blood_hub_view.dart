@@ -326,7 +326,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 ],
               ),
             ),
-            ElevatedButton(
+            PressableScale(child: ElevatedButton(
               onPressed: () => setState(() => _activeMode = 2),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
@@ -339,7 +339,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 isBangla ? 'অনুরোধ' : 'Request',
                 style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold),
               ),
-            ),
+            )),
           ],
         ),
       );
@@ -484,7 +484,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
+                child: PressableScale(child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFC30121),
                     foregroundColor: Colors.white,
@@ -507,11 +507,11 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                     isBangla ? 'লাইভ ট্র্যাক করুন ➔' : 'Track Live Dispatch ➔',
                     style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold),
                   ),
-                ),
+                )),
               ),
               if (activeRequest.contactNumber.isNotEmpty) ...[
                 const SizedBox(width: 8),
-                OutlinedButton(
+                PressableScale(child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFC30121)),
                     foregroundColor: const Color(0xFFC30121),
@@ -520,8 +520,8 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                   ),
                   onPressed: () => _makePhoneCall(activeRequest.contactNumber),
                   child: const Icon(Icons.phone_rounded, size: 18),
-                ),
-                OutlinedButton(
+                )),
+                PressableScale(child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF0D68AA)),
                     foregroundColor: const Color(0xFF0D68AA),
@@ -540,7 +540,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                     );
                   },
                   child: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                ),
+                )),
               ],
             ],
           ),
@@ -809,12 +809,12 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                   ),
                 ],
               ),
-              TextButton(
+              PressableScale(child: TextButton(
                 onPressed: () {
                   ref.read(donorSearchFilterProvider.notifier).state = const DonorSearchFilter();
                 },
                 child: const Text('Clear all', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 14),
@@ -1033,7 +1033,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
               ),
               const SizedBox(height: 8),
               if (donor.isAvailable)
-                ElevatedButton(
+                PressableScale(child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFC30121),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -1051,7 +1051,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                     );
                   },
                   child: const Text('Request', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                )
+                ))
               else
                 const Text('Unavailable', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF888888))),
             ],
@@ -1085,11 +1085,11 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 'Nearby Donor Network',
                 style: TextStyle(fontFamily: 'Georgia', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
               ),
-              TextButton.icon(
+              PressableScale(child: TextButton.icon(
                 onPressed: () => context.push('/map?mode=radar'),
                 icon: const Icon(Icons.fullscreen_rounded, size: 16, color: Color(0xFFC30121)),
                 label: const Text('Full Screen Map', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 12),
@@ -1229,7 +1229,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
           if (badgeWidget != null) ...[ badgeWidget, const SizedBox(height: 16) ],
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -1241,7 +1241,7 @@ class _BloodHubViewState extends ConsumerState<BloodHubView> {
                 buttonText,
                 style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
               ),
-            ),
+            )),
           ),
         ],
       ),
@@ -1590,7 +1590,7 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            OutlinedButton.icon(
+                            PressableScale(child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                                 side: const BorderSide(color: Color(0xFFC30121)),
@@ -1598,9 +1598,9 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
                               icon: const Icon(Icons.camera_alt_outlined, size: 16, color: Color(0xFFC30121)),
                               label: const Text('Camera', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFFC30121))),
                               onPressed: () => _pickMedicalReport(ImageSource.camera),
-                            ),
+                            )),
                             const SizedBox(width: 12),
-                            ElevatedButton.icon(
+                            PressableScale(child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFC30121),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -1609,7 +1609,7 @@ class _EmergencyRequestFormContentState extends ConsumerState<_EmergencyRequestF
                               icon: const Icon(Icons.file_upload_outlined, size: 16, color: Colors.white),
                               label: const Text('Files', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: Colors.white)),
                               onPressed: () => _pickMedicalReport(ImageSource.gallery),
-                            ),
+                            )),
                           ],
                         ),
                       ],
@@ -1925,7 +1925,7 @@ class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificatio
                 ),
               ),
               const SizedBox(width: 10),
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC30121),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -1934,7 +1934,7 @@ class _IdentityVerificationModalState extends ConsumerState<_IdentityVerificatio
                 ),
                 onPressed: _sendOtp,
                 child: const Text('Send OTP', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-              ),
+              )),
             ],
           ),
 

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import '../../../../core/widgets/location_cascade_selector.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -362,7 +363,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           const SizedBox(height: 12),
                           ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 44),
-                            child: OutlinedButton.icon(
+                            child: PressableScale(child: OutlinedButton.icon(
                               onPressed: () => context.push('/blood-group-change'),
                               icon: const Icon(Icons.biotech_rounded, size: 16, color: Color(0xFFC30121)),
                               label: const FittedBox(
@@ -376,7 +377,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                                 textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
                               ),
-                            ),
+                            )),
                           ),
                         ],
                       ),
@@ -421,7 +422,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   // Save Button
                   SizedBox(
                     height: 52,
-                    child: ElevatedButton(
+                    child: PressableScale(child: ElevatedButton(
                       onPressed: _isLoading ? null : _saveProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC30121),
@@ -435,7 +436,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               'Save Changes',
                               style: TextStyle(fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.2),
                             ),
-                    ),
+                    )),
                   ),
                   const SizedBox(height: 24),
                 ],

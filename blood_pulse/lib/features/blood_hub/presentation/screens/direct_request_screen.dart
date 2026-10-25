@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -412,7 +413,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
   Widget _unitsStepper() {
     return Row(
       children: [
-        IconButton(
+        PressableScale(child: IconButton(
           style: IconButton.styleFrom(
             backgroundColor: const Color(0xFFFEE9EB),
             shape: const CircleBorder(),
@@ -421,7 +422,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
           onPressed: _unitsNeeded > 1
               ? () => setState(() => _unitsNeeded--)
               : null,
-        ),
+        )),
         const SizedBox(width: 8),
         Text(
           '$_unitsNeeded ${_unitsNeeded == 1 ? 'unit' : 'units'}',
@@ -433,7 +434,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        IconButton(
+        PressableScale(child: IconButton(
           style: IconButton.styleFrom(
             backgroundColor: const Color(0xFFFEE9EB),
             shape: const CircleBorder(),
@@ -442,7 +443,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
           onPressed: _unitsNeeded < 10
               ? () => setState(() => _unitsNeeded++)
               : null,
-        ),
+        )),
       ],
     );
   }
@@ -584,11 +585,11 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
               ),
             ),
             if (bytes != null)
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded,
                     size: 18, color: _kPrimary),
                 onPressed: onRemove,
-              ),
+              )),
           ],
         ),
       ),
@@ -817,7 +818,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                     Expanded(
                       child: SizedBox(
                         height: 52,
-                        child: OutlinedButton(
+                        child: PressableScale(child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             shape: const StadiumBorder(),
                             side: const BorderSide(color: _kPrimary, width: 1.5),
@@ -873,14 +874,14 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                               ),
                             ],
                           ),
-                        ),
+                        )),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
                         height: 52,
-                        child: ElevatedButton(
+                        child: PressableScale(child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _kPrimary,
                             foregroundColor: Colors.white,
@@ -908,7 +909,7 @@ class _DirectRequestScreenState extends ConsumerState<DirectRequestScreen> {
                                     ),
                                   ),
                                 ),
-                        ),
+                        )),
                       ),
                     ),
                   ],

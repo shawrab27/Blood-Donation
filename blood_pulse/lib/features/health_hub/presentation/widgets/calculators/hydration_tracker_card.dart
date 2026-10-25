@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/count_up_text.dart';
@@ -94,7 +95,7 @@ class HydrationTrackerCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              OutlinedButton.icon(
+              PressableScale(child: OutlinedButton.icon(
                 onPressed: glasses > 0 ? onRemoveGlass : null,
                 icon: const Icon(Icons.remove, size: 16),
                 label: const FittedBox(
@@ -108,8 +109,8 @@ class HydrationTrackerCard extends StatelessWidget {
                   minimumSize: const Size(48, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
-              ),
-              ElevatedButton.icon(
+              )),
+              PressableScale(child: ElevatedButton.icon(
                 onPressed: onAddGlass,
                 icon: const Icon(Icons.add, size: 16),
                 label: const FittedBox(
@@ -125,7 +126,7 @@ class HydrationTrackerCard extends StatelessWidget {
                   minimumSize: const Size(48, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
-              ),
+              )),
             ],
           ),
         ],

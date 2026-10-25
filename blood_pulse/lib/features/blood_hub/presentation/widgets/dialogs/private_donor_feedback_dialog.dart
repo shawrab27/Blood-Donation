@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/theme/app_colors.dart';
 import 'package:blood_pulse/core/widgets/capsule_button.dart';
@@ -124,7 +125,7 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
                       ),
                     ),
                   ),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -133,7 +134,7 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
                       Navigator.of(context).pop();
                       widget.onDismiss?.call();
                     },
-                  ),
+                  )),
                 ],
               ),
               const SizedBox(height: 12),
@@ -168,7 +169,7 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (index) {
                     final starIndex = index + 1;
-                    return IconButton(
+                    return PressableScale(child: IconButton(
                       iconSize: 28,
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(horizontal: 1),
@@ -177,7 +178,7 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
                         color: const Color(0xFFFFA000),
                       ),
                       onPressed: () => setState(() => _stars = starIndex),
-                    );
+                    ));
                   }),
                 ),
               ),
@@ -240,7 +241,7 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
                 ),
               ),
               const SizedBox(height: 8),
-              TextButton(
+              PressableScale(child: TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   widget.onDismiss?.call();
@@ -253,7 +254,7 @@ class _PrivateDonorFeedbackDialogState extends State<PrivateDonorFeedbackDialog>
                     color: Color(0xFF6B7280),
                   ),
                 ),
-              ),
+              )),
             ],
           ),
         ),

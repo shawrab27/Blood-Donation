@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project â€” unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -114,7 +115,7 @@ class _InstitutionAutocompleteState extends State<InstitutionAutocomplete> {
           enabled: widget.enabled,
           validator: widget.validator,
           suffixWidget: hasText
-              ? IconButton(
+              ? PressableScale(child: IconButton(
                   icon: const Icon(
                     Icons.close_rounded,
                     size: 18,
@@ -127,7 +128,7 @@ class _InstitutionAutocompleteState extends State<InstitutionAutocomplete> {
                     widget.onSelected(null);
                     setState(() {});
                   },
-                )
+                ))
               : null,
         );
       },

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import '../../../../core/widgets/location_cascade_selector.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -154,10 +155,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     if (currentUser != null && currentUser.primaryPhone.isNotEmpty) {
       _phoneCtrl.text = currentUser.primaryPhone;
     }
-    if (currentUser != null && currentUser.bloodGroup.isNotEmpty && _bloodGroups.contains(currentUser.bloodGroup)) {
+    if (currentUser != null &&
+        currentUser.isProfileComplete &&
+        currentUser.bloodGroup.isNotEmpty &&
+        _bloodGroups.contains(currentUser.bloodGroup)) {
       _bloodGroup = currentUser.bloodGroup;
       _confirmBloodGroup = currentUser.bloodGroup;
-      _isBloodGroupLocked = currentUser.isProfileComplete;
+      _isBloodGroupLocked = true;
     }
     _pwCtrl.addListener(_onPasswordChanged);
     _confirmPwCtrl.addListener(_onPasswordChanged);
@@ -201,10 +205,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             // Blood group (lock only if stored and registration complete)
             final bg = data['blood_group']?.toString().trim() ?? '';
             final isComplete = data['is_profile_complete'] == true;
-            if (bg.isNotEmpty && _bloodGroups.contains(bg)) {
+            if (isComplete && bg.isNotEmpty && _bloodGroups.contains(bg)) {
               _bloodGroup = bg;
               _confirmBloodGroup = bg;
-              _isBloodGroupLocked = isComplete;
+              _isBloodGroupLocked = true;
+            } else {
+              _bloodGroup = null;
+              _confirmBloodGroup = null;
+              _isBloodGroupLocked = false;
             }
 
             // District & Division
@@ -921,12 +929,12 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           child: LanguageToggleButton(),
         ),
         if (kDebugMode)
-          IconButton(
+          PressableScale(child: IconButton(
             key: const ValueKey('debug_quick_fill_btn'),
             icon: const Icon(Icons.flash_on, color: Color(0xFFC30121)),
             tooltip: 'Quick Fill Test Donor',
             onPressed: _quickFillTestDonor,
-          ),
+          )),
       ],
     );
   }
@@ -2081,18 +2089,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.remove_circle_outline_rounded, color: Color(0xFFC30121)),
                     onPressed: _totalBags > 0 ? () => setState(() => _totalBags--) : null,
-                  ),
+                  )),
                   Text(
                     '$_totalBags',
                     style: const TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
                   ),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFFC30121)),
                     onPressed: () => setState(() => _totalBags++),
-                  ),
+                  )),
                 ],
               ),
             ),

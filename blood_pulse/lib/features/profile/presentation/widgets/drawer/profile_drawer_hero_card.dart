@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:blood_pulse/core/widgets/avatar_helper.dart';
@@ -59,7 +60,7 @@ class ProfileDrawerHeroCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          ElevatedButton(
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white.withValues(alpha: 0.2),
               foregroundColor: Colors.white,
@@ -76,7 +77,7 @@ class ProfileDrawerHeroCard extends StatelessWidget {
               'View Profile',
               style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600),
             ),
-          ),
+          )),
         ],
       ),
     );

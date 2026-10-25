@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -71,18 +72,18 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
               : 'Are you sure you want to revoke session for "$deviceName"? This device will require logging in again.',
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Revoke', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
+          )),
         ],
       ),
     );
@@ -135,18 +136,18 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
           'This will revoke all active login sessions on other phones, tablets, and computers. Your current session will remain active.',
         ),
         actions: [
-          TextButton(
+          PressableScale(child: TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('Cancel'),
-          ),
-          ElevatedButton(
+          )),
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Log Out Others', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
+          )),
         ],
       ),
     );
@@ -204,7 +205,7 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
         backgroundColor: const Color(0xFFFFF8F7),
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF24191A)),
           onPressed: () {
             if (context.canPop()) {
@@ -213,7 +214,7 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
               context.go('/settings');
             }
           },
-        ),
+        )),
         title: const Text(
           'Devices & Sessions',
           style: TextStyle(
@@ -256,14 +257,14 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
                 style: const TextStyle(fontSize: 14, color: Color(0xFF24191A)),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                 ),
                 onPressed: _fetchDevices,
                 child: const Text('Try Again', style: TextStyle(color: Colors.white)),
-              ),
+              )),
             ],
           ),
         ),
@@ -334,7 +335,7 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
           // Log out all other devices button
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
+            child: PressableScale(child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFFC30121),
                 side: const BorderSide(color: Color(0xFFC30121), width: 1.2),
@@ -347,7 +348,7 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
                 'Log Out All Other Devices',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
-            ),
+            )),
           ),
           const SizedBox(height: 16),
         ],
@@ -484,7 +485,7 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
               ),
             ),
             if (deviceId != null)
-              TextButton(
+              PressableScale(child: TextButton(
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFFC30121),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -497,7 +498,7 @@ class _DevicesSessionsScreenState extends ConsumerState<DevicesSessionsScreen> {
                   isCurrent ? 'Log Out' : 'Revoke',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
-              ),
+              )),
           ],
         ),
       ),

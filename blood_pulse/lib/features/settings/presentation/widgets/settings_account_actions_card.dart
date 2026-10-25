@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,8 +47,8 @@ class SettingsAccountActionsCard extends ConsumerWidget {
                   title: const Text('Create New Account', style: TextStyle(fontFamily: 'Georgia')),
                   content: const Text('Do you want to log out of this account and register a new donor or organization account?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-                    ElevatedButton(
+                    PressableScale(child: TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel'))),
+                    PressableScale(child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -58,7 +59,7 @@ class SettingsAccountActionsCard extends ConsumerWidget {
                         context.go('/register');
                       },
                       child: const Text('Register New', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                    )),
                   ],
                 ),
               );

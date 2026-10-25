@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,7 +63,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                   children: [
                     // Back button if popped from previous flow
                     if (Navigator.of(context).canPop())
-                      IconButton(
+                      PressableScale(child: IconButton(
                         icon: const Icon(Icons.arrow_back_ios_new_rounded,
                             size: 20, color: Color(0xFF2B2B2B)),
                         onPressed: () {
@@ -70,12 +71,12 @@ class LanguageSelectionScreen extends ConsumerWidget {
                             Navigator.of(context).pop();
                           }
                         },
-                      )
+                      ))
                     else
                       const SizedBox.shrink(),
 
                     // Skip CTA Button
-                    TextButton(
+                    PressableScale(child: TextButton(
                       onPressed: () => context.go('/login'),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFF667085),
@@ -94,7 +95,7 @@ class LanguageSelectionScreen extends ConsumerWidget {
                           color: Color(0xFF667085),
                         ),
                       ),
-                    ),
+                    )),
                   ],
                 ),
               ),

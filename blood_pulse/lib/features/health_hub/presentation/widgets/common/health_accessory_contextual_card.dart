@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -116,7 +117,7 @@ class HealthAccessoryContextualCard extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: ElevatedButton.icon(
+              child: PressableScale(child: ElevatedButton.icon(
                 onPressed: () {
                   context.push('/health-hub/accessories');
                 },
@@ -136,7 +137,7 @@ class HealthAccessoryContextualCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
+              )),
             ),
           ),
         ],

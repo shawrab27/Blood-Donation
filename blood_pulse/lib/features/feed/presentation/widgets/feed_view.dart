@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -161,7 +162,7 @@ class _FeedViewState extends ConsumerState<FeedView> {
                             ],
                           ),
                         ),
-                        TextButton(
+                        PressableScale(child: TextButton(
                           onPressed: () => ref.read(feedFilterProvider.notifier).state = null,
                           style: TextButton.styleFrom(
                             backgroundColor: filter == 'campaign' ? const Color(0xFF0D68AA) : const Color(0xFFC30121),
@@ -174,7 +175,7 @@ class _FeedViewState extends ConsumerState<FeedView> {
                             'Show All',
                             style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 11),
                           ),
-                        ),
+                        )),
                       ],
                     ),
                   ),
@@ -575,10 +576,10 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                         ),
                       ),
                       const Spacer(),
-                      IconButton(
+                      PressableScale(child: IconButton(
                         icon: const Icon(Icons.close, size: 20, color: Color(0xFF666666)),
                         onPressed: () => Navigator.pop(sheetCtx),
-                      ),
+                      )),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -653,15 +654,15 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                   Row(
                     children: [
                       if (_clinicCheckIn != null)
-                        TextButton(
+                        PressableScale(child: TextButton(
                           onPressed: () {
                             setState(() => _clinicCheckIn = null);
                             Navigator.pop(sheetCtx);
                           },
                           child: const Text('Clear Check In', style: TextStyle(fontFamily: 'Inter', color: Colors.grey)),
-                        ),
+                        )),
                       const Spacer(),
-                      ElevatedButton(
+                      PressableScale(child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFC30121),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -679,7 +680,7 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                           'Add Location',
                           style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ],
@@ -807,12 +808,12 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                       style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFFC30121)),
                     ),
                   ),
-                  TextButton(
+                  PressableScale(child: TextButton(
                     onPressed: _onPost,
                     style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     child: const Text('Retry', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
-                  ),
-                  IconButton(
+                  )),
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.close, size: 14, color: Color(0xFF888888)),
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
@@ -821,7 +822,7 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                         _uploadFailed = false;
                       });
                     },
-                  ),
+                  )),
                 ],
               ),
             ),
@@ -923,7 +924,7 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                   runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    TextButton.icon(
+                    PressableScale(child: TextButton.icon(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         visualDensity: VisualDensity.compact,
@@ -935,8 +936,8 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                         'Photo',
                         style: TextStyle(fontFamily: 'Inter', fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF666666)),
                       ),
-                    ),
-                    TextButton.icon(
+                    )),
+                    PressableScale(child: TextButton.icon(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         visualDensity: VisualDensity.compact,
@@ -959,12 +960,12 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                           color: _clinicCheckIn != null ? const Color(0xFFC30121) : const Color(0xFF666666),
                         ),
                       ),
-                    ),
+                    )),
                   ],
                 ),
               ),
               const SizedBox(width: 6),
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC30121),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
@@ -977,7 +978,7 @@ class _PostCreatorCardState extends ConsumerState<_PostCreatorCard> {
                   'Post',
                   style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
-              ),
+              )),
             ],
           ),
         ],
@@ -1447,7 +1448,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                       style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFFC30121)),
                     ),
                   ),
-                  TextButton(
+                  PressableScale(child: TextButton(
                     onPressed: () {
                       ref.read(feedProvider.notifier).removeFailedPost(post.id);
                       ref.read(feedProvider.notifier).addPost(
@@ -1464,14 +1465,14 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                     },
                     style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     child: const Text('Retry', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
-                  ),
-                  IconButton(
+                  )),
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.close, size: 14, color: Color(0xFF888888)),
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
                       ref.read(feedProvider.notifier).removeFailedPost(post.id);
                     },
-                  ),
+                  )),
                 ],
               ),
             ),
@@ -1583,7 +1584,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                   const SizedBox(height: 10),
                     SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
+                    child: PressableScale(child: ElevatedButton.icon(
                       onPressed: () {
                         ref.read(feedProvider.notifier).pledgeCampaign(post.id);
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -1610,7 +1611,7 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         elevation: 0,
                       ),
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -1909,10 +1910,10 @@ class _FeedPostCardState extends ConsumerState<_FeedPostCard> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
+                PressableScale(child: IconButton(
                   icon: const Icon(Icons.send_rounded, color: Color(0xFFC30121), size: 20),
                   onPressed: _onSendComment,
-                ),
+                )),
               ],
             ),
           ],
@@ -2001,7 +2002,7 @@ class _ProfileCompletionBanner extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             height: 40,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               onPressed: () {
                 final auth = ref.read(authProvider);
                 final u = auth.user;
@@ -2039,7 +2040,7 @@ class _ProfileCompletionBanner extends ConsumerWidget {
                   Icon(Icons.arrow_forward_rounded, size: 16),
                 ],
               ),
-            ),
+            )),
           ),
         ],
       ),

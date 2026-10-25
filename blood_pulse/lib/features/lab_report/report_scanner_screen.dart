@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -82,11 +83,11 @@ class _ReportScannerScreenState extends State<ReportScannerScreen> {
                             children: [
                               const Icon(Icons.document_scanner, color: Colors.grey, size: 64),
                               const SizedBox(height: 16),
-                              ElevatedButton.icon(
+                              PressableScale(child: ElevatedButton.icon(
                                 onPressed: _startScan,
                                 icon: const Icon(Icons.camera_alt),
                                 label: const Text('Scan Document'),
-                              ),
+                              )),
                             ],
                           ),
                         ),
@@ -94,11 +95,11 @@ class _ReportScannerScreenState extends State<ReportScannerScreen> {
             const SizedBox(height: 32),
             
             if (_isScanned)
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 onPressed: () => context.go('/dashboard'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
                 child: const Text('Update Profile with Data'),
-              ),
+              )),
           ],
         ),
       ),

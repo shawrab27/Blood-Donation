@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -107,7 +108,8 @@ class _PriorityBloodRequisitionScreenState
       };
 
       final profile = ref.read(profileProvider).value;
-      if (profile?.requestOtpRequired == false) {
+      final otpRequired = profile != null ? profile.requestOtpRequired : await ApiClient().getRequestOtpRequired();
+      if (!otpRequired) {
         final client = ApiClient();
         final response = await client.post('blood-hub/requests/', body: payload);
         if (response.statusCode == 200 || response.statusCode == 201) {
@@ -159,10 +161,10 @@ class _PriorityBloodRequisitionScreenState
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF2B2B2B)),
           onPressed: () => context.canPop() ? context.pop() : context.go('/blood-hub'),
-        ),
+        )),
         title: const Text(
           'Emergency Blood Request',
           style: TextStyle(
@@ -249,7 +251,7 @@ class _PriorityBloodRequisitionScreenState
         Expanded(
           child: SizedBox(
             height: 52,
-            child: OutlinedButton(
+            child: PressableScale(child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
                 shape: const StadiumBorder(),
@@ -300,14 +302,14 @@ class _PriorityBloodRequisitionScreenState
                   ),
                 ],
               ),
-            ),
+            )),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: SizedBox(
             height: 52,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               onPressed: _isSubmitting ? null : _submitRequisition,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
@@ -335,7 +337,7 @@ class _PriorityBloodRequisitionScreenState
                         ),
                       ),
                     ),
-            ),
+            )),
           ),
         ),
       ],

@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -219,10 +220,10 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
           ],
         ),
         actions: [
-          IconButton(
+          PressableScale(child: IconButton(
             icon: const Icon(Icons.close, color: Colors.black54),
             onPressed: () => context.pop(),
-          ),
+          )),
           const SizedBox(width: 8),
         ],
       ),
@@ -381,12 +382,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        IconButton(
+                        PressableScale(child: IconButton(
                           icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF5A6E85), size: 20),
                           tooltip: 'Scan Blood Report',
                           onPressed: () => context.push('/health-hub/ai-report'),
                           visualDensity: VisualDensity.compact,
-                        ),
+                        )),
                         const SizedBox(width: 6),
                         Expanded(
                           child: TextField(
@@ -415,7 +416,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                               color: _isListening ? const Color(0xFFC30121).withOpacity(0.15) : Colors.transparent,
                               shape: BoxShape.circle,
                             ),
-                            child: IconButton(
+                            child: PressableScale(child: IconButton(
                               icon: Icon(
                                 _isListening ? Icons.mic : Icons.mic_none_outlined,
                                 color: _isListening ? const Color(0xFFC30121) : Colors.grey,
@@ -426,7 +427,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                               padding: const EdgeInsets.all(6),
                               constraints: const BoxConstraints(),
                               visualDensity: VisualDensity.compact,
-                            ),
+                            )),
                           ),
                         ],
                         const SizedBox(width: 6),
@@ -439,13 +440,13 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                                 color: canSend ? const Color(0xFFC30121) : Colors.grey.shade300,
                                 shape: BoxShape.circle,
                               ),
-                              child: IconButton(
+                              child: PressableScale(child: IconButton(
                                 icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 18),
                                 onPressed: canSend ? () => _sendMessage(_textController.text) : null,
                                 padding: const EdgeInsets.all(8),
                                 constraints: const BoxConstraints(),
                                 visualDensity: VisualDensity.compact,
-                              ),
+                              )),
                             );
                           },
                         ),
@@ -614,7 +615,7 @@ class MessageWidget extends ConsumerWidget {
                 if (message.action == 'complete_profile')
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: ElevatedButton.icon(
+                    child: PressableScale(child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFC30121),
                         foregroundColor: Colors.white,
@@ -647,7 +648,7 @@ class MessageWidget extends ConsumerWidget {
                           },
                         );
                       },
-                    ),
+                    )),
                   ),
 
                 if (message.actions.isNotEmpty)
@@ -908,21 +909,21 @@ class EmergencyCard extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton.icon(
+            child: PressableScale(child: ElevatedButton.icon(
               onPressed: () => launchUrl(Uri.parse('tel:999')),
               icon: const Icon(Icons.call, color: Colors.white, size: 16),
               label: const Text("Call 999", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFC30121), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50))),
-            ),
+            )),
           ),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
+            child: PressableScale(child: OutlinedButton(
               onPressed: () => context.push('/emergency-request'),
               child: const Text("Request Emergency Blood"),
               style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFC30121), side: const BorderSide(color: Color(0xFFC30121)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50))),
-            ),
+            )),
           )
         ],
       ),
@@ -970,7 +971,7 @@ class ConsentSheetWidget extends ConsumerWidget {
               const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PressableScale(child: ElevatedButton(
                   onPressed: () {
                     ref.read(assistantProvider.notifier).saveConsent(true);
                     Navigator.pop(context);
@@ -991,7 +992,7 @@ class ConsentSheetWidget extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                )),
               ),
             ],
           ),
@@ -1025,14 +1026,14 @@ class _HandoffDialogState extends ConsumerState<HandoffDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-        ElevatedButton(
+        PressableScale(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel"))),
+        PressableScale(child: ElevatedButton(
           onPressed: () {
             ref.read(assistantProvider.notifier).submitHandoff(_subjectCtrl.text, _msgCtrl.text, _pref);
             Navigator.pop(context);
           },
           child: const Text("Submit"),
-        )
+        ))
       ],
     );
   }
@@ -1211,7 +1212,7 @@ class _PulseAiErrorBanner extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          ElevatedButton.icon(
+          PressableScale(child: ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh, size: 16),
             label: Text(isBangla ? 'আবার চেষ্টা করুন' : 'Retry'),
@@ -1221,7 +1222,7 @@ class _PulseAiErrorBanner extends StatelessWidget {
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-          ),
+          )),
         ],
       ),
     );

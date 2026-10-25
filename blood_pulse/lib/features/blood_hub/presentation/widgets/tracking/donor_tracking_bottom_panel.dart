@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -100,7 +101,7 @@ class DonorTrackingBottomPanel extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: PressableScale(child: OutlinedButton.icon(
                   // USER RULE - do not change: launch chat with numeric match ID for real-time Django HTTP transport
                   onPressed: () => context.push('/chat', extra: {
                     'chatRecipientName':
@@ -112,11 +113,11 @@ class DonorTrackingBottomPanel extends StatelessWidget {
                   icon:
                       const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                   label: const Text('Chat'),
-                ),
+                )),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
+                child: PressableScale(child: OutlinedButton.icon(
                   onPressed: () => DonorTrackingActionsSheet.show(
                     context,
                     matchId: numericMatchId,
@@ -124,7 +125,7 @@ class DonorTrackingBottomPanel extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.report_problem_outlined, size: 16),
                   label: const Text('Report'),
-                ),
+                )),
               ),
             ],
           ),

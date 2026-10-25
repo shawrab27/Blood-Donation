@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import '../../../../core/widgets/location_cascade_selector.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
@@ -405,7 +406,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
                 height: 50,
                 child: _isSubmitting
                     ? const Center(child: AppLoader())
-                    : ElevatedButton(
+                    : PressableScale(child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF8B0014),
                           shape: const StadiumBorder(),
@@ -432,7 +433,7 @@ class _RegisterClubFormViewState extends ConsumerState<RegisterClubFormView> {
                             const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
                           ],
                         ),
-                      ),
+                      )),
               ),
               const SizedBox(height: 40),
             ],

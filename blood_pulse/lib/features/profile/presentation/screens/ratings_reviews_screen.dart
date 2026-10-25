@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/app_loader.dart';
@@ -36,10 +37,10 @@ class RatingsReviewsScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF24191A)),
           onPressed: () => Navigator.of(context).pop(),
-        ),
+        )),
         title: const Text(
           'Ratings & Reviews',
           style: TextStyle(
@@ -93,14 +94,14 @@ class RatingsReviewsScreen extends ConsumerWidget {
                     style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xFF5F5E5E)),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
+                  PressableScale(child: ElevatedButton(
                     onPressed: () => ref.invalidate(donorReviewsProvider(targetId)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFC30121),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                     ),
                     child: const Text('Retry', style: TextStyle(color: Colors.white)),
-                  ),
+                  )),
                 ],
               ),
             ),

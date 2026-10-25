@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
@@ -98,10 +99,10 @@ class _PublicDonorProfileScreenState extends ConsumerState<PublicDonorProfileScr
                           style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF5F5E5E)),
                         ),
                         const SizedBox(height: 16),
-                        OutlinedButton(
+                        PressableScale(child: OutlinedButton(
                           onPressed: () => context.pop(),
                           child: const Text('Go Back'),
-                        ),
+                        )),
                       ],
                     ),
                   ),

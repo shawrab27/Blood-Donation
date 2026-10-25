@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../domain/models/health_accessory_model.dart';
@@ -151,14 +152,14 @@ class AccessoryCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
+                        PressableScale(child: IconButton(
                           tooltip: 'Item Specs & Details',
                           icon: const Icon(Icons.info_outline_rounded, color: Color(0xFF666666), size: 20),
                           onPressed: onOpenDetails,
-                        ),
+                        )),
                         const SizedBox(width: 4),
                         Flexible(
-                          child: ElevatedButton.icon(
+                          child: PressableScale(child: ElevatedButton.icon(
                             onPressed: () => onLaunchStore(item.affiliateUrl),
                             icon: const Icon(Icons.open_in_new_rounded, size: 14),
                             label: FittedBox(
@@ -179,7 +180,7 @@ class AccessoryCard extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
+                          )),
                         ),
                       ],
                     ),

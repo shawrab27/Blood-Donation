@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -192,7 +193,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                         ),
                       ],
                     ),
-                    ElevatedButton.icon(
+                    PressableScale(child: ElevatedButton.icon(
                       onPressed: () => _showRequestAllModal(context, searchPageAsync.valueOrNull?.totalCount ?? 0),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF960017),
@@ -212,7 +213,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
+                    )),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -242,7 +243,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              TextButton(
+                              PressableScale(child: TextButton(
                                 onPressed: () {
                                   _searchController.clear();
                                   ref.read(bloodHubFilterProvider.notifier).state =
@@ -256,7 +257,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
+                              )),
                             ],
                           ),
                         ),
@@ -322,7 +323,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 12),
-                          ElevatedButton(
+                          PressableScale(child: ElevatedButton(
                             onPressed: () {
                               ref.read(donorSearchNotifierProvider.notifier).refresh();
                             },
@@ -334,7 +335,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                               ),
                             ),
                             child: const Text('Retry'),
-                          ),
+                          )),
                         ],
                       ),
                     ),
@@ -358,7 +359,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                         color: Color(0xFF24191A),
                       ),
                     ),
-                    TextButton.icon(
+                    PressableScale(child: TextButton.icon(
                       onPressed: () {
                         setState(() => _isMapExpanded = !_isMapExpanded);
                       },
@@ -378,7 +379,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                           color: Color(0xFF960017),
                         ),
                       ),
-                    ),
+                    )),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -448,7 +449,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: PressableScale(child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(ctx);
                       context.push(
@@ -474,7 +475,7 @@ class _DonorSearchScreenState extends ConsumerState<DonorSearchScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                  )),
                 ),
               ],
             ),

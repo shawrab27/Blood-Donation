@@ -95,9 +95,24 @@ def compute_public_stats_data() -> dict:
 def public_stats_view(request):
     """
     GET /api/public/stats/
-    Returns ONLY {registered_donors, districts_covered}.
+    Returns ONLY {registered_donors, districts_covered, request_otp_required}.
     No PII, no ids, no phones, no names.
     Cached for 10 minutes.
     """
-    data = compute_public_stats_data()
+    from django.conf import settings
+    data = dict(compute_public_stats_data())
+    data['request_otp_required'] = getattr(settings, 'REQUEST_OTP_REQUIRED', True)
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_config_view(request):
+    """
+    GET /api/public/config/
+    Returns public runtime configuration for guests and logged-in users.
+    """
+    from django.conf import settings
+    return Response({
+        'request_otp_required': getattr(settings, 'REQUEST_OTP_REQUIRED', True),
+    }, status=status.HTTP_200_OK)

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -170,7 +171,7 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
                             style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: Color(0xFF666666)),
                           ),
                           const SizedBox(height: 16),
-                          ElevatedButton.icon(
+                          PressableScale(child: ElevatedButton.icon(
                             onPressed: () => ref.invalidate(productsProvider),
                             icon: const Icon(Icons.refresh, size: 16),
                             label: const Text('Retry'),
@@ -179,7 +180,7 @@ class _HealthAccessoriesScreenState extends ConsumerState<HealthAccessoriesScree
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             ),
-                          ),
+                          )),
                         ],
                       ),
                     ),

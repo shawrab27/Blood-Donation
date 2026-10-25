@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 import 'package:file_picker/file_picker.dart';
@@ -124,11 +125,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     'Profile Photo',
                     style: TextStyle(fontFamily: 'Georgia', fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  IconButton(
+                  PressableScale(child: IconButton(
                     icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: () => Navigator.pop(ctx),
                     visualDensity: VisualDensity.compact,
-                  ),
+                  )),
                 ],
               ),
               const SizedBox(height: 20),
@@ -165,7 +166,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ],
               ),
               const SizedBox(height: 18),
-              TextButton.icon(
+              PressableScale(child: TextButton.icon(
                 icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFBA1A1A), size: 18),
                 label: const Text(
                   'Remove Current Photo',
@@ -175,7 +176,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   Navigator.pop(ctx);
                   _removePhoto();
                 },
-              ),
+              )),
             ],
           ),
         ),
@@ -556,7 +557,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             // ── Footer: Download Verified Certificate Compact Pill Button ──
             // USER RULE - do not change: compact pill button for certificate download
             Center(
-              child: ElevatedButton.icon(
+              child: PressableScale(child: ElevatedButton.icon(
                 onPressed: () {
                   if (totalDonations <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -591,7 +592,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                 ),
-              ),
+              )),
             ),
             const SizedBox(height: 36),
           ],

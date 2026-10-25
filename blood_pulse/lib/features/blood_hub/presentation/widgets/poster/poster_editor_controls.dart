@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -115,7 +116,7 @@ class _PosterEditorControlsState extends State<PosterEditorControls> {
                   color: AppColors.secondary,
                 ),
               ),
-              OutlinedButton.icon(
+              PressableScale(child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50),
@@ -136,7 +137,7 @@ class _PosterEditorControlsState extends State<PosterEditorControls> {
                     color: AppColors.primary,
                   ),
                 ),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 14),

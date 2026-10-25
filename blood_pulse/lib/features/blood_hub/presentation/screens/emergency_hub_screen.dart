@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -174,7 +175,7 @@ class _NationalEmergencyCard extends StatelessWidget {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: PressableScale(child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFE0DCDC)),
                   shape: const StadiumBorder(),
@@ -190,7 +191,7 @@ class _NationalEmergencyCard extends StatelessWidget {
                     color: Color(0xFF8E7D7F),
                   ),
                 ),
-              ),
+              )),
             ),
           ],
         ),
@@ -301,7 +302,7 @@ class _PersonalEmergencyCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton(
+              child: PressableScale(child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: _kPrimary,
@@ -317,7 +318,7 @@ class _PersonalEmergencyCard extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-              ),
+              )),
             ),
           ],
         ),

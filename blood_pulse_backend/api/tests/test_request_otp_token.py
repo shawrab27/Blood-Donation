@@ -497,6 +497,19 @@ class RequestOTPAndSubmitTokenTests(TestCase):
             res_ok = self.client.post('/api/emergency/requests/', payload_valid, format='json')
             self.assertIn(res_ok.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
 
+    def test_public_config_endpoint_returns_request_otp_required(self):
+        """Unauthenticated public config endpoint returns request_otp_required status for guests."""
+        self.client.logout()
+        res = self.client.get('/api/public/config/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('request_otp_required', res.data)
+        self.assertIsInstance(res.data['request_otp_required'], bool)
+
+        with override_settings(REQUEST_OTP_REQUIRED=False):
+            res_false = self.client.get('/api/public/config/')
+            self.assertEqual(res_false.status_code, status.HTTP_200_OK)
+            self.assertFalse(res_false.data['request_otp_required'])
+
 
 class BrevoApiEmailSenderAndSeedGuardTests(TestCase):
     def setUp(self):

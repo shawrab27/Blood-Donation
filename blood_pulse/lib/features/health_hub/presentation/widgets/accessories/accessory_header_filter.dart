@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -119,10 +120,10 @@ class AccessoryHeaderFilter extends StatelessWidget {
               ),
               prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 22),
               suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(
+                  ? PressableScale(child: IconButton(
                       icon: const Icon(Icons.clear, size: 18, color: Color(0xFF757575)),
                       onPressed: onClearSearch,
-                    )
+                    ))
                   : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),

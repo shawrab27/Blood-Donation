@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/responsive_center_wrapper.dart';
@@ -28,10 +29,10 @@ class XpLevelScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
+        leading: PressableScale(child: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF24191A)),
           onPressed: () => Navigator.of(context).pop(),
-        ),
+        )),
         title: const Text(
           'XP & Level Standing',
           style: TextStyle(

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,19 +83,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                 ],
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
+              PressableScale(child: ElevatedButton(
                 onPressed: () => context.go('/login'),
                 child: const Text('Get Started', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
+              )),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('Already have an account?', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                  TextButton(
+                  PressableScale(child: TextButton(
                     onPressed: () => context.go('/login'),
                     child: const Text('Login', style: TextStyle(color: AppColors.primaryRed, fontWeight: FontWeight.bold)),
-                  ),
+                  )),
                 ],
               ),
             ],

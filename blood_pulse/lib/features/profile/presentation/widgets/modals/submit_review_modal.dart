@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -153,11 +154,11 @@ class _SubmitReviewModalState extends ConsumerState<SubmitReviewModal> {
                   color: Color(0xFF24191A),
                 ),
               ),
-              IconButton(
+              PressableScale(child: IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 onPressed: () => Navigator.of(context).pop(),
                 visualDensity: VisualDensity.compact,
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 4),
@@ -197,14 +198,14 @@ class _SubmitReviewModalState extends ConsumerState<SubmitReviewModal> {
               mainAxisSize: MainAxisSize.min,
               children: List.generate(5, (index) {
                 final starNum = index + 1;
-                return IconButton(
+                return PressableScale(child: IconButton(
                   icon: Icon(
                     starNum <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
                     size: 34,
                     color: starNum <= _stars ? const Color(0xFFC30121) : const Color(0xFFE2D6D6),
                   ),
                   onPressed: () => setState(() => _stars = starNum),
-                );
+                ));
               }),
             ),
           ),
@@ -277,7 +278,7 @@ class _SubmitReviewModalState extends ConsumerState<SubmitReviewModal> {
           // Submit Button
           SizedBox(
             height: 48,
-            child: ElevatedButton(
+            child: PressableScale(child: ElevatedButton(
               onPressed: _isSubmitting ? null : _handleSubmit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFC30121),
@@ -288,7 +289,7 @@ class _SubmitReviewModalState extends ConsumerState<SubmitReviewModal> {
               child: _isSubmitting
                   ? const SizedBox(width: 20, height: 20, child: AppLoader.small())
                   : const Text('Submit Review'),
-            ),
+            )),
           ),
         ],
       ),

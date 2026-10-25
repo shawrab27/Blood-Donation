@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -188,7 +189,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           style: const TextStyle(fontFamily: 'Inter', color: AppColors.secondary),
         ),
         actions: [
-          ElevatedButton(
+          PressableScale(child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -196,7 +197,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('OK', style: TextStyle(fontFamily: 'Inter')),
-          ),
+          )),
         ],
       ),
     );
@@ -276,7 +277,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               'Patient: ${r['patient_name']}',
                               style: const TextStyle(fontFamily: 'Inter', color: Color(0xFF5F5E5E)),
                             ),
-                            trailing: ElevatedButton(
+                            trailing: PressableScale(child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.tertiary,
                                 foregroundColor: Colors.white,
@@ -285,7 +286,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               ),
                               onPressed: () => _markRequestFulfilled(r['id']),
                               child: const Text('Fulfill Request', style: TextStyle(fontFamily: 'Inter', fontSize: 13)),
-                            ),
+                            )),
                           ),
                         )),
                     const Divider(height: 32, color: Color(0xFFEAE0E0)),
@@ -327,7 +328,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               'Donor Username: ${f['donor_username'] ?? 'Unknown'}',
                               style: const TextStyle(fontFamily: 'Inter', color: Color(0xFF5F5E5E)),
                             ),
-                            trailing: ElevatedButton(
+                            trailing: PressableScale(child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
@@ -336,7 +337,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               ),
                               onPressed: () => _resolveFlag(f['id']),
                               child: const Text('Resolve Flag', style: TextStyle(fontFamily: 'Inter', fontSize: 13)),
-                            ),
+                            )),
                           ),
                         )),
                   ],

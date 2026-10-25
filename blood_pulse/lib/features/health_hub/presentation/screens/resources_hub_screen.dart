@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -190,7 +191,7 @@ class ResourcesHubScreen extends ConsumerWidget {
               ],
             ),
           ),
-          ElevatedButton.icon(
+          PressableScale(child: ElevatedButton.icon(
             onPressed: () => _makePhoneCall(context, number),
             icon: const Icon(Icons.call, size: 14),
             label: Text(number),
@@ -202,7 +203,7 @@ class ResourcesHubScreen extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
               textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
             ),
-          ),
+          )),
         ],
       ),
     );
@@ -238,10 +239,10 @@ class ResourcesHubScreen extends ConsumerWidget {
             ),
           ),
           if (phone.isNotEmpty)
-            IconButton(
+            PressableScale(child: IconButton(
               icon: const Icon(Icons.phone_in_talk_rounded, color: AppColors.primary),
               onPressed: () => _makePhoneCall(context, phone),
-            ),
+            )),
         ],
       ),
     );

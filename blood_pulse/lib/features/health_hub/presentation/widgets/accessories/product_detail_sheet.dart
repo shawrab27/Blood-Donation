@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
+import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -89,10 +90,10 @@ class ProductDetailSheet extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      IconButton(
+                      PressableScale(child: IconButton(
                         icon: const Icon(Icons.close, size: 20, color: Color(0xFF666666)),
                         onPressed: () => Navigator.pop(context),
-                      ),
+                      )),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -221,7 +222,7 @@ class ProductDetailSheet extends StatelessWidget {
                           ),
                         ],
                       ),
-                      ElevatedButton.icon(
+                      PressableScale(child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
                           onOrderNow(product.externalUrl);
@@ -250,7 +251,7 @@ class ProductDetailSheet extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ],
