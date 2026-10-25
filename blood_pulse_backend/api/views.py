@@ -387,11 +387,13 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             data['missing_fields'] = missing
             return Response(data)
 
+        from django.conf import settings
         serializer = self.get_serializer(profile)
         data = dict(serializer.data)
         is_comp, missing = profile.check_is_complete()
         data['is_profile_complete'] = is_comp
         data['missing_fields'] = missing
+        data['request_otp_required'] = getattr(settings, 'REQUEST_OTP_REQUIRED', True)
         return Response(data)
 
     @action(detail=True, methods=['get'])
@@ -482,11 +484,13 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
         if not profile:
             profile = DonorProfile.objects.filter(user=self.request.user).first()
 
-        if not profile or not profile.email_verified:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({
-                "detail": "Email verification is required before submitting an emergency blood request. Please verify your email first."
-            })
+        from django.conf import settings
+        if getattr(settings, 'REQUEST_OTP_REQUIRED', True):
+            if not profile or not profile.email_verified:
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError({
+                    "detail": "Email verification is required before submitting an emergency blood request. Please verify your email first."
+                })
 
         submit_token = self.request.data.get('submit_token') or self.request.headers.get('X-Submit-Token')
         from api.views_request_otp import validate_and_consume_submit_token
@@ -1353,7 +1357,10 @@ class GoogleAuthView(APIView):
                 google_uid=verified_uid,
                 google_display_name=verified_name,
                 google_photo_url=verified_photo,
-                phone_number=f'+880{user.id:08d}'
+                phone_number=f'+880{user.id:08d}',
+                blood_group='',
+                district='',
+                is_profile_complete=False,
             )
         else:
             # Update existing profile

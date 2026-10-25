@@ -157,7 +157,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     if (currentUser != null && currentUser.bloodGroup.isNotEmpty && _bloodGroups.contains(currentUser.bloodGroup)) {
       _bloodGroup = currentUser.bloodGroup;
       _confirmBloodGroup = currentUser.bloodGroup;
-      _isBloodGroupLocked = true;
+      _isBloodGroupLocked = currentUser.isProfileComplete;
     }
     _pwCtrl.addListener(_onPasswordChanged);
     _confirmPwCtrl.addListener(_onPasswordChanged);
@@ -198,12 +198,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               _phoneCtrl.text = phone;
             }
 
-            // Blood group (lock if stored)
+            // Blood group (lock only if stored and registration complete)
             final bg = data['blood_group']?.toString().trim() ?? '';
+            final isComplete = data['is_profile_complete'] == true;
             if (bg.isNotEmpty && _bloodGroups.contains(bg)) {
               _bloodGroup = bg;
               _confirmBloodGroup = bg;
-              _isBloodGroupLocked = true;
+              _isBloodGroupLocked = isComplete;
             }
 
             // District & Division

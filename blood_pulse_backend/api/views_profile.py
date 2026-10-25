@@ -157,6 +157,7 @@ class ProfileMeView(APIView):
             "show_in_rankings": profile.show_in_rankings,
             "is_profile_complete": True,
             "user_intent": getattr(profile, 'user_intent', 'DONATE_AND_REQUEST'),
+            "request_otp_required": getattr(settings, 'REQUEST_OTP_REQUIRED', True),
         }
         return Response(response_data)
 

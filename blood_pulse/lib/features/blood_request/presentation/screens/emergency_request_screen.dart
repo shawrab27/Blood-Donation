@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../profile/domain/providers/profile_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
@@ -146,6 +147,24 @@ class _EmergencyRequestScreenState extends ConsumerState<EmergencyRequestScreen>
         : _hospitalNameCtrl.text.trim();
 
     final urgencyStr = _urgency == UrgencyLevel.critical ? 'Critical' : 'Moderate';
+
+    final profile = ref.read(profileProvider).value;
+    final otpRequired = profile?.requestOtpRequired ?? true;
+    if (!otpRequired) {
+      final posterData = PosterData(
+        patientName: _patientNameCtrl.text.trim().isNotEmpty ? _patientNameCtrl.text.trim() : 'Emergency Patient',
+        bloodGroup: _selectedBloodGroup!,
+        location: hospitalLoc.isNotEmpty ? hospitalLoc : 'Dhaka, Bangladesh',
+        unitsNeeded: _unitsNeeded,
+        urgencyLevel: urgencyStr.toUpperCase(),
+        condition: _conditionReasonCtrl.text.trim().isNotEmpty ? _conditionReasonCtrl.text.trim() : 'Emergency Blood Request',
+        hospitalName: _hospitalNameCtrl.text.trim().isNotEmpty ? _hospitalNameCtrl.text.trim() : null,
+        contactNumber: _contactPhoneCtrl.text.trim().isNotEmpty ? _contactPhoneCtrl.text.trim() : null,
+        photoPath: _medicalReportFile?.path,
+      );
+      context.push('/blood-hub/poster', extra: posterData);
+      return;
+    }
 
     // Navigate to OTP page with request details (Phase 3 Requirement 5 & 6)
     context.push(

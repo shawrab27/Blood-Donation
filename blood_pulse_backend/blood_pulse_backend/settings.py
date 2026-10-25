@@ -598,3 +598,11 @@ _startup_logger.info(_startup_msg)
 
 
 
+
+# Emergency Request OTP Verification Flag
+REQUEST_OTP_REQUIRED = os.environ.get('REQUEST_OTP_REQUIRED', 'true').strip().lower() in ('1', 'true', 'yes')
+if not REQUEST_OTP_REQUIRED:
+    import logging
+    logging.getLogger('blood_pulse_backend').warning(
+        "WARNING: REQUEST_OTP_REQUIRED is False! Emergency blood requests will bypass OTP verification."
+    )

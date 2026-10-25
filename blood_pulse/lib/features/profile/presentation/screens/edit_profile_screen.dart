@@ -35,6 +35,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedDivision;
   String? _selectedDistrict;
   String? _selectedUpazila;
+  String? _selectedBloodGroup;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _selectedDistrict = profile.district;
         _selectedUpazila = profile.upazila;
         _showInRankings = profile.showInRankings;
+        _selectedBloodGroup = profile.bloodGroup;
         if (mounted) setState(() {});
       }
     });
@@ -82,6 +84,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (_selectedDistrict != null) 'district': _selectedDistrict,
       if (_selectedUpazila != null) 'upazila': _selectedUpazila,
       if (_selectedDivision != null) 'division': _selectedDivision,
+      if (_selectedBloodGroup != null && _selectedBloodGroup!.isNotEmpty) 'blood_group': _selectedBloodGroup,
     };
 
     final weightText = _weightController.text.trim();
@@ -310,73 +313,109 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Locked Blood Group & Change Request Button
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4E5),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFFFD8A8)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.lock_rounded, size: 16, color: Color(0xFFD97706)),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'Current Blood Group: ${profile?.bloodGroup ?? "O+"}',
-                                      style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
-                                      overflow: TextOverflow.ellipsis,
+                  // Blood Group: Locked when profile complete & blood group chosen; otherwise editable
+                  if ((profile?.isProfileComplete == true) && (profile?.bloodGroup != null && profile!.bloodGroup!.isNotEmpty))
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF4E5),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFFD8A8)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.lock_rounded, size: 16, color: Color(0xFFD97706)),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Current Blood Group: ${profile.bloodGroup ?? ''}',
+                                        style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFDE8E8),
-                                borderRadius: BorderRadius.circular(50),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDE8E8),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: const Text('Clinical Lock', style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
                               ),
-                              child: const Text('Clinical Lock', style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC30121))),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'For recipient and donor safety, blood group changes require verified laboratory documentation reviewed by administrators.',
-                          style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF92400E)),
-                        ),
-                        const SizedBox(height: 12),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 44),
-                          child: OutlinedButton.icon(
-                            onPressed: () => context.push('/blood-group-change'),
-                            icon: const Icon(Icons.biotech_rounded, size: 16, color: Color(0xFFC30121)),
-                            label: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text('Request Blood Group Change'),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
-                              foregroundColor: const Color(0xFFC30121),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                              textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'For recipient and donor safety, blood group changes require verified laboratory documentation reviewed by administrators.',
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xFF92400E)),
+                          ),
+                          const SizedBox(height: 12),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            child: OutlinedButton.icon(
+                              onPressed: () => context.push('/blood-group-change'),
+                              icon: const Icon(Icons.biotech_rounded, size: 16, color: Color(0xFFC30121)),
+                              label: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text('Request Blood Group Change'),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFC30121), width: 1.5),
+                                foregroundColor: const Color(0xFFC30121),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                                textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2D6D6)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Blood Group / রক্তের গ্রুপ',
+                            style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B)),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) {
+                              final isSelected = (_selectedBloodGroup ?? profile?.bloodGroup) == bg;
+                              return ChoiceChip(
+                                label: Text(bg, style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: isSelected ? Colors.white : const Color(0xFFC30121))),
+                                selected: isSelected,
+                                selectedColor: const Color(0xFFC30121),
+                                backgroundColor: const Color(0xFFFDF3F3),
+                                onSelected: (val) {
+                                  setState(() => _selectedBloodGroup = val ? bg : null);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 28),
 
                   // Save Button

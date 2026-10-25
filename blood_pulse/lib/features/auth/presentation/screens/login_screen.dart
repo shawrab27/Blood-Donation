@@ -3,7 +3,6 @@ import '../../../../core/widgets/success_pulse.dart';
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:blood_pulse/l10n/app_localizations.dart';
@@ -11,7 +10,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/capsule_button.dart';
 import '../../../../core/widgets/custom_input_field.dart';
 import '../../../../core/widgets/app_logo.dart';
-import '../../../../core/widgets/hero_reveal_logo.dart';
 import '../../../../core/widgets/language_toggle_button.dart';
 import '../providers/auth_notifier.dart';
 
@@ -41,7 +39,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   _LoginButtonType _loadingButton = _LoginButtonType.none;
   bool _showSuccessPulse = false;
   String? _loginErrorMessage;
-  DateTime? _lastBackPressTime;
 
   // Subtle slide-up entry animation
   late final AnimationController _entryCtrl = AnimationController(
@@ -177,37 +174,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final auth = ref.watch(authProvider);
     final l10n = AppLocalizations.of(context);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (context.canPop()) {
-          context.pop();
-          return;
-        }
-        final now = DateTime.now();
-        if (_lastBackPressTime != null &&
-            now.difference(_lastBackPressTime!) < const Duration(seconds: 2)) {
-          SystemNavigator.pop();
-        } else {
-          _lastBackPressTime = now;
-          final isBangla = Localizations.localeOf(context).languageCode == 'bn';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isBangla
-                    ? 'অ্যাপ থেকে বের হতে আবার ব্যাক প্রেস করুন'
-                    : 'Press back again to exit BloodPulse',
-                style: const TextStyle(fontFamily: 'Inter'),
-              ),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: const StadiumBorder(),
-            ),
-          );
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFFDF3F3),
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
@@ -231,13 +198,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         const SizedBox(height: 16),
                         // ── Official BloodPulse Logo & Brand Name ─────────
                         // USER RULE - do not change: E3 Hero reveal (ECG line draws into logo once on Login)
-                        const HeroRevealLogo(
-                          child: BloodPulseLogo(
-                            direction: Axis.vertical,
-                            iconSize: 72.0,
-                            fontSize: 28.0,
-                            spacing: 10.0,
-                          ),
+                        const BloodPulseLogo(
+                          direction: Axis.vertical,
+                          iconSize: 72.0,
+                          fontSize: 28.0,
+                          spacing: 10.0,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -484,7 +449,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           ),
         ),
-      ),
       ),
       ),
     );

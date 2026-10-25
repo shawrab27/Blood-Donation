@@ -49,6 +49,7 @@ class ProfileModel {
   final bool isAvailable;
   final List<DonationHistoryModel> donationHistory;
   final List<RecentLogModel> recentLogs;
+  final bool requestOtpRequired;
 
   static const Object _sentinel = Object();
 
@@ -100,6 +101,7 @@ class ProfileModel {
     this.isAvailable = true,
     this.donationHistory = const [],
     this.recentLogs = const [],
+    this.requestOtpRequired = true,
   });
 
   ProfileModel copyWith({
@@ -292,6 +294,7 @@ class ProfileModel {
               ?.map((e) => RecentLogModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      requestOtpRequired: json['request_otp_required'] != false,
     );
   }
 

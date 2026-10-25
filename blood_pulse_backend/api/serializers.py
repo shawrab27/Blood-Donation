@@ -60,6 +60,22 @@ class RecentLogSerializer(serializers.ModelSerializer):
         model = RecentLog
         fields = '__all__'
 
+def _is_unlocked_incomplete_user(instance):
+    if not instance or getattr(instance, 'is_profile_complete', False):
+        return False
+    if not (getattr(instance, 'blood_group', None) and instance.blood_group.strip()):
+        return True
+    if getattr(instance, 'auth_provider', '') == 'google' or bool(getattr(instance, 'google_uid', None)):
+        return True
+    user = getattr(instance, 'user', None)
+    if user:
+        username = (getattr(user, 'username', '') or '').lower()
+        email = (getattr(user, 'email', '') or '').lower()
+        if 'google' in username or email.endswith('@gmail.com'):
+            return True
+    return False
+
+
 class DonorProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     first_name = serializers.CharField(source='user.first_name', read_only=True)
@@ -86,14 +102,17 @@ class DonorProfileSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         # USER RULE: blood_group is editable until registration complete, then locked
-        if self.instance and (self.instance.registration_complete or self.instance.is_profile_complete):
-            if 'blood_group' in attrs and self.instance.blood_group:
+        if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
+            if 'blood_group' in attrs:
                 new_bg = (attrs['blood_group'] or '').strip().upper()
                 old_bg = self.instance.blood_group.strip().upper()
                 if new_bg and new_bg != old_bg:
-                    raise serializers.ValidationError({
-                        'blood_group': 'Blood group is permanently locked once registration is complete.'
-                    })
+                    if not _is_unlocked_incomplete_user(self.instance):
+                        request = self.context.get('request')
+                        if not (request and request.user and request.user.is_staff):
+                            raise serializers.ValidationError({
+                                'blood_group': 'Blood group is permanently locked once registration is complete.'
+                            })
         return super().validate(attrs)
 
     def update(self, instance, validated_data):
@@ -158,7 +177,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     def validate_blood_group(self, value):
         if self.instance and self.instance.blood_group and self.instance.blood_group.strip():
             if value and self.instance.blood_group.strip() != value.strip():
-                if getattr(self.instance, 'is_profile_complete', True):
+                if not _is_unlocked_incomplete_user(self.instance):
                     request = self.context.get('request')
                     if not (request and request.user and request.user.is_staff):
                         raise serializers.ValidationError(

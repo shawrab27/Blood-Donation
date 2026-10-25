@@ -377,7 +377,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     String displayName = authUser?.fullName.trim().isNotEmpty == true
         ? authUser!.fullName
         : 'Blood Donor';
-    String bloodGroup = authUser?.bloodGroup.isNotEmpty == true ? authUser!.bloodGroup : 'O-';
+    String bloodGroup = authUser?.bloodGroup.isNotEmpty == true ? authUser!.bloodGroup : '—';
     int totalDonations = authUser?.totalBagsDonated ?? 0;
     int rank = 0;
     double ratingAvg = 5.0;

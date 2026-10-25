@@ -6,6 +6,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../profile/domain/providers/profile_provider.dart';
+import '../../../../services/api_client.dart';
 
 import '../../../../core/widgets/responsive_center_wrapper.dart';
 import '../../data/blood_hub_api_service.dart';
@@ -103,6 +105,23 @@ class _PriorityBloodRequisitionScreenState
         'units_needed': 1,
         'component': 'WHOLE',
       };
+
+      final profile = ref.read(profileProvider).value;
+      if (profile?.requestOtpRequired == false) {
+        final client = ApiClient();
+        final response = await client.post('blood-hub/requests/', body: payload);
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          if (mounted) context.push('/blood-hub/poster');
+          return;
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Submission failed (${response.statusCode})')),
+            );
+          }
+          return;
+        }
+      }
 
       if (mounted) {
         context.push(

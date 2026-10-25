@@ -455,6 +455,49 @@ class RequestOTPAndSubmitTokenTests(TestCase):
         self.assertTrue(otp1.is_used, "Older unused OTP was not marked as is_used on resend")
 
 
+    def test_request_otp_required_mode_enforced(self):
+        """When REQUEST_OTP_REQUIRED=True, emergency blood request without submit_token is rejected."""
+        self.client.force_authenticate(user=self.user)
+        with override_settings(REQUEST_OTP_REQUIRED=True):
+            payload = {
+                'patient_name': 'Emergency Patient',
+                'blood_group': 'O+',
+                'units_needed': 1,
+                'hospital_id': self.hospital.id,
+                'contact_number': '+8801711111111',
+                'ward_bed': 'Ward 5, Bed 12',
+                'lat': 23.726,
+                'lng': 90.398,
+            }
+            res = self.client.post('/api/emergency/requests/', payload, format='json')
+            self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertIn("submit_token is required", str(res.data))
+
+    def test_request_otp_disabled_mode_bypasses_otp_and_enforces_ward_bed(self):
+        """When REQUEST_OTP_REQUIRED=False, submit_token is skipped, but Ward/Bed is still required."""
+        self.client.force_authenticate(user=self.user)
+        with override_settings(REQUEST_OTP_REQUIRED=False):
+            # 1. Missing ward_bed still fails with 400
+            payload_no_ward = {
+                'patient_name': 'Emergency Patient',
+                'blood_group': 'O+',
+                'units_needed': 1,
+                'hospital_id': self.hospital.id,
+                'contact_number': '+8801711111111',
+                'lat': 23.726,
+                'lng': 90.398,
+            }
+            res_no_ward = self.client.post('/api/emergency/requests/', payload_no_ward, format='json')
+            self.assertEqual(res_no_ward.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("Ward/Bed information is required", str(res_no_ward.data))
+
+            # 2. Valid payload without submit_token succeeds
+            payload_valid = dict(payload_no_ward)
+            payload_valid['ward_bed'] = 'Ward 3, Bed 7'
+            res_ok = self.client.post('/api/emergency/requests/', payload_valid, format='json')
+            self.assertIn(res_ok.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
+
+
 class BrevoApiEmailSenderAndSeedGuardTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -588,5 +631,6 @@ class BrevoApiEmailSenderAndSeedGuardTests(TestCase):
                 call_command('seed_bloodhub_demo', stdout=StringIO(), stderr=StringIO())
             with self.assertRaises(CommandError):
                 call_command('seed_health_hub_content', stdout=StringIO(), stderr=StringIO())
+
 
 

@@ -39,6 +39,10 @@ def check_submit_token(user, submit_token: str, purpose: str = 'blood_request_su
     """
     Checks if submit_token is valid, unexpired, and unused without consuming it.
     """
+    from django.conf import settings
+    if not getattr(settings, 'REQUEST_OTP_REQUIRED', True):
+        return True
+
     if not submit_token or not user or not user.is_authenticated:
         return False
 
@@ -66,6 +70,10 @@ def validate_and_consume_submit_token(user, submit_token: str, purpose: str = 'b
     Validates and atomically consumes a single-use submit_token.
     Returns True if valid and consumed; False otherwise.
     """
+    from django.conf import settings
+    if not getattr(settings, 'REQUEST_OTP_REQUIRED', True):
+        return True
+
     if not submit_token or not user or not user.is_authenticated:
         return False
 
