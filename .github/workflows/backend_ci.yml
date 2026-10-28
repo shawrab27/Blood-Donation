@@ -1,0 +1,66 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'blood_pulse_backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'blood_pulse_backend/**'
+  workflow_dispatch:
+
+jobs:
+  backend_ci:
+    name: Django & Pulse AI CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: blood_pulse_backend
+
+    env:
+      DJANGO_ENV: test
+      USE_SQLITE: '1'
+      DJANGO_SECRET_KEY: ci-dummy-secret-key-32-chars-minimum-length
+      DJANGO_DEBUG: 'True'
+      FIELD_ENCRYPTION_KEY: dGVzdF9mZXJuZXRfa2V5XzMyX2J5dGVzX2xvbmdfMTIzNDU=
+      EMAIL_PROVIDER: locmem
+      BREVO_API_KEY: dummy-brevo-key
+      RESEND_API_KEY: dummy-resend-key
+      MAILJET_API_KEY: dummy-mailjet-key
+      MAILJET_SECRET_KEY: dummy-mailjet-secret
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'blood_pulse_backend/requirements.txt'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Lint critical rules (ruff E9, F63, F7, F82)
+        run: |
+          ruff check --select E9,F63,F7,F82 --exclude "recovered_models.py,scratch" --per-file-ignores "api/views.py:F821" .
+
+      - name: Django system check
+        run: |
+          python manage.py check
+
+      - name: Django migration drift check
+        run: |
+          python manage.py makemigrations --check --dry-run
+
+      - name: Run test suites
+        run: |
+          python manage.py test api.tests.test_prompt_auth api.tests.test_auth_roles_intent api.tests.test_auth_audit_verification api.tests.test_email_service assistant.tests
