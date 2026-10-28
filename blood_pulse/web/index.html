@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn" dir="ltr">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -19,14 +19,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="BloodPulse – Nationwide blood donation network for Bangladesh. Donate, request, and save lives.">
+  
+  <title>BloodPulse – You give today, they live today | রক্তদান নেটওয়ার্ক বাংলাদেশ</title>
+  <meta name="description" content="BloodPulse – You give today, they live today. বাংলাদেশের ৬৪ জেলায় স্বেচ্ছায় রক্তদাতা ও জরুরি রক্তের সংযোগ প্ল্যাটফর্ম। Nationwide voluntary blood donation network for Bangladesh.">
+  <link rel="canonical" href="https://bloodpulse-283dc.web.app/">
+  <meta name="robots" content="index, follow">
+  
   <meta name="theme-color" content="#FFFFFF">
   <meta name="google-signin-client_id" content="404989190662-hojuqm8fie4lbrfuh62dspj8m9e1acgg.apps.googleusercontent.com">
 
-  <!-- Open Graph -->
-  <meta property="og:title" content="BloodPulse">
-  <meta property="og:description" content="Nationwide blood donation network for Bangladesh.">
+  <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bloodpulse-283dc.web.app/">
+  <meta property="og:title" content="BloodPulse – You give today, they live today">
+  <meta property="og:description" content="BloodPulse – You give today, they live today. Nationwide voluntary blood donation network for Bangladesh across all 64 districts.">
+  <meta property="og:image" content="https://bloodpulse-283dc.web.app/icons/Icon-512.png">
+  <meta property="og:site_name" content="BloodPulse">
+  <meta property="og:locale" content="bn_BD">
+  <meta property="og:locale:alternate" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="https://bloodpulse-283dc.web.app/">
+  <meta name="twitter:title" content="BloodPulse – You give today, they live today">
+  <meta name="twitter:description" content="BloodPulse – You give today, they live today. Nationwide voluntary blood donation network for Bangladesh across all 64 districts.">
+  <meta name="twitter:image" content="https://bloodpulse-283dc.web.app/icons/Icon-512.png">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -38,9 +55,66 @@
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>BloodPulse</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Structured Data: Organization, WebSite, FAQPage (Zero PII, purely factual) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://bloodpulse-283dc.web.app/#organization",
+        "name": "BloodPulse",
+        "url": "https://bloodpulse-283dc.web.app/",
+        "logo": "https://bloodpulse-283dc.web.app/favicon.png",
+        "slogan": "You give today, they live today",
+        "description": "Nationwide voluntary blood donation network for Bangladesh connecting donors across 64 districts."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://bloodpulse-283dc.web.app/#website",
+        "url": "https://bloodpulse-283dc.web.app/",
+        "name": "BloodPulse",
+        "description": "You give today, they live today – Bangladesh Voluntary Blood Donation Platform",
+        "publisher": {
+          "@id": "https://bloodpulse-283dc.web.app/#organization"
+        },
+        "inLanguage": ["bn", "en"]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://bloodpulse-283dc.web.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Who can donate blood on BloodPulse? / রক্তদান করতে কারা যোগ্য?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Healthy adult individuals aged 18 to 60 years weighing at least 50 kg can donate blood voluntarily. A minimum interval of 90 days between donations is required. Disclaimer: BloodPulse is a voluntary donor connection platform; consult a registered healthcare professional for clinical eligibility."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is blood donation through BloodPulse free? / ব্লাডপাল্সে রক্তদান কি সম্পূর্ণ বিনামূল্য?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, 100% free. BloodPulse is a non-commercial voluntary humanitarian network. Buying, selling, or paying compensation for blood is strictly illegal and prohibited."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which districts does BloodPulse cover? / ব্লাডপাল্স কোন কোন জেলায় সেবা দেয়?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "BloodPulse connects voluntary donors across all 64 districts of Bangladesh."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 
   <style>
     html, body {
@@ -90,6 +164,21 @@
   </style>
 </head>
 <body>
+  <!-- Semantic noscript fallback for accessibility, crawlers, and non-JS clients -->
+  <noscript>
+    <div style="padding: 32px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: center; background-color: #FDF3F3; color: #2B2B2B; min-height: 100vh; box-sizing: border-box;">
+      <h1 style="font-family: Georgia, serif; color: #C30121; font-size: 28px; margin-bottom: 8px;">BloodPulse</h1>
+      <p style="font-weight: 600; font-size: 18px; margin-bottom: 12px; color: #2B2B2B;">You give today, they live today</p>
+      <p style="max-width: 600px; margin: 0 auto 16px auto; font-size: 15px; line-height: 1.6; color: #555;">
+        BloodPulse is Bangladesh's nationwide voluntary blood donor network connecting donors across all 64 districts.
+        Please enable JavaScript in your browser to experience the full interactive platform.
+      </p>
+      <p style="margin-top: 24px; font-size: 14px;">
+        <a href="/privacy" style="color: #0D68AA; text-decoration: underline;">Privacy Policy & Terms</a>
+      </p>
+    </div>
+  </noscript>
+
   <!-- Offline fallback (shown by service worker on fetch failure) -->
   <div id="offline-page">
     <div style="font-size: 40px; margin-bottom: 12px;">🩸</div>
