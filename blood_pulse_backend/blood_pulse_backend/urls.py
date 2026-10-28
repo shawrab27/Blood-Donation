@@ -63,6 +63,10 @@ def api_handler404(request, exception=None):
     }, status=404)
 
 def api_handler500(request):
+    import logging
+    logger = logging.getLogger('blood_pulse_backend.errors')
+    path = getattr(request, 'path', 'unknown')
+    logger.exception(f"Unhandled server error at {path}")
     return JsonResponse({
         'error': 'Server problem, please try again shortly.',
         'status_code': 500,

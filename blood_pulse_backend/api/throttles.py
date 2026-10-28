@@ -87,10 +87,13 @@ def custom_exception_handler(exc, context):
     Custom DRF exception handler ensuring HTTP 429 responses always include
     both `retry_after` (integer seconds) in the JSON body AND the `Retry-After` header,
     along with friendly English and Bangla messages (Part F).
+    Logs full traceback for unhandled exceptions including request path.
     """
     import math
+    import logging
     from rest_framework.exceptions import Throttled
     from rest_framework.views import exception_handler
+    from rest_framework.response import Response
 
     response = exception_handler(exc, context)
     if response is not None and isinstance(exc, Throttled):
@@ -105,5 +108,13 @@ def custom_exception_handler(exc, context):
                 f"অতিরিক্ত অনুরোধ করা হয়েছে। অনুগ্রহ করে {retry_after} সেকেন্ড অপেক্ষা করে আবার চেষ্টা করুন।"
             )
         response['Retry-After'] = str(retry_after)
+    elif response is None:
+        logger = logging.getLogger('blood_pulse_backend.errors')
+        req = context.get('request') if context else None
+        path = getattr(req, 'path', 'unknown')
+        logger.exception(f"Unhandled DRF exception at {path}: {exc}", exc_info=exc)
+        return Response({
+            'error': 'Server problem, please try again shortly.',
+            'status_code': 500,
+        }, status=500)
     return response
-
