@@ -51,8 +51,8 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
     _apiClient = widget.apiClient ?? ref.read(apiClientProvider);
     _fetchServerNotifications();
 
-    // Poll every 15s while app is open for real-time live updates
-    _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    // Poll every 10s while app is open for real-time live updates
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted) _fetchServerNotifications();
     });
 
@@ -529,21 +529,22 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
-                    onPressed: () {
-                      // Opens chat if chat room or recipient is available
-                      final chatRoomId = rawData['chat_room_id']?.toString() ??
-                          (requestId != null ? 'emergency_$requestId' : null);
-                      final recipientId = rawData['requester_id']?.toString() ??
-                          rawData['recipientId']?.toString();
-                      if (chatRoomId != null) {
-                        context.push('/chat', extra: {
-                          'chatRecipientName': rawData['requester_name']?.toString() ?? 'Blood Requester',
-                          'bloodGroup': rawData['blood_group']?.toString() ?? 'Blood',
-                          'chatRoomId': chatRoomId,
-                          'recipientId': recipientId ?? chatRoomId,
-                        });
-                      }
-                    },
+                    onPressed: (rawData['chat_room_id'] != null || requestId != null)
+                        ? () {
+                            final chatRoomId = rawData['chat_room_id']?.toString() ??
+                                (requestId != null ? 'emergency_$requestId' : null);
+                            final recipientId = rawData['requester_id']?.toString() ??
+                                rawData['recipientId']?.toString();
+                            if (chatRoomId != null) {
+                              context.push('/chat', extra: {
+                                'chatRecipientName': rawData['requester_name']?.toString() ?? 'Blood Requester',
+                                'bloodGroup': rawData['blood_group']?.toString() ?? 'Blood',
+                                'chatRoomId': chatRoomId,
+                                'recipientId': recipientId ?? chatRoomId,
+                              });
+                            }
+                          }
+                        : null,
                     child: const Text(
                       'Message',
                       style: TextStyle(

@@ -258,7 +258,7 @@ class VoiceMessageUploadAPIView(APIView):
             return Response({'detail': 'Voice message exceeds 5MB limit.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # MIME and Extension validation (m4a, aac, mp3, mp4, wav, ogg)
-        allowed_exts = ('.m4a', '.aac', '.mp3', '.mp4', '.wav', '.ogg')
+        allowed_exts = ('.m4a', '.aac', '.mp3', '.mp4', '.wav', '.ogg', '.webm')
         ext = os.path.splitext(voice_file.name)[1].lower()
         if ext not in allowed_exts:
             ext = '.m4a'
@@ -266,7 +266,8 @@ class VoiceMessageUploadAPIView(APIView):
         # Check content type
         allowed_mimes = (
             'audio/m4a', 'audio/x-m4a', 'audio/aac', 'audio/mp4', 'audio/mpeg',
-            'audio/wav', 'audio/x-wav', 'audio/ogg', 'application/octet-stream',
+            'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/webm', 'audio/webm;codecs=opus',
+            'video/webm', 'application/octet-stream',
         )
         content_type = getattr(voice_file, 'content_type', '')
         if content_type and content_type.lower() not in allowed_mimes:

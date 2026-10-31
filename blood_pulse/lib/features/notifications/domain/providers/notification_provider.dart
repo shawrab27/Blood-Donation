@@ -20,7 +20,7 @@ class NotificationCountNotifier extends StateNotifier<int> {
     if (enablePolling) {
       fetchUnreadCount();
       // Poll every 15 seconds for real-time unread badge updates
-      _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      _pollingTimer = Timer.periodic(const Duration(seconds: 10), (_) {
         fetchUnreadCount();
       });
       try {

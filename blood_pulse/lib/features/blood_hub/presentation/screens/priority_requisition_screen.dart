@@ -100,6 +100,11 @@ class _PriorityBloodRequisitionScreenState
       final hospital = _selectedHospital?.nameEn ?? _hospitalController.text.trim();
       final contact = _contactController.text.trim();
       final wardBed = _wardBedController.text.trim();
+      final userProfile = ref.read(profileProvider).value;
+      final hospitalDistrict = _selectedHospital?.district;
+      final finalDistrict = (hospitalDistrict != null && hospitalDistrict.isNotEmpty)
+          ? hospitalDistrict
+          : ((userProfile?.district != null && userProfile!.district!.isNotEmpty) ? userProfile.district! : 'Dhaka');
 
       final payload = <String, dynamic>{
         'patient_name': patientName,
@@ -107,6 +112,7 @@ class _PriorityBloodRequisitionScreenState
         'urgency': _urgencyLevel,
         'hospital_name_other': hospital.isNotEmpty ? hospital : 'Medical Center',
         if (_selectedHospital != null) 'hospital_id': _selectedHospital!.id,
+        'district': finalDistrict,
         'ward_bed': wardBed,
         'contact_phone': contact,
         'condition_note': _conditionController.text.trim(),

@@ -93,6 +93,11 @@ def finalize_donation(acceptance, auto=False):
             from django.core.cache import cache
             cache.delete('top_donors_v2')
             cache.delete('global_rank_v2')
+            try:
+                from api.services.notify import notify_donor_thanks
+                notify_donor_thanks(blood_req, donor)
+            except Exception:
+                pass
 
         acceptance.status = locked_acc.status
         acceptance.completed_at = locked_acc.completed_at

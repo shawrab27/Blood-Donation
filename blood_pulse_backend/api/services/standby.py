@@ -67,6 +67,7 @@ def trigger_standby_donor_offer(blood_request, exclude_donor_ids: list = None) -
     donors_qs = DonorProfile.objects.filter(
         blood_group__in=compatible_groups,
         is_available=True,
+        is_profile_complete=True,
     ).exclude(id__in=exclude_donor_ids).select_related('user')
 
     if blood_request.requester_id:
@@ -75,9 +76,17 @@ def trigger_standby_donor_offer(blood_request, exclude_donor_ids: list = None) -
     req_lat = blood_request.lat or (blood_request.hospital.lat if blood_request.hospital else None)
     req_lng = blood_request.lng or (blood_request.hospital.lng if blood_request.hospital else None)
 
+    urgency_val = str(getattr(blood_request, 'urgency', '')).upper()
+    is_critical = urgency_val in ('CRITICAL_2H', 'URGENT', 'URGENT (IMMEDIATE)')
     candidates = []
     for donor in donors_qs:
-        eligibility = evaluate_donor_eligibility(donor, blood_request.component)
+        eligibility = evaluate_donor_eligibility(
+            donor,
+            blood_request.component or 'WHOLE',
+            is_critical=is_critical,
+            check_quiet_hours=False,
+            eval_time=now,
+        )
         if not eligibility['is_eligible']:
             continue
 

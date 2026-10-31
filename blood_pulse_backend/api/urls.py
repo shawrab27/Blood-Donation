@@ -256,6 +256,8 @@ urlpatterns = [
     path('chat/<int:acceptance_id>/messages/<int:pk>/read/', MessageMarkReadAPIView.as_view(), name='chat-message-mark-read'),
     path('chat/<int:acceptance_id>/messages/<int:pk>/report/', MessageReportAPIView.as_view(), name='chat-message-report'),
     path('chat/<int:acceptance_id>/voice/', VoiceMessageUploadAPIView.as_view(), name='chat-voice-upload'),
+    path('blood-hub/chat/<int:acceptance_id>/voice/', VoiceMessageUploadAPIView.as_view(), name='bloodhub-chat-voice-upload'),
+    path('v1/blood-hub/chat/<int:acceptance_id>/voice/', VoiceMessageUploadAPIView.as_view(), name='v1-bloodhub-chat-voice-upload'),
 
     # Brevo HTTPS Email OTP Verification (Rule 8)
     path('auth/otp/send/', email_otp_send_view, name='bloodhub-otp-send'),

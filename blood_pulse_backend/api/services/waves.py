@@ -155,6 +155,8 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1, eval_time
             # Wave 3: Division-wide / <= 100km
             if dist_km is not None and dist_km <= max_radius_km:
                 in_boundary = True
+            elif blood_request.district and donor.district and blood_request.district.strip().lower() == donor.district.strip().lower():
+                in_boundary = True
             elif blood_request.division_id and getattr(donor, 'division_id', None) == blood_request.division_id:
                 in_boundary = True
 

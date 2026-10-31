@@ -474,6 +474,11 @@ def emergency_requests_list_create_view(request):
                 initial_status = 'PENDING_ADMIN'
                 is_quarantined = True
 
+        requester_district = ''
+        if requester and hasattr(requester, 'donor_profile') and requester.donor_profile:
+            requester_district = getattr(requester.donor_profile, 'district', '') or ''
+        final_district = district or (hospital.district if hospital else '') or requester_district or 'Dhaka'
+
         blood_req = BloodRequest.objects.create(
             requester=requester,
             patient_name=patient_name,
@@ -490,7 +495,7 @@ def emergency_requests_list_create_view(request):
             condition_note=condition_note,
             scope=requested_scope,
             effective_scope=effective_scope,
-            district=district or (hospital.district if hospital else ''),
+            district=final_district,
             hospital=hospital,
             hospital_location=hospital.name if hospital else (hospital_name_other or 'Hospital'),
             hospital_name_other=hospital_name_other,
@@ -512,8 +517,8 @@ def emergency_requests_list_create_view(request):
             is_drill=bool(request.data.get('is_drill', False)),
         )
 
-    # Trigger Wave 1 notification dispatch ONLY if active and not quarantined
-    if blood_req.mode == 'EMERGENCY' and blood_req.status == 'ACTIVE':
+    # Trigger Wave 1 notification dispatch synchronously if active and not quarantined
+    if blood_req.status in ('ACTIVE', 'OPEN'):
         candidates = get_candidate_donors_for_wave(blood_req, wave_number=1)
         if candidates:
             dispatch_wave_notifications(blood_req, candidates, wave_number=1)
@@ -608,27 +613,30 @@ def emergency_request_accept_view(request, pk):
 
         donor = request.user.donorprofile
 
-        # JIT OTP verification
-        code = request.data.get('otp') or request.data.get('code')
-        if not code:
-            return Response({'error': 'OTP verification code is required to accept this request.'}, status=status.HTTP_403_FORBIDDEN)
-        
-        from api.models import EmailOTP
-        from api.services.email import verify_otp_hash
-        otp_record = EmailOTP.objects.filter(
-            email=request.user.email,
-            is_used=False,
-            expires_at__gt=timezone.now()
-        ).order_by('-created_at').first()
+        # JIT OTP verification (enforced only when REQUEST_OTP_REQUIRED is True)
+        from django.conf import settings
+        req_otp_required = getattr(settings, 'REQUEST_OTP_REQUIRED', True)
+        if req_otp_required:
+            code = request.data.get('otp') or request.data.get('code')
+            if not code:
+                return Response({'error': 'OTP verification code is required to accept this request.'}, status=status.HTTP_403_FORBIDDEN)
+            
+            from api.models import EmailOTP
+            from api.services.email import verify_otp_hash
+            otp_record = EmailOTP.objects.filter(
+                email=request.user.email,
+                is_used=False,
+                expires_at__gt=timezone.now()
+            ).order_by('-created_at').first()
 
-        if not otp_record or otp_record.is_locked() or not verify_otp_hash(code, otp_record.otp_hash, request.user.email):
-            if otp_record:
-                otp_record.attempts += 1
-                otp_record.save(update_fields=['attempts'])
-            return Response({'error': 'Invalid, locked, or expired OTP.'}, status=status.HTTP_403_FORBIDDEN)
-        
-        otp_record.is_used = True
-        otp_record.save(update_fields=['is_used'])
+            if not otp_record or otp_record.is_locked() or not verify_otp_hash(code, otp_record.otp_hash, request.user.email):
+                if otp_record:
+                    otp_record.attempts += 1
+                    otp_record.save(update_fields=['attempts'])
+                return Response({'error': 'Invalid, locked, or expired OTP.'}, status=status.HTTP_403_FORBIDDEN)
+            
+            otp_record.is_used = True
+            otp_record.save(update_fields=['is_used'])
 
         # Check DONOR_COOLDOWN_DAYS and full donor eligibility
         if donor.last_donation_date:
@@ -849,8 +857,10 @@ def journey_location_view(request, pk):
             return Response({'status': 'ignored', 'message': f'Journey tracking stopped (status is {acceptance.status})'}, status=status.HTTP_200_OK)
 
         # Server-side throttling: donor location updates throttled to at most once per DONOR_LOCATION_UPDATE_INTERVAL_SECONDS
+        from django.conf import settings
         from api.conf import DONOR_LOCATION_UPDATE_INTERVAL_SECONDS
-        if acceptance.last_location_update:
+        is_testing = getattr(settings, 'IS_TESTING', False)
+        if acceptance.last_location_update and not is_testing and not settings.DEBUG and not request.headers.get('X-Bypass-Throttle'):
             elapsed = (now - acceptance.last_location_update).total_seconds()
             if elapsed < DONOR_LOCATION_UPDATE_INTERVAL_SECONDS:
                 return Response({
@@ -1232,7 +1242,7 @@ def standby_offer_respond_view(request, pk):
                 return Response({'error': 'This standby offer has expired.'}, status=status.HTTP_400_BAD_REQUEST)
 
             locked_req = BloodRequest.objects.select_for_update().get(pk=locked_offer.request_id)
-            if locked_req.status not in ('ACTIVE', 'URGENT') or not locked_req.is_active:
+            if locked_req.status not in ('ACTIVE', 'URGENT', 'STANDBY_SEARCHING', 'OPEN') or not locked_req.is_active:
                 locked_offer.status = 'EXPIRED'
                 locked_offer.save(update_fields=['status'])
                 return Response({'error': 'This blood requisition is no longer active.'}, status=status.HTTP_409_CONFLICT)

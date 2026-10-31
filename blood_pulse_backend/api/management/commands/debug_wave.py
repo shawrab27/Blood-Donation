@@ -158,6 +158,8 @@ class Command(BaseCommand):
             elif current_wave == 3:
                 if dist_km is not None and dist_km <= ladder_radius_km:
                     in_boundary = True
+                elif req.district and donor.district and req.district.strip().lower() == donor.district.strip().lower():
+                    in_boundary = True
                 elif req.division_id and getattr(donor, 'division_id', None) == req.division_id:
                     in_boundary = True
             else:
@@ -167,9 +169,10 @@ class Command(BaseCommand):
                 dist_str = f"{round(dist_km, 1)}km > {ladder_radius_km}km" if dist_km is not None else "no coordinate match"
                 reasons.append(f"outside radius ({dist_str}) and different district/upazila (donor={donor.district}, req={req.district})")
 
-            # 9. Verification status
-            verified = getattr(donor, 'is_verified', False) or getattr(donor, 'is_profile_complete', True)
-            if not verified:
+            # 9. Profile complete and verification status
+            if not getattr(donor, 'is_profile_complete', True):
+                reasons.append("profile incomplete")
+            if not getattr(donor, 'is_verified', False):
                 reasons.append("not verified")
 
             # 10. FCM Token check
