@@ -286,15 +286,18 @@ class _PersonalEmergencyScreenState
       final profile = ref.read(profileProvider).value;
       final otpRequired = profile != null ? profile.requestOtpRequired : await ApiClient().getRequestOtpRequired();
       if (!otpRequired) {
-        final client = ApiClient();
-        final response = await client.post('blood-hub/requests/', body: payload);
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          if (mounted) context.push('/journeys');
-          return;
-        } else {
-          _showError('Submission failed (${response.statusCode})');
-          return;
+        final service = ref.read(bloodHubApiServiceProvider);
+        await service.createEmergencyRequest(
+          payload,
+          fileBytes: _slipBytes,
+          filename: "requisition_slip.jpg",
+          photoBytes: _patientPhotoBytes,
+          photoFilename: "patient_photo.jpg",
+        );
+        if (mounted) {
+          context.push("/journeys");
         }
+        return;
       }
 
       if (!mounted) return;
@@ -312,7 +315,30 @@ class _PersonalEmergencyScreenState
       );
     } catch (e) {
       if (!mounted) return;
-      _showError('Failed to prepare request: $e');
+      String friendlyError = "Unable to submit blood request. Please check your connection and tap Retry.";
+      if (e is ApiException) {
+        if (e.statusCode == 404) {
+          friendlyError = "Request service endpoint temporarily unavailable. Please tap Retry.";
+        } else if (e.statusCode != null && e.statusCode! >= 500) {
+          friendlyError = "Server is currently waking up or busy. Please tap Retry.";
+        } else if (e.statusCode == 403) {
+          friendlyError = "Request submission not authorized. Please complete your profile first.";
+        } else {
+          friendlyError = e.message;
+        }
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(friendlyError, style: const TextStyle(fontFamily: "Inter")),
+          backgroundColor: _kPrimary,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: "Retry",
+            textColor: Colors.white,
+            onPressed: _submit,
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

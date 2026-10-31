@@ -49,6 +49,7 @@ class _PriorityBloodRequisitionScreenState
   final _conditionController = TextEditingController();
   final _contactController = TextEditingController();
   final _hospitalController = TextEditingController();
+  final _wardBedController = TextEditingController();
 
   String? _selectedBloodGroup;
   HospitalModel? _selectedHospital;
@@ -66,6 +67,8 @@ class _PriorityBloodRequisitionScreenState
     if (widget.prefillDistrict != null) {
       _hospitalController.text = widget.prefillDistrict!;
     }
+    // Pre-cache request OTP configuration in background
+    ApiClient().getRequestOtpRequired();
   }
 
   @override
@@ -74,6 +77,7 @@ class _PriorityBloodRequisitionScreenState
     _conditionController.dispose();
     _contactController.dispose();
     _hospitalController.dispose();
+    _wardBedController.dispose();
     super.dispose();
   }
 
@@ -95,34 +99,59 @@ class _PriorityBloodRequisitionScreenState
       final patientName = _nameController.text.trim();
       final hospital = _selectedHospital?.nameEn ?? _hospitalController.text.trim();
       final contact = _contactController.text.trim();
+      final wardBed = _wardBedController.text.trim();
 
       final payload = <String, dynamic>{
         'patient_name': patientName,
         'blood_group': _selectedBloodGroup,
         'urgency': _urgencyLevel,
         'hospital_name_other': hospital.isNotEmpty ? hospital : 'Medical Center',
+        if (_selectedHospital != null) 'hospital_id': _selectedHospital!.id,
+        'ward_bed': wardBed,
         'contact_phone': contact,
         'condition_note': _conditionController.text.trim(),
         'units_needed': 1,
         'component': 'WHOLE',
+        'mode': 'EMERGENCY',
       };
 
+      final client = ref.read(apiClientProvider);
       final profile = ref.read(profileProvider).value;
-      final otpRequired = profile != null ? profile.requestOtpRequired : await ApiClient().getRequestOtpRequired();
+      bool otpRequired = false;
+      if (profile != null) {
+        otpRequired = profile.requestOtpRequired;
+      } else if (client.cachedRequestOtpRequired != null) {
+        otpRequired = client.cachedRequestOtpRequired!;
+      } else {
+        otpRequired = await client.getRequestOtpRequired();
+      }
+
       if (!otpRequired) {
-        final client = ApiClient();
-        final response = await client.post('blood-hub/requests/', body: payload);
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          if (mounted) context.push('/blood-hub/poster');
-          return;
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Submission failed (${response.statusCode})')),
-            );
-          }
-          return;
+        final res = await ref.read(bloodHubApiServiceProvider).createEmergencyRequest(
+          payload,
+          fileBytes: _verificationFileBytes,
+          filename: _verificationFileName ?? 'requisition_slip.jpg',
+          photoBytes: _patientPhotoBytes,
+          photoFilename: 'patient_photo.jpg',
+        );
+
+        if (mounted) {
+          final posterData = PosterData(
+            patientName: patientName,
+            bloodGroup: _selectedBloodGroup!,
+            location: hospital.isNotEmpty ? hospital : 'Dhaka',
+            unitsNeeded: 1,
+            urgencyLevel: _urgencyLevel,
+            condition: _conditionController.text.trim().isNotEmpty
+                ? _conditionController.text.trim()
+                : 'Medical Emergency',
+            hospitalName: hospital.isNotEmpty ? hospital : null,
+            contactNumber: contact.isNotEmpty ? contact : null,
+            photoBytes: _patientPhotoBytes,
+          );
+          context.push('/blood-hub/poster', extra: posterData);
         }
+        return;
       }
 
       if (mounted) {
@@ -142,10 +171,28 @@ class _PriorityBloodRequisitionScreenState
       }
     } catch (e) {
       if (mounted) {
+        String friendlyError = 'Unable to submit blood request. Please check your connection and tap Retry.';
+        if (e is ApiException) {
+          if (e.statusCode == 404) {
+            friendlyError = 'Request service endpoint temporarily unavailable. Please tap Retry.';
+          } else if (e.statusCode != null && e.statusCode! >= 500) {
+            friendlyError = 'Server is currently waking up or busy. Please tap Retry.';
+          } else if (e.statusCode == 403) {
+            friendlyError = 'Request submission not authorized. Please complete your profile first.';
+          } else {
+            friendlyError = e.message;
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error preparing request: $e'),
+            content: Text(friendlyError),
             backgroundColor: const Color(0xFFC30121),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _submitRequisition,
+            ),
           ),
         );
       }
@@ -209,6 +256,7 @@ class _PriorityBloodRequisitionScreenState
                   const SizedBox(height: 20),
                   LocationUrgencyCard(
                     hospitalController: _hospitalController,
+                    wardBedController: _wardBedController,
                     selectedHospital: _selectedHospital,
                     onHospitalSelected: (h) => setState(() => _selectedHospital = h),
                     urgencyLevel: _urgencyLevel,

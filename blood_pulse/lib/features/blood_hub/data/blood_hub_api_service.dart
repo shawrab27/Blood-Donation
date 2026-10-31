@@ -295,12 +295,36 @@ class BloodHubApiService {
   // ── Emergency Request ──────────────────────────────────────────────────────
 
   /// POST /api/emergency/requests/
-  /// Creates an emergency blood request.  Returns the server-assigned request id.
+  /// Creates an emergency blood request. Supports JSON and multipart image uploads. Returns the server-assigned request id.
   Future<Map<String, dynamic>> createEmergencyRequest(
-    Map<String, dynamic> payload,
-  ) async {
-    final response = await _api.post('emergency/requests/', body: payload);
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    Map<String, dynamic> payload, {
+    List<int>? fileBytes,
+    String? filename,
+    List<int>? photoBytes,
+    String? photoFilename,
+  }) async {
+    if ((fileBytes != null && fileBytes.isNotEmpty) || (photoBytes != null && photoBytes.isNotEmpty)) {
+      final stringFields = <String, String>{};
+      payload.forEach((key, value) {
+        if (value != null) {
+          stringFields[key] = value.toString();
+        }
+      });
+      final response = await _api.postMultipart(
+        'emergency/requests/',
+        fields: stringFields,
+        fileBytes: fileBytes,
+        filename: filename ?? 'requisition_slip.jpg',
+        fileFieldName: 'requisition_slip',
+        secondFileBytes: photoBytes,
+        secondFilename: photoFilename ?? 'patient_photo.jpg',
+        secondFileFieldName: 'patient_photo',
+      );
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      final response = await _api.post('emergency/requests/', body: payload);
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
   }
 }
 
@@ -309,11 +333,11 @@ class BloodHubApiService {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Singleton ApiClient provider.
-final _apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
 
 /// BloodHubApiService provider.
 final bloodHubApiServiceProvider = Provider<BloodHubApiService>((ref) {
-  return BloodHubApiService(ref.read(_apiClientProvider));
+  return BloodHubApiService(ref.read(apiClientProvider));
 });
 
 // ── Donor Search State ────────────────────────────────────────────────────────

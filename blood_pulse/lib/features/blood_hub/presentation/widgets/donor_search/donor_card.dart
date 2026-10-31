@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/animated_fill_card.dart';
 import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
@@ -38,171 +39,204 @@ class DonorCard extends StatelessWidget {
     final tierBadge = donor.badge.isNotEmpty ? donor.badge : 'Donor';
 
     // USER RULE - do not change: S2 PressableScale on donor cards (B4)
-    return PressableScale(
+    return AnimatedFillCard(
       onTap: () => _handleTap(context),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _handleTap(context),
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-          decoration: BoxDecoration(
-            color: kDonorCardDarkRed,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: kDonorCardBorder, width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x26000000),
-                blurRadius: 8,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: SingleChildScrollView(
-              physics: const NeverScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 1. Top Row: Blood Group pill + Platform Tier pill
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Blood Group (White pill with dark red text for >=10:1 contrast)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        child: Text(
-                          donor.bloodGroup,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: kDonorCardDarkRed,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      // Platform Tier Badge
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.35), width: 0.8),
-                          ),
-                          child: Text(
-                            tierBadge,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
+      borderRadius: BorderRadius.circular(16),
+      backgroundColor: Colors.white,
+      borderColor: const Color(0xFFF0E5E5),
+      fillColor: const Color(0xFFB71C1C),
+      secondaryFillColor: const Color(0xFFE53935),
+      amplitude: 8.0,
+      fillDuration: const Duration(milliseconds: 900),
+      waveDuration: const Duration(seconds: 2),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x14000000),
+          blurRadius: 8,
+          offset: Offset(0, 3),
+        ),
+      ],
+      builder: (context, fillProgress) {
+        // Smoothly interpolate colors from default dark state to white as blood liquid rises
+        final nameColor = Color.lerp(const Color(0xFF24191A), Colors.white, fillProgress)!;
+        final districtColor = Color.lerp(const Color(0xFF5C3F3D), const Color(0xFFFFECEE), fillProgress)!;
+        final locationIconColor = Color.lerp(const Color(0xFFC30121), const Color(0xFFFFCDD2), fillProgress)!;
 
-                  // 2. Middle Content: Donor Name + District Name
-                  Text(
-                    donor.name,
-                    style: const TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 12,
-                        color: Color(0xFFFFCDD2),
+        // Blood Group badge colors
+        final bgBadgeBg = Color.lerp(const Color(0xFFFEE9EB), Colors.white, fillProgress)!;
+        final bgBadgeText = Color.lerp(const Color(0xFFC30121), const Color(0xFF960017), fillProgress)!;
+
+        // Platform Tier badge colors
+        final tierBadgeBg = Color.lerp(
+          const Color(0xFFF5EEEE),
+          Colors.white.withValues(alpha: 0.18),
+          fillProgress,
+        )!;
+        final tierBadgeBorder = Color.lerp(
+          const Color(0xFFE0D5D5),
+          Colors.white.withValues(alpha: 0.35),
+          fillProgress,
+        )!;
+        final tierBadgeText = Color.lerp(const Color(0xFF5C3F3D), Colors.white, fillProgress)!;
+
+        // Status pill colors
+        final statusDefaultBg = donor.isEligible ? const Color(0xFFE8F5E9) : const Color(0xFFF5EEEE);
+        final statusBg = Color.lerp(
+          statusDefaultBg,
+          Colors.white.withValues(alpha: 0.15),
+          fillProgress,
+        )!;
+        final statusText = donor.isEligible
+            ? Color.lerp(const Color(0xFF2E7D32), const Color(0xFFC8E6C9), fillProgress)!
+            : Color.lerp(const Color(0xFF8E7D7F), Colors.white70, fillProgress)!;
+
+        // Request button colors
+        final btnBg = Color.lerp(const Color(0xFFC30121), Colors.white, fillProgress)!;
+        final btnText = Color.lerp(Colors.white, const Color(0xFF960017), fillProgress)!;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Top Row: Blood Group pill + Platform Tier pill
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Blood Group
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: bgBadgeBg,
+                        borderRadius: BorderRadius.circular(50),
                       ),
-                      const SizedBox(width: 3),
-                      Expanded(
+                      child: Text(
+                        donor.bloodGroup,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: bgBadgeText,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Platform Tier Badge
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: tierBadgeBg,
+                          borderRadius: BorderRadius.circular(50),
+                          border: Border.all(color: tierBadgeBorder, width: 0.8),
+                        ),
                         child: Text(
-                          districtText,
-                          style: const TextStyle(
+                          tierBadge,
+                          style: TextStyle(
                             fontFamily: 'Inter',
-                            fontSize: 11,
-                            color: Color(0xFFFFECEE),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: tierBadgeText,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-
-                  // 3. Status Pill (Available / Resting)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
-                      donor.isEligible ? 'Available' : 'Resting',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w600,
-                        color: donor.isEligible ? const Color(0xFFC8E6C9) : Colors.white70,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
+                  ],
+                ),
+                const SizedBox(height: 6),
 
-                  // 4. Bottom Button: Small Full-Width Capsule "Request" Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 28,
-                    child: PressableScale(child: ElevatedButton(
-                      onPressed: () => _handleTap(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: kDonorCardDarkRed,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        padding: EdgeInsets.zero,
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Request',
+                // 2. Middle Content: Donor Name + District Name
+                Text(
+                  donor.name,
+                  style: TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: nameColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      size: 12,
+                      color: locationIconColor,
+                    ),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        districtText,
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: kDonorCardDarkRed,
+                          color: districtColor,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+
+                // 3. Status Pill (Available / Resting)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                ],
-              ),
+                  child: Text(
+                    donor.isEligible ? 'Available' : 'Resting',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                      color: statusText,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // 4. Bottom Button: Small Full-Width Capsule "Request" Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 28,
+                  child: ElevatedButton(
+                    onPressed: () => _handleTap(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: btnBg,
+                      foregroundColor: btnText,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      padding: EdgeInsets.zero,
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Request',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: btnText,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ),
-    ),
+        );
+      },
     );
   }
 

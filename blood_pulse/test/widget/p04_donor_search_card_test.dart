@@ -1,3 +1,4 @@
+import 'package:blood_pulse/core/widgets/animated_fill_card.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 // Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
@@ -37,7 +38,7 @@ void main() {
       maskedPhone: '+88017****5555', // Strictly private
     );
 
-    testWidgets('A1: Card uses dark red background with white text and contrast >= 4.5:1', (tester) async {
+    testWidgets('A1: Card uses AnimatedFillCard with default white background, dark text, and liquid fill contrast >= 4.5:1', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -57,23 +58,60 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Check card background color
-      final inkFinder = find.byType(Ink);
-      expect(inkFinder, findsOneWidget);
-      final ink = tester.widget<Ink>(inkFinder);
-      final dec = ink.decoration as BoxDecoration;
-      expect(dec.color, equals(kDonorCardDarkRed));
+      // Check card uses AnimatedFillCard with default white background and dark red fill
+      final fillCardFinder = find.byType(AnimatedFillCard);
+      expect(fillCardFinder, findsOneWidget);
+      final fillCard = tester.widget<AnimatedFillCard>(fillCardFinder);
+      expect(fillCard.backgroundColor, equals(Colors.white));
+      expect(fillCard.fillColor, equals(const Color(0xFFB71C1C)));
 
-      // Calculate contrast ratio against white text (WCAG requirement >= 4.5:1)
-      final contrast = _contrastRatio(kDonorCardDarkRed, Colors.white);
-      expect(contrast, greaterThanOrEqualTo(4.5));
-      expect(contrast, greaterThanOrEqualTo(7.0)); // Meets AAA
+      // Calculate contrast ratio of dark text against default white card (WCAG AAA >= 7.0:1)
+      final darkContrast = _contrastRatio(const Color(0xFF24191A), Colors.white);
+      expect(darkContrast, greaterThanOrEqualTo(7.0));
 
-      // Check that white text is rendered
+      // Calculate contrast ratio of liquid fill against white text (WCAG AAA >= 7.0:1)
+      final fillContrast = _contrastRatio(fillCard.fillColor, Colors.white);
+      expect(fillContrast, greaterThanOrEqualTo(4.5));
+
+      // Check that dark text is rendered by default
       final nameFinder = find.text('Tanvir Ahmed');
       expect(nameFinder, findsOneWidget);
       final nameText = tester.widget<Text>(nameFinder);
-      expect(nameText.style?.color, equals(Colors.white));
+      expect(nameText.style?.color, equals(const Color(0xFF24191A)));
+    });
+
+    testWidgets('A5: Liquid blood fill animation renders on tap down and drains on cancel', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 170,
+                height: 180,
+                child: DonorCard(
+                  donor: testDonor,
+                  onRequestTap: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap down to trigger fill
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(DonorCard)));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // CustomPaint for LiquidFillPainter is now rendered
+      final customPaintFinder = find.byType(CustomPaint);
+      expect(customPaintFinder, findsWidgets);
+
+      // Cancel gesture / drag away: drains back
+      await gesture.cancel();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tanvir Ahmed'), findsOneWidget);
     });
 
     testWidgets('A3: Card displays ONLY the 4 privacy fields (no phone, no campus, no GPS)', (tester) async {

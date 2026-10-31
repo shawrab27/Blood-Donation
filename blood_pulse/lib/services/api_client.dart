@@ -610,7 +610,7 @@ class ApiClient {
       ),
     );
 
-    final streamedResponse = await request.send().timeout(connectTimeout);
+    final streamedResponse = await _client.send(request).timeout(connectTimeout);
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -619,6 +619,79 @@ class ApiClient {
       final msg = _extractErrorMessage(response.body, statusCode: response.statusCode);
       throw ApiException(msg, statusCode: response.statusCode, rawError: response.body);
     }
+  }
+
+  /// Uploads fields and optional raw file bytes via multipart/form-data.
+  /// Fully cross-platform compatible across Flutter Web (memory bytes) and native platforms.
+  Future<http.Response> postMultipart(
+    String path, {
+    Map<String, String>? fields,
+    List<int>? fileBytes,
+    String? filename,
+    String fileFieldName = 'requisition_slip',
+    List<int>? secondFileBytes,
+    String? secondFilename,
+    String secondFileFieldName = 'patient_photo',
+  }) async {
+    final authHeaders = await _getAuthHeaders();
+    final uri = Uri.parse(_normalizeUrl(path));
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll(authHeaders);
+
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
+
+    if (fileBytes != null && fileBytes.isNotEmpty) {
+      final fname = filename ?? 'document.jpg';
+      final ext = fname.split('.').last.toLowerCase();
+      http_parser.MediaType mediaType;
+      if (ext == 'png') {
+        mediaType = http_parser.MediaType('image', 'png');
+      } else if (ext == 'webp') {
+        mediaType = http_parser.MediaType('image', 'webp');
+      } else {
+        mediaType = http_parser.MediaType('image', 'jpeg');
+      }
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          fileFieldName,
+          fileBytes,
+          filename: fname,
+          contentType: mediaType,
+        ),
+      );
+    }
+
+    if (secondFileBytes != null && secondFileBytes.isNotEmpty) {
+      final fname = secondFilename ?? 'photo.jpg';
+      final ext = fname.split('.').last.toLowerCase();
+      http_parser.MediaType mediaType;
+      if (ext == 'png') {
+        mediaType = http_parser.MediaType('image', 'png');
+      } else if (ext == 'webp') {
+        mediaType = http_parser.MediaType('image', 'webp');
+      } else {
+        mediaType = http_parser.MediaType('image', 'jpeg');
+      }
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          secondFileFieldName,
+          secondFileBytes,
+          filename: fname,
+          contentType: mediaType,
+        ),
+      );
+    }
+
+    final streamedResponse = await _client.send(request).timeout(connectTimeout);
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode >= 400) {
+      final msg = _extractErrorMessage(response.body, statusCode: response.statusCode);
+      throw ApiException(msg, statusCode: response.statusCode, rawError: response.body);
+    }
+    return response;
   }
 
 
@@ -1169,8 +1242,15 @@ class ApiClient {
     return responseBody.length > 100 ? '${responseBody.substring(0, 100)}...' : responseBody;
   }
 
-  bool? _cachedRequestOtpRequired;
-  DateTime? _cachedRequestOtpRequiredAt;
+  static bool? _cachedRequestOtpRequired;
+  static DateTime? _cachedRequestOtpRequiredAt;
+
+  static set staticRequestOtpRequired(bool? val) {
+    _cachedRequestOtpRequired = val;
+    _cachedRequestOtpRequiredAt = val != null ? DateTime.now() : null;
+  }
+
+  bool? get cachedRequestOtpRequired => _cachedRequestOtpRequired;
 
   Future<bool> getRequestOtpRequired() async {
     final now = DateTime.now();
@@ -1180,7 +1260,7 @@ class ApiClient {
       return _cachedRequestOtpRequired!;
     }
     try {
-      final res = await get('public/config/');
+      final res = await get('public/config/').timeout(const Duration(seconds: 3));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data is Map<String, dynamic> && data.containsKey('request_otp_required')) {
@@ -1190,6 +1270,7 @@ class ApiClient {
         }
       }
     } catch (_) {}
-    return true;
+    // Config fail-safe: if GET /api/public/config/ fails or is slow, treat request_otp_required as false
+    return false;
   }
 }

@@ -497,6 +497,47 @@ class RequestOTPAndSubmitTokenTests(TestCase):
             res_ok = self.client.post('/api/emergency/requests/', payload_valid, format='json')
             self.assertIn(res_ok.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
 
+    def test_emergency_request_otp_off_with_and_without_image(self):
+        """When REQUEST_OTP_REQUIRED=False, POST /api/emergency/requests/ succeeds without submit_token, both with and without image."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.force_authenticate(user=self.user)
+        with override_settings(REQUEST_OTP_REQUIRED=False):
+            # 1. Without image (JSON)
+            payload_json = {
+                'patient_name': 'Emergency Patient No Image',
+                'blood_group': 'O+',
+                'units_needed': 1,
+                'hospital_id': self.hospital.id,
+                'contact_number': '+8801711111111',
+                'lat': 23.726,
+                'lng': 90.398,
+                'ward_bed': 'Ward 5, Bed 12',
+            }
+            res_json = self.client.post('/api/emergency/requests/', payload_json, format='json')
+            self.assertIn(res_json.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
+            self.assertTrue('id' in res_json.data or 'request_id' in res_json.data)
+
+            # 2. With image (multipart)
+            dummy_image = SimpleUploadedFile(
+                "requisition_slip.jpg",
+                b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00\xff\xdb\x00C\x00\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xda\x00\x08\x01\x01\x00\x00?\x00\xbf\x00\xff\xd9",
+                content_type="image/jpeg"
+            )
+            payload_multipart = {
+                'patient_name': 'Emergency Patient With Image',
+                'blood_group': 'O+',
+                'units_needed': 1,
+                'hospital_id': self.hospital.id,
+                'contact_number': '+8801711111111',
+                'lat': 23.726,
+                'lng': 90.398,
+                'ward_bed': 'Ward 6, Bed 14',
+                'requisition_slip': dummy_image,
+            }
+            res_mp = self.client.post('/api/emergency/requests/', payload_multipart, format='multipart')
+            self.assertIn(res_mp.status_code, (status.HTTP_200_OK, status.HTTP_201_CREATED))
+            self.assertTrue('id' in res_mp.data or 'request_id' in res_mp.data)
+
     def test_public_config_endpoint_returns_request_otp_required(self):
         """Unauthenticated public config endpoint returns request_otp_required status for guests."""
         self.client.logout()

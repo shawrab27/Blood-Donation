@@ -18,9 +18,11 @@ class LocationUrgencyCard extends ConsumerStatefulWidget {
     required this.onUrgencyChanged,
     required this.customDateTime,
     required this.onDateTimeChanged,
+    this.wardBedController,
   });
 
   final TextEditingController hospitalController;
+  final TextEditingController? wardBedController;
   final HospitalModel? selectedHospital;
   final ValueChanged<HospitalModel?> onHospitalSelected;
   final String urgencyLevel; // 'NORMAL' | 'URGENT' | 'CUSTOM'
@@ -214,6 +216,58 @@ class _LocationUrgencyCardState extends ConsumerState<LocationUrgencyCard> {
                 },
               ),
             ),
+
+          if (widget.wardBedController != null) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Ward / Bed *',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF5C3F3D),
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              key: const Key("ward_bed_input"),
+              controller: widget.wardBedController,
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Ward/Bed information is required' : null,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: Color(0xFF24191A),
+              ),
+              decoration: InputDecoration(
+                hintText: 'e.g. Ward 4, Bed 12',
+                hintStyle: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: Color(0xFF916F6C),
+                ),
+                prefixIcon: const Icon(
+                  Icons.hotel_rounded,
+                  color: Color(0xFFC30121),
+                  size: 22,
+                ),
+                filled: true,
+                fillColor: const Color(0xFFFDF3F3),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFFE8DADA)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFFE8DADA)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFFC30121)),
+                ),
+              ),
+            ),
+          ],
 
           const SizedBox(height: 18),
 
