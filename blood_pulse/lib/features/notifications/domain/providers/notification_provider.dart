@@ -4,22 +4,30 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../features/blood_hub/data/blood_hub_api_service.dart';
 import '../../../../services/api_client.dart';
 
 class NotificationCountNotifier extends StateNotifier<int> {
   final ApiClient _apiClient;
   Timer? _pollingTimer;
+  AppLifecycleListener? _lifecycleListener;
 
   NotificationCountNotifier({ApiClient? apiClient, bool enablePolling = true})
       : _apiClient = apiClient ?? ApiClient(),
         super(0) {
     if (enablePolling) {
       fetchUnreadCount();
-      // Poll every 30 seconds for real-time unread badge updates
-      _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      // Poll every 15 seconds for real-time unread badge updates
+      _pollingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
         fetchUnreadCount();
       });
+      try {
+        _lifecycleListener = AppLifecycleListener(
+          onResume: () => fetchUnreadCount(),
+        );
+      } catch (_) {}
     }
   }
 
@@ -53,11 +61,12 @@ class NotificationCountNotifier extends StateNotifier<int> {
   @override
   void dispose() {
     _pollingTimer?.cancel();
+    _lifecycleListener?.dispose();
     super.dispose();
   }
 }
 
 final notificationCountProvider =
     StateNotifierProvider<NotificationCountNotifier, int>((ref) {
-  return NotificationCountNotifier();
+  return NotificationCountNotifier(apiClient: ref.read(apiClientProvider));
 });

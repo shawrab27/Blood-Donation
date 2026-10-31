@@ -1813,9 +1813,37 @@ from .models import Notification
 from rest_framework.serializers import ModelSerializer
 
 class NotificationSerializer(ModelSerializer):
+    request_id = serializers.SerializerMethodField()
+    target_route = serializers.SerializerMethodField()
+
     class Meta:
         model = Notification
-        fields = ['id', 'title', 'body', 'type', 'is_read', 'created_at']
+        fields = ['id', 'title', 'body', 'type', 'is_read', 'created_at', 'request_id', 'target_route']
+
+    def get_request_id(self, obj):
+        import re
+        match = re.search(r'\[Req #?(\d+)\]', obj.body or '') or re.search(r'request #?(\d+)', obj.body or '', re.IGNORECASE)
+        if match:
+            try:
+                return int(match.group(1))
+            except Exception:
+                pass
+        if obj.type == 'emergency_request_new' and hasattr(obj.user, 'donor_profile'):
+            en = EmergencyNotification.objects.filter(donor=obj.user.donor_profile).order_by('-sent_at').first()
+            if en:
+                return en.request_id
+        return None
+
+    def get_target_route(self, obj):
+        req_id = self.get_request_id(obj)
+        if req_id and (obj.type == 'emergency_request_new' or 'REQUEST' in obj.type.upper()):
+            return f"/blood-hub/requests/{req_id}"
+        from api.services.notifications import NOTIFICATION_MATRIX
+        rule = NOTIFICATION_MATRIX.get(obj.type, {})
+        target = rule.get('tap_target', '/notifications')
+        if req_id and '{id}' in target:
+            return target.replace('{id}', str(req_id))
+        return target
 
 class NotificationListView(APIView):
     """

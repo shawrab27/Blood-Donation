@@ -107,17 +107,18 @@ def get_candidate_donors_for_wave(blood_request, wave_number: int = 1, eval_time
             pass
 
     # Urgency & Quiet Hours check
-    is_critical = (getattr(blood_request, 'urgency', '') == 'CRITICAL_2H')
+    urgency_val = str(getattr(blood_request, 'urgency', '')).upper()
+    is_critical = urgency_val in ('CRITICAL_2H', 'URGENT', 'URGENT (IMMEDIATE)')
 
     candidates = []
 
     for donor in donors_qs:
-        # Check medical & interval eligibility + Quiet Hours
+        # Check medical & interval eligibility (in-app notifications are created even during quiet hours)
         eligibility = evaluate_donor_eligibility(
             donor,
             component=blood_request.component or 'WHOLE',
             is_critical=is_critical,
-            check_quiet_hours=True,
+            check_quiet_hours=False,
             eval_time=eval_time,
         )
         if not eligibility['is_eligible']:

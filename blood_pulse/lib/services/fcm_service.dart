@@ -73,6 +73,8 @@ class FcmService {
   static final FcmService instance = FcmService._();
 
   bool _isInitialized = false;
+  bool _webPushDeniedOrUnsupported = false;
+  bool get isWebPushDeniedOrUnsupported => _webPushDeniedOrUnsupported;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   static const AndroidNotificationChannel _emergencyChannel = AndroidNotificationChannel(
@@ -149,13 +151,32 @@ class FcmService {
   Future<String?> getDeviceToken() async {
     try {
       if (kIsWeb) {
+        try {
+          final settings = await FirebaseMessaging.instance.requestPermission();
+          if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+              settings.authorizationStatus != AuthorizationStatus.provisional) {
+            _webPushDeniedOrUnsupported = true;
+            return null;
+          }
+        } catch (_) {
+          _webPushDeniedOrUnsupported = true;
+          return null;
+        }
+
         const vapidKey = String.fromEnvironment('FCM_VAPID_KEY', defaultValue: '');
         if (vapidKey.isNotEmpty) {
-          return await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+          final t = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+          if (t == null || t.isEmpty) {
+            _webPushDeniedOrUnsupported = true;
+          } else {
+            _webPushDeniedOrUnsupported = false;
+          }
+          return t;
         }
       }
       return await FirebaseMessaging.instance.getToken();
     } catch (e) {
+      if (kIsWeb) _webPushDeniedOrUnsupported = true;
       debugPrint('[FCM] getDeviceToken error: $e');
       return null;
     }

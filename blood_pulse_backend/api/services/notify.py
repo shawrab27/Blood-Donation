@@ -12,7 +12,7 @@ import os
 from django.conf import settings
 from django.utils import timezone
 from api.conf import FCM_BATCH_SIZE
-from api.models import EmergencyNotification, UserNotificationState, WaveNotificationLog, DonorProfile, UserDevice
+from api.models import EmergencyNotification, UserNotificationState, WaveNotificationLog, DonorProfile, UserDevice, Notification
 
 logger = logging.getLogger(__name__)
 
@@ -191,9 +191,21 @@ def dispatch_wave_notifications(blood_request, candidate_list: list, wave_number
         donor.alert_count = (donor.alert_count or 0) + 1
         donor.save(update_fields=['alert_count'])
 
-        # 4. Increment unread notification badge
+        # 4. Increment unread notification badge & create in-app Notification row
         if donor.user:
             UserNotificationState.increment_for_user(donor.user)
+            hospital_name = getattr(blood_request.hospital, 'name', None) or blood_request.hospital_name_other or 'Hospital'
+            ward_info = f" ({blood_request.ward_bed})" if getattr(blood_request, 'ward_bed', None) else ""
+            notif_title = f"Urgent: {blood_request.blood_group} Blood Needed!"
+            notif_body = f"{hospital_name}{ward_info} needs {blood_request.blood_group} blood. [Req #{blood_request.id}]"
+            Notification.objects.create(
+                user=donor.user,
+                title=notif_title,
+                body=notif_body,
+                type='emergency_request_new',
+                is_read=False,
+                created_at=now,
+            )
 
         # 5. Collect valid FCM token
         if donor.fcm_token and donor.fcm_token.strip():
@@ -204,7 +216,13 @@ def dispatch_wave_notifications(blood_request, candidate_list: list, wave_number
         dispatched_count += 1
 
     # Send high-priority FCM notifications in batches of max 500
-    if tokens_with_donors:
+    from api.services.eligibility import is_in_quiet_hours
+    urgency_val = str(getattr(blood_request, 'urgency', '')).upper()
+    is_critical = urgency_val in ('CRITICAL_2H', 'URGENT', 'URGENT (IMMEDIATE)')
+    in_quiet = is_in_quiet_hours(now)
+    allow_push = is_critical or not in_quiet
+
+    if allow_push and tokens_with_donors:
         blood_group = blood_request.blood_group or 'Blood'
         hospital = getattr(blood_request.hospital, 'name', None) or blood_request.hospital_name_other or 'Hospital'
         title = f"Urgent: {blood_group} Blood Needed!"
