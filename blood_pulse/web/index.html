@@ -123,9 +123,69 @@
       padding: 0;
       height: 100%;
     }
-    @keyframes pulse-spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes ecg-trace {
+      0% {
+        stroke-dashoffset: 60;
+      }
+      100% {
+        stroke-dashoffset: -200;
+      }
+    }
+    @keyframes heartbeat-bounce {
+      0%, 100% {
+        transform: scale(1);
+      }
+      30% {
+        transform: scale(1.04);
+      }
+      40% {
+        transform: scale(0.98);
+      }
+      50% {
+        transform: scale(1.07);
+      }
+      65% {
+        transform: scale(1);
+      }
+    }
+    .bp-heartbeat-box {
+      width: 88px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: heartbeat-bounce 1.4s ease-in-out infinite;
+    }
+    .bp-ecg-svg {
+      width: 88px;
+      height: 48px;
+      overflow: visible;
+    }
+    .bp-ecg-bg {
+      stroke: #E6BDBA;
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.45;
+    }
+    .bp-ecg-pulse {
+      stroke: #C30121;
+      stroke-width: 3.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 60 200;
+      filter: drop-shadow(0 0 2px rgba(195, 1, 33, 0.45));
+      animation: ecg-trace 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bp-heartbeat-box {
+        animation: none;
+      }
+      .bp-ecg-pulse {
+        animation: none;
+        stroke-dasharray: none;
+        filter: none;
+      }
     }
     /* Offline page styles */
     #offline-page {
@@ -189,7 +249,12 @@
 
   <!-- Splash / loading screen -->
   <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #FDF3F3;">
-    <div style="width: 48px; height: 48px; border: 4px solid #E6BDBA; border-top: 4px solid #C30121; border-radius: 50%; animation: pulse-spin 0.9s linear infinite;"></div>
+    <div class="bp-heartbeat-box">
+      <svg class="bp-ecg-svg" viewBox="0 0 120 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="bp-ecg-bg" d="M 0 25 L 28 25 L 36 17 L 44 32 L 54 4 L 64 45 L 74 25 L 82 20 L 90 25 L 120 25" />
+        <path class="bp-ecg-pulse" d="M 0 25 L 28 25 L 36 17 L 44 32 L 54 4 L 64 45 L 74 25 L 82 20 L 90 25 L 120 25" />
+      </svg>
+    </div>
     <div style="margin-top: 16px; font-family: Georgia, serif; font-size: 20px; font-weight: bold; color: #C30121;">BloodPulse</div>
     <div style="margin-top: 4px; font-family: sans-serif; font-size: 12px; color: #666;">Loading Application...</div>
   </div>

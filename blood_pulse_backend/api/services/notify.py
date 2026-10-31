@@ -161,6 +161,7 @@ def dispatch_wave_notifications(blood_request, candidate_list: list, wave_number
     now = timezone.now()
 
     tokens_with_donors = []
+    seen_fcm_tokens = set()
 
     for item in candidate_list:
         donor = item['donor']
@@ -207,11 +208,13 @@ def dispatch_wave_notifications(blood_request, candidate_list: list, wave_number
                 created_at=now,
             )
 
-        # 5. Collect valid FCM token
+        # 5. Collect valid FCM token (strictly deduplicated across all candidates)
         if donor.fcm_token and donor.fcm_token.strip():
             candidate_t = donor.fcm_token.strip()
-            if not UserDevice.objects.filter(user=donor.user, fcm_token=candidate_t, is_revoked=True).exists():
-                tokens_with_donors.append((candidate_t, donor))
+            if candidate_t not in seen_fcm_tokens:
+                if not UserDevice.objects.filter(user=donor.user, fcm_token=candidate_t, is_revoked=True).exists():
+                    seen_fcm_tokens.add(candidate_t)
+                    tokens_with_donors.append((candidate_t, donor))
 
         dispatched_count += 1
 

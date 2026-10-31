@@ -24,6 +24,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/notifications/presentation/screens/notification_wallpaper_overlay.dart';
 import '../core/deep_link_resolver.dart';
@@ -74,7 +75,17 @@ class FcmService {
 
   bool _isInitialized = false;
   bool _webPushDeniedOrUnsupported = false;
-  bool get isWebPushDeniedOrUnsupported => _webPushDeniedOrUnsupported;
+  String? _cachedToken;
+
+  /// Returns true if an FCM token has already been successfully retrieved or saved.
+  bool get hasSavedToken => (_cachedToken != null && _cachedToken!.isNotEmpty);
+
+  /// Hint must show ONLY when permission is denied or unsupported, NEVER when a token is saved.
+  bool get isWebPushDeniedOrUnsupported {
+    if (hasSavedToken) return false;
+    return _webPushDeniedOrUnsupported;
+  }
+
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   static const AndroidNotificationChannel _emergencyChannel = AndroidNotificationChannel(
@@ -101,11 +112,14 @@ class FcmService {
     if (_isInitialized) return;
     _isInitialized = true;
 
-    // 1. Register background handler first (top-level entry-point)
-    FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
-
-    // 2. Local Notifications Plugin Init (for Foreground Banners & Channels)
+    // 1. Local Notifications Plugin Init (for Foreground Banners & Channels)
     await _initLocalNotifications(context);
+
+    // 2. Load any previously saved token from persistent storage
+    await _loadSavedToken();
+
+    // 3. Register background handler first (top-level entry-point)
+    FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
     // 3. Permission Request
     await _requestPermissions();
@@ -148,35 +162,67 @@ class FcmService {
   }
 
   /// Explicit helper to retrieve or refresh the device FCM token.
+  Future<void> _loadSavedToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('fcm_device_token');
+      if (saved != null && saved.isNotEmpty) {
+        _cachedToken = saved;
+        _webPushDeniedOrUnsupported = false;
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _persistToken(String token) async {
+    try {
+      _cachedToken = token;
+      _webPushDeniedOrUnsupported = false;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_device_token', token);
+    } catch (_) {}
+  }
+
   Future<String?> getDeviceToken() async {
     try {
       if (kIsWeb) {
         try {
           final settings = await FirebaseMessaging.instance.requestPermission();
-          if (settings.authorizationStatus != AuthorizationStatus.authorized &&
-              settings.authorizationStatus != AuthorizationStatus.provisional) {
-            _webPushDeniedOrUnsupported = true;
+          if (settings.authorizationStatus == AuthorizationStatus.denied) {
+            if (!hasSavedToken) {
+              _webPushDeniedOrUnsupported = true;
+            }
             return null;
           }
         } catch (_) {
-          _webPushDeniedOrUnsupported = true;
+          if (!hasSavedToken) {
+            _webPushDeniedOrUnsupported = true;
+          }
           return null;
         }
 
         const vapidKey = String.fromEnvironment('FCM_VAPID_KEY', defaultValue: '');
+        String? t;
         if (vapidKey.isNotEmpty) {
-          final t = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
-          if (t == null || t.isEmpty) {
-            _webPushDeniedOrUnsupported = true;
-          } else {
-            _webPushDeniedOrUnsupported = false;
-          }
+          t = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+        } else {
+          t = await FirebaseMessaging.instance.getToken();
+        }
+        if (t != null && t.isNotEmpty) {
+          await _persistToken(t);
           return t;
+        } else if (!hasSavedToken) {
+          _webPushDeniedOrUnsupported = true;
         }
       }
-      return await FirebaseMessaging.instance.getToken();
+      final t = await FirebaseMessaging.instance.getToken();
+      if (t != null && t.isNotEmpty) {
+        await _persistToken(t);
+      }
+      return t;
     } catch (e) {
-      if (kIsWeb) _webPushDeniedOrUnsupported = true;
+      if (kIsWeb && !hasSavedToken) {
+        _webPushDeniedOrUnsupported = true;
+      }
       debugPrint('[FCM] getDeviceToken error: $e');
       return null;
     }
@@ -266,6 +312,9 @@ class FcmService {
         await FirebaseMessaging.instance.getAPNSToken();
       }
       final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        await _persistToken(token);
+      }
       debugPrint('\n════════════════════════════════════════════════════════════');
       debugPrint('🔥 [BLOODPULSE FCM DEVICE TOKEN]');
       if (userUid != null && userUid.isNotEmpty) {

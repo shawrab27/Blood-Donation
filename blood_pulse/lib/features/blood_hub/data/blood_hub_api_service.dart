@@ -791,6 +791,31 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
     throw Exception(data['detail'] ?? 'Failed to load journey');
   }
 
+  /// Resolves the journey ID from a blood request ID via GET /api/journeys/?request_id=`<id>`.
+  /// Returns the corresponding journey ID (RequestAcceptance.id) if found,
+  /// or falls back to the original [requestId].
+  Future<int> resolveJourneyIdFromRequestId(int requestId) async {
+    try {
+      final response = await _api.get('journeys/?request_id=$requestId');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data['results'] is List) {
+          final results = data['results'] as List;
+          if (results.isNotEmpty) {
+            final first = results.first;
+            if (first is Map<String, dynamic>) {
+              final jId = (first['id'] as num?)?.toInt();
+              if (jId != null && jId > 0) {
+                return jId;
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    return requestId;
+  }
+
   /// POST `/api/journeys/<id>/status/`  — update journey status
   Future<Map<String, dynamic>> getActiveDeferral() async {
     final response = await _api.get('deferrals/active/');

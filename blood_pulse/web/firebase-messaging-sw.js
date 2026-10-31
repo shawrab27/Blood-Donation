@@ -16,15 +16,19 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message: ', payload);
-  const notificationTitle = (payload.notification && payload.notification.title) ||
-    (payload.data && payload.data.title) ||
-    'BloodPulse Alert';
+  // Prevent duplicate: When payload.notification exists, the Web Push standard
+  // already automatically displays the native banner. Showing it again causes duplicate alerts.
+  if (payload.notification && payload.notification.title) {
+    return;
+  }
+  const notificationTitle = (payload.data && payload.data.title) || 'BloodPulse Alert';
+  const reqId = (payload.data && (payload.data.request_id || payload.data.requestId));
+  const tag = reqId ? ('bloodpulse_req_' + reqId) : notificationTitle;
   const notificationOptions = {
-    body: (payload.notification && payload.notification.body) ||
-      (payload.data && payload.data.body) ||
-      'New blood request notification.',
+    body: (payload.data && payload.data.body) || 'New blood request notification.',
     icon: '/icons/Icon-192.png',
     badge: '/icons/Icon-192.png',
+    tag: tag, // Deduplicate alerts with the same tag
     data: payload.data || {}
   };
 
@@ -36,7 +40,7 @@ self.addEventListener('notificationclick', function(event) {
   const data = (event.notification && event.notification.data) || {};
   let targetUrl = '/feed';
   if (data.requestId || data.request_id) {
-    targetUrl = '/blood-hub?requestId=' + (data.requestId || data.request_id);
+    targetUrl = '/journeys/' + (data.requestId || data.request_id);
   } else if (data.chatId || data.chat_id || data.chatRoomId) {
     targetUrl = '/chat?roomId=' + (data.chatId || data.chat_id || data.chatRoomId);
   }

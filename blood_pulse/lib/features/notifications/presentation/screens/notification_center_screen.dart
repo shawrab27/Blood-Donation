@@ -14,6 +14,9 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_loader.dart';
 import '../../../../core/widgets/blood_pulse_app_bar.dart';
+import '../../../../core/widgets/ecg_loader.dart';
+import '../../../../core/widgets/pressable_scale.dart';
+
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/chat_message_model.dart';
 import '../../../../services/api_client.dart';
@@ -39,7 +42,8 @@ class NotificationCenterScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScreen> {
-  int _selectedFilterIndex = 0; // 0: Feed, 1: Request, 2: Messages, 3: Profile
+  int _selectedFilterIndex = 0;
+  String? _isAcceptingRequestId; // 0: Feed, 1: Request, 2: Messages, 3: Profile
   Timer? _pollingTimer;
   AppLifecycleListener? _lifecycleListener;
   List<Map<String, dynamic>> _serverNotifications = [];
@@ -73,6 +77,86 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
     _pollingTimer?.cancel();
     _lifecycleListener?.dispose();
     super.dispose();
+  }
+
+
+  Future<void> _handleRespond(String? requestId, Map<String, dynamic> rawData) async {
+    if (requestId == null || requestId.isEmpty) {
+      context.go('/blood-hub');
+      return;
+    }
+
+    final reqIdInt = int.tryParse(requestId);
+    if (reqIdInt == null) {
+      context.go('/blood-hub');
+      return;
+    }
+
+    setState(() => _isAcceptingRequestId = requestId);
+
+    try {
+      final api = ref.read(bloodHubApiServiceProvider);
+      final res = await api.acceptBloodRequest(
+        reqIdInt,
+        supportStatus: 'CAN_SUPPORT',
+        unitsPledged: 1,
+      );
+
+      if (!mounted) return;
+
+      final acceptanceData = res['acceptance'] as Map<String, dynamic>?;
+      int? journeyId = (res['acceptance_id'] as num?)?.toInt() ??
+          (acceptanceData?['id'] as num?)?.toInt();
+      if (journeyId == null || journeyId <= 0) {
+        journeyId = await api.resolveJourneyIdFromRequestId(reqIdInt);
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Requisition Accepted! Real contact & live tracking unlocked.',
+            style: TextStyle(fontFamily: 'Inter', color: Colors.white),
+          ),
+          backgroundColor: Color(0xFF1B8A4E),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      ref.invalidate(journeyDetailProvider(journeyId));
+      context.push('/journeys/$journeyId');
+    } catch (e) {
+      if (!mounted) return;
+      final errStr = e.toString().toLowerCase();
+
+      // If already responded/accepted, route directly to the active journey!
+      if (errStr.contains('already responded') ||
+          errStr.contains('already accepted') ||
+          errStr.contains('conflict')) {
+        final api = ref.read(bloodHubApiServiceProvider);
+        final resolvedId = await api.resolveJourneyIdFromRequestId(reqIdInt);
+        if (!mounted) return;
+        ref.invalidate(journeyDetailProvider(resolvedId));
+        context.push('/journeys/$resolvedId');
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e is ApiException ? e.message : 'Could not accept request: $e',
+            style: const TextStyle(fontFamily: 'Inter', color: Colors.white),
+          ),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAcceptingRequestId = null);
+      }
+    }
   }
 
   Future<void> _fetchServerNotifications() async {
@@ -481,76 +565,92 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
           ),
           const SizedBox(height: 14),
 
-          // Two Buttons: Respond (filled #C30121) + Message (outlined)
+          // Two Buttons: Respond (filled #C30121) + Message (outlined) — Guaranteed no clip/wrap
           Row(
             children: [
-              // Respond button
+              // Respond button with ECG loading & auto-scaling
               Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
+                child: PressableScale(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                        alignment: Alignment.center,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
                       ),
-                    ),
-                    onPressed: () {
-                      if (requestId != null && requestId.isNotEmpty) {
-                        context.push('/blood-hub/requests/$requestId');
-                      } else {
-                        context.go('/blood-hub');
-                      }
-                    },
-                    child: const Text(
-                      'Respond',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      onPressed: _isAcceptingRequestId == requestId
+                          ? null
+                          : () => _handleRespond(requestId, rawData),
+                      child: _isAcceptingRequestId == requestId
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: EcgLoader(color: Colors.white, width: 24, height: 16),
+                            )
+                          : const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Respond',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 10),
 
-              // Message button
+              // Message button with auto-scaling
               Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
+                child: PressableScale(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary, width: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                        alignment: Alignment.center,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                        ),
                       ),
-                    ),
-                    onPressed: (rawData['chat_room_id'] != null || requestId != null)
-                        ? () {
-                            final chatRoomId = rawData['chat_room_id']?.toString() ??
-                                (requestId != null ? 'emergency_$requestId' : null);
-                            final recipientId = rawData['requester_id']?.toString() ??
-                                rawData['recipientId']?.toString();
-                            if (chatRoomId != null) {
-                              context.push('/chat', extra: {
-                                'chatRecipientName': rawData['requester_name']?.toString() ?? 'Blood Requester',
-                                'bloodGroup': rawData['blood_group']?.toString() ?? 'Blood',
-                                'chatRoomId': chatRoomId,
-                                'recipientId': recipientId ?? chatRoomId,
-                              });
+                      onPressed: (rawData['chat_room_id'] != null || requestId != null)
+                          ? () {
+                              final chatRoomId = rawData['chat_room_id']?.toString() ??
+                                  (requestId != null ? 'emergency_$requestId' : null);
+                              final recipientId = rawData['requester_id']?.toString() ??
+                                  rawData['recipientId']?.toString();
+                              if (chatRoomId != null) {
+                                context.push('/chat', extra: {
+                                  'chatRecipientName': rawData['requester_name']?.toString() ?? 'Blood Requester',
+                                  'bloodGroup': rawData['blood_group']?.toString() ?? 'Blood',
+                                  'chatRoomId': chatRoomId,
+                                  'recipientId': recipientId ?? chatRoomId,
+                                });
+                              }
                             }
-                          }
-                        : null,
-                    child: const Text(
-                      'Message',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                          : null,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Message',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -673,24 +773,31 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
           ),
           if (buttonLabel != null && buttonAction != null) ...[
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 36,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary, width: 1.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
+            PressableScale(
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                    alignment: Alignment.center,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(50),
+                    ),
                   ),
-                ),
-                onPressed: buttonAction,
-                child: Text(
-                  buttonLabel,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                  onPressed: buttonAction,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      buttonLabel,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),

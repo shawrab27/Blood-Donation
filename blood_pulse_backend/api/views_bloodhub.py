@@ -1387,15 +1387,39 @@ def journey_detail_view(request, pk):
     DONOR sees patient/hospital + requester contact.
     Contacts masked until status is ARRIVED or DONATED.
     """
+    user = request.user
+    donor_profile = DonorProfile.objects.filter(user=user).first()
+    donor_filter = Q(donor=donor_profile) if donor_profile else Q(pk__in=[])
+
+    # 1. Try finding RequestAcceptance by pk (journey ID)
     acceptance = (
         RequestAcceptance.objects
         .select_related(
             'request', 'request__requester', 'request__hospital',
             'donor', 'donor__user',
         )
-        .filter(Q(pk=pk) | Q(request_id=pk))
+        .filter(pk=pk)
         .first()
     )
+
+    # If found by pk but current user is not participant or staff,
+    # pk may be a request_id where an unrelated RequestAcceptance coincidentally shares the same numeric id.
+    if acceptance and not (user.is_staff or acceptance.donor == donor_profile or acceptance.request.requester == user):
+        acceptance = None
+
+    # 2. Try finding RequestAcceptance by request_id for this user
+    if not acceptance:
+        acceptance_qs = (
+            RequestAcceptance.objects
+            .select_related(
+                'request', 'request__requester', 'request__hospital',
+                'donor', 'donor__user',
+            )
+            .filter(request_id=pk)
+        )
+        if not user.is_staff:
+            acceptance_qs = acceptance_qs.filter(Q(request__requester=user) | donor_filter)
+        acceptance = acceptance_qs.order_by('-started_at').first()
 
     if not acceptance:
         # Check if pk refers directly to a BloodRequest with no acceptance yet
@@ -1539,6 +1563,14 @@ def journey_list_view(request):
         .filter(Q(request__requester=user) | donor_filter)
         .order_by('-started_at')
     )
+    req_id_param = request.query_params.get('request_id')
+    if req_id_param:
+        try:
+            req_id_val = int(req_id_param)
+            qs = qs.filter(request_id=req_id_val)
+        except (ValueError, TypeError):
+            pass
+
     limit = min(50, int(request.query_params.get('limit', 20)))
     offset = int(request.query_params.get('offset', 0))
     total = qs.count()

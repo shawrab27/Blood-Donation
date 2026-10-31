@@ -54,6 +54,9 @@ import '../features/blood_hub/presentation/screens/follow_up_screen.dart';
 import '../features/blood_hub/presentation/screens/qr_landing_screen.dart';
 
 
+import '../features/blood_hub/data/blood_hub_api_service.dart';
+import '../core/widgets/ecg_loader.dart';
+import '../core/theme/app_colors.dart';
 // Health Hub 7 Sub-Screens
 import '../features/health_hub/presentation/screens/ai_report_analysis_screen.dart';
 import '../features/health_hub/presentation/screens/health_calculators_screen.dart';
@@ -97,6 +100,50 @@ class _StandaloneProfileScreen extends StatelessWidget {
 
 
 
+
+
+class RequestJourneyResolverScreen extends ConsumerStatefulWidget {
+  const RequestJourneyResolverScreen({super.key, required this.requestId});
+  final int requestId;
+
+  @override
+  ConsumerState<RequestJourneyResolverScreen> createState() =>
+      _RequestJourneyResolverScreenState();
+}
+
+class _RequestJourneyResolverScreenState
+    extends ConsumerState<RequestJourneyResolverScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _resolveAndNavigate();
+  }
+
+  Future<void> _resolveAndNavigate() async {
+    try {
+      final api = ref.read(bloodHubApiServiceProvider);
+      final journeyId =
+          await api.resolveJourneyIdFromRequestId(widget.requestId);
+      if (mounted) {
+        context.go('/journeys/$journeyId');
+      }
+    } catch (_) {
+      if (mounted) {
+        context.go('/journeys/${widget.requestId}');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.surface,
+      body: Center(
+        child: EcgLoader(color: AppColors.primary, width: 48, height: 32),
+      ),
+    );
+  }
+}
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(routerNotifierProvider);
@@ -283,6 +330,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         final idStr = state.pathParameters['id'] ?? '0';
         final id = int.tryParse(idStr) ?? 0;
         return JourneyDetailScreen(journeyId: id);
+      },
+    ),
+    // /blood-hub/requests/:id — Resolves request id to journey id before opening tracking
+    GoRoute(
+      path: '/blood-hub/requests/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'] ?? '0';
+        final id = int.tryParse(idStr) ?? 0;
+        return RequestJourneyResolverScreen(requestId: id);
+      },
+    ),
+    // /requests/:id — Resolves request id to journey id before opening tracking
+    GoRoute(
+      path: '/requests/:id',
+      builder: (context, state) {
+        final idStr = state.pathParameters['id'] ?? '0';
+        final id = int.tryParse(idStr) ?? 0;
+        return RequestJourneyResolverScreen(requestId: id);
       },
     ),
     // /standby/:offerId — Standby Donor Alert (Prompt 4)
