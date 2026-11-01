@@ -37,3 +37,6 @@ final pulseAiVisibilityProvider =
     StateNotifierProvider<PulseAiVisibilityNotifier, bool>((ref) {
   return PulseAiVisibilityNotifier();
 });
+
+/// Ephemeral suppression provider for modal sheets, dialogs, and non-allowlist surfaces
+final pulseAiSuppressedProvider = StateProvider<bool>((ref) => false);

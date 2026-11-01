@@ -1,3 +1,4 @@
+import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
@@ -120,12 +121,15 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   }
 
   void _showIssueSheet(JourneyDetail journey) {
+    ref.read(pulseAiSuppressedProvider.notifier).state = true;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DonationIssueSheet(journey: journey),
-    );
+    ).whenComplete(() {
+      ref.read(pulseAiSuppressedProvider.notifier).state = false;
+    });
   }
 
   Future<void> _cancelJourney(int id) async {
@@ -1042,10 +1046,11 @@ class _DonationIssueSheetState extends ConsumerState<DonationIssueSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Center(
             child: Container(
               width: 40,
@@ -1209,6 +1214,7 @@ class _DonationIssueSheetState extends ConsumerState<DonationIssueSheet> {
           ),
         ],
       ),
+      )
     );
   }
 }
