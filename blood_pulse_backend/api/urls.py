@@ -95,6 +95,7 @@ from .views_bloodhub import (
     journey_status_transition_view,
     journey_issue_report_view,
     journey_detail_view,
+    journey_by_request_view,
     journey_list_view,
     standby_offer_detail_view,
     standby_offer_respond_view,
@@ -239,6 +240,7 @@ urlpatterns = [
 
     # Journey List, Detail, Tracking & Issues
     path('journeys/', journey_list_view, name='bloodhub-journey-list'),
+    path('journeys/by-request/<int:request_id>/', journey_by_request_view, name='bloodhub-journey-by-request'),
     path('journeys/<int:pk>/', journey_detail_view, name='bloodhub-journey-detail'),
     path('journeys/<int:pk>/location/', journey_location_view, name='bloodhub-journey-location'),
     path('journeys/<int:pk>/status/', journey_status_transition_view, name='bloodhub-journey-status'),

@@ -23,25 +23,21 @@ class MockMappingApiClient extends ApiClient {
 }
 
 void main() {
-  group('Request ID to Journey ID Mapping Tests', () {
-    test('resolveJourneyIdFromRequestId resolves distinct journey ID from API', () async {
+  group('Request ID to Journey ID Mapping Tests (Point 1)', () {
+    test('resolveJourneyIdFromRequestId resolves distinct journey ID from by-request endpoint', () async {
       const requestId = 42;
       const expectedJourneyId = 108;
 
-      // The API returns the RequestAcceptance ID (journey ID = 108) for request 42
+      // The new by-request endpoint returns the acceptance details
       final mockClient = MockMappingApiClient(
         mockResponse: {
-          'count': 1,
-          'results': [
-            {
-              'id': expectedJourneyId,
-              'request_id': requestId,
-              'status': 'ACCEPTED',
-              'viewer_role': 'DONOR',
-              'hospital_name': 'Dhaka Medical College Hospital',
-              'blood_group': 'O+',
-            }
-          ]
+          'id': expectedJourneyId,
+          'request_id': requestId,
+          'request_only': false,
+          'status': 'ACCEPTED',
+          'viewer_role': 'DONOR',
+          'hospital_name': 'Dhaka Medical College Hospital',
+          'blood_group': 'O+',
         },
       );
 
@@ -52,13 +48,15 @@ void main() {
       expect(resolvedId, isNot(equals(requestId)));
     });
 
-    test('resolveJourneyIdFromRequestId falls back to requestId when no journey found', () async {
+    test('resolveJourneyIdFromRequestId falls back to requestId when request_only is true', () async {
       const requestId = 55;
 
       final mockClient = MockMappingApiClient(
         mockResponse: {
-          'count': 0,
-          'results': [],
+          'id': requestId,
+          'request_id': requestId,
+          'request_only': true,
+          'status': 'OPEN',
         },
       );
 

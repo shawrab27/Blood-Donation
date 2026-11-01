@@ -738,6 +738,8 @@ class JourneyListItem {
     required this.hospitalName,
     required this.isStandby,
     required this.createdAt,
+    this.requestId = 0,
+    this.requestOnly = false,
   });
 
   final int id;
@@ -748,6 +750,8 @@ class JourneyListItem {
   final String hospitalName;
   final bool isStandby;
   final String createdAt;
+  final int requestId;
+  final bool requestOnly;
 
   factory JourneyListItem.fromJson(Map<String, dynamic> j) {
     final roleStr = j['viewer_role'] as String?;
@@ -757,8 +761,11 @@ class JourneyListItem {
             ? JourneyViewerRole.requester
             : JourneyViewerRole.unknown;
 
+    final parsedId = (j['id'] as num?)?.toInt() ?? 0;
+    final parsedReqId = (j['request_id'] as num?)?.toInt() ?? parsedId;
+
     return JourneyListItem(
-      id: (j['id'] as num?)?.toInt() ?? 0,
+      id: parsedId,
       status: (j['status'] as String?) ?? 'UNKNOWN',
       viewerRole: role,
       bloodGroup: (j['blood_group'] as String?) ?? '',
@@ -766,6 +773,8 @@ class JourneyListItem {
       hospitalName: (j['hospital_name'] as String?) ?? '',
       isStandby: (j['is_standby'] as bool?) ?? false,
       createdAt: (j['created_at'] as String?) ?? '',
+      requestId: parsedReqId,
+      requestOnly: (j['request_only'] as bool?) ?? false,
     );
   }
 }
@@ -791,23 +800,19 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
     throw Exception(data['detail'] ?? 'Failed to load journey');
   }
 
-  /// Resolves the journey ID from a blood request ID via GET /api/journeys/?request_id=`<id>`.
-  /// Returns the corresponding journey ID (RequestAcceptance.id) if found,
-  /// or falls back to the original [requestId].
+  /// Resolves the journey ID from a blood request ID via GET /api/journeys/by-request/{requestId}/.
+  /// Point 1: Unambiguous route returning acceptance ID or request ID fallback.
   Future<int> resolveJourneyIdFromRequestId(int requestId) async {
     try {
-      final response = await _api.get('journeys/?request_id=$requestId');
+      final response = await _api.get('journeys/by-request/$requestId/');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is Map && data['results'] is List) {
-          final results = data['results'] as List;
-          if (results.isNotEmpty) {
-            final first = results.first;
-            if (first is Map<String, dynamic>) {
-              final jId = (first['id'] as num?)?.toInt();
-              if (jId != null && jId > 0) {
-                return jId;
-              }
+        if (data is Map<String, dynamic>) {
+          final isRequestOnly = data['request_only'] == true;
+          if (!isRequestOnly) {
+            final jId = (data['id'] as num?)?.toInt();
+            if (jId != null && jId > 0) {
+              return jId;
             }
           }
         }
