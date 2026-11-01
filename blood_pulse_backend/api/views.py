@@ -481,6 +481,18 @@ class BloodRequestViewSet(viewsets.ModelViewSet):
             )
         return super().create(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not (request.user and request.user.is_authenticated and (request.user.is_staff or instance.requester_id == request.user.id)):
+            return Response({'detail': 'You do not have permission to edit this blood request.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not (request.user and request.user.is_authenticated and (request.user.is_staff or instance.requester_id == request.user.id)):
+            return Response({'detail': 'You do not have permission to delete this blood request.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         profile = getattr(self.request.user, 'donorprofile', None)
         if not profile:
@@ -514,6 +526,18 @@ class SocialPostViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
         return [IsAuthenticated()]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not (request.user and request.user.is_authenticated and (request.user.is_staff or (instance.author and instance.author.user_id == request.user.id))):
+            return Response({'detail': 'You do not have permission to edit this post.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not (request.user and request.user.is_authenticated and (request.user.is_staff or (instance.author and instance.author.user_id == request.user.id))):
+            return Response({'detail': 'You do not have permission to delete this post.'}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         author = getattr(self.request.user, 'donorprofile', None)

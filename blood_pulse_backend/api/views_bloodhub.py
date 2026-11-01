@@ -933,6 +933,12 @@ def journey_status_transition_view(request, pk):
     if not acceptance:
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+    # Participant authorization: caller must be assigned donor or requester (or staff), else 404
+    is_donor = (acceptance.donor.user_id == request.user.id)
+    is_requester = (acceptance.request.requester_id == request.user.id or request.user.is_staff)
+    if not (is_donor or is_requester):
+        return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
+
     new_status = request.data.get('status', '').strip().upper()
     valid_statuses = ['ON_THE_WAY', 'ARRIVED', 'DONATED', 'CANCELLED', 'CONFIRMED', 'COMPLETED']
     if new_status not in valid_statuses:
@@ -1097,11 +1103,18 @@ def journey_issue_report_view(request, pk):
     """
     Reports an issue during donation (Medical Rejection, Donor No-Show, Logistics Delay).
     Medical rejection sets DONOR_COOLDOWN_DAYS deferral; no-show increments penalty; both trigger Standby offers.
+    Caller must be a participant (donor or requester) of that journey, else 404.
     """
     from api.conf import DONOR_COOLDOWN_DAYS
 
     acceptance = RequestAcceptance.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not acceptance:
+        return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Participant authorization: caller must be assigned donor or requester (or staff), else 404
+    is_donor = (acceptance.donor.user_id == request.user.id)
+    is_requester = (acceptance.request.requester_id == request.user.id or request.user.is_staff)
+    if not (is_donor or is_requester):
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     issue_type = request.data.get('issue_type', 'OTHER').strip().upper()
