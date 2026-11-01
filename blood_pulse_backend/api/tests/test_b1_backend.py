@@ -278,3 +278,94 @@ class B1Item5DeleteRemovalTests(TestCase):
         self.client.force_authenticate(user=user)
         resp = self.client.delete(f'/api/requests/{req.id}/')
         self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class B1Item6PhoneMaskingTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        self.requester_user = User.objects.create_user(
+            username='mask_req_user', password='password123', email='req_mask@example.com', first_name='Rahim'
+        )
+        self.requester_profile = DonorProfile.objects.create(
+            user=self.requester_user,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='+8801811111199',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        self.unrelated_user = User.objects.create_user(
+            username='mask_unrel_user', password='password123', email='unrel_mask@example.com', first_name='Karim'
+        )
+        self.unrelated_profile = DonorProfile.objects.create(
+            user=self.unrelated_user,
+            blood_group='B+',
+            district='Dhaka',
+            phone_number='+8801822222299',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        self.hospital = Hospital.objects.create(
+            name='Dhaka Medical College Hospital',
+            district='Dhaka',
+            lat=23.7259,
+            lng=90.3976,
+            is_verified=True,
+        )
+
+        # Request WITH exact coordinates
+        self.blood_req = BloodRequest.objects.create(
+            requester=self.requester_user,
+            patient_name='Mohammad Rahim Khan',
+            blood_group='O+',
+            hospital=self.hospital,
+            contact_phone='+8801811111199',
+            contact_number='+8801811111199',
+            lat=23.810321,
+            lng=90.412512,
+            status='ACTIVE',
+        )
+
+    def test_6_phone_masking_and_geo_fuzzing_on_all_real_urls(self):
+        """
+        Item 6 Test:
+        Public and unrelated viewers see NO phone digits ('Hidden until accepted').
+        Exact lat/lng coordinates are fuzzed.
+        """
+        # 1. Anonymous on /api/emergency/requests/ (BloodRequestListSerializer)
+        self.client.logout()
+        resp_list = self.client.get('/api/emergency/requests/')
+        self.assertEqual(resp_list.status_code, status.HTTP_200_OK)
+        items = resp_list.json()
+        item = next((i for i in items if i['id'] == self.blood_req.id), None)
+        self.assertIsNotNone(item)
+        self.assertEqual(item['contact_phone_masked'], "Hidden until accepted")
+
+        # 2. Anonymous on /api/emergency/requests/<pk>/ (emergency_request_detail_view)
+        resp_anon_detail = self.client.get(f'/api/emergency/requests/{self.blood_req.id}/')
+        self.assertEqual(resp_anon_detail.status_code, status.HTTP_200_OK)
+        anon_data = resp_anon_detail.json()
+        self.assertNotIn('contact_phone', anon_data)
+        self.assertNotIn('contact_phone_display', anon_data)
+
+        # 3. Unrelated user on /api/emergency/requests/<pk>/ (BloodRequestDetailSerializer)
+        self.client.force_authenticate(user=self.unrelated_user)
+        resp_unrel_detail = self.client.get(f'/api/emergency/requests/{self.blood_req.id}/')
+        self.assertEqual(resp_unrel_detail.status_code, status.HTTP_200_OK)
+        unrel_data = resp_unrel_detail.json()
+        self.assertEqual(unrel_data['contact_phone_display'], "Hidden until accepted")
+        self.assertNotEqual(unrel_data['patient_name'], 'Mohammad Rahim Khan')
+        # Exact coords (23.810321, 90.412512) must be fuzzed!
+        self.assertNotEqual(unrel_data['lat'], 23.810321)
+        self.assertNotEqual(unrel_data['lng'], 90.412512)
+
+        # 4. Unrelated user on /api/requests/<pk>/ (BloodRequestDetailV2APIView)
+        resp_v2 = self.client.get(f'/api/requests/{self.blood_req.id}/')
+        self.assertEqual(resp_v2.status_code, status.HTTP_200_OK)
+        v2_data = resp_v2.json()
+        self.assertEqual(v2_data['contact_phone_display'], "Hidden until accepted")
+        self.assertNotEqual(v2_data['lat'], 23.810321)
+        self.assertNotEqual(v2_data['lng'], 90.412512)

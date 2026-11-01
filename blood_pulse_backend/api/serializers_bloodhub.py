@@ -29,17 +29,8 @@ from api.services.geo import fuzz_coordinates
 
 
 def mask_phone_number(phone: str) -> str:
-    """Masks middle digits of a phone number: +880 17****1234"""
-    if not phone:
-        return ""
-    p = str(phone).strip()
-    if len(p) >= 11:
-        prefix = p[:6]
-        suffix = p[-3:]
-        return f"{prefix}****{suffix}"
-    elif len(p) >= 7:
-        return f"{p[:3]}***{p[-2:]}"
-    return "***-***"
+    """Public / unrelated viewers see NO phone digits."""
+    return "Hidden until accepted"
 
 
 class HospitalSerializer(serializers.ModelSerializer):
