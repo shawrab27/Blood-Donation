@@ -1143,7 +1143,7 @@ def journey_issue_report_view(request, pk):
     elif issue_type == 'DONOR_NO_SHOW':
         if not is_requester:
             return Response({'error': 'Donor no-show can only be reported by the requester.'}, status=status.HTTP_403_FORBIDDEN)
-        eta_mins = acceptance.eta_minutes if acceptance.eta_minutes is not None else 30
+        eta_mins = acceptance.eta_minutes or 0
         base_time = acceptance.started_at or now
         eta_deadline = base_time + timedelta(minutes=eta_mins + NO_SHOW_GRACE_MINUTES)
         if now < eta_deadline:
@@ -1467,7 +1467,7 @@ def _serialize_journey_detail(acceptance, user):
     requester_phone = req.contact_phone or req.contact_number or ''
     from api.conf import NO_SHOW_GRACE_MINUTES
     now = timezone.now()
-    eta_mins = acceptance.eta_minutes if acceptance.eta_minutes is not None else 30
+    eta_mins = acceptance.eta_minutes or 0
     base_time = acceptance.started_at or now
     eta_deadline = base_time + timedelta(minutes=eta_mins + NO_SHOW_GRACE_MINUTES)
 

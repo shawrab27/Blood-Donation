@@ -691,3 +691,190 @@ class B1Item8StandbyCapacityTests(TestCase):
         resp = self.client.post(f'/api/standby/{expired_offer.id}/respond/', {'action': 'ACCEPT'})
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('expired', resp.json().get('error', ''))
+
+
+class Item0PositivePathTests(TestCase):
+    def setUp(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        from api.models import Hospital, DonorProfile, BloodRequest, RequestAcceptance, StandbyOffer
+
+        self.client = APIClient()
+
+        # Requester
+        self.requester_user = User.objects.create_user(
+            username='item0_req', password='password123', email='item0_req@example.com', first_name='Requester'
+        )
+        self.requester_profile = DonorProfile.objects.create(
+            user=self.requester_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801811110001',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        # Donor
+        self.donor_user = User.objects.create_user(
+            username='item0_donor', password='password123', email='item0_donor@example.com', first_name='Donor'
+        )
+        self.donor_profile = DonorProfile.objects.create(
+            user=self.donor_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801711110002',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        # Standby Donor
+        self.standby_user = User.objects.create_user(
+            username='item0_standby', password='password123', email='item0_st@example.com', first_name='Standby'
+        )
+        self.standby_profile = DonorProfile.objects.create(
+            user=self.standby_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801711110003',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        self.hospital = Hospital.objects.create(
+            name='Item 0 Test Hospital',
+            district='Dhaka',
+            address='Gulshan, Dhaka',
+        )
+
+        self.blood_req = BloodRequest.objects.create(
+            requester=self.requester_user,
+            patient_name='Patient Item Zero',
+            blood_group='A+',
+            hospital=self.hospital,
+            contact_phone='+8801811110001',
+            contact_number='+8801811110001',
+            units_needed=1,
+            units_received=0,
+            units_pending=0,
+            status='ACTIVE',
+        )
+
+    def test_0a_standby_donor_can_confirm_when_slot_free(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from api.models import StandbyOffer, RequestAcceptance
+
+        offer = StandbyOffer.objects.create(
+            request=self.blood_req,
+            donor=self.standby_profile,
+            status='PENDING',
+            expires_at=timezone.now() + timedelta(minutes=10),
+        )
+
+        self.client.force_authenticate(user=self.standby_user)
+        resp = self.client.post(f'/api/standby/{offer.id}/respond/', {'action': 'ACCEPT'})
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        offer.refresh_from_db()
+        self.assertEqual(offer.status, 'ACCEPTED')
+
+        acceptance = RequestAcceptance.objects.filter(request=self.blood_req, donor=self.standby_profile).first()
+        self.assertIsNotNone(acceptance)
+        self.assertEqual(acceptance.status, 'ACCEPTED')
+        self.assertTrue(acceptance.is_standby)
+
+    def test_0a_donor_can_report_medical_rejection_with_valid_code(self):
+        from api.models import RequestAcceptance
+
+        acceptance = RequestAcceptance.objects.create(
+            request=self.blood_req,
+            donor=self.donor_profile,
+            status='ACCEPTED',
+            eta_minutes=20,
+        )
+
+        self.client.force_authenticate(user=self.donor_user)
+        resp = self.client.post(f'/api/journeys/{acceptance.id}/issue/', {
+            'issue_type': 'MEDICAL_REJECTION',
+            'reason_code': 'LOW_HEMOGLOBIN',
+        })
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        acceptance.refresh_from_db()
+        self.assertEqual(acceptance.status, 'FAILED')
+        self.assertEqual(acceptance.cancellation_reason, 'Medical Rejection: LOW_HEMOGLOBIN')
+
+    def test_0a_requester_can_report_donor_no_show_after_eta_and_grace(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from api.models import RequestAcceptance
+
+        # Scenario 1: eta_minutes = 25, overdue after 25 + 20 = 45 min
+        acceptance_with_eta = RequestAcceptance.objects.create(
+            request=self.blood_req,
+            donor=self.donor_profile,
+            status='ACCEPTED',
+            eta_minutes=25,
+        )
+        RequestAcceptance.objects.filter(id=acceptance_with_eta.id).update(
+            started_at=timezone.now() - timedelta(minutes=50)
+        )
+
+        self.client.force_authenticate(user=self.requester_user)
+        resp1 = self.client.post(f'/api/journeys/{acceptance_with_eta.id}/issue/', {
+            'issue_type': 'DONOR_NO_SHOW',
+        })
+        self.assertEqual(resp1.status_code, status.HTTP_201_CREATED)
+        acceptance_with_eta.refresh_from_db()
+        self.assertEqual(acceptance_with_eta.status, 'FAILED')
+
+        # Scenario 2 (Item 0b): eta_minutes is None (donor offline), overdue after 0 + 20 = 20 min from accept time
+        offline_acceptance = RequestAcceptance.objects.create(
+            request=self.blood_req,
+            donor=self.standby_profile,
+            status='ACCEPTED',
+            eta_minutes=None,
+        )
+        RequestAcceptance.objects.filter(id=offline_acceptance.id).update(
+            started_at=timezone.now() - timedelta(minutes=25)
+        )
+
+        resp2 = self.client.post(f'/api/journeys/{offline_acceptance.id}/issue/', {
+            'issue_type': 'DONOR_NO_SHOW',
+        })
+        self.assertEqual(resp2.status_code, status.HTTP_201_CREATED)
+        offline_acceptance.refresh_from_db()
+        self.assertEqual(offline_acceptance.status, 'FAILED')
+
+    def test_0a_accepted_participants_still_see_real_phones(self):
+        from api.models import RequestAcceptance
+
+        acceptance = RequestAcceptance.objects.create(
+            request=self.blood_req,
+            donor=self.donor_profile,
+            status='ACCEPTED',
+            is_standby=False,
+        )
+
+        # Donor sees requester real phone
+        self.client.force_authenticate(user=self.donor_user)
+        resp_donor = self.client.get(f'/api/journeys/{acceptance.id}/')
+        self.assertEqual(resp_donor.status_code, status.HTTP_200_OK)
+        donor_view = resp_donor.json()
+        self.assertEqual(donor_view['requester_contact'], '+8801811110001')
+
+        # Requester sees donor real phone
+        self.client.force_authenticate(user=self.requester_user)
+        resp_req = self.client.get(f'/api/journeys/{acceptance.id}/')
+        self.assertEqual(resp_req.status_code, status.HTTP_200_OK)
+        req_view = resp_req.json()
+        self.assertEqual(req_view['donor_contact'], '+8801711110002')
+
+    def test_0a_preflight_from_firebase_app_allowed(self):
+        resp = self.client.options(
+            '/api/journeys/',
+            HTTP_ORIGIN='https://bloodpulse-283dc.web.app',
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='GET',
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.headers.get('Access-Control-Allow-Origin'), 'https://bloodpulse-283dc.web.app')
