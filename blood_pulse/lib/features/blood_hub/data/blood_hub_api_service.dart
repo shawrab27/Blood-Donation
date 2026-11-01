@@ -527,6 +527,34 @@ class JourneyStep {
 /// Viewer's role in this journey — backend decides which fields are populated.
 enum JourneyViewerRole { requester, donor, unknown }
 
+/// Returns true only if the phone number is an actual reachable phone (not masked, not "Hidden until accepted").
+bool isRealCallablePhone(String? phone) {
+  if (phone == null) return false;
+  final trimmed = phone.trim();
+  if (trimmed.isEmpty) return false;
+  final lower = trimmed.toLowerCase();
+  if (lower.contains('hidden') ||
+      lower.contains('*') ||
+      lower.contains('protect') ||
+      lower.contains('reveal') ||
+      lower.contains('null')) {
+    return false;
+  }
+  final clean = trimmed.replaceAll(RegExp(r'[^0-9+]'), '');
+  return clean.length >= 7;
+}
+
+/// Normalizes "Protected ..." backend strings into user-friendly localized fallbacks.
+String friendlyProtectedText(String? value, {String fallback = 'Protected'}) {
+  if (value == null) return fallback;
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return fallback;
+  if (trimmed.startsWith('Protected') || trimmed.toLowerCase().contains('protected')) {
+    return fallback;
+  }
+  return trimmed;
+}
+
 class JourneyDetail {
   const JourneyDetail({
     required this.id,
@@ -560,12 +588,18 @@ class JourneyDetail {
     this.requestId,
     this.canReportNoShow = false,
     this.canReportMedical = false,
+    this.hospitalDetails,
+    this.patientPhoto,
+    this.requisitionSlip,
   });
 
   final String? chatRoomId;
   final int? requestId;
   final bool canReportNoShow;
   final bool canReportMedical;
+  final String? hospitalDetails;
+  final String? patientPhoto;
+  final String? requisitionSlip;
 
   final int id;
   final String status;
@@ -665,6 +699,9 @@ class JourneyDetail {
       requestId: (j['request_id'] as num?)?.toInt(),
       canReportNoShow: (j['can_report_no_show'] as bool?) ?? false,
       canReportMedical: (j['can_report_medical'] as bool?) ?? false,
+      hospitalDetails: j['hospital_details'] as String?,
+      patientPhoto: j['patient_photo'] as String?,
+      requisitionSlip: j['requisition_slip'] as String?,
     );
   }
 }

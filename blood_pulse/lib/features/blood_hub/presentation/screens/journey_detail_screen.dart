@@ -417,21 +417,28 @@ class _LiveMap extends StatelessWidget {
     LatLng? focusPin;
     LatLng? secondaryPin;
 
+    bool isValidCoord(double? lat, double? lng) {
+      if (lat == null || lng == null) return false;
+      if (!lat.isFinite || !lng.isFinite) return false;
+      if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) return false;
+      return true;
+    }
+
     if (journey.isRequester) {
       // Requester watches donor moving toward hospital
-      if (journey.donorLat != null && journey.donorLng != null) {
+      if (isValidCoord(journey.donorLat, journey.donorLng)) {
         focusPin = LatLng(journey.donorLat!, journey.donorLng!);
       }
-      if (journey.destLat != null && journey.destLng != null) {
+      if (isValidCoord(journey.destLat, journey.destLng)) {
         secondaryPin = LatLng(journey.destLat!, journey.destLng!);
       }
     } else if (journey.isDonor) {
       // Donor sees destination (hospital) as primary
-      if (journey.destLat != null && journey.destLng != null) {
+      if (isValidCoord(journey.destLat, journey.destLng)) {
         focusPin = LatLng(journey.destLat!, journey.destLng!);
       }
       // Also show requester's location if they opted-in
-      if (journey.requesterLat != null && journey.requesterLng != null) {
+      if (isValidCoord(journey.requesterLat, journey.requesterLng)) {
         secondaryPin =
             LatLng(journey.requesterLat!, journey.requesterLng!);
       }
@@ -677,14 +684,14 @@ class _RequesterInfoCard extends ConsumerWidget {
             _InfoRow('Donor', journey.donorName.isNotEmpty ? journey.donorName : 'Searching for donor...'),
             _InfoRow(
               'Contact',
-              journey.donorContact.isNotEmpty
+              isRealCallablePhone(journey.donorContact)
                   ? journey.donorContact
-                  : 'Revealed after acceptance',
-              highlight: journey.donorContact.isNotEmpty,
+                  : 'Hidden until accepted',
+              highlight: isRealCallablePhone(journey.donorContact),
             ),
             const _InfoDivider(),
-            _InfoRow('Patient', journey.patientName.isNotEmpty ? journey.patientName : 'Protected Patient'),
-            _InfoRow('Hospital', journey.hospitalName.isNotEmpty ? journey.hospitalName : 'Designated Hospital'),
+            _InfoRow('Patient', friendlyProtectedText(journey.patientName, fallback: 'Protected Patient')),
+            _InfoRow('Hospital', friendlyProtectedText(journey.hospitalName, fallback: 'Designated Hospital')),
             _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
             _InfoRow('Units', '${journey.unitsNeeded}'),
             _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
@@ -721,14 +728,14 @@ class _DonorInfoCard extends ConsumerWidget {
           titleIcon: Icons.bloodtype_rounded,
           titleColor: _kPrimary,
           rows: [
-            _InfoRow('Patient', journey.patientName.isNotEmpty ? journey.patientName : 'Protected Patient'),
-            _InfoRow('Hospital', journey.hospitalName.isNotEmpty ? journey.hospitalName : 'Designated Hospital'),
+            _InfoRow('Patient', friendlyProtectedText(journey.patientName, fallback: 'Protected Patient')),
+            _InfoRow('Hospital', friendlyProtectedText(journey.hospitalName, fallback: 'Designated Hospital')),
             _InfoRow(
               'Requester',
-              journey.requesterContact.isNotEmpty
+              isRealCallablePhone(journey.requesterContact)
                   ? journey.requesterContact
-                  : 'Revealed after you accept',
-              highlight: journey.requesterContact.isNotEmpty,
+                  : 'Hidden until accepted',
+              highlight: isRealCallablePhone(journey.requesterContact),
             ),
             const _InfoDivider(),
             _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),

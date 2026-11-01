@@ -73,8 +73,20 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
     super.dispose();
   }
 
+  bool _isCallable(String p) {
+    final trimmed = p.trim().toLowerCase();
+    return trimmed.isNotEmpty &&
+        !trimmed.contains('hidden') &&
+        !trimmed.contains('*') &&
+        !trimmed.contains('protect') &&
+        !trimmed.contains('reveal') &&
+        p.replaceAll(RegExp(r'[^0-9+]'), '').length >= 7;
+  }
+
   Future<void> _makeCall(String phoneNumber) async {
-    final uri = Uri(scheme: 'tel', path: phoneNumber);
+    if (!_isCallable(phoneNumber)) return;
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri(scheme: 'tel', path: cleanPhone);
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
@@ -1240,7 +1252,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
             children: [
               Expanded(
                 child: PressableScale(child: ElevatedButton.icon(
-                  onPressed: phone.trim().isNotEmpty ? () => _makeCall(phone) : null,
+                  onPressed: _isCallable(phone) ? () => _makeCall(phone) : null,
                   icon: const Icon(Icons.call, size: 15),
                   label: Text(
                     isRequester ? 'Call Donor' : 'Call Ward Desk',

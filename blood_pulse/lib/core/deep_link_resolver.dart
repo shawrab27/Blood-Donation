@@ -109,10 +109,18 @@ class DeepLinkResolver {
     context.go('/blood-hub');
   }
 
-  /// Launch phone call with tel: scheme.
+  /// Launch phone call with tel: scheme (guarded against masked / hidden values).
   Future<void> makePhoneCall(String phoneNumber) async {
+    final trimmed = phoneNumber.trim().toLowerCase();
+    if (trimmed.isEmpty ||
+        trimmed.contains('hidden') ||
+        trimmed.contains('*') ||
+        trimmed.contains('protect') ||
+        trimmed.contains('reveal')) {
+      return;
+    }
     final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (cleanPhone.isEmpty) return;
+    if (cleanPhone.length < 7) return;
     final uri = Uri(scheme: 'tel', path: cleanPhone);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

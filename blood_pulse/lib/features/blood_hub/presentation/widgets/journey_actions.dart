@@ -266,7 +266,7 @@ class _JourneyRequesterActionsState extends ConsumerState<JourneyRequesterAction
               )),
 
               // Call Donor (only once ACCEPTED and phone unmasked)
-              if (journey.donorContact.isNotEmpty)
+              if (isRealCallablePhone(journey.donorContact))
                 PressableScale(child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF1A7A3F), width: 1.5),
@@ -482,7 +482,7 @@ class _JourneyDonorActionsState extends ConsumerState<JourneyDonorActions> {
               )),
 
               // Call Requester (only once ACCEPTED and phone unmasked)
-              if (journey.requesterContact.isNotEmpty)
+              if (isRealCallablePhone(journey.requesterContact))
                 PressableScale(child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF1A7A3F), width: 1.5),
