@@ -150,24 +150,28 @@ CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').strip
 
 _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
+    'https://bloodpulse-283dc.web.app',
+    'https://bloodpulse-283dc.firebaseapp.com',
     'https://blood-donation-liard.vercel.app',
 ]
+if DEBUG:
+    CORS_ALLOWED_ORIGINS.extend([
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ])
+
+# Removed wildcard regexes for *.vercel.app, *.web.app, *.pages.dev, *.netlify.app
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\.vercel\.app$",
-    r"^https://.*\.pages\.dev$",       # Cloudflare Pages
-    r"^https://.*\.netlify\.app$",     # Netlify
-    r"^https://.*\.web\.app$",         # Firebase Hosting
     r"^http://172\.20\.10\.\d+(:\d+)?$",
     r"^http://192\.168\.\d+\.\d+(:\d+)?$",
     r"^http://localhost(:\d+)?$",
     r"^http://127\.0\.0\.1(:\d+)?$",
-]
+] if DEBUG else []
+
 from corsheaders.defaults import default_headers
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -186,13 +190,19 @@ if _cors_origins_env:
 
 _csrf_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '').strip()
 CSRF_TRUSTED_ORIGINS = [
-    'https://blood-donation-liard.vercel.app',
+    'https://bloodpulse-283dc.web.app',
+    'https://bloodpulse-283dc.firebaseapp.com',
     'https://bloodpulse-backend.onrender.com',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
+    'https://blood-donation-liard.vercel.app',
 ]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS.extend([
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+    ])
+
 if _csrf_origins_env:
     for origin in _csrf_origins_env.split(','):
         clean_origin = origin.strip()

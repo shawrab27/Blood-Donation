@@ -237,11 +237,17 @@ class MediaFileServeView(APIView):
     def get(self, request, filename):
         import os
         from django.conf import settings
-        media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
-        file_path = os.path.join(media_root, 'uploads', filename)
-        if not os.path.exists(file_path):
-            file_path = os.path.join(media_root, filename)
-        if not os.path.exists(file_path):
+
+        # Path traversal guard: basename check + path must reside within MEDIA_ROOT
+        safe_filename = os.path.basename(filename)
+        if safe_filename != filename or not safe_filename or '..' in filename:
+            raise Http404("Invalid filename")
+
+        media_root = os.path.abspath(getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media')))
+        file_path = os.path.abspath(os.path.join(media_root, 'uploads', safe_filename))
+        if not file_path.startswith(media_root) or not os.path.exists(file_path):
+            file_path = os.path.abspath(os.path.join(media_root, safe_filename))
+        if not file_path.startswith(media_root) or not os.path.exists(file_path):
             raise Http404("Media file not found")
 
         content_type, _ = mimetypes.guess_type(file_path)

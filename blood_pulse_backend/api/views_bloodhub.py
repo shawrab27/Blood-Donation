@@ -784,12 +784,11 @@ def emergency_wave_tick_view(request):
     auth_header = request.headers.get('Authorization', '')
     expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
     
-    if expected:
-        if not auth_header.startswith('Bearer '):
-            raise PermissionDenied("Invalid or missing token")
-        token = auth_header.split(' ')[1]
-        if not hmac.compare_digest(token, expected):
-            raise PermissionDenied("Invalid token")
+    if not expected or not auth_header.startswith('Bearer '):
+        raise PermissionDenied("Invalid or missing token")
+    token = auth_header.split(' ')[1]
+    if not hmac.compare_digest(token, expected):
+        raise PermissionDenied("Invalid token")
         
     result = process_wave_tick()
     return Response(result, status=status.HTTP_200_OK)
@@ -801,12 +800,11 @@ def emergency_wave_tick_view(request):
 def maintenance_tick_view(request):
     auth_header = request.headers.get('Authorization', '')
     expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
-    if expected:
-        if not auth_header.startswith('Bearer '):
-            raise PermissionDenied("Invalid or missing token")
-        token = auth_header.split(' ')[1]
-        if not hmac.compare_digest(token, expected):
-            raise PermissionDenied("Invalid token")
+    if not expected or not auth_header.startswith('Bearer '):
+        raise PermissionDenied("Invalid or missing token")
+    token = auth_header.split(' ')[1]
+    if not hmac.compare_digest(token, expected):
+        raise PermissionDenied("Invalid token")
 
     from api.services.journeys import auto_confirm_stale_donations, auto_manage_deferrals
     from api.services.match_operations_service import run_due_followups
@@ -933,6 +931,12 @@ def journey_status_transition_view(request, pk):
 
     acceptance = RequestAcceptance.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not acceptance:
+        return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Participant authorization: caller must be assigned donor or requester (or staff), else 404
+    is_donor = (acceptance.donor.user_id == request.user.id)
+    is_requester = (acceptance.request.requester_id == request.user.id or request.user.is_staff)
+    if not (is_donor or is_requester):
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     new_status = request.data.get('status', '').strip().upper()
@@ -1098,23 +1102,57 @@ def journey_status_transition_view(request, pk):
 def journey_issue_report_view(request, pk):
     """
     Reports an issue during donation (Medical Rejection, Donor No-Show, Logistics Delay).
-    Medical rejection sets DONOR_COOLDOWN_DAYS deferral; no-show increments penalty; both trigger Standby offers.
+    - MEDICAL_REJECTION: only by the donor; reason code from fixed list; never stores free-text medical data.
+    - DONOR_NO_SHOW: only by requester; only after ETA + NO_SHOW_GRACE_MINUTES.
+    - Neither triggers automatic trust penalty; both log RequestTimelineEvent for admin review.
+    - Caller must be participant (donor or requester) of that journey, else 404.
     """
-    from api.conf import DONOR_COOLDOWN_DAYS
+    from api.conf import DONOR_COOLDOWN_DAYS, NO_SHOW_GRACE_MINUTES
+    from api.models import DonationIssue, DeferralRecord, RequestTimelineEvent
+    from api.services.standby import trigger_standby_donor_offer
 
     acceptance = RequestAcceptance.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not acceptance:
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    issue_type = request.data.get('issue_type', 'OTHER').strip().upper()
-    description = request.data.get('description', '').strip()
+    # Participant authorization: caller must be assigned donor or requester (or staff), else 404
+    is_donor = (acceptance.donor.user_id == request.user.id)
+    is_requester = (acceptance.request.requester_id == request.user.id or request.user.is_staff)
+    if not (is_donor or is_requester):
+        return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+    issue_type = request.data.get('issue_type', 'OTHER').strip().upper()
     valid_types = ['MEDICAL_REJECTION', 'DONOR_NO_SHOW', 'LOGISTICS_DELAY', 'OTHER']
     if issue_type not in valid_types:
         return Response({'error': f'Invalid issue type. Allowed: {valid_types}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    from api.models import DonationIssue, DeferralRecord
-    from api.services.standby import trigger_standby_donor_offer
+    now = timezone.now()
+    ALLOWED_MEDICAL_REASONS = ('LOW_HEMOGLOBIN', 'RECENT_MEDICATION', 'VEIN_ACCESS_ISSUE', 'OTHER')
+
+    if issue_type == 'MEDICAL_REJECTION':
+        if not is_donor:
+            return Response({'error': 'Medical rejection can only be reported by the donor.'}, status=status.HTTP_403_FORBIDDEN)
+        raw_reason = request.data.get('reason_code') or request.data.get('reason') or ''
+        reason_code = str(raw_reason).strip().upper()
+        if reason_code not in ALLOWED_MEDICAL_REASONS:
+            return Response({
+                'error': f'Invalid reason code. Allowed: {list(ALLOWED_MEDICAL_REASONS)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        # Never store or return free-text medical values
+        description = reason_code
+    elif issue_type == 'DONOR_NO_SHOW':
+        if not is_requester:
+            return Response({'error': 'Donor no-show can only be reported by the requester.'}, status=status.HTTP_403_FORBIDDEN)
+        eta_mins = acceptance.eta_minutes or 0
+        base_time = acceptance.started_at or now
+        eta_deadline = base_time + timedelta(minutes=eta_mins + NO_SHOW_GRACE_MINUTES)
+        if now < eta_deadline:
+            return Response({
+                'error': f'Donor no-show can only be reported after ETA plus {NO_SHOW_GRACE_MINUTES} minutes grace period.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        description = request.data.get('description', '').strip()
+    else:
+        description = request.data.get('description', '').strip()
 
     issue = DonationIssue.objects.create(
         acceptance=acceptance,
@@ -1123,17 +1161,14 @@ def journey_issue_report_view(request, pk):
         description=description,
     )
 
-    now = timezone.now()
     standby_offer = None
 
     if issue_type == 'MEDICAL_REJECTION':
-        # Journey failed due to medical screen
         acceptance.status = 'FAILED'
-        acceptance.cancellation_reason = f"Medical Rejection: {description}"
+        acceptance.cancellation_reason = f'Medical Rejection: {reason_code}'
         acceptance.completed_at = now
         acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
 
-        # Apply medical deferral using DONOR_COOLDOWN_DAYS from api/conf.py
         donor = acceptance.donor
         deferral_date = now + timedelta(days=DONOR_COOLDOWN_DAYS)
         donor.deferral_until = deferral_date
@@ -1141,31 +1176,40 @@ def journey_issue_report_view(request, pk):
 
         DeferralRecord.objects.create(
             donor=donor,
-            reason=f"Medical rejection at hospital: {description or 'Vital signs / low hemoglobin'}",
+            reason=f'Medical rejection: {reason_code}',
             reason_code='MEDICAL',
             expires_at=deferral_date,
             created_by=request.user,
             is_active=True,
         )
 
-        # Trigger Standby Donor offer
+        RequestTimelineEvent.objects.create(
+            request=acceptance.request,
+            actor=request.user,
+            state='ISSUE_REPORTED',
+            note=f'Issue: MEDICAL_REJECTION - {reason_code} (Pending admin review)',
+        )
+
         standby_offer = trigger_standby_donor_offer(acceptance.request, exclude_donor_ids=[donor.id])
 
     elif issue_type == 'DONOR_NO_SHOW':
         acceptance.status = 'FAILED'
-        acceptance.cancellation_reason = f"Donor No-Show: {description}"
+        acceptance.cancellation_reason = f'Donor No-Show (Pending admin review): {description}' if description else 'Donor No-Show (Pending admin review)'
         acceptance.completed_at = now
         acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
 
-        donor = acceptance.donor
-        donor.no_show_count = (donor.no_show_count or 0) + 1
-        donor.save(update_fields=['no_show_count'])
+        # Neither triggers an automatic trust penalty; logs timeline event for admin review
+        RequestTimelineEvent.objects.create(
+            request=acceptance.request,
+            actor=request.user,
+            state='ISSUE_REPORTED',
+            note='Issue: DONOR_NO_SHOW (Pending admin review)',
+        )
 
-        # Trigger Standby Donor offer
+        donor = acceptance.donor
         standby_offer = trigger_standby_donor_offer(acceptance.request, exclude_donor_ids=[donor.id])
 
     elif issue_type == 'LOGISTICS_DELAY':
-        # Logistics / traffic delay does not fail the journey
         pass
 
     serializer = DonationIssueSerializer(issue)
@@ -1256,6 +1300,22 @@ def standby_offer_respond_view(request, pk):
                 locked_offer.status = 'DECLINED'
                 locked_offer.save(update_fields=['status'])
                 return Response({'error': 'You already have another active journey in progress.'}, status=status.HTTP_409_CONFLICT)
+
+            # Capacity check (Item 8): Ensure 2 donors cannot take 1 slot concurrently
+            active_acceptances_qs = RequestAcceptance.objects.filter(
+                request=locked_req,
+                status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']
+            ).exclude(donor=locked_offer.donor)
+            db_pending = sum(a.units_pledged for a in active_acceptances_qs)
+            effective_pending = max(locked_req.units_pending, db_pending)
+
+            if locked_req.units_received + effective_pending >= (locked_req.units_needed or 1):
+                locked_offer.status = 'DECLINED'
+                locked_offer.save(update_fields=['status'])
+                return Response({'error': 'Slot Full. This request already has enough active donors.'}, status=status.HTTP_409_CONFLICT)
+
+            locked_req.units_pending = effective_pending + 1
+            locked_req.save(update_fields=['units_pending'])
 
             locked_offer.status = 'ACCEPTED'
             locked_offer.responded_at = now
@@ -1378,125 +1438,55 @@ def _build_milestones(acceptance):
     return milestones
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def journey_detail_view(request, pk):
-    """
-    GET /api/journeys/<pk>/
-    Role-scoped: REQUESTER sees donor live location + contact;
-    DONOR sees patient/hospital + requester contact.
-    Contacts masked until status is ARRIVED or DONATED.
-    """
-    user = request.user
-    donor_profile = DonorProfile.objects.filter(user=user).first()
-    donor_filter = Q(donor=donor_profile) if donor_profile else Q(pk__in=[])
-
-    # 1. Try finding RequestAcceptance by pk (journey ID)
-    acceptance = (
-        RequestAcceptance.objects
-        .select_related(
-            'request', 'request__requester', 'request__hospital',
-            'donor', 'donor__user',
-        )
-        .filter(pk=pk)
-        .first()
-    )
-
-    # If found by pk but current user is not participant or staff,
-    # pk may be a request_id where an unrelated RequestAcceptance coincidentally shares the same numeric id.
-    if acceptance and not (user.is_staff or acceptance.donor == donor_profile or acceptance.request.requester == user):
-        acceptance = None
-
-    # 2. Try finding RequestAcceptance by request_id for this user
-    if not acceptance:
-        acceptance_qs = (
-            RequestAcceptance.objects
-            .select_related(
-                'request', 'request__requester', 'request__hospital',
-                'donor', 'donor__user',
-            )
-            .filter(request_id=pk)
-        )
-        if not user.is_staff:
-            acceptance_qs = acceptance_qs.filter(Q(request__requester=user) | donor_filter)
-        acceptance = acceptance_qs.order_by('-started_at').first()
-
-    if not acceptance:
-        # Check if pk refers directly to a BloodRequest with no acceptance yet
-        req = BloodRequest.objects.filter(pk=pk).select_related('requester', 'hospital').first()
-        if req and (req.requester_id == request.user.id or request.user.is_staff):
-            hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
-            timeline_events = [
-                {
-                    'state': ev.state,
-                    'actor_name': (ev.actor.get_full_name() or ev.actor.username) if ev.actor else 'System',
-                    'note': ev.note,
-                    'created_at': ev.created_at.isoformat(),
-                }
-                for ev in req.timeline_events.all()
-            ]
-            return Response({
-                'id': req.id,
-                'request_id': req.id,
-                'status': req.status,
-                'viewer_role': 'REQUESTER',
-                'blood_group': req.blood_group or '',
-                'component': getattr(req, 'component', 'WHOLE') or 'WHOLE',
-                'urgency': req.urgency or getattr(req, 'urgency_level', '') or '',
-                'units_needed': req.units_needed,
-                'units_received': req.units_received,
-                'units_pending': req.units_pending,
-                'request_mode': req.request_mode,
-                'support_status': 'CAN_SUPPORT',
-                'support_status_label': 'Can Support',
-                'milestones': {'ACCEPTED': None, 'ON_THE_WAY': None, 'ARRIVED': None, 'DONATED': None},
-                'eta_minutes': None,
-                'distance_km': None,
-                'can_report': False,
-                'can_cancel': req.status in ('OPEN', 'STANDBY_SEARCHING'),
-                'created_at': req.created_at.isoformat(),
-                'donor_name': 'Searching for donors...',
-                'donor_contact': '',
-                'donor_lat': None,
-                'donor_lng': None,
-                'patient_name': req.patient_name or '',
-                'hospital_name': hospital_name,
-                'requester_contact': req.contact_phone or req.contact_number or '',
-                'dest_lat': req.lat or (req.hospital.lat if req.hospital else None),
-                'dest_lng': req.lng or (req.hospital.lng if req.hospital else None),
-                'requester_lat': None,
-                'requester_lng': None,
-                'chat_room_id': '',
-                'timeline': timeline_events,
-            }, status=status.HTTP_200_OK)
-        return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
-
+def _serialize_journey_detail(acceptance, user):
     req = acceptance.request
     donor_profile = acceptance.donor
-    is_donor = (donor_profile.user_id == request.user.id)
-    is_requester = (req.requester_id == request.user.id or request.user.is_staff)
-
-    if not (is_donor or is_requester):
-        return Response({'detail': 'You are not part of this journey.'}, status=status.HTTP_403_FORBIDDEN)
-
-    from api.models import DonationMatch
+    is_donor = (donor_profile.user_id == user.id)
+    is_requester = (req.requester_id == user.id or user.is_staff)
     viewer_role = 'DONOR' if is_donor else 'REQUESTER'
-    contact_revealed = acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED', 'COMPLETED', 'CONFIRMED')
+
+    # Point 4: is_standby acceptances must not reveal requester contact until promoted to active
+    if acceptance.is_standby:
+        contact_revealed = False
+    else:
+        contact_revealed = acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED', 'COMPLETED', 'CONFIRMED')
+
     hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
     dest_lat = req.lat or (req.hospital.lat if req.hospital else None)
     dest_lng = req.lng or (req.hospital.lng if req.hospital else None)
-    donor_lat = acceptance.donor_lat
-    donor_lng = acceptance.donor_lng
+
+    # Point 3: Return donor_lat/donor_lng only while status is ACCEPTED, ON_THE_WAY or ARRIVED; null otherwise
+    if acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED'):
+        donor_lat = acceptance.donor_lat
+        donor_lng = acceptance.donor_lng
+    else:
+        donor_lat = None
+        donor_lng = None
+
     donor_phone = donor_profile.phone_number or getattr(donor_profile.user, 'phone_number', '') or ''
     requester_phone = req.contact_phone or req.contact_number or ''
+    from api.conf import NO_SHOW_GRACE_MINUTES
+    now = timezone.now()
+    eta_mins = acceptance.eta_minutes or 0
+    base_time = acceptance.started_at or now
+    eta_deadline = base_time + timedelta(minutes=eta_mins + NO_SHOW_GRACE_MINUTES)
+
+    can_report_no_show = bool(
+        is_requester and
+        acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED') and
+        now >= eta_deadline
+    )
+    can_report_medical = bool(
+        is_donor and
+        acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED')
+    )
     can_report = is_requester and acceptance.status in ('ON_THE_WAY', 'ARRIVED')
     can_cancel = is_requester and acceptance.status in ('ACCEPTED', 'ON_THE_WAY')
 
-    # Find or derive chat room id
+    from api.models import DonationMatch
     match_obj = DonationMatch.objects.filter(request=req, donor=donor_profile).first()
     chat_room_id = match_obj.chat_room_id if match_obj and match_obj.chat_room_id else f"chat_{req.id}_{donor_profile.id}"
 
-    # Timeline events
     timeline_events = [
         {
             'state': ev.state,
@@ -1507,8 +1497,32 @@ def journey_detail_view(request, pk):
         for ev in req.timeline_events.all()
     ]
 
-    return Response({
+    # Point 5: A requester with several accepted donors must see all of them (acceptances list)
+    acceptances_data = []
+    if is_requester or user.is_staff:
+        all_accs = req.acceptances.select_related('donor__user').order_by('-started_at')
+        for a in all_accs:
+            d_ph = a.donor.phone_number or getattr(a.donor.user, 'phone_number', '') or ''
+            a_revealed = not a.is_standby and a.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED', 'COMPLETED', 'CONFIRMED')
+            acceptances_data.append({
+                'id': a.id,
+                'status': a.status,
+                'donor_name': a.donor.user.get_full_name() or a.donor.user.username,
+                'donor_contact': _mask_phone(d_ph, revealed=a_revealed),
+                'is_standby': a.is_standby,
+                'support_status': a.support_status,
+                'units_pledged': a.units_pledged,
+                'eta_minutes': a.eta_minutes,
+                'distance_km': a.distance_km,
+                'donor_lat': a.donor_lat if a.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED') else None,
+                'donor_lng': a.donor_lng if a.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED') else None,
+                'created_at': a.started_at.isoformat() if a.started_at else None,
+            })
+
+    return {
         'id': acceptance.id,
+        'request_id': req.id,
+        'request_only': False,
         'status': acceptance.status,
         'viewer_role': viewer_role,
         'blood_group': req.blood_group or '',
@@ -1528,9 +1542,11 @@ def journey_detail_view(request, pk):
         'eta_minutes': acceptance.eta_minutes,
         'distance_km': acceptance.distance_km,
         'can_report': can_report,
+        'can_report_no_show': can_report_no_show,
+        'can_report_medical': can_report_medical,
         'can_cancel': can_cancel,
+        'is_standby': acceptance.is_standby,
         'created_at': acceptance.started_at.isoformat(),
-        'request_id': req.id,
         'chat_room_id': chat_room_id,
         'donor_name': donor_profile.user.get_full_name() or donor_profile.user.username,
         'donor_contact': _mask_phone(donor_phone, revealed=contact_revealed),
@@ -1544,7 +1560,175 @@ def journey_detail_view(request, pk):
         'requester_lat': None,
         'requester_lng': None,
         'timeline': timeline_events,
-    }, status=status.HTTP_200_OK)
+        'acceptances': acceptances_data,
+    }
+
+
+def _serialize_open_request_detail(req, user):
+    hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
+    timeline_events = [
+        {
+            'state': ev.state,
+            'actor_name': (ev.actor.get_full_name() or ev.actor.username) if ev.actor else 'System',
+            'note': ev.note,
+            'created_at': ev.created_at.isoformat(),
+        }
+        for ev in req.timeline_events.all()
+    ]
+    return {
+        'id': req.id,
+        'request_id': req.id,
+        'request_only': True,
+        'status': req.status,
+        'viewer_role': 'REQUESTER',
+        'blood_group': req.blood_group or '',
+        'component': getattr(req, 'component', 'WHOLE') or 'WHOLE',
+        'urgency': req.urgency or getattr(req, 'urgency_level', '') or '',
+        'units_needed': req.units_needed,
+        'units_received': req.units_received,
+        'units_pending': req.units_pending,
+        'request_mode': req.request_mode,
+        'support_status': 'CAN_SUPPORT',
+        'support_status_label': 'Can Support',
+        'milestones': {'ACCEPTED': None, 'ON_THE_WAY': None, 'ARRIVED': None, 'DONATED': None},
+        'eta_minutes': None,
+        'distance_km': None,
+        'can_report': False,
+        'can_report_no_show': False,
+        'can_report_medical': False,
+        'can_cancel': req.status in ('OPEN', 'STANDBY_SEARCHING'),
+        'is_standby': False,
+        'created_at': req.created_at.isoformat(),
+        'donor_name': 'Searching for donors...',
+        'donor_contact': '',
+        'donor_lat': None,
+        'donor_lng': None,
+        'patient_name': req.patient_name or '',
+        'hospital_name': hospital_name,
+        'requester_contact': req.contact_phone or req.contact_number or '',
+        'dest_lat': req.lat or (req.hospital.lat if req.hospital else None),
+        'dest_lng': req.lng or (req.hospital.lng if req.hospital else None),
+        'requester_lat': None,
+        'requester_lng': None,
+        'chat_room_id': '',
+        'timeline': timeline_events,
+        'acceptances': [],
+    }
+
+
+def _pick_primary_acceptance(acceptances_iterable):
+    """
+    Status priority for picking primary acceptance:
+    1. Active non-standby: (ACCEPTED, ON_THE_WAY, ARRIVED) and not is_standby
+    2. Donated/Completed/Confirmed: (DONATED, COMPLETED, CONFIRMED) and not is_standby
+    3. Standby: is_standby=True and not CANCELLED/FAILED
+    4. Cancelled/Failed: status in (CANCELLED, FAILED)
+    Tie-break: newest started_at (descending)
+    """
+    def _rank(acc):
+        st = acc.status
+        is_sb = acc.is_standby
+        if not is_sb and st in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED'):
+            priority = 0
+        elif not is_sb and st in ('DONATED', 'COMPLETED', 'CONFIRMED'):
+            priority = 1
+        elif is_sb and st not in ('CANCELLED', 'FAILED'):
+            priority = 2
+        elif st in ('CANCELLED', 'FAILED'):
+            priority = 3
+        else:
+            priority = 4
+        started = acc.started_at.timestamp() if acc.started_at else 0
+        return (priority, -started, -acc.id)
+
+    sorted_accs = sorted(acceptances_iterable, key=_rank)
+    return sorted_accs[0] if sorted_accs else None
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def journey_detail_view(request, pk):
+    """
+    GET /api/journeys/<pk>/
+    Primary lookup by RequestAcceptance id.
+    If pk matches an acceptance where user is NOT a participant, does NOT return 403;
+    falls through to check if user owns a BloodRequest with that pk (200 request-only view).
+    Otherwise returns 404 (never 403, preventing ID existence enumeration).
+    """
+    user = request.user
+    donor_profile = DonorProfile.objects.filter(user=user).first()
+
+    # 1. Primary lookup: RequestAcceptance by pk
+    acceptance = (
+        RequestAcceptance.objects
+        .select_related(
+            'request', 'request__requester', 'request__hospital',
+            'donor', 'donor__user',
+        )
+        .filter(pk=pk)
+        .first()
+    )
+
+    if acceptance:
+        is_donor = (acceptance.donor.user_id == user.id)
+        is_requester = (acceptance.request.requester_id == user.id or user.is_staff)
+        if is_donor or is_requester:
+            return Response(_serialize_journey_detail(acceptance, user), status=status.HTTP_200_OK)
+        # If user is not participant in this acceptance, do NOT return 403; fall through to BloodRequest lookup!
+
+    # 2. Fallback: BloodRequest with that pk owned by current user
+    req = BloodRequest.objects.filter(pk=pk).select_related('requester', 'hospital').first()
+    if req:
+        is_requester = (req.requester_id == user.id or user.is_staff)
+        donor_acc = req.acceptances.filter(donor=donor_profile).first() if donor_profile else None
+
+        if donor_acc:
+            primary_donor_acc = _pick_primary_acceptance(req.acceptances.filter(donor=donor_profile))
+            return Response(_serialize_journey_detail(primary_donor_acc, user), status=status.HTTP_200_OK)
+
+        if is_requester:
+            primary_acc = _pick_primary_acceptance(req.acceptances.all())
+            if primary_acc:
+                return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
+            return Response(_serialize_open_request_detail(req, user), status=status.HTTP_200_OK)
+
+    # 3. Neither a participant in acceptance pk nor owner of request pk -> 404
+    return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def journey_by_request_view(request, request_id):
+    """
+    GET /api/journeys/by-request/<request_id>/
+    Point 1: Unambiguous lookup by request ID.
+    Returns the newest non-standby acceptance (plus acceptances list) for requesters,
+    or request-only view if no acceptances exist. Returns 404 for unauthorized users.
+    """
+    user = request.user
+    donor_profile = DonorProfile.objects.filter(user=user).first()
+
+    req = BloodRequest.objects.filter(pk=request_id).select_related('requester', 'hospital').first()
+    if not req:
+        return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    is_requester = (req.requester_id == user.id or user.is_staff)
+    donor_acc = req.acceptances.filter(donor=donor_profile).first() if donor_profile else None
+
+    if not (is_requester or donor_acc):
+        return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if donor_acc:
+        primary_donor_acc = _pick_primary_acceptance(req.acceptances.filter(donor=donor_profile))
+        return Response(_serialize_journey_detail(primary_donor_acc, user), status=status.HTTP_200_OK)
+
+    if is_requester:
+        primary_acc = _pick_primary_acceptance(req.acceptances.all())
+        if primary_acc:
+            return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
+        return Response(_serialize_open_request_detail(req, user), status=status.HTTP_200_OK)
+
+    return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])
@@ -1563,29 +1747,64 @@ def journey_list_view(request):
         .filter(Q(request__requester=user) | donor_filter)
         .order_by('-started_at')
     )
+
     req_id_param = request.query_params.get('request_id')
-    if req_id_param:
+    filtered_by_request = False
+    req_id_val = None
+    if req_id_param is not None and str(req_id_param).strip() != '':
         try:
             req_id_val = int(req_id_param)
             qs = qs.filter(request_id=req_id_val)
+            filtered_by_request = True
         except (ValueError, TypeError):
-            pass
+            qs = qs.none()
+            filtered_by_request = True
 
-    limit = min(50, int(request.query_params.get('limit', 20)))
-    offset = int(request.query_params.get('offset', 0))
-    total = qs.count()
+    # Point 6: Safe defaults for limit/offset, never 500
+    try:
+        raw_limit = int(request.query_params.get('limit', 20))
+        limit = max(1, min(50, raw_limit))
+    except (ValueError, TypeError):
+        limit = 20
+
+    try:
+        raw_offset = int(request.query_params.get('offset', 0))
+        offset = max(0, raw_offset)
+    except (ValueError, TypeError):
+        offset = 0
+
+    # Represented request IDs across the FULL queryset (not just current page)
+    represented_req_ids = set(qs.values_list('request_id', flat=True))
+
+    if filtered_by_request:
+        if req_id_val is not None and req_id_val not in represented_req_ids:
+            open_requests_qs = BloodRequest.objects.filter(
+                id=req_id_val,
+                requester=user,
+                is_active=True,
+            ).select_related('hospital')
+        else:
+            open_requests_qs = BloodRequest.objects.none()
+    else:
+        open_requests_qs = BloodRequest.objects.filter(
+            requester=user,
+            is_active=True,
+        ).exclude(id__in=represented_req_ids).select_related('hospital').order_by('-created_at')
+
+    open_requests_count = open_requests_qs.count()
+    total = qs.count() + open_requests_count
+
     page = qs[offset: offset + limit]
 
     items = []
-    represented_req_ids = set()
     for acc in page:
         req = acc.request
-        represented_req_ids.add(req.id)
         is_donor_view = donor_profile and acc.donor_id == donor_profile.id
         hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
         items.append({
             'id': acc.id,
             'request_id': req.id,
+            'request_only': False,
             'status': acc.status,
             'viewer_role': 'DONOR' if is_donor_view else 'REQUESTER',
             'blood_group': req.blood_group or '',
@@ -1596,25 +1815,23 @@ def journey_list_view(request):
             'created_at': acc.started_at.isoformat(),
         })
 
-    # Also include any of the user's active blood requests that do not yet have an acceptance
-    open_user_requests = BloodRequest.objects.filter(
-        requester=user,
-        is_active=True,
-    ).exclude(id__in=represented_req_ids).select_related('hospital')
-    for ureq in open_user_requests:
-        hosp = ureq.hospital.name if ureq.hospital else (ureq.hospital_location or '')
-        items.append({
-            'id': ureq.id,
-            'request_id': ureq.id,
-            'status': ureq.status,
-            'viewer_role': 'REQUESTER',
-            'blood_group': ureq.blood_group or '',
-            'urgency': ureq.urgency or getattr(ureq, 'urgency_level', '') or '',
-            'hospital_name': hosp,
-            'is_standby': False,
-            'support_status': 'CAN_SUPPORT',
-            'created_at': ureq.created_at.isoformat(),
-        })
+    # Append request_only items once (first page only: offset == 0)
+    if offset == 0:
+        for ureq in open_requests_qs:
+            hosp = ureq.hospital.name if ureq.hospital else (ureq.hospital_location or '')
+            items.append({
+                'id': ureq.id,
+                'request_id': ureq.id,
+                'request_only': True,
+                'status': ureq.status,
+                'viewer_role': 'REQUESTER',
+                'blood_group': ureq.blood_group or '',
+                'urgency': ureq.urgency or getattr(ureq, 'urgency_level', '') or '',
+                'hospital_name': hosp,
+                'is_standby': False,
+                'support_status': 'CAN_SUPPORT',
+                'created_at': ureq.created_at.isoformat(),
+            })
 
     return Response({
         'count': total,

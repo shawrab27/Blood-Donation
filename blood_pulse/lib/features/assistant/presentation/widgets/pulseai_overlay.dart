@@ -229,10 +229,11 @@ class _PulseAiOverlayState extends ConsumerState<PulseAiOverlay>
   @override
   Widget build(BuildContext context) {
     final isVisible = ref.watch(pulseAiVisibilityProvider);
+    final isSuppressed = ref.watch(pulseAiSuppressedProvider);
     final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final routeAllowed = _isRouteAllowed();
 
-    final showOverlay = isVisible && routeAllowed && !isKeyboardOpen;
+    final showOverlay = isVisible && !isSuppressed && routeAllowed && !isKeyboardOpen;
 
     return PopScope(
       canPop: _animController.value == 0.0,

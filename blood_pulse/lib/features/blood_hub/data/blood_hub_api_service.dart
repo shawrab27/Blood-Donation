@@ -527,6 +527,34 @@ class JourneyStep {
 /// Viewer's role in this journey — backend decides which fields are populated.
 enum JourneyViewerRole { requester, donor, unknown }
 
+/// Returns true only if the phone number is an actual reachable phone (not masked, not "Hidden until accepted").
+bool isRealCallablePhone(String? phone) {
+  if (phone == null) return false;
+  final trimmed = phone.trim();
+  if (trimmed.isEmpty) return false;
+  final lower = trimmed.toLowerCase();
+  if (lower.contains('hidden') ||
+      lower.contains('*') ||
+      lower.contains('protect') ||
+      lower.contains('reveal') ||
+      lower.contains('null')) {
+    return false;
+  }
+  final clean = trimmed.replaceAll(RegExp(r'[^0-9+]'), '');
+  return clean.length >= 7;
+}
+
+/// Normalizes "Protected ..." backend strings into user-friendly localized fallbacks.
+String friendlyProtectedText(String? value, {String fallback = 'Protected'}) {
+  if (value == null) return fallback;
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return fallback;
+  if (trimmed.startsWith('Protected') || trimmed.toLowerCase().contains('protected')) {
+    return fallback;
+  }
+  return trimmed;
+}
+
 class JourneyDetail {
   const JourneyDetail({
     required this.id,
@@ -558,10 +586,20 @@ class JourneyDetail {
     required this.requesterLng,
     this.chatRoomId,
     this.requestId,
+    this.canReportNoShow = false,
+    this.canReportMedical = false,
+    this.hospitalDetails,
+    this.patientPhoto,
+    this.requisitionSlip,
   });
 
   final String? chatRoomId;
   final int? requestId;
+  final bool canReportNoShow;
+  final bool canReportMedical;
+  final String? hospitalDetails;
+  final String? patientPhoto;
+  final String? requisitionSlip;
 
   final int id;
   final String status;
@@ -659,6 +697,11 @@ class JourneyDetail {
       requesterLng: (j['requester_lng'] as num?)?.toDouble(),
       chatRoomId: j['chat_room_id'] as String?,
       requestId: (j['request_id'] as num?)?.toInt(),
+      canReportNoShow: (j['can_report_no_show'] as bool?) ?? false,
+      canReportMedical: (j['can_report_medical'] as bool?) ?? false,
+      hospitalDetails: j['hospital_details'] as String?,
+      patientPhoto: j['patient_photo'] as String?,
+      requisitionSlip: j['requisition_slip'] as String?,
     );
   }
 }
@@ -738,6 +781,8 @@ class JourneyListItem {
     required this.hospitalName,
     required this.isStandby,
     required this.createdAt,
+    this.requestId = 0,
+    this.requestOnly = false,
   });
 
   final int id;
@@ -748,6 +793,8 @@ class JourneyListItem {
   final String hospitalName;
   final bool isStandby;
   final String createdAt;
+  final int requestId;
+  final bool requestOnly;
 
   factory JourneyListItem.fromJson(Map<String, dynamic> j) {
     final roleStr = j['viewer_role'] as String?;
@@ -757,8 +804,11 @@ class JourneyListItem {
             ? JourneyViewerRole.requester
             : JourneyViewerRole.unknown;
 
+    final parsedId = (j['id'] as num?)?.toInt() ?? 0;
+    final parsedReqId = (j['request_id'] as num?)?.toInt() ?? parsedId;
+
     return JourneyListItem(
-      id: (j['id'] as num?)?.toInt() ?? 0,
+      id: parsedId,
       status: (j['status'] as String?) ?? 'UNKNOWN',
       viewerRole: role,
       bloodGroup: (j['blood_group'] as String?) ?? '',
@@ -766,9 +816,72 @@ class JourneyListItem {
       hospitalName: (j['hospital_name'] as String?) ?? '',
       isStandby: (j['is_standby'] as bool?) ?? false,
       createdAt: (j['created_at'] as String?) ?? '',
+      requestId: parsedReqId,
+      requestOnly: (j['request_only'] as bool?) ?? false,
     );
   }
 }
+
+sealed class JourneyResolutionOutcome {
+  const JourneyResolutionOutcome();
+
+  const factory JourneyResolutionOutcome.journeyId(int id) = JourneyResolutionId;
+  const factory JourneyResolutionOutcome.requestOnly(int requestId) = JourneyResolutionRequestOnly;
+  const factory JourneyResolutionOutcome.error(String message) = JourneyResolutionError;
+}
+
+class JourneyResolutionId extends JourneyResolutionOutcome {
+  final int id;
+  const JourneyResolutionId(this.id);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JourneyResolutionId && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() => 'JourneyResolutionOutcome.journeyId()';
+}
+
+class JourneyResolutionRequestOnly extends JourneyResolutionOutcome {
+  final int requestId;
+  const JourneyResolutionRequestOnly(this.requestId);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JourneyResolutionRequestOnly &&
+          runtimeType == other.runtimeType &&
+          requestId == other.requestId;
+
+  @override
+  int get hashCode => requestId.hashCode;
+
+  @override
+  String toString() => 'JourneyResolutionOutcome.requestOnly()';
+}
+
+class JourneyResolutionError extends JourneyResolutionOutcome {
+  final String message;
+  const JourneyResolutionError(this.message);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JourneyResolutionError &&
+          runtimeType == other.runtimeType &&
+          message == other.message;
+
+  @override
+  int get hashCode => message.hashCode;
+
+  @override
+  String toString() => 'JourneyResolutionOutcome.error()';
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NATIONAL EMERGENCY MODEL  (Prompt 4)
@@ -791,29 +904,37 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
     throw Exception(data['detail'] ?? 'Failed to load journey');
   }
 
-  /// Resolves the journey ID from a blood request ID via GET /api/journeys/?request_id=`<id>`.
-  /// Returns the corresponding journey ID (RequestAcceptance.id) if found,
-  /// or falls back to the original [requestId].
-  Future<int> resolveJourneyIdFromRequestId(int requestId) async {
+  /// Resolves the journey ID from a blood request ID via GET /api/journeys/by-request/{requestId}/.
+  /// Returns one of three outcomes:
+  /// - JourneyResolutionOutcome.journeyId(id) when an active acceptance exists
+  /// - JourneyResolutionOutcome.requestOnly(requestId) when no acceptance exists
+  /// - JourneyResolutionOutcome.error(message) on 404, HTTP error, or network exception
+  Future<JourneyResolutionOutcome> resolveJourneyIdFromRequestId(int requestId) async {
     try {
-      final response = await _api.get('journeys/?request_id=$requestId');
+      final response = await _api.get('journeys/by-request//');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is Map && data['results'] is List) {
-          final results = data['results'] as List;
-          if (results.isNotEmpty) {
-            final first = results.first;
-            if (first is Map<String, dynamic>) {
-              final jId = (first['id'] as num?)?.toInt();
-              if (jId != null && jId > 0) {
-                return jId;
-              }
-            }
+        if (data is Map<String, dynamic>) {
+          final isRequestOnly = data['request_only'] == true;
+          if (isRequestOnly) {
+            final reqId = (data['request_id'] as num?)?.toInt() ?? (data['id'] as num?)?.toInt() ?? requestId;
+            return JourneyResolutionOutcome.requestOnly(reqId);
           }
+          final jId = (data['id'] as num?)?.toInt();
+          if (jId != null && jId > 0) {
+            return JourneyResolutionOutcome.journeyId(jId);
+          }
+          return JourneyResolutionOutcome.requestOnly(requestId);
         }
+        return const JourneyResolutionOutcome.error('Invalid response format');
       }
-    } catch (_) {}
-    return requestId;
+      if (response.statusCode == 404) {
+        return const JourneyResolutionOutcome.error('Journey or request not found');
+      }
+      return JourneyResolutionOutcome.error('Failed to resolve journey: HTTP ' + response.statusCode.toString());
+    } catch (e) {
+      return JourneyResolutionOutcome.error('Network error resolving journey: $e');
+    }
   }
 
   /// POST `/api/journeys/<id>/status/`  — update journey status
@@ -860,17 +981,18 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
 
   /// POST `/api/journeys/<id>/issue/`  — report a donation issue
   Future<void> reportDonationIssue(
-      int journeyId, String issueType, String? note) async {
+      int journeyId, String issueType, {String? reasonCode, String? note}) async {
     final response = await _api.post(
       'journeys/$journeyId/issue/',
       body: {
         'issue_type': issueType,
+        if (reasonCode != null && reasonCode.isNotEmpty) 'reason_code': reasonCode,
         if (note != null && note.isNotEmpty) 'note': note,
       },
     );
-    if (response.statusCode != 201) {
+    if (response.statusCode != 201 && response.statusCode != 200) {
       final data = jsonDecode(response.body);
-      throw Exception(data['detail'] ?? 'Failed to report issue');
+      throw Exception(data['error'] ?? data['detail'] ?? 'Failed to report issue');
     }
   }
 

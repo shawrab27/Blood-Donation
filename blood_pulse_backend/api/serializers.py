@@ -278,6 +278,28 @@ class BloodRequestSerializer(serializers.ModelSerializer):
         model = BloodRequest
         fields = '__all__'
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        user = request.user if request and hasattr(request, 'user') and request.user.is_authenticated else None
+        is_owner = user and (user.is_staff or instance.requester_id == user.id)
+        is_accepted_donor = user and instance.acceptances.filter(
+            donor__user=user,
+            status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']
+        ).exists()
+        if not (is_owner or is_accepted_donor):
+            if 'contact_phone' in data:
+                data['contact_phone'] = "Hidden until accepted"
+            if 'contact_number' in data:
+                data['contact_number'] = "Hidden until accepted"
+            if instance.patient_name:
+                parts = instance.patient_name.strip().split()
+                data['patient_name'] = f"{parts[0][0]}. {' '.join(p[0] + '.' for p in parts[1:])}" if parts else "Protected Patient"
+            if instance.lat is not None and instance.lng is not None:
+                from api.utils.geo import fuzz_coordinates
+                data['lat'], data['lng'] = fuzz_coordinates(instance.lat, instance.lng, seed_id=instance.id)
+        return data
+
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     author_photo = serializers.SerializerMethodField()

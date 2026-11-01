@@ -229,7 +229,12 @@ class _JourneyCard extends StatelessWidget {
         !['DONATED', 'FAILED', 'CANCELLED'].contains(item.status);
 
     return InkWell(
-      onTap: () => context.push('/journeys/${item.id}'),
+      onTap: () {
+        final targetId = item.requestOnly
+            ? (item.requestId != 0 ? item.requestId : item.id)
+            : item.id;
+        context.push('/journeys/' + targetId.toString());
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),

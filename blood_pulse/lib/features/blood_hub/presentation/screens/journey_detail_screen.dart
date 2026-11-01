@@ -1,3 +1,4 @@
+import '../../../../core/providers/pulse_ai_visibility_provider.dart';
 import 'package:blood_pulse/core/widgets/pressable_scale.dart';
 import 'package:blood_pulse/core/widgets/app_loader.dart';
 // Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
@@ -120,12 +121,15 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   }
 
   void _showIssueSheet(JourneyDetail journey) {
+    ref.read(pulseAiSuppressedProvider.notifier).state = true;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _DonationIssueSheet(journeyId: journey.id),
-    );
+      builder: (_) => DonationIssueSheet(journey: journey),
+    ).whenComplete(() {
+      ref.read(pulseAiSuppressedProvider.notifier).state = false;
+    });
   }
 
   Future<void> _cancelJourney(int id) async {
@@ -413,21 +417,28 @@ class _LiveMap extends StatelessWidget {
     LatLng? focusPin;
     LatLng? secondaryPin;
 
+    bool isValidCoord(double? lat, double? lng) {
+      if (lat == null || lng == null) return false;
+      if (!lat.isFinite || !lng.isFinite) return false;
+      if (lat < -90.0 || lat > 90.0 || lng < -180.0 || lng > 180.0) return false;
+      return true;
+    }
+
     if (journey.isRequester) {
       // Requester watches donor moving toward hospital
-      if (journey.donorLat != null && journey.donorLng != null) {
+      if (isValidCoord(journey.donorLat, journey.donorLng)) {
         focusPin = LatLng(journey.donorLat!, journey.donorLng!);
       }
-      if (journey.destLat != null && journey.destLng != null) {
+      if (isValidCoord(journey.destLat, journey.destLng)) {
         secondaryPin = LatLng(journey.destLat!, journey.destLng!);
       }
     } else if (journey.isDonor) {
       // Donor sees destination (hospital) as primary
-      if (journey.destLat != null && journey.destLng != null) {
+      if (isValidCoord(journey.destLat, journey.destLng)) {
         focusPin = LatLng(journey.destLat!, journey.destLng!);
       }
       // Also show requester's location if they opted-in
-      if (journey.requesterLat != null && journey.requesterLng != null) {
+      if (isValidCoord(journey.requesterLat, journey.requesterLng)) {
         secondaryPin =
             LatLng(journey.requesterLat!, journey.requesterLng!);
       }
@@ -673,16 +684,16 @@ class _RequesterInfoCard extends ConsumerWidget {
             _InfoRow('Donor', journey.donorName.isNotEmpty ? journey.donorName : 'Searching for donor...'),
             _InfoRow(
               'Contact',
-              journey.donorContact.isNotEmpty
+              isRealCallablePhone(journey.donorContact)
                   ? journey.donorContact
-                  : 'Revealed after acceptance',
-              highlight: journey.donorContact.isNotEmpty,
+                  : 'Hidden until accepted',
+              highlight: isRealCallablePhone(journey.donorContact),
             ),
             const _InfoDivider(),
-            _InfoRow('Patient', journey.patientName),
-            _InfoRow('Hospital', journey.hospitalName),
-            _InfoRow('Blood', ' · '),
-            _InfoRow('Units', ''),
+            _InfoRow('Patient', friendlyProtectedText(journey.patientName, fallback: 'Protected Patient')),
+            _InfoRow('Hospital', friendlyProtectedText(journey.hospitalName, fallback: 'Designated Hospital')),
+            _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
+            _InfoRow('Units', '${journey.unitsNeeded}'),
             _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
           ],
         ),
@@ -717,14 +728,14 @@ class _DonorInfoCard extends ConsumerWidget {
           titleIcon: Icons.bloodtype_rounded,
           titleColor: _kPrimary,
           rows: [
-            _InfoRow('Patient', journey.patientName),
-            _InfoRow('Hospital', journey.hospitalName),
+            _InfoRow('Patient', friendlyProtectedText(journey.patientName, fallback: 'Protected Patient')),
+            _InfoRow('Hospital', friendlyProtectedText(journey.hospitalName, fallback: 'Designated Hospital')),
             _InfoRow(
               'Requester',
-              journey.requesterContact.isNotEmpty
+              isRealCallablePhone(journey.requesterContact)
                   ? journey.requesterContact
-                  : 'Revealed after you accept',
-              highlight: journey.requesterContact.isNotEmpty,
+                  : 'Hidden until accepted',
+              highlight: isRealCallablePhone(journey.requesterContact),
             ),
             const _InfoDivider(),
             _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
@@ -957,57 +968,64 @@ class _ActionRow extends StatelessWidget {
 // DONATION ISSUE BOTTOM SHEET
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _DonationIssueSheet extends ConsumerStatefulWidget {
-  const _DonationIssueSheet({required this.journeyId});
-  final int journeyId;
+@visibleForTesting
+class DonationIssueSheet extends ConsumerStatefulWidget {
+  const DonationIssueSheet({super.key, required this.journey});
+  final JourneyDetail journey;
 
   @override
-  ConsumerState<_DonationIssueSheet> createState() =>
+  ConsumerState<DonationIssueSheet> createState() =>
       _DonationIssueSheetState();
 }
 
-class _DonationIssueSheetState
-    extends ConsumerState<_DonationIssueSheet> {
-  String _issueType = 'MEDICAL_REJECTION';
-  final _noteCtrl = TextEditingController();
+class _DonationIssueSheetState extends ConsumerState<DonationIssueSheet> {
+  String _selectedReason = 'LOW_HEMOGLOBIN';
   bool _submitting = false;
 
-  static const _issues = [
+  static const _medicalReasons = [
     (
-      'MEDICAL_REJECTION',
-      'Medical Rejection',
-      'Donor medically unfit at hospital — 90-day deferral applied'
+      'LOW_HEMOGLOBIN',
+      'Low Hemoglobin',
+      'Hemoglobin level below donation threshold'
     ),
     (
-      'DONOR_NO_SHOW',
-      'Donor No-Show',
-      'Donor did not arrive within expected time'
+      'RECENT_MEDICATION',
+      'Recent Medication',
+      'Temporary deferral due to recent prescription'
     ),
     (
-      'LOGISTICS',
-      'Logistics Issue',
-      'Transport or scheduling problem — request will re-open'
+      'VEIN_ACCESS_ISSUE',
+      'Vein Access Issue',
+      'Inadequate or collapsed vein access'
+    ),
+    (
+      'OTHER',
+      'Other Clinical Reason',
+      'Other medical criteria not met at facility'
     ),
   ];
 
-  @override
-  void dispose() {
-    _noteCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _submit() async {
     setState(() => _submitting = true);
+    final isDonor = widget.journey.isDonor;
+    final issueType = isDonor ? 'MEDICAL_REJECTION' : 'DONOR_NO_SHOW';
     try {
-      await ref
-          .read(bloodHubApiServiceProvider)
-          .reportDonationIssue(widget.journeyId, _issueType, _noteCtrl.text.trim());
+      await ref.read(bloodHubApiServiceProvider).reportDonationIssue(
+            widget.journey.id,
+            issueType,
+            reasonCode: isDonor ? _selectedReason : null,
+          );
       if (mounted) {
         Navigator.of(context).pop();
-        ref.invalidate(journeyDetailProvider(widget.journeyId));
+        ref.invalidate(journeyDetailProvider(widget.journey.id));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Issue reported — standby donor activated.')),
+          SnackBar(
+            content: Text(
+              isDonor
+                  ? 'Medical rejection recorded. 90-day cooldown applied.'
+                  : 'Donor no-show reported. Backup standby donor activated.',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -1024,16 +1042,22 @@ class _DonationIssueSheetState
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final isDonor = widget.journey.isDonor;
+    final canSubmit = isDonor
+        ? true
+        : widget.journey.canReportNoShow;
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Center(
             child: Container(
               width: 40,
@@ -1045,9 +1069,9 @@ class _DonationIssueSheetState
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Report Donation Issue',
-            style: TextStyle(
+          Text(
+            isDonor ? 'Report Medical Rejection' : 'Report Donor No-Show',
+            style: const TextStyle(
               fontFamily: 'Georgia',
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1055,116 +1079,140 @@ class _DonationIssueSheetState
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'The backup standby donor will be notified automatically.',
-            style: TextStyle(
+          Text(
+            isDonor
+                ? 'Select the clinical reason. A temporary recovery deferral will be recorded.'
+                : 'Report that the donor did not arrive. The standby donor will be notified.',
+            style: const TextStyle(
                 fontFamily: 'Inter', fontSize: 12, color: _kNeutral),
           ),
           const SizedBox(height: 16),
-          ..._issues.map((issue) {
-            final (value, label, sub) = issue;
-            final selected = _issueType == value;
-            return GestureDetector(
-              onTap: () => setState(() => _issueType = value),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? const Color(0xFFFEE9EB)
-                      : const Color(0xFFFAFAFA),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: selected ? _kPrimary : const Color(0xFFE8DADA),
-                    width: selected ? 1.5 : 1,
+          if (isDonor) ...[
+            ..._medicalReasons.map((reason) {
+              final (code, label, sub) = reason;
+              final selected = _selectedReason == code;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedReason = code),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 11),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? const Color(0xFFFEE9EB)
+                        : const Color(0xFFFAFAFA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: selected ? _kPrimary : const Color(0xFFE8DADA),
+                      width: selected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        selected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_unchecked_rounded,
+                        color: selected ? _kPrimary : _kNeutral,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: selected ? _kPrimary : _kSecondary,
+                              ),
+                            ),
+                            Text(
+                              sub,
+                              style: const TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 11,
+                                  color: _kNeutral),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      selected
-                          ? Icons.radio_button_checked_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      color: selected ? _kPrimary : _kNeutral,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            label,
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: selected ? _kPrimary : _kSecondary,
-                            ),
-                          ),
-                          Text(
-                            sub,
-                            style: const TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 11,
-                                color: _kNeutral),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              );
+            }),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: widget.journey.canReportNoShow
+                    ? const Color(0xFFFEE9EB)
+                    : const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: widget.journey.canReportNoShow
+                      ? _kPrimary.withAlpha(80)
+                      : const Color(0xFFE0DCDC),
                 ),
               ),
-            );
-          }),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _noteCtrl,
-            maxLines: 2,
-            decoration: InputDecoration(
-              hintText: 'Add a note (optional)',
-              hintStyle: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  color: Color(0xFFBBAAAA)),
-              filled: true,
-              fillColor: const Color(0xFFFAFAFA),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: Color(0xFFE8DADA)),
+              child: Row(
+                children: [
+                  Icon(
+                    widget.journey.canReportNoShow
+                        ? Icons.timer_off_rounded
+                        : Icons.hourglass_top_rounded,
+                    color: widget.journey.canReportNoShow
+                        ? _kPrimary
+                        : _kNeutral,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.journey.canReportNoShow
+                          ? 'ETA + grace period has elapsed. You can now report no-show and activate a standby donor.'
+                          : 'No-show reporting unlocks after donor ETA plus grace period has elapsed.',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: widget.journey.canReportNoShow
+                            ? _kSecondary
+                            : _kNeutral,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: Color(0xFFE8DADA)),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 10),
             ),
-          ),
+          ],
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             height: 50,
             child: PressableScale(child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _kPrimary,
+                backgroundColor: canSubmit ? _kPrimary : const Color(0xFFCCC0C0),
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
                 elevation: 0,
               ),
-              onPressed: _submitting ? null : _submit,
+              onPressed: (_submitting || !canSubmit) ? null : _submit,
               child: _submitting
                   ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: AppLoader())
-                  : const Text(
-                      'Submit & Activate Standby',
-                      style: TextStyle(
+                  : Text(
+                      isDonor
+                          ? 'Submit Medical Rejection'
+                          : 'Report Donor No-Show',
+                      style: const TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w700,
                           fontSize: 14),
@@ -1173,9 +1221,11 @@ class _DonationIssueSheetState
           ),
         ],
       ),
+      )
     );
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SKELETON & ERROR

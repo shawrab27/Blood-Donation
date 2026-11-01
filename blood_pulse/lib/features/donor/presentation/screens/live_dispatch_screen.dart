@@ -18,10 +18,10 @@ enum DispatchRole { requester, donor }
 class LiveDispatchScreen extends StatefulWidget {
   const LiveDispatchScreen({
     super.key,
-    this.patientName = 'Emergency Requester',
-    this.hospitalName = 'Medical Center',
+    this.patientName = 'Patient',
+    this.hospitalName = 'Hospital',
     this.bloodGroup = '',
-    this.donorName = 'Matched Donor',
+    this.donorName = 'Donor',
     this.donorPhone = '',
     this.initialRole = DispatchRole.requester,
   });
@@ -73,8 +73,20 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
     super.dispose();
   }
 
+  bool _isCallable(String p) {
+    final trimmed = p.trim().toLowerCase();
+    return trimmed.isNotEmpty &&
+        !trimmed.contains('hidden') &&
+        !trimmed.contains('*') &&
+        !trimmed.contains('protect') &&
+        !trimmed.contains('reveal') &&
+        p.replaceAll(RegExp(r'[^0-9+]'), '').length >= 7;
+  }
+
   Future<void> _makeCall(String phoneNumber) async {
-    final uri = Uri(scheme: 'tel', path: phoneNumber);
+    if (!_isCallable(phoneNumber)) return;
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final uri = Uri(scheme: 'tel', path: cleanPhone);
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
@@ -123,7 +135,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
       case 2:
         return 'On the Way (Transit)';
       case 3:
-        return 'Arrived & Prep (Ward 04)';
+        return 'Arrived at Hospital';
       case 4:
         return 'Donated (Handover Complete)';
       default:
@@ -136,7 +148,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
       case 1:
         return 'Donor accepted request and departed from station.';
       case 2:
-        return 'Donor is actively in motion along Mirpur Road to ${widget.hospitalName}.';
+        return 'Donor is on the way to ${widget.hospitalName}.';
       case 3:
         return 'Donor has arrived at ward reception and undergoing vitals check.';
       case 4:
@@ -231,10 +243,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
 
                   const SizedBox(height: 12),
 
-                  // 1. Role Switcher / Perspective Toggle
-                  _buildRoleSwitcher(),
 
-                  const SizedBox(height: 14),
 
                   // 2. ETA & Quick Route Card
                   _buildEtaCard(),
@@ -275,134 +284,6 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
     );
   }
 
-  Widget _buildRoleSwitcher() {
-    return Container(
-      height: 46,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEE9EB),
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _activeRole = DispatchRole.requester);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Switched to Requester View (Live Tracking)'),
-                    duration: Duration(seconds: 1),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: _activeRole == DispatchRole.requester
-                      ? const Color(0xFFC30121)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: _activeRole == DispatchRole.requester
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFC30121).withAlpha(60),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person_pin_circle_rounded,
-                      size: 16,
-                      color: _activeRole == DispatchRole.requester
-                          ? Colors.white
-                          : const Color(0xFF5C3F3D),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Requester View',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _activeRole == DispatchRole.requester
-                            ? Colors.white
-                            : const Color(0xFF5C3F3D),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _activeRole = DispatchRole.donor);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Switched to Donor View (Dispatch Control)'),
-                    duration: Duration(seconds: 1),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: _activeRole == DispatchRole.donor
-                      ? const Color(0xFFC30121)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: _activeRole == DispatchRole.donor
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFC30121).withAlpha(60),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.volunteer_activism_rounded,
-                      size: 16,
-                      color: _activeRole == DispatchRole.donor
-                          ? Colors.white
-                          : const Color(0xFF5C3F3D),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Donor View',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _activeRole == DispatchRole.donor
-                            ? Colors.white
-                            : const Color(0xFF5C3F3D),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildEtaCard() {
     return Container(
@@ -430,7 +311,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                 Row(
                   children: [
                     Text(
-                      _currentMilestone >= 3 ? 'Arrived' : '18 Mins',
+                      _currentMilestone >= 3 ? 'Arrived' : 'In Transit',
                       style: const TextStyle(
                         fontFamily: 'Georgia',
                         fontSize: 22,
@@ -446,7 +327,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Fast Route',
+                        'Active',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 10,
@@ -465,7 +346,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        '2.4 km to ${widget.hospitalName}',
+                        'En route to ${widget.hospitalName}',
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
@@ -496,7 +377,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     Icon(Icons.speed_rounded, size: 14, color: Color(0xFF004B7E)),
                     SizedBox(width: 4),
                     Text(
-                      '28 km/h',
+                      'Active',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 11,
@@ -514,7 +395,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                   CircleAvatar(radius: 3.5, backgroundColor: Color(0xFF1B8A4E)),
                   SizedBox(width: 4),
                   Text(
-                    'Clear flow',
+                    'Active flow',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 10,
@@ -1084,11 +965,11 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                     ),
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mirpur Road, Dhaka',
+                          widget.hospitalName,
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 11,
@@ -1097,7 +978,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                           ),
                         ),
                         Text(
-                          'Passing Dhanmondi 27',
+                          'Live Tracking Active',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 9,
@@ -1282,7 +1163,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                         radius: 26,
                         backgroundColor: const Color(0xFFFEE9EB),
                         child: Text(
-                          name.isNotEmpty ? name[0] : 'T',
+                          name.isNotEmpty ? name[0] : 'P',
                           style: const TextStyle(
                             fontFamily: 'Georgia',
                             fontSize: 20,
@@ -1371,7 +1252,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
             children: [
               Expanded(
                 child: PressableScale(child: ElevatedButton.icon(
-                  onPressed: phone.trim().isNotEmpty ? () => _makeCall(phone) : null,
+                  onPressed: _isCallable(phone) ? () => _makeCall(phone) : null,
                   icon: const Icon(Icons.call, size: 15),
                   label: Text(
                     isRequester ? 'Call Donor' : 'Call Ward Desk',

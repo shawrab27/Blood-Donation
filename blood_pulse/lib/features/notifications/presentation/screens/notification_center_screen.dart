@@ -108,7 +108,12 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
       int? journeyId = (res['acceptance_id'] as num?)?.toInt() ??
           (acceptanceData?['id'] as num?)?.toInt();
       if (journeyId == null || journeyId <= 0) {
-        journeyId = await api.resolveJourneyIdFromRequestId(reqIdInt);
+        final outcome = await api.resolveJourneyIdFromRequestId(reqIdInt);
+        if (outcome is JourneyResolutionId) {
+          journeyId = outcome.id;
+        } else if (outcome is JourneyResolutionRequestOnly) {
+          journeyId = outcome.requestId;
+        }
       }
 
       if (!mounted) return;
@@ -124,8 +129,19 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
         ),
       );
 
-      ref.invalidate(journeyDetailProvider(journeyId));
-      context.push('/journeys/$journeyId');
+      if (journeyId == null || journeyId <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open journey for this request.'),
+            backgroundColor: Color(0xFFC30121),
+          ),
+        );
+        return;
+      }
+
+      final validJourneyId = journeyId;
+      ref.invalidate(journeyDetailProvider(validJourneyId));
+      context.push('/journeys/' + validJourneyId.toString());
     } catch (e) {
       if (!mounted) return;
       final errStr = e.toString().toLowerCase();
@@ -135,10 +151,19 @@ class _NotificationCenterScreenState extends ConsumerState<NotificationCenterScr
           errStr.contains('already accepted') ||
           errStr.contains('conflict')) {
         final api = ref.read(bloodHubApiServiceProvider);
-        final resolvedId = await api.resolveJourneyIdFromRequestId(reqIdInt);
+        final outcome = await api.resolveJourneyIdFromRequestId(reqIdInt);
         if (!mounted) return;
-        ref.invalidate(journeyDetailProvider(resolvedId));
-        context.push('/journeys/$resolvedId');
+        if (outcome is JourneyResolutionId) {
+          ref.invalidate(journeyDetailProvider(outcome.id));
+          context.push('/journeys/' + outcome.id.toString());
+        } else if (outcome is JourneyResolutionRequestOnly) {
+          ref.invalidate(journeyDetailProvider(outcome.requestId));
+          context.push('/journeys/' + outcome.requestId.toString());
+        } else if (outcome is JourneyResolutionError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(outcome.message), backgroundColor: const Color(0xFFC30121)),
+          );
+        }
         return;
       }
 

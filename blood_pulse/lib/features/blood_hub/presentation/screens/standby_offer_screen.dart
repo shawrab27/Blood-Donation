@@ -143,8 +143,9 @@ class _OfferBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasValidExpiry = offer.expiresAt.isNotEmpty && offer.timeRemaining > Duration.zero;
     final isExpired = offer.status == 'EXPIRED' ||
-        offer.timeRemaining == Duration.zero;
+        (offer.expiresAt.isNotEmpty && offer.timeRemaining == Duration.zero);
     final isSettled =
         offer.status == 'ACCEPTED' || offer.status == 'DECLINED' || isExpired;
 
@@ -160,10 +161,11 @@ class _OfferBody extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // ── Countdown timer ────────────────────────────────────────
-            if (!isSettled) _CountdownTimer(offer: offer),
-
-            if (!isSettled) const SizedBox(height: 16),
+            // ── Countdown timer (only if API provides expiry) ──────────
+            if (!isSettled && hasValidExpiry) ...[
+              _CountdownTimer(offer: offer),
+              const SizedBox(height: 16),
+            ],
 
             // ── Status chip if settled ─────────────────────────────────
             if (isSettled) _StatusChip(status: offer.status),
