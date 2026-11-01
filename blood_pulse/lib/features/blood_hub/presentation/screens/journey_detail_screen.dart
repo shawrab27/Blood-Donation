@@ -679,10 +679,10 @@ class _RequesterInfoCard extends ConsumerWidget {
               highlight: journey.donorContact.isNotEmpty,
             ),
             const _InfoDivider(),
-            _InfoRow('Patient', journey.patientName),
-            _InfoRow('Hospital', journey.hospitalName),
-            _InfoRow('Blood', ' · '),
-            _InfoRow('Units', ''),
+            _InfoRow('Patient', journey.patientName.isNotEmpty ? journey.patientName : 'Protected Patient'),
+            _InfoRow('Hospital', journey.hospitalName.isNotEmpty ? journey.hospitalName : 'Designated Hospital'),
+            _InfoRow('Blood', '${journey.bloodGroup} · ${journey.component}'),
+            _InfoRow('Units', '${journey.unitsNeeded}'),
             _InfoRow('Urgency', _urgencyLabel(journey.urgency)),
           ],
         ),
@@ -717,8 +717,8 @@ class _DonorInfoCard extends ConsumerWidget {
           titleIcon: Icons.bloodtype_rounded,
           titleColor: _kPrimary,
           rows: [
-            _InfoRow('Patient', journey.patientName),
-            _InfoRow('Hospital', journey.hospitalName),
+            _InfoRow('Patient', journey.patientName.isNotEmpty ? journey.patientName : 'Protected Patient'),
+            _InfoRow('Hospital', journey.hospitalName.isNotEmpty ? journey.hospitalName : 'Designated Hospital'),
             _InfoRow(
               'Requester',
               journey.requesterContact.isNotEmpty

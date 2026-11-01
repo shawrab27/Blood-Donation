@@ -18,10 +18,10 @@ enum DispatchRole { requester, donor }
 class LiveDispatchScreen extends StatefulWidget {
   const LiveDispatchScreen({
     super.key,
-    this.patientName = 'Emergency Requester',
-    this.hospitalName = 'Medical Center',
+    this.patientName = 'Patient',
+    this.hospitalName = 'Hospital',
     this.bloodGroup = '',
-    this.donorName = 'Matched Donor',
+    this.donorName = 'Donor',
     this.donorPhone = '',
     this.initialRole = DispatchRole.requester,
   });
@@ -123,7 +123,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
       case 2:
         return 'On the Way (Transit)';
       case 3:
-        return 'Arrived & Prep (Ward 04)';
+        return 'Arrived at Hospital';
       case 4:
         return 'Donated (Handover Complete)';
       default:
@@ -136,7 +136,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
       case 1:
         return 'Donor accepted request and departed from station.';
       case 2:
-        return 'Donor is actively in motion along Mirpur Road to ${widget.hospitalName}.';
+        return 'Donor is on the way to ${widget.hospitalName}.';
       case 3:
         return 'Donor has arrived at ward reception and undergoing vitals check.';
       case 4:
@@ -299,7 +299,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                 Row(
                   children: [
                     Text(
-                      _currentMilestone >= 3 ? 'Arrived' : '18 Mins',
+                      _currentMilestone >= 3 ? 'Arrived' : 'In Transit',
                       style: const TextStyle(
                         fontFamily: 'Georgia',
                         fontSize: 22,
@@ -315,7 +315,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Fast Route',
+                        'Active',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 10,
@@ -334,7 +334,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        '2.4 km to ${widget.hospitalName}',
+                        'En route to ${widget.hospitalName}',
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
@@ -365,7 +365,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     Icon(Icons.speed_rounded, size: 14, color: Color(0xFF004B7E)),
                     SizedBox(width: 4),
                     Text(
-                      '28 km/h',
+                      'Active',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 11,
@@ -383,7 +383,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                   CircleAvatar(radius: 3.5, backgroundColor: Color(0xFF1B8A4E)),
                   SizedBox(width: 4),
                   Text(
-                    'Clear flow',
+                    'Active flow',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 10,
@@ -953,11 +953,11 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                     ),
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mirpur Road, Dhaka',
+                          widget.hospitalName,
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 11,
@@ -966,7 +966,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                           ),
                         ),
                         Text(
-                          'Passing Dhanmondi 27',
+                          'Live Tracking Active',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 9,
@@ -1151,7 +1151,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                         radius: 26,
                         backgroundColor: const Color(0xFFFEE9EB),
                         child: Text(
-                          name.isNotEmpty ? name[0] : 'T',
+                          name.isNotEmpty ? name[0] : 'P',
                           style: const TextStyle(
                             fontFamily: 'Georgia',
                             fontSize: 20,
