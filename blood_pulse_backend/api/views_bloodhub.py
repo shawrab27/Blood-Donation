@@ -1301,6 +1301,22 @@ def standby_offer_respond_view(request, pk):
                 locked_offer.save(update_fields=['status'])
                 return Response({'error': 'You already have another active journey in progress.'}, status=status.HTTP_409_CONFLICT)
 
+            # Capacity check (Item 8): Ensure 2 donors cannot take 1 slot concurrently
+            active_acceptances_qs = RequestAcceptance.objects.filter(
+                request=locked_req,
+                status__in=['ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'DONATED']
+            ).exclude(donor=locked_offer.donor)
+            db_pending = sum(a.units_pledged for a in active_acceptances_qs)
+            effective_pending = max(locked_req.units_pending, db_pending)
+
+            if locked_req.units_received + effective_pending >= (locked_req.units_needed or 1):
+                locked_offer.status = 'DECLINED'
+                locked_offer.save(update_fields=['status'])
+                return Response({'error': 'Slot Full. This request already has enough active donors.'}, status=status.HTTP_409_CONFLICT)
+
+            locked_req.units_pending = effective_pending + 1
+            locked_req.save(update_fields=['units_pending'])
+
             locked_offer.status = 'ACCEPTED'
             locked_offer.responded_at = now
             locked_offer.save(update_fields=['status', 'responded_at'])

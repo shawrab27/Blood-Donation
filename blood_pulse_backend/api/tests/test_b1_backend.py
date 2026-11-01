@@ -572,3 +572,122 @@ class B1Item7IssueReportRulesTests(TestCase):
         comp_data = resp_completed.json()
         self.assertFalse(comp_data['can_report_medical'])
         self.assertFalse(comp_data['can_report_no_show'])
+
+
+class B1Item8StandbyCapacityTests(TestCase):
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from api.models import Hospital, DonorProfile, BloodRequest, StandbyOffer
+
+        self.client = APIClient()
+
+        # Requester
+        self.requester_user = User.objects.create_user(
+            username='b1_8_req', password='password123', email='req8@example.com'
+        )
+        DonorProfile.objects.create(
+            user=self.requester_user,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='+8801811118800',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        # Donor 1
+        self.donor1_user = User.objects.create_user(
+            username='b1_8_donor1', password='password123', email='donor8_1@example.com', first_name='Donor One'
+        )
+        self.donor1_profile = DonorProfile.objects.create(
+            user=self.donor1_user,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='+8801711118801',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        # Donor 2
+        self.donor2_user = User.objects.create_user(
+            username='b1_8_donor2', password='password123', email='donor8_2@example.com', first_name='Donor Two'
+        )
+        self.donor2_profile = DonorProfile.objects.create(
+            user=self.donor2_user,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='+8801711118802',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        self.hospital = Hospital.objects.create(
+            name='Item 8 Capacity Hospital',
+            district='Dhaka',
+            address='Mirpur, Dhaka',
+        )
+
+        # Request with units_needed = 1
+        self.blood_req = BloodRequest.objects.create(
+            requester=self.requester_user,
+            patient_name='Patient Eight',
+            blood_group='O+',
+            hospital=self.hospital,
+            contact_phone='+8801811118800',
+            units_needed=1,
+            units_received=0,
+            units_pending=0,
+            status='ACTIVE',
+        )
+
+        now = timezone.now()
+        self.offer1 = StandbyOffer.objects.create(
+            request=self.blood_req,
+            donor=self.donor1_profile,
+            status='PENDING',
+            expires_at=now + timedelta(minutes=10),
+        )
+        self.offer2 = StandbyOffer.objects.create(
+            request=self.blood_req,
+            donor=self.donor2_profile,
+            status='PENDING',
+            expires_at=now + timedelta(minutes=10),
+        )
+
+    def test_8_standby_capacity_prevents_two_donors_taking_one_slot(self):
+        # 1. Donor 1 responds ACCEPT -> Success 200
+        self.client.force_authenticate(user=self.donor1_user)
+        resp1 = self.client.post(f'/api/standby/{self.offer1.id}/respond/', {'action': 'ACCEPT'})
+        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+
+        self.offer1.refresh_from_db()
+        self.assertEqual(self.offer1.status, 'ACCEPTED')
+
+        self.blood_req.refresh_from_db()
+        self.assertEqual(self.blood_req.units_pending, 1)
+
+        # 2. Donor 2 responds ACCEPT on the same slot -> 409 Conflict (Capacity reached)
+        self.client.force_authenticate(user=self.donor2_user)
+        resp2 = self.client.post(f'/api/standby/{self.offer2.id}/respond/', {'action': 'ACCEPT'})
+        self.assertEqual(resp2.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn('Slot Full', resp2.json().get('error', ''))
+
+        self.offer2.refresh_from_db()
+        self.assertEqual(self.offer2.status, 'DECLINED')
+
+    def test_8_standby_expired_offer_rejected(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from api.models import StandbyOffer
+
+        # Expired offer
+        expired_offer = StandbyOffer.objects.create(
+            request=self.blood_req,
+            donor=self.donor2_profile,
+            status='PENDING',
+            expires_at=timezone.now() - timedelta(minutes=5),
+        )
+        self.client.force_authenticate(user=self.donor2_user)
+        resp = self.client.post(f'/api/standby/{expired_offer.id}/respond/', {'action': 'ACCEPT'})
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('expired', resp.json().get('error', ''))
