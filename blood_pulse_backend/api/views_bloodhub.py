@@ -1705,14 +1705,32 @@ def journey_list_view(request):
     except (ValueError, TypeError):
         offset = 0
 
-    total = qs.count()
+    # Represented request IDs across the FULL queryset (not just current page)
+    represented_req_ids = set(qs.values_list('request_id', flat=True))
+
+    if filtered_by_request:
+        if req_id_val is not None and req_id_val not in represented_req_ids:
+            open_requests_qs = BloodRequest.objects.filter(
+                id=req_id_val,
+                requester=user,
+                is_active=True,
+            ).select_related('hospital')
+        else:
+            open_requests_qs = BloodRequest.objects.none()
+    else:
+        open_requests_qs = BloodRequest.objects.filter(
+            requester=user,
+            is_active=True,
+        ).exclude(id__in=represented_req_ids).select_related('hospital').order_by('-created_at')
+
+    open_requests_count = open_requests_qs.count()
+    total = qs.count() + open_requests_count
+
     page = qs[offset: offset + limit]
 
     items = []
-    represented_req_ids = set()
     for acc in page:
         req = acc.request
-        represented_req_ids.add(req.id)
         is_donor_view = donor_profile and acc.donor_id == donor_profile.id
         hospital_name = req.hospital.name if req.hospital else (req.hospital_location or '')
         items.append({
@@ -1729,36 +1747,9 @@ def journey_list_view(request):
             'created_at': acc.started_at.isoformat(),
         })
 
-    # Point 2: with ?request_id= never append the user's other open requests.
-    # Items with no acceptance must carry request_only: true
-    if filtered_by_request:
-        if req_id_val is not None and req_id_val not in represented_req_ids:
-            open_req = BloodRequest.objects.filter(
-                id=req_id_val,
-                requester=user,
-                is_active=True,
-            ).select_related('hospital').first()
-            if open_req:
-                hosp = open_req.hospital.name if open_req.hospital else (open_req.hospital_location or '')
-                items.append({
-                    'id': open_req.id,
-                    'request_id': open_req.id,
-                    'request_only': True,
-                    'status': open_req.status,
-                    'viewer_role': 'REQUESTER',
-                    'blood_group': open_req.blood_group or '',
-                    'urgency': open_req.urgency or getattr(open_req, 'urgency_level', '') or '',
-                    'hospital_name': hosp,
-                    'is_standby': False,
-                    'support_status': 'CAN_SUPPORT',
-                    'created_at': open_req.created_at.isoformat(),
-                })
-    else:
-        open_user_requests = BloodRequest.objects.filter(
-            requester=user,
-            is_active=True,
-        ).exclude(id__in=represented_req_ids).select_related('hospital')
-        for ureq in open_user_requests:
+    # Append request_only items once (first page only: offset == 0)
+    if offset == 0:
+        for ureq in open_requests_qs:
             hosp = ureq.hospital.name if ureq.hospital else (ureq.hospital_location or '')
             items.append({
                 'id': ureq.id,

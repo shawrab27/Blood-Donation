@@ -122,3 +122,90 @@ class B1Item1Tests(TestCase):
         acc_ids = [a['id'] for a in data['acceptances']]
         self.assertIn(acc_b.id, acc_ids)
         self.assertIn(acc_a.id, acc_ids)
+
+
+class B1Item2PaginationTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        self.requester_user = User.objects.create_user(
+            username='b1_pag_req', password='password123', email='pag_req@example.com'
+        )
+        self.requester_profile = DonorProfile.objects.create(
+            user=self.requester_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801811111102',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        self.hospital = Hospital.objects.create(
+            name='Dhaka Medical College Hospital',
+            district='Dhaka',
+            lat=23.7259,
+            lng=90.3976,
+            is_verified=True,
+        )
+
+    def test_2_pagination_25_items_limit_20_no_duplicate_requests(self):
+        """
+        Item 2 Test:
+        22 RequestAcceptances for requester, and 3 open BloodRequests without acceptance (Total = 25 items).
+        Page 1 (offset=0, limit=20): count=25, contains request_only items.
+        Page 2 (offset=20, limit=20): count=25, contains remaining 2 acceptances, NEVER duplicates request_only items.
+        """
+        # Create 22 acceptances across 22 requests
+        for i in range(22):
+            req = BloodRequest.objects.create(
+                requester=self.requester_user,
+                patient_name=f'Patient Acc {i}',
+                blood_group='A+',
+                hospital=self.hospital,
+                status='ACTIVE',
+            )
+            donor_u = User.objects.create_user(username=f'donor_pag_{i}', password='p', email=f'd{i}@ex.com')
+            dp = DonorProfile.objects.create(user=donor_u, blood_group='A+', phone_number=f'+880170000{i:04d}')
+            RequestAcceptance.objects.create(
+                request=req,
+                donor=dp,
+                status='ACCEPTED',
+                is_standby=False,
+            )
+
+        # Create 3 open requests without acceptance
+        open_ids = []
+        for j in range(3):
+            open_req = BloodRequest.objects.create(
+                requester=self.requester_user,
+                patient_name=f'Patient Open {j}',
+                blood_group='A+',
+                hospital=self.hospital,
+                status='OPEN',
+            )
+            open_ids.append(open_req.id)
+
+        self.client.force_authenticate(user=self.requester_user)
+
+        # Page 1: limit 20, offset 0
+        resp1 = self.client.get('/api/journeys/?limit=20&offset=0')
+        self.assertEqual(resp1.status_code, status.HTTP_200_OK)
+        data1 = resp1.json()
+        self.assertEqual(data1['count'], 25)
+        self.assertEqual(data1['next_offset'], 20)
+
+        # Confirm request_only items are present on first page
+        p1_ids = [item['id'] for item in data1['results'] if item['request_only']]
+        for oid in open_ids:
+            self.assertIn(oid, p1_ids)
+
+        # Page 2: limit 20, offset 20
+        resp2 = self.client.get('/api/journeys/?limit=20&offset=20')
+        self.assertEqual(resp2.status_code, status.HTTP_200_OK)
+        data2 = resp2.json()
+        self.assertEqual(data2['count'], 25)
+        self.assertIsNone(data2['next_offset'])  # 20 + 20 >= 25
+
+        # Confirm request_only items are NEVER appended again on page 2
+        p2_request_only = [item for item in data2['results'] if item['request_only']]
+        self.assertEqual(len(p2_request_only), 0)
