@@ -120,17 +120,28 @@ class _RequestJourneyResolverScreenState
   }
 
   Future<void> _resolveAndNavigate() async {
-    try {
-      final api = ref.read(bloodHubApiServiceProvider);
-      final journeyId =
-          await api.resolveJourneyIdFromRequestId(widget.requestId);
-      if (mounted) {
-        context.go('/journeys/$journeyId');
-      }
-    } catch (_) {
-      if (mounted) {
-        context.go('/journeys/${widget.requestId}');
-      }
+    final api = ref.read(bloodHubApiServiceProvider);
+    final outcome = await api.resolveJourneyIdFromRequestId(widget.requestId);
+    if (!mounted) return;
+
+    switch (outcome) {
+      case JourneyResolutionId(:final id):
+        context.go('/journeys/' + id.toString());
+      case JourneyResolutionRequestOnly(:final requestId):
+        // requestOnly opens the request view
+        context.go('/journeys/' + requestId.toString());
+      case JourneyResolutionError(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/blood-hub');
+        }
     }
   }
 

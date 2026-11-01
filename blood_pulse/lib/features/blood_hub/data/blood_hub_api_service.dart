@@ -779,6 +779,67 @@ class JourneyListItem {
   }
 }
 
+sealed class JourneyResolutionOutcome {
+  const JourneyResolutionOutcome();
+
+  const factory JourneyResolutionOutcome.journeyId(int id) = JourneyResolutionId;
+  const factory JourneyResolutionOutcome.requestOnly(int requestId) = JourneyResolutionRequestOnly;
+  const factory JourneyResolutionOutcome.error(String message) = JourneyResolutionError;
+}
+
+class JourneyResolutionId extends JourneyResolutionOutcome {
+  final int id;
+  const JourneyResolutionId(this.id);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JourneyResolutionId && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() => 'JourneyResolutionOutcome.journeyId()';
+}
+
+class JourneyResolutionRequestOnly extends JourneyResolutionOutcome {
+  final int requestId;
+  const JourneyResolutionRequestOnly(this.requestId);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JourneyResolutionRequestOnly &&
+          runtimeType == other.runtimeType &&
+          requestId == other.requestId;
+
+  @override
+  int get hashCode => requestId.hashCode;
+
+  @override
+  String toString() => 'JourneyResolutionOutcome.requestOnly()';
+}
+
+class JourneyResolutionError extends JourneyResolutionOutcome {
+  final String message;
+  const JourneyResolutionError(this.message);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JourneyResolutionError &&
+          runtimeType == other.runtimeType &&
+          message == other.message;
+
+  @override
+  int get hashCode => message.hashCode;
+
+  @override
+  String toString() => 'JourneyResolutionOutcome.error()';
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // NATIONAL EMERGENCY MODEL  (Prompt 4)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -801,24 +862,36 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
   }
 
   /// Resolves the journey ID from a blood request ID via GET /api/journeys/by-request/{requestId}/.
-  /// Point 1: Unambiguous route returning acceptance ID or request ID fallback.
-  Future<int> resolveJourneyIdFromRequestId(int requestId) async {
+  /// Returns one of three outcomes:
+  /// - JourneyResolutionOutcome.journeyId(id) when an active acceptance exists
+  /// - JourneyResolutionOutcome.requestOnly(requestId) when no acceptance exists
+  /// - JourneyResolutionOutcome.error(message) on 404, HTTP error, or network exception
+  Future<JourneyResolutionOutcome> resolveJourneyIdFromRequestId(int requestId) async {
     try {
-      final response = await _api.get('journeys/by-request/$requestId/');
+      final response = await _api.get('journeys/by-request//');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is Map<String, dynamic>) {
           final isRequestOnly = data['request_only'] == true;
-          if (!isRequestOnly) {
-            final jId = (data['id'] as num?)?.toInt();
-            if (jId != null && jId > 0) {
-              return jId;
-            }
+          if (isRequestOnly) {
+            final reqId = (data['request_id'] as num?)?.toInt() ?? (data['id'] as num?)?.toInt() ?? requestId;
+            return JourneyResolutionOutcome.requestOnly(reqId);
           }
+          final jId = (data['id'] as num?)?.toInt();
+          if (jId != null && jId > 0) {
+            return JourneyResolutionOutcome.journeyId(jId);
+          }
+          return JourneyResolutionOutcome.requestOnly(requestId);
         }
+        return const JourneyResolutionOutcome.error('Invalid response format');
       }
-    } catch (_) {}
-    return requestId;
+      if (response.statusCode == 404) {
+        return const JourneyResolutionOutcome.error('Journey or request not found');
+      }
+      return JourneyResolutionOutcome.error('Failed to resolve journey: HTTP ' + response.statusCode.toString());
+    } catch (e) {
+      return JourneyResolutionOutcome.error('Network error resolving journey: $e');
+    }
   }
 
   /// POST `/api/journeys/<id>/status/`  — update journey status
