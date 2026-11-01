@@ -558,10 +558,14 @@ class JourneyDetail {
     required this.requesterLng,
     this.chatRoomId,
     this.requestId,
+    this.canReportNoShow = false,
+    this.canReportMedical = false,
   });
 
   final String? chatRoomId;
   final int? requestId;
+  final bool canReportNoShow;
+  final bool canReportMedical;
 
   final int id;
   final String status;
@@ -659,6 +663,8 @@ class JourneyDetail {
       requesterLng: (j['requester_lng'] as num?)?.toDouble(),
       chatRoomId: j['chat_room_id'] as String?,
       requestId: (j['request_id'] as num?)?.toInt(),
+      canReportNoShow: (j['can_report_no_show'] as bool?) ?? false,
+      canReportMedical: (j['can_report_medical'] as bool?) ?? false,
     );
   }
 }
@@ -938,17 +944,18 @@ extension BloodHubApiServiceP4 on BloodHubApiService {
 
   /// POST `/api/journeys/<id>/issue/`  — report a donation issue
   Future<void> reportDonationIssue(
-      int journeyId, String issueType, String? note) async {
+      int journeyId, String issueType, {String? reasonCode, String? note}) async {
     final response = await _api.post(
       'journeys/$journeyId/issue/',
       body: {
         'issue_type': issueType,
+        if (reasonCode != null && reasonCode.isNotEmpty) 'reason_code': reasonCode,
         if (note != null && note.isNotEmpty) 'note': note,
       },
     );
-    if (response.statusCode != 201) {
+    if (response.statusCode != 201 && response.statusCode != 200) {
       final data = jsonDecode(response.body);
-      throw Exception(data['detail'] ?? 'Failed to report issue');
+      throw Exception(data['error'] ?? data['detail'] ?? 'Failed to report issue');
     }
   }
 
