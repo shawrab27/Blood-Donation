@@ -1102,10 +1102,14 @@ def journey_status_transition_view(request, pk):
 def journey_issue_report_view(request, pk):
     """
     Reports an issue during donation (Medical Rejection, Donor No-Show, Logistics Delay).
-    Medical rejection sets DONOR_COOLDOWN_DAYS deferral; no-show increments penalty; both trigger Standby offers.
-    Caller must be a participant (donor or requester) of that journey, else 404.
+    - MEDICAL_REJECTION: only by the donor; reason code from fixed list; never stores free-text medical data.
+    - DONOR_NO_SHOW: only by requester; only after ETA + NO_SHOW_GRACE_MINUTES.
+    - Neither triggers automatic trust penalty; both log RequestTimelineEvent for admin review.
+    - Caller must be participant (donor or requester) of that journey, else 404.
     """
-    from api.conf import DONOR_COOLDOWN_DAYS
+    from api.conf import DONOR_COOLDOWN_DAYS, NO_SHOW_GRACE_MINUTES
+    from api.models import DonationIssue, DeferralRecord, RequestTimelineEvent
+    from api.services.standby import trigger_standby_donor_offer
 
     acceptance = RequestAcceptance.objects.filter(id=pk).select_related('request', 'donor__user').first()
     if not acceptance:
@@ -1118,14 +1122,37 @@ def journey_issue_report_view(request, pk):
         return Response({'error': 'Journey acceptance not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     issue_type = request.data.get('issue_type', 'OTHER').strip().upper()
-    description = request.data.get('description', '').strip()
-
     valid_types = ['MEDICAL_REJECTION', 'DONOR_NO_SHOW', 'LOGISTICS_DELAY', 'OTHER']
     if issue_type not in valid_types:
         return Response({'error': f'Invalid issue type. Allowed: {valid_types}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    from api.models import DonationIssue, DeferralRecord
-    from api.services.standby import trigger_standby_donor_offer
+    now = timezone.now()
+    ALLOWED_MEDICAL_REASONS = ('LOW_HEMOGLOBIN', 'RECENT_MEDICATION', 'VEIN_ACCESS_ISSUE', 'OTHER')
+
+    if issue_type == 'MEDICAL_REJECTION':
+        if not is_donor:
+            return Response({'error': 'Medical rejection can only be reported by the donor.'}, status=status.HTTP_403_FORBIDDEN)
+        raw_reason = request.data.get('reason_code') or request.data.get('reason') or ''
+        reason_code = str(raw_reason).strip().upper()
+        if reason_code not in ALLOWED_MEDICAL_REASONS:
+            return Response({
+                'error': f'Invalid reason code. Allowed: {list(ALLOWED_MEDICAL_REASONS)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        # Never store or return free-text medical values
+        description = reason_code
+    elif issue_type == 'DONOR_NO_SHOW':
+        if not is_requester:
+            return Response({'error': 'Donor no-show can only be reported by the requester.'}, status=status.HTTP_403_FORBIDDEN)
+        eta_mins = acceptance.eta_minutes if acceptance.eta_minutes is not None else 30
+        base_time = acceptance.started_at or now
+        eta_deadline = base_time + timedelta(minutes=eta_mins + NO_SHOW_GRACE_MINUTES)
+        if now < eta_deadline:
+            return Response({
+                'error': f'Donor no-show can only be reported after ETA plus {NO_SHOW_GRACE_MINUTES} minutes grace period.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        description = request.data.get('description', '').strip()
+    else:
+        description = request.data.get('description', '').strip()
 
     issue = DonationIssue.objects.create(
         acceptance=acceptance,
@@ -1134,17 +1161,14 @@ def journey_issue_report_view(request, pk):
         description=description,
     )
 
-    now = timezone.now()
     standby_offer = None
 
     if issue_type == 'MEDICAL_REJECTION':
-        # Journey failed due to medical screen
         acceptance.status = 'FAILED'
-        acceptance.cancellation_reason = f"Medical Rejection: {description}"
+        acceptance.cancellation_reason = f'Medical Rejection: {reason_code}'
         acceptance.completed_at = now
         acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
 
-        # Apply medical deferral using DONOR_COOLDOWN_DAYS from api/conf.py
         donor = acceptance.donor
         deferral_date = now + timedelta(days=DONOR_COOLDOWN_DAYS)
         donor.deferral_until = deferral_date
@@ -1152,31 +1176,40 @@ def journey_issue_report_view(request, pk):
 
         DeferralRecord.objects.create(
             donor=donor,
-            reason=f"Medical rejection at hospital: {description or 'Vital signs / low hemoglobin'}",
+            reason=f'Medical rejection: {reason_code}',
             reason_code='MEDICAL',
             expires_at=deferral_date,
             created_by=request.user,
             is_active=True,
         )
 
-        # Trigger Standby Donor offer
+        RequestTimelineEvent.objects.create(
+            request=acceptance.request,
+            actor=request.user,
+            state='ISSUE_REPORTED',
+            note=f'Issue: MEDICAL_REJECTION - {reason_code} (Pending admin review)',
+        )
+
         standby_offer = trigger_standby_donor_offer(acceptance.request, exclude_donor_ids=[donor.id])
 
     elif issue_type == 'DONOR_NO_SHOW':
         acceptance.status = 'FAILED'
-        acceptance.cancellation_reason = f"Donor No-Show: {description}"
+        acceptance.cancellation_reason = f'Donor No-Show (Pending admin review): {description}' if description else 'Donor No-Show (Pending admin review)'
         acceptance.completed_at = now
         acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
 
-        donor = acceptance.donor
-        donor.no_show_count = (donor.no_show_count or 0) + 1
-        donor.save(update_fields=['no_show_count'])
+        # Neither triggers an automatic trust penalty; logs timeline event for admin review
+        RequestTimelineEvent.objects.create(
+            request=acceptance.request,
+            actor=request.user,
+            state='ISSUE_REPORTED',
+            note='Issue: DONOR_NO_SHOW (Pending admin review)',
+        )
 
-        # Trigger Standby Donor offer
+        donor = acceptance.donor
         standby_offer = trigger_standby_donor_offer(acceptance.request, exclude_donor_ids=[donor.id])
 
     elif issue_type == 'LOGISTICS_DELAY':
-        # Logistics / traffic delay does not fail the journey
         pass
 
     serializer = DonationIssueSerializer(issue)
@@ -1416,6 +1449,21 @@ def _serialize_journey_detail(acceptance, user):
 
     donor_phone = donor_profile.phone_number or getattr(donor_profile.user, 'phone_number', '') or ''
     requester_phone = req.contact_phone or req.contact_number or ''
+    from api.conf import NO_SHOW_GRACE_MINUTES
+    now = timezone.now()
+    eta_mins = acceptance.eta_minutes if acceptance.eta_minutes is not None else 30
+    base_time = acceptance.started_at or now
+    eta_deadline = base_time + timedelta(minutes=eta_mins + NO_SHOW_GRACE_MINUTES)
+
+    can_report_no_show = bool(
+        is_requester and
+        acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED') and
+        now >= eta_deadline
+    )
+    can_report_medical = bool(
+        is_donor and
+        acceptance.status in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED')
+    )
     can_report = is_requester and acceptance.status in ('ON_THE_WAY', 'ARRIVED')
     can_cancel = is_requester and acceptance.status in ('ACCEPTED', 'ON_THE_WAY')
 
@@ -1478,6 +1526,8 @@ def _serialize_journey_detail(acceptance, user):
         'eta_minutes': acceptance.eta_minutes,
         'distance_km': acceptance.distance_km,
         'can_report': can_report,
+        'can_report_no_show': can_report_no_show,
+        'can_report_medical': can_report_medical,
         'can_cancel': can_cancel,
         'is_standby': acceptance.is_standby,
         'created_at': acceptance.started_at.isoformat(),
@@ -1528,6 +1578,8 @@ def _serialize_open_request_detail(req, user):
         'eta_minutes': None,
         'distance_km': None,
         'can_report': False,
+        'can_report_no_show': False,
+        'can_report_medical': False,
         'can_cancel': req.status in ('OPEN', 'STANDBY_SEARCHING'),
         'is_standby': False,
         'created_at': req.created_at.isoformat(),

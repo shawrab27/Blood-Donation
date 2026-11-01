@@ -369,3 +369,206 @@ class B1Item6PhoneMaskingTests(TestCase):
         self.assertEqual(v2_data['contact_phone_display'], "Hidden until accepted")
         self.assertNotEqual(v2_data['lat'], 23.810321)
         self.assertNotEqual(v2_data['lng'], 90.412512)
+
+
+class B1Item7IssueReportRulesTests(TestCase):
+    def setUp(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        from api.models import Hospital, DonorProfile, BloodRequest, RequestAcceptance
+
+        self.client = APIClient()
+
+        # Requester
+        self.requester_user = User.objects.create_user(
+            username='b1_7_req', password='password123', email='req7@example.com'
+        )
+        self.requester_profile = DonorProfile.objects.create(
+            user=self.requester_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801811117701',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        # Donor
+        self.donor_user = User.objects.create_user(
+            username='b1_7_donor', password='password123', email='donor7@example.com'
+        )
+        self.donor_profile = DonorProfile.objects.create(
+            user=self.donor_user,
+            blood_group='A+',
+            district='Dhaka',
+            phone_number='+8801711117702',
+            is_profile_complete=True,
+            email_verified=True,
+            no_show_count=0,
+        )
+
+        # Unrelated User
+        self.unrelated_user = User.objects.create_user(
+            username='b1_7_unrel', password='password123', email='unrel7@example.com'
+        )
+        DonorProfile.objects.create(
+            user=self.unrelated_user,
+            blood_group='B+',
+            district='Dhaka',
+            phone_number='+8801911117703',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+
+        self.hospital = Hospital.objects.create(
+            name='Item 7 General Hospital',
+            district='Dhaka',
+            address='Dhanmondi, Dhaka',
+        )
+
+        self.blood_req = BloodRequest.objects.create(
+            requester=self.requester_user,
+            patient_name='Patient Seven',
+            blood_group='A+',
+            hospital=self.hospital,
+            contact_phone='+8801811117701',
+            status='ACTIVE',
+        )
+
+        self.acceptance = RequestAcceptance.objects.create(
+            request=self.blood_req,
+            donor=self.donor_profile,
+            status='ACCEPTED',
+            eta_minutes=30,
+        )
+
+    def test_7_medical_rejection_only_by_donor_no_freetext_no_trust_penalty(self):
+        from api.models import DonationIssue, RequestTimelineEvent
+
+        # 1. Requester cannot report MEDICAL_REJECTION -> 403 Forbidden
+        self.client.force_authenticate(user=self.requester_user)
+        resp_req = self.client.post(f'/api/journeys/{self.acceptance.id}/issue/', {
+            'issue_type': 'MEDICAL_REJECTION',
+            'reason_code': 'LOW_HEMOGLOBIN',
+        })
+        self.assertEqual(resp_req.status_code, status.HTTP_403_FORBIDDEN)
+
+        # 2. Donor reporting invalid reason code -> 400 Bad Request
+        self.client.force_authenticate(user=self.donor_user)
+        resp_inv = self.client.post(f'/api/journeys/{self.acceptance.id}/issue/', {
+            'issue_type': 'MEDICAL_REJECTION',
+            'reason_code': 'UNKNOWN_CODE',
+        })
+        self.assertEqual(resp_inv.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # 3. Donor reporting valid reason code with free-text description
+        resp_ok = self.client.post(f'/api/journeys/{self.acceptance.id}/issue/', {
+            'issue_type': 'MEDICAL_REJECTION',
+            'reason_code': 'LOW_HEMOGLOBIN',
+            'description': 'Private medical notes: patient had viral fever and low platelet count',
+        })
+        self.assertEqual(resp_ok.status_code, status.HTTP_201_CREATED)
+        data = resp_ok.json()
+
+        # Never store or return free-text medical values
+        self.assertNotIn('Private medical notes', str(data))
+        self.assertEqual(data['issue']['description'], 'LOW_HEMOGLOBIN')
+
+        issue_obj = DonationIssue.objects.get(id=data['issue']['id'])
+        self.assertEqual(issue_obj.description, 'LOW_HEMOGLOBIN')
+
+        # Acceptance updated to FAILED with reason code only
+        self.acceptance.refresh_from_db()
+        self.assertEqual(self.acceptance.status, 'FAILED')
+        self.assertIn('LOW_HEMOGLOBIN', self.acceptance.cancellation_reason)
+        self.assertNotIn('Private medical notes', self.acceptance.cancellation_reason)
+
+        # No automatic trust penalty
+        self.donor_profile.refresh_from_db()
+        self.assertEqual(self.donor_profile.no_show_count, 0)
+
+        # Timeline event logged for admin review
+        event = RequestTimelineEvent.objects.filter(request=self.blood_req, state='ISSUE_REPORTED').last()
+        self.assertIsNotNone(event)
+        self.assertIn('Pending admin review', event.note)
+
+    def test_7_no_show_only_by_requester_after_eta_and_grace(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from api.models import RequestTimelineEvent
+
+        # 1. Donor cannot report NO_SHOW -> 403 Forbidden
+        self.client.force_authenticate(user=self.donor_user)
+        resp_donor = self.client.post(f'/api/journeys/{self.acceptance.id}/issue/', {
+            'issue_type': 'DONOR_NO_SHOW',
+        })
+        self.assertEqual(resp_donor.status_code, status.HTTP_403_FORBIDDEN)
+
+        # 2. Requester cannot report NO_SHOW before ETA + grace minutes (30 + 20 = 50 min) -> 400
+        self.client.force_authenticate(user=self.requester_user)
+        resp_early = self.client.post(f'/api/journeys/{self.acceptance.id}/issue/', {
+            'issue_type': 'DONOR_NO_SHOW',
+        })
+        self.assertEqual(resp_early.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('grace period', resp_early.json().get('error', ''))
+
+        # 3. Simulate overdue journey (started 60 minutes ago)
+        RequestAcceptance.objects.filter(id=self.acceptance.id).update(
+            started_at=timezone.now() - timedelta(minutes=60)
+        )
+
+        resp_ok = self.client.post(f'/api/journeys/{self.acceptance.id}/issue/', {
+            'issue_type': 'DONOR_NO_SHOW',
+        })
+        self.assertEqual(resp_ok.status_code, status.HTTP_201_CREATED)
+
+        # Acceptance failed
+        self.acceptance.refresh_from_db()
+        self.assertEqual(self.acceptance.status, 'FAILED')
+
+        # Neither triggers an automatic trust penalty
+        self.donor_profile.refresh_from_db()
+        self.assertEqual(self.donor_profile.no_show_count, 0)
+
+        # RequestTimelineEvent logged for admin review
+        event = RequestTimelineEvent.objects.filter(request=self.blood_req, state='ISSUE_REPORTED').last()
+        self.assertIsNotNone(event)
+        self.assertIn('DONOR_NO_SHOW', event.note)
+        self.assertIn('Pending admin review', event.note)
+
+    def test_7_can_report_booleans_on_journey_detail(self):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        # Fresh journey (within ETA)
+        # Donor perspective
+        self.client.force_authenticate(user=self.donor_user)
+        resp_donor = self.client.get(f'/api/journeys/{self.acceptance.id}/')
+        self.assertEqual(resp_donor.status_code, status.HTTP_200_OK)
+        donor_data = resp_donor.json()
+        self.assertTrue(donor_data['can_report_medical'])
+        self.assertFalse(donor_data['can_report_no_show'])
+
+        # Requester perspective before ETA + grace
+        self.client.force_authenticate(user=self.requester_user)
+        resp_req = self.client.get(f'/api/journeys/{self.acceptance.id}/')
+        self.assertEqual(resp_req.status_code, status.HTTP_200_OK)
+        req_data = resp_req.json()
+        self.assertFalse(req_data['can_report_medical'])
+        self.assertFalse(req_data['can_report_no_show'])
+
+        # After ETA + grace passed
+        RequestAcceptance.objects.filter(id=self.acceptance.id).update(
+            started_at=timezone.now() - timedelta(minutes=60)
+        )
+        resp_req_overdue = self.client.get(f'/api/journeys/{self.acceptance.id}/')
+        self.assertEqual(resp_req_overdue.status_code, status.HTTP_200_OK)
+        overdue_data = resp_req_overdue.json()
+        self.assertFalse(overdue_data['can_report_medical'])
+        self.assertTrue(overdue_data['can_report_no_show'])
+
+        # Completed/Failed journey
+        RequestAcceptance.objects.filter(id=self.acceptance.id).update(status='COMPLETED')
+        resp_completed = self.client.get(f'/api/journeys/{self.acceptance.id}/')
+        comp_data = resp_completed.json()
+        self.assertFalse(comp_data['can_report_medical'])
+        self.assertFalse(comp_data['can_report_no_show'])
