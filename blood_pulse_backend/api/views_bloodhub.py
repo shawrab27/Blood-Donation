@@ -1466,6 +1466,7 @@ def _serialize_journey_detail(acceptance, user):
         'distance_km': acceptance.distance_km,
         'can_report': can_report,
         'can_cancel': can_cancel,
+        'is_standby': acceptance.is_standby,
         'created_at': acceptance.started_at.isoformat(),
         'chat_room_id': chat_room_id,
         'donor_name': donor_profile.user.get_full_name() or donor_profile.user.username,
@@ -1515,6 +1516,7 @@ def _serialize_open_request_detail(req, user):
         'distance_km': None,
         'can_report': False,
         'can_cancel': req.status in ('OPEN', 'STANDBY_SEARCHING'),
+        'is_standby': False,
         'created_at': req.created_at.isoformat(),
         'donor_name': 'Searching for donors...',
         'donor_contact': '',
@@ -1538,13 +1540,15 @@ def _serialize_open_request_detail(req, user):
 def journey_detail_view(request, pk):
     """
     GET /api/journeys/<pk>/
-    Point 1: Detail lookup by acceptance id ONLY.
-    Maintains backward compatibility for older push notification links that passed request_id.
+    Primary lookup by RequestAcceptance id.
+    If pk matches an acceptance where user is NOT a participant, does NOT return 403;
+    falls through to check if user owns a BloodRequest with that pk (200 request-only view).
+    Otherwise returns 404 (never 403, preventing ID existence enumeration).
     """
     user = request.user
     donor_profile = DonorProfile.objects.filter(user=user).first()
 
-    # 1. Primary lookup: strictly by RequestAcceptance ID
+    # 1. Primary lookup: RequestAcceptance by pk
     acceptance = (
         RequestAcceptance.objects
         .select_related(
@@ -1558,28 +1562,26 @@ def journey_detail_view(request, pk):
     if acceptance:
         is_donor = (acceptance.donor.user_id == user.id)
         is_requester = (acceptance.request.requester_id == user.id or user.is_staff)
-        if not (is_donor or is_requester):
-            return Response({'detail': 'You are not part of this journey.'}, status=status.HTTP_403_FORBIDDEN)
-        return Response(_serialize_journey_detail(acceptance, user), status=status.HTTP_200_OK)
+        if is_donor or is_requester:
+            return Response(_serialize_journey_detail(acceptance, user), status=status.HTTP_200_OK)
+        # If user is not participant in this acceptance, do NOT return 403; fall through to BloodRequest lookup!
 
-    # 2. Backward compatibility fallback: only when no acceptance has this pk
+    # 2. Fallback: BloodRequest with that pk owned by current user
     req = BloodRequest.objects.filter(pk=pk).select_related('requester', 'hospital').first()
     if req:
         is_requester = (req.requester_id == user.id or user.is_staff)
         donor_acc = req.acceptances.filter(donor=donor_profile).first() if donor_profile else None
-        if not (is_requester or donor_acc):
-            return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if donor_acc:
             return Response(_serialize_journey_detail(donor_acc, user), status=status.HTTP_200_OK)
 
-        active_acc = req.acceptances.order_by('-started_at').first()
-        if active_acc and is_requester:
-            return Response(_serialize_journey_detail(active_acc, user), status=status.HTTP_200_OK)
-
         if is_requester:
+            primary_acc = req.acceptances.filter(is_standby=False).order_by('-started_at').first() or req.acceptances.order_by('-started_at').first()
+            if primary_acc:
+                return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
             return Response(_serialize_open_request_detail(req, user), status=status.HTTP_200_OK)
 
+    # 3. Neither a participant in acceptance pk nor owner of request pk -> 404
     return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -1589,29 +1591,29 @@ def journey_by_request_view(request, request_id):
     """
     GET /api/journeys/by-request/<request_id>/
     Point 1: Unambiguous lookup by request ID.
-    Returns the journey acceptance or open request state without ID collisions.
+    Returns the newest non-standby acceptance (plus acceptances list) for requesters,
+    or request-only view if no acceptances exist. Returns 404 for unauthorized users.
     """
     user = request.user
     donor_profile = DonorProfile.objects.filter(user=user).first()
 
     req = BloodRequest.objects.filter(pk=request_id).select_related('requester', 'hospital').first()
     if not req:
-        return Response({'detail': 'Blood request not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     is_requester = (req.requester_id == user.id or user.is_staff)
     donor_acc = req.acceptances.filter(donor=donor_profile).first() if donor_profile else None
 
     if not (is_requester or donor_acc):
-        return Response({'detail': 'You are not authorized to view this request journey.'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     if donor_acc:
         return Response(_serialize_journey_detail(donor_acc, user), status=status.HTTP_200_OK)
 
-    primary_acc = req.acceptances.order_by('-started_at').first()
-    if primary_acc and is_requester:
-        return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
-
     if is_requester:
+        primary_acc = req.acceptances.filter(is_standby=False).order_by('-started_at').first() or req.acceptances.order_by('-started_at').first()
+        if primary_acc:
+            return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
         return Response(_serialize_open_request_detail(req, user), status=status.HTTP_200_OK)
 
     return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
