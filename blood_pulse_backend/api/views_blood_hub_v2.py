@@ -113,19 +113,6 @@ class BloodRequestDetailV2APIView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete(self, request, pk):
-        try:
-            req = BloodRequest.objects.get(pk=pk)
-        except BloodRequest.DoesNotExist:
-            return Response({"detail": "Blood requisition not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if req.requester_id != request.user.id and not request.user.is_staff:
-            raise PermissionDenied("Only the requester can delete this blood request.")
-
-        req.is_active = False
-        req.save(update_fields=['is_active'])
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class BloodRequestReachAPIView(APIView):
     permission_classes = [IsAuthenticated]

@@ -247,3 +247,34 @@ class B1Item4MediaServeTests(TestCase):
 
         resp2 = self.client.get('/api/media/files/....//etc//passwd/')
         self.assertEqual(resp2.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class B1Item5DeleteRemovalTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_5_blood_request_detail_v2_has_no_delete(self):
+        """
+        Item 5 Test:
+        DELETE /api/requests/<pk>/ returns 405 Method Not Allowed since delete is removed.
+        """
+        user = User.objects.create_user(
+            username='req_del_user',
+            password='p',
+            email='del@ex.com',
+            first_name='Del User',
+        )
+        DonorProfile.objects.create(
+            user=user,
+            blood_group='A+',
+            phone_number='+8801899999901',
+            district='Dhaka',
+            is_profile_complete=True,
+            email_verified=True,
+        )
+        h = Hospital.objects.create(name='Del Hospital', district='Dhaka')
+        req = BloodRequest.objects.create(requester=user, patient_name='P', blood_group='A+', hospital=h)
+
+        self.client.force_authenticate(user=user)
+        resp = self.client.delete(f'/api/requests/{req.id}/')
+        self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
