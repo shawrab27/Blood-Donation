@@ -234,3 +234,16 @@ class B1Item3CorsTests(TestCase):
         csrf_origins = getattr(settings, 'CSRF_TRUSTED_ORIGINS', [])
         self.assertIn('https://bloodpulse-283dc.web.app', csrf_origins)
         self.assertIn('https://bloodpulse-283dc.firebaseapp.com', csrf_origins)
+
+
+class B1Item4MediaServeTests(TestCase):
+    def test_4_media_file_serve_path_traversal_blocked(self):
+        """
+        Item 4 Test:
+        MediaFileServeView blocks path traversal attempts with 404.
+        """
+        resp1 = self.client.get('/api/media/files/..%2F..%2Fsettings.py/')
+        self.assertEqual(resp1.status_code, status.HTTP_404_NOT_FOUND)
+
+        resp2 = self.client.get('/api/media/files/....//etc//passwd/')
+        self.assertEqual(resp2.status_code, status.HTTP_404_NOT_FOUND)
