@@ -231,10 +231,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
 
                   const SizedBox(height: 12),
 
-                  // 1. Role Switcher / Perspective Toggle
-                  _buildRoleSwitcher(),
 
-                  const SizedBox(height: 14),
 
                   // 2. ETA & Quick Route Card
                   _buildEtaCard(),
@@ -275,134 +272,6 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
     );
   }
 
-  Widget _buildRoleSwitcher() {
-    return Container(
-      height: 46,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEE9EB),
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _activeRole = DispatchRole.requester);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Switched to Requester View (Live Tracking)'),
-                    duration: Duration(seconds: 1),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: _activeRole == DispatchRole.requester
-                      ? const Color(0xFFC30121)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: _activeRole == DispatchRole.requester
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFC30121).withAlpha(60),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person_pin_circle_rounded,
-                      size: 16,
-                      color: _activeRole == DispatchRole.requester
-                          ? Colors.white
-                          : const Color(0xFF5C3F3D),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Requester View',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _activeRole == DispatchRole.requester
-                            ? Colors.white
-                            : const Color(0xFF5C3F3D),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _activeRole = DispatchRole.donor);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Switched to Donor View (Dispatch Control)'),
-                    duration: Duration(seconds: 1),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: _activeRole == DispatchRole.donor
-                      ? const Color(0xFFC30121)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: _activeRole == DispatchRole.donor
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFFC30121).withAlpha(60),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.volunteer_activism_rounded,
-                      size: 16,
-                      color: _activeRole == DispatchRole.donor
-                          ? Colors.white
-                          : const Color(0xFF5C3F3D),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Donor View',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _activeRole == DispatchRole.donor
-                            ? Colors.white
-                            : const Color(0xFF5C3F3D),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildEtaCard() {
     return Container(
