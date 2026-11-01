@@ -209,3 +209,28 @@ class B1Item2PaginationTests(TestCase):
         # Confirm request_only items are NEVER appended again on page 2
         p2_request_only = [item for item in data2['results'] if item['request_only']]
         self.assertEqual(len(p2_request_only), 0)
+
+
+class B1Item3CorsTests(TestCase):
+    def test_3_cors_origins_and_regexes_no_wildcards(self):
+        """
+        Item 3 Test:
+        CORS_ALLOWED_ORIGIN_REGEXES must not contain wildcards for vercel.app, web.app, pages.dev, netlify.app.
+        CORS_ALLOWED_ORIGINS and CSRF_TRUSTED_ORIGINS must contain explicit Firebase Hosting domains.
+        """
+        from django.conf import settings
+
+        regexes = getattr(settings, 'CORS_ALLOWED_ORIGIN_REGEXES', [])
+        for r in regexes:
+            self.assertNotIn('vercel.app', r)
+            self.assertNotIn('web.app', r)
+            self.assertNotIn('pages.dev', r)
+            self.assertNotIn('netlify.app', r)
+
+        cors_origins = getattr(settings, 'CORS_ALLOWED_ORIGINS', [])
+        self.assertIn('https://bloodpulse-283dc.web.app', cors_origins)
+        self.assertIn('https://bloodpulse-283dc.firebaseapp.com', cors_origins)
+
+        csrf_origins = getattr(settings, 'CSRF_TRUSTED_ORIGINS', [])
+        self.assertIn('https://bloodpulse-283dc.web.app', csrf_origins)
+        self.assertIn('https://bloodpulse-283dc.firebaseapp.com', csrf_origins)
