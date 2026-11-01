@@ -1548,6 +1548,35 @@ def _serialize_open_request_detail(req, user):
     }
 
 
+def _pick_primary_acceptance(acceptances_iterable):
+    """
+    Status priority for picking primary acceptance:
+    1. Active non-standby: (ACCEPTED, ON_THE_WAY, ARRIVED) and not is_standby
+    2. Donated/Completed/Confirmed: (DONATED, COMPLETED, CONFIRMED) and not is_standby
+    3. Standby: is_standby=True and not CANCELLED/FAILED
+    4. Cancelled/Failed: status in (CANCELLED, FAILED)
+    Tie-break: newest started_at (descending)
+    """
+    def _rank(acc):
+        st = acc.status
+        is_sb = acc.is_standby
+        if not is_sb and st in ('ACCEPTED', 'ON_THE_WAY', 'ARRIVED'):
+            priority = 0
+        elif not is_sb and st in ('DONATED', 'COMPLETED', 'CONFIRMED'):
+            priority = 1
+        elif is_sb and st not in ('CANCELLED', 'FAILED'):
+            priority = 2
+        elif st in ('CANCELLED', 'FAILED'):
+            priority = 3
+        else:
+            priority = 4
+        started = acc.started_at.timestamp() if acc.started_at else 0
+        return (priority, -started, -acc.id)
+
+    sorted_accs = sorted(acceptances_iterable, key=_rank)
+    return sorted_accs[0] if sorted_accs else None
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def journey_detail_view(request, pk):
@@ -1586,10 +1615,11 @@ def journey_detail_view(request, pk):
         donor_acc = req.acceptances.filter(donor=donor_profile).first() if donor_profile else None
 
         if donor_acc:
-            return Response(_serialize_journey_detail(donor_acc, user), status=status.HTTP_200_OK)
+            primary_donor_acc = _pick_primary_acceptance(req.acceptances.filter(donor=donor_profile))
+            return Response(_serialize_journey_detail(primary_donor_acc, user), status=status.HTTP_200_OK)
 
         if is_requester:
-            primary_acc = req.acceptances.filter(is_standby=False).order_by('-started_at').first() or req.acceptances.order_by('-started_at').first()
+            primary_acc = _pick_primary_acceptance(req.acceptances.all())
             if primary_acc:
                 return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
             return Response(_serialize_open_request_detail(req, user), status=status.HTTP_200_OK)
@@ -1621,10 +1651,11 @@ def journey_by_request_view(request, request_id):
         return Response({'detail': 'Journey not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     if donor_acc:
-        return Response(_serialize_journey_detail(donor_acc, user), status=status.HTTP_200_OK)
+        primary_donor_acc = _pick_primary_acceptance(req.acceptances.filter(donor=donor_profile))
+        return Response(_serialize_journey_detail(primary_donor_acc, user), status=status.HTTP_200_OK)
 
     if is_requester:
-        primary_acc = req.acceptances.filter(is_standby=False).order_by('-started_at').first() or req.acceptances.order_by('-started_at').first()
+        primary_acc = _pick_primary_acceptance(req.acceptances.all())
         if primary_acc:
             return Response(_serialize_journey_detail(primary_acc, user), status=status.HTTP_200_OK)
         return Response(_serialize_open_request_detail(req, user), status=status.HTTP_200_OK)
