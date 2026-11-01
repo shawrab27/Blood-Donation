@@ -784,12 +784,11 @@ def emergency_wave_tick_view(request):
     auth_header = request.headers.get('Authorization', '')
     expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
     
-    if expected:
-        if not auth_header.startswith('Bearer '):
-            raise PermissionDenied("Invalid or missing token")
-        token = auth_header.split(' ')[1]
-        if not hmac.compare_digest(token, expected):
-            raise PermissionDenied("Invalid token")
+    if not expected or not auth_header.startswith('Bearer '):
+        raise PermissionDenied("Invalid or missing token")
+    token = auth_header.split(' ')[1]
+    if not hmac.compare_digest(token, expected):
+        raise PermissionDenied("Invalid token")
         
     result = process_wave_tick()
     return Response(result, status=status.HTTP_200_OK)
@@ -801,12 +800,11 @@ def emergency_wave_tick_view(request):
 def maintenance_tick_view(request):
     auth_header = request.headers.get('Authorization', '')
     expected = os.environ.get('EMERGENCY_TICK_TOKEN', '')
-    if expected:
-        if not auth_header.startswith('Bearer '):
-            raise PermissionDenied("Invalid or missing token")
-        token = auth_header.split(' ')[1]
-        if not hmac.compare_digest(token, expected):
-            raise PermissionDenied("Invalid token")
+    if not expected or not auth_header.startswith('Bearer '):
+        raise PermissionDenied("Invalid or missing token")
+    token = auth_header.split(' ')[1]
+    if not hmac.compare_digest(token, expected):
+        raise PermissionDenied("Invalid token")
 
     from api.services.journeys import auto_confirm_stale_donations, auto_manage_deferrals
     from api.services.match_operations_service import run_due_followups
