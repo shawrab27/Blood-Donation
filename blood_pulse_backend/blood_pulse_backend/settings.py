@@ -637,3 +637,39 @@ if not REQUEST_OTP_REQUIRED:
     logging.getLogger('blood_pulse_backend').warning(
         "WARNING: REQUEST_OTP_REQUIRED is False! Emergency blood requests will bypass OTP verification."
     )
+
+# Sentry Error Tracking
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    def before_send_scrub(event, hint):
+        try:
+            req = event.get('request', {})
+            headers = req.get('headers', {})
+            for h in ['authorization', 'cookie', 'x-csrftoken']:
+                if h in headers:
+                    headers[h] = '[SCRUBBED]'
+
+            if 'user' in event:
+                u = event['user']
+                event['user'] = {'id': u.get('id')}
+
+            data = req.get('data')
+            if isinstance(data, dict):
+                for k in list(data.keys()):
+                    if any(s in k.lower() for s in ('token', 'phone', 'email', 'password', 'otp', 'nid')):
+                        data[k] = '[SCRUBBED]'
+        except Exception:
+            pass
+        return event
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        send_default_pii=False,
+        before_send=before_send_scrub,
+    )
+
