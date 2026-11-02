@@ -15,8 +15,13 @@ class StorageProviderError(Exception):
 
 class MediaStorage(ABC):
     @abstractmethod
-    def upload_image(self, file_bytes: bytes, filename: str, folder: str = "uploads") -> Dict[str, Any]:
+    def upload_image(self, file_bytes: bytes, filename: str, folder: str = "uploads", delivery_type: str = "upload") -> Dict[str, Any]:
         """Uploads image and returns dict with url, public_id, width, height."""
+        pass
+
+    @abstractmethod
+    def generate_signed_url(self, public_id: str, resource_type: str = "image", delivery_type: str = "authenticated", expires_in_seconds: int = 3600) -> str:
+        """Generates signed, expiring URL for authenticated assets."""
         pass
 
     @abstractmethod
@@ -50,31 +55,65 @@ class CloudinaryStorage(MediaStorage):
             self._uploader = None
             self._configured = False
 
-    def upload_image(self, file_bytes: bytes, filename: str, folder: str = "bloodpulse") -> Dict[str, Any]:
+    def upload_image(self, file_bytes: bytes, filename: str, folder: str = "bloodpulse", delivery_type: str = "upload") -> Dict[str, Any]:
         if not self._configured or not self._uploader:
             logger.warning("[CloudinaryStorage] Cloudinary library not installed. Falling back to in-memory metadata.")
             return {
-                "url": f"https://res.cloudinary.com/demo/image/upload/{filename}",
+                "url": f"https://res.cloudinary.com/demo/image/{delivery_type}/{filename}",
                 "public_id": f"{folder}/{filename}",
                 "width": 800,
                 "height": 600,
+                "delivery_type": delivery_type,
             }
         try:
+            upload_kwargs = {
+                "folder": folder,
+                "resource_type": "image",
+                "transformation": [{"quality": "auto", "fetch_format": "auto"}],
+            }
+            if delivery_type == "authenticated":
+                upload_kwargs["type"] = "authenticated"
             res = self._uploader.upload(
                 file_bytes,
-                folder=folder,
-                resource_type="image",
-                transformation=[{"quality": "auto", "fetch_format": "auto"}],
+                **upload_kwargs,
             )
             return {
                 "url": res.get("secure_url", res.get("url")),
                 "public_id": res.get("public_id"),
                 "width": res.get("width"),
                 "height": res.get("height"),
+                "delivery_type": delivery_type,
             }
         except Exception as e:
             logger.error("[CloudinaryStorage] Upload failed: %s", e)
             raise StorageProviderError(f"Upload failed: {e}") from e
+
+    def generate_signed_url(self, public_id: str, resource_type: str = "image", delivery_type: str = "authenticated", expires_in_seconds: int = 3600) -> str:
+        """
+        Generates signed, expiring URL for authenticated Cloudinary assets.
+        Valid for participants (requester, accepted donor, staff).
+        """
+        if not self._configured or not self._uploader:
+            import time
+            exp = int(time.time()) + expires_in_seconds
+            return f"https://res.cloudinary.com/demo/{resource_type}/{delivery_type}/{public_id}?exp={exp}&sig=mock_expiring_sig"
+        try:
+            import time
+            import cloudinary.utils
+            exp_time = int(time.time()) + expires_in_seconds
+            res = cloudinary.utils.cloudinary_url(
+                public_id,
+                resource_type=resource_type,
+                type=delivery_type,
+                sign_url=True,
+                expires_at=exp_time,
+            )
+            if isinstance(res, (tuple, list)):
+                return res[0]
+            return str(res)
+        except Exception as e:
+            logger.warning("[CloudinaryStorage] Failed to generate signed url for %s: %s", public_id, e)
+            return ""
 
     def delete_image(self, public_id: str) -> bool:
         if not self._configured or not self._uploader:
@@ -131,7 +170,7 @@ class LocalStorage(MediaStorage):
     def __init__(self):
         self.store = {}
 
-    def upload_image(self, file_bytes: bytes, filename: str, folder: str = "test") -> Dict[str, Any]:
+    def upload_image(self, file_bytes: bytes, filename: str, folder: str = "test", delivery_type: str = "upload") -> Dict[str, Any]:
         import os
         from django.conf import settings
         media_root = getattr(settings, 'MEDIA_ROOT', os.path.join(settings.BASE_DIR, 'media'))
@@ -156,6 +195,12 @@ class LocalStorage(MediaStorage):
             del self.store[public_id]
             return True
         return False
+
+    def generate_signed_url(self, public_id: str, resource_type: str = "image", delivery_type: str = "authenticated", expires_in_seconds: int = 3600) -> str:
+        import time
+        exp = int(time.time()) + expires_in_seconds
+        safe_name = os.path.basename(public_id)
+        return f"/api/media/files/{safe_name}?exp={exp}&sig=signed_token"
 
     def upload_file(self, file_bytes: bytes, filename: str, folder: str = "chat_voice", resource_type: str = "video") -> Dict[str, Any]:
         public_id = f"{folder}/{filename}"
