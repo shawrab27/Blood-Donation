@@ -24,6 +24,8 @@ class LiveDispatchScreen extends StatefulWidget {
     this.donorName = 'Donor',
     this.donorPhone = '',
     this.initialRole = DispatchRole.requester,
+    this.etaMinutes,
+    this.distanceKm,
   });
 
   final String patientName;
@@ -32,6 +34,8 @@ class LiveDispatchScreen extends StatefulWidget {
   final String donorName;
   final String donorPhone;
   final DispatchRole initialRole;
+  final int? etaMinutes;
+  final double? distanceKm;
 
   @override
   State<LiveDispatchScreen> createState() => _LiveDispatchScreenState();
@@ -41,7 +45,6 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
     with SingleTickerProviderStateMixin {
   late DispatchRole _activeRole;
   int _currentMilestone = 2; // 1: Dispatched, 2: On the Way, 3: Arrived & Prep, 4: Donated
-  bool _trafficEnabled = false;
 
   final MapController _mapController = MapController();
 
@@ -246,9 +249,10 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
 
 
                   // 2. ETA & Quick Route Card
-                  _buildEtaCard(),
-
-                  const SizedBox(height: 14),
+                  if (widget.etaMinutes != null || widget.distanceKm != null) ...[
+                    _buildEtaCard(),
+                    const SizedBox(height: 14),
+                  ],
 
                   // 3. 4 Milestone Steps in a Single Horizontal Track
                   _buildMilestoneTrack(),
@@ -286,6 +290,13 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
 
 
   Widget _buildEtaCard() {
+    final etaText = widget.etaMinutes != null
+        ? 'ETA ~ min'
+        : (_currentMilestone >= 3 ? 'Arrived' : 'In Transit');
+    final distanceText = widget.distanceKm != null
+        ? ' km · '
+        : 'En route to ';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -308,35 +319,14 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      _currentMilestone >= 3 ? 'Arrived' : 'In Transit',
-                      style: const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFC30121),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE9EB),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'Active',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFC30121),
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  etaText,
+                  style: const TextStyle(
+                    fontFamily: 'Georgia',
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFC30121),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -346,7 +336,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        'En route to ${widget.hospitalName}',
+                        distanceText,
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 12,
@@ -361,50 +351,6 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8E3E5),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.speed_rounded, size: 14, color: Color(0xFF004B7E)),
-                    SizedBox(width: 4),
-                    Text(
-                      'Active',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF24191A),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(radius: 3.5, backgroundColor: Color(0xFF1B8A4E)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Active flow',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 10,
-                      color: Color(0xFF5C3F3D),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ),
         ],
       ),
@@ -920,32 +866,7 @@ class _LiveDispatchScreenState extends State<LiveDispatchScreen>
                       ],
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      setState(() => _trafficEnabled = !_trafficEnabled);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(_trafficEnabled ? 'Traffic layer enabled' : 'Traffic layer hidden'),
-                          duration: const Duration(seconds: 1),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(235),
-                        shape: BoxShape.circle,
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-                      ),
-                      child: Icon(
-                        Icons.traffic_rounded,
-                        size: 16,
-                        color: _trafficEnabled ? const Color(0xFFC30121) : const Color(0xFF5F5E5E),
-                      ),
-                    ),
-                  ),
+
                 ],
               ),
             ),

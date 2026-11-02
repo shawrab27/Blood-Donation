@@ -540,6 +540,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'request_create': os.environ.get('REQUEST_CREATE_USER_RATE', '5/hour'),
     'request_create_user': os.environ.get('REQUEST_CREATE_USER_RATE', '5/hour'),
     'request_create_ip': os.environ.get('REQUEST_CREATE_IP_RATE', '10/hour'),
+    'user_location_anon': os.environ.get('USER_LOCATION_ANON_RATE', '60/hour'),
     'donor_response': '30/hour',
     'donation_confirm': '40/hour',
     'pulseai_anon': '20/hour',
