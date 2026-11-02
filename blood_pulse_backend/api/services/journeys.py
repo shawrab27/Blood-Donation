@@ -24,9 +24,15 @@ def finalize_donation(acceptance, auto=False):
         blood_req = BloodRequest.objects.select_for_update().get(pk=locked_acc.request_id)
 
         if locked_acc.status == 'CONFIRMED' and locked_acc.completed_at is not None:
+            if locked_acc.donor_lat is not None or locked_acc.donor_lng is not None:
+                locked_acc.donor_lat = None
+                locked_acc.donor_lng = None
+                locked_acc.save(update_fields=['donor_lat', 'donor_lng'])
             acceptance.status = locked_acc.status
             acceptance.completed_at = locked_acc.completed_at
             acceptance.auto_confirmed = locked_acc.auto_confirmed
+            acceptance.donor_lat = None
+            acceptance.donor_lng = None
             return locked_acc
 
         units = max(1, locked_acc.units_pledged or 1)
@@ -37,6 +43,8 @@ def finalize_donation(acceptance, auto=False):
             locked_acc.donor_confirmed_at = locked_acc.donated_at or now
         if not locked_acc.requester_confirmed_at and not auto:
             locked_acc.requester_confirmed_at = now
+        locked_acc.donor_lat = None
+        locked_acc.donor_lng = None
         locked_acc.save(
             update_fields=[
                 'status',
@@ -44,6 +52,8 @@ def finalize_donation(acceptance, auto=False):
                 'auto_confirmed',
                 'donor_confirmed_at',
                 'requester_confirmed_at',
+                'donor_lat',
+                'donor_lng',
             ]
         )
 
@@ -102,6 +112,8 @@ def finalize_donation(acceptance, auto=False):
         acceptance.status = locked_acc.status
         acceptance.completed_at = locked_acc.completed_at
         acceptance.auto_confirmed = locked_acc.auto_confirmed
+        acceptance.donor_lat = None
+        acceptance.donor_lng = None
         return locked_acc
 
 

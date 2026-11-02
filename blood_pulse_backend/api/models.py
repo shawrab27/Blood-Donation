@@ -755,6 +755,15 @@ class RequestAcceptance(models.Model):
 
     distance_km = models.FloatField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if self.status in ('COMPLETED', 'CONFIRMED', 'CANCELLED', 'FAILED'):
+            self.donor_lat = None
+            self.donor_lng = None
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None:
+                kwargs['update_fields'] = list(set(update_fields) | {'donor_lat', 'donor_lng'})
+        super().save(*args, **kwargs)
+
 
 
     class Meta:

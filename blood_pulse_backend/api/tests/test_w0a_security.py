@@ -160,3 +160,61 @@ class W0aSecurityTests(TestCase):
         results = resp_rev.json().get('results', [])
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['reviewer_name'], 'Rahim C.')
+
+    def test_item10_completed_or_cancelled_nulls_donor_coordinates(self):
+        """When a journey reaches COMPLETED, CONFIRMED, CANCELLED, or FAILED, donor_lat and donor_lng are nulled in DB."""
+        from api.models import RequestAcceptance
+        from api.services.journeys import finalize_donation
+
+        donor_u = User.objects.create_user(username='lat_donor', password='Password123!')
+        donor_p = DonorProfile.objects.create(user=donor_u, blood_group='A+', district='Dhaka', phone_number='01811112222')
+        req_u = User.objects.create_user(username='lat_req', password='Password123!')
+        hosp = Hospital.objects.create(name='City Hospital', district='Dhaka')
+        br = BloodRequest.objects.create(requester=req_u, blood_group='A+', hospital=hosp, status='ACTIVE', patient_name='P1')
+
+        # 1. Status update to CANCELLED via endpoint
+        acc1 = RequestAcceptance.objects.create(
+            request=br,
+            donor=donor_p,
+            status='ACCEPTED',
+            donor_lat=23.8103,
+            donor_lng=90.4125
+        )
+        self.client.force_authenticate(user=req_u)
+        resp_cancel = self.client.post(f'/api/journeys/{acc1.id}/status/', {'status': 'CANCELLED', 'reason': 'Donor unavailable'})
+        self.assertEqual(resp_cancel.status_code, status.HTTP_200_OK)
+        acc1.refresh_from_db()
+        self.assertEqual(acc1.status, 'CANCELLED')
+        self.assertIsNone(acc1.donor_lat)
+        self.assertIsNone(acc1.donor_lng)
+
+        # 2. finalize_donation nulls coordinates on DB row
+        br2 = BloodRequest.objects.create(requester=req_u, blood_group='A+', hospital=hosp, status='ACTIVE', patient_name='P2')
+        acc2 = RequestAcceptance.objects.create(
+            request=br2,
+            donor=donor_p,
+            status='ACCEPTED',
+            donor_lat=23.7500,
+            donor_lng=90.3900
+        )
+        finalize_donation(acc2, auto=False)
+        acc2.refresh_from_db()
+        self.assertEqual(acc2.status, 'CONFIRMED')
+        self.assertIsNone(acc2.donor_lat)
+        self.assertIsNone(acc2.donor_lng)
+
+        # 3. Model save guard nulls coordinates on terminal statuses even if updated directly
+        br3 = BloodRequest.objects.create(requester=req_u, blood_group='A+', hospital=hosp, status='ACTIVE', patient_name='P3')
+        acc3 = RequestAcceptance.objects.create(
+            request=br3,
+            donor=donor_p,
+            status='ACCEPTED',
+            donor_lat=23.7777,
+            donor_lng=90.4444
+        )
+        acc3.status = 'CANCELLED'
+        acc3.save(update_fields=['status'])
+        acc3.refresh_from_db()
+        self.assertIsNone(acc3.donor_lat)
+        self.assertIsNone(acc3.donor_lng)
+
