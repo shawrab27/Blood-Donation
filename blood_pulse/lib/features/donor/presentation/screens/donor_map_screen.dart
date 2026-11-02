@@ -936,12 +936,7 @@ class _DonorMapScreenState extends State<DonorMapScreen>
                   label: 'Est. Time',
                   value: '~$etaMinutes mins',
                 ),
-                Container(width: 1, height: 28, color: Colors.grey.shade300),
-                _buildMetricItem(
-                  icon: Icons.speed_rounded,
-                  label: 'Traffic',
-                  value: 'Moderate',
-                ),
+
               ],
             ),
           ),
