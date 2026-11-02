@@ -1780,6 +1780,37 @@ def health_check(view=None, request=None, *args, **kwargs):
     return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def ticks_health_view(request):
+    """
+    GET /api/health/ticks/
+    Returns heartbeat status for emergency wave tick and maintenance tick:
+    {"wave": "ok|stale", "maintenance": "ok|stale"}
+    Stale when older than TICK_STALE_SECONDS (default 300s).
+    """
+    import os
+    from datetime import timedelta
+    from django.utils import timezone
+    from api.models import TickHeartbeat
+
+    try:
+        stale_seconds = int(os.environ.get('TICK_STALE_SECONDS', 300))
+    except (ValueError, TypeError):
+        stale_seconds = 300
+
+    cutoff = timezone.now() - timedelta(seconds=stale_seconds)
+    heartbeats = {hb.tick_name: hb.last_success_at for hb in TickHeartbeat.objects.all()}
+
+    wave_status = "ok" if heartbeats.get('wave') and heartbeats['wave'] >= cutoff else "stale"
+    maintenance_status = "ok" if heartbeats.get('maintenance') and heartbeats['maintenance'] >= cutoff else "stale"
+
+    return Response({
+        "wave": wave_status,
+        "maintenance": maintenance_status,
+    }, status=status.HTTP_200_OK)
+
+
 class HealthCheckView(APIView):
     permission_classes = [AllowAny]
 

@@ -791,6 +791,8 @@ def emergency_wave_tick_view(request):
         raise PermissionDenied("Invalid token")
         
     result = process_wave_tick()
+    from api.models import record_tick_heartbeat
+    record_tick_heartbeat('wave')
     return Response(result, status=status.HTTP_200_OK)
 
 
@@ -813,6 +815,8 @@ def maintenance_tick_view(request):
     closed = auto_confirm_stale_donations(hours=48)
     deferred, reenabled = auto_manage_deferrals()
     followups_count = run_due_followups()
+    from api.models import record_tick_heartbeat
+    record_tick_heartbeat('maintenance')
     return Response({
         'standby_stats': standby_stats,
         'auto_confirmed_count': len(closed),

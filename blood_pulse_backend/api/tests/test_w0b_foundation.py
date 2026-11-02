@@ -84,3 +84,41 @@ class W0bFoundationTests(TestCase):
         resp_user_b = self.client.get('/api/public/config/')
         data_user_b = resp_user_b.json()
         self.assertFalse(data_user_b['flags']['pilot_program'])
+
+    def test_item2_tick_heartbeats_and_health_endpoint(self):
+        """
+        Tests tick heartbeat recording and GET /api/health/ticks/:
+        - Initially returns {"wave": "stale", "maintenance": "stale"}
+        - Updating wave or maintenance records heartbeat and transitions status to "ok"
+        - Heartbeats older than TICK_STALE_SECONDS transition back to "stale"
+        """
+        import os
+        from datetime import timedelta
+        from django.utils import timezone
+        from api.models import TickHeartbeat, record_tick_heartbeat
+
+        # 1. Initially no records -> both stale
+        TickHeartbeat.objects.all().delete()
+        resp_initial = self.client.get('/api/health/ticks/')
+        self.assertEqual(resp_initial.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_initial.json(), {'wave': 'stale', 'maintenance': 'stale'})
+
+        # 2. Record wave heartbeat -> wave ok, maintenance stale
+        record_tick_heartbeat('wave')
+        resp_wave = self.client.get('/api/health/ticks/')
+        self.assertEqual(resp_wave.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_wave.json(), {'wave': 'ok', 'maintenance': 'stale'})
+
+        # 3. Record maintenance heartbeat -> both ok
+        record_tick_heartbeat('maintenance')
+        resp_both = self.client.get('/api/health/ticks/')
+        self.assertEqual(resp_both.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_both.json(), {'wave': 'ok', 'maintenance': 'ok'})
+
+        # 4. Check stale expiration when older than TICK_STALE_SECONDS (default 300)
+        stale_time = timezone.now() - timedelta(seconds=350)
+        TickHeartbeat.objects.filter(tick_name='wave').update(last_success_at=stale_time)
+        resp_stale = self.client.get('/api/health/ticks/')
+        self.assertEqual(resp_stale.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp_stale.json(), {'wave': 'stale', 'maintenance': 'ok'})
+

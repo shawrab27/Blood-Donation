@@ -3048,3 +3048,22 @@ def flag_enabled(name: str, user=None) -> bool:
     except Exception:
         return False
 
+class TickHeartbeat(models.Model):
+    tick_name = models.CharField(max_length=50, unique=True, db_index=True)
+    last_success_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tick_name} @ {self.last_success_at}"
+
+
+def record_tick_heartbeat(tick_name: str) -> None:
+    """Records the timestamp of a successful tick run in TickHeartbeat."""
+    try:
+        from django.utils import timezone
+        TickHeartbeat.objects.update_or_create(
+            tick_name=tick_name,
+            defaults={'last_success_at': timezone.now()}
+        )
+    except Exception:
+        pass
+
