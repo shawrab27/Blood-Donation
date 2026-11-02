@@ -322,7 +322,7 @@ def hospital_list_view(request):
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-@throttle_classes([__import__('api.throttles', fromlist=['RequestsThrottle', 'EmergencyBroadcastThrottle']).EmergencyBroadcastThrottle])
+@throttle_classes([__import__('api.throttles', fromlist=['RequestCreateUserThrottle', 'RequestCreateIpThrottle']).RequestCreateUserThrottle, __import__('api.throttles', fromlist=['RequestCreateUserThrottle', 'RequestCreateIpThrottle']).RequestCreateIpThrottle])
 def emergency_requests_list_create_view(request):
     """
     GET: List active requests with filters.
