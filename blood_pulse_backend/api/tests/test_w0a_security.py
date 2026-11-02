@@ -18,7 +18,7 @@ class W0aSecurityTests(TestCase):
         """In production (DEBUG=False), browsable API is disabled and HTML accepts get JSON."""
         # 1. Verify the settings definition file directly contains the production condition
         with open('blood_pulse_backend/blood_pulse_backend/settings.py', 'r', encoding='utf-8') as f:
-            content = f.read()
+            content = f.read().replace('\r\n', '\n')
         self.assertIn("if not DEBUG:\n    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (\n        'rest_framework.renderers.JSONRenderer',\n    )", content)
 
         # 2. Test an API view configured with JSONRenderer only (as production sets it)
