@@ -499,4 +499,15 @@ class EmergencyNotificationAdmin(admin.ModelAdmin):
     def donor_username(self, obj):
         return obj.donor.user.username
 
+from .models import FeatureFlag
+
+@admin.register(FeatureFlag)
+class FeatureFlagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'enabled', 'allowed_user_ids_count', 'updated_at')
+    list_filter = ('enabled',)
+    search_fields = ('name', 'description')
+
+    def allowed_user_ids_count(self, obj):
+        return len(obj.allowed_user_ids or [])
+    allowed_user_ids_count.short_description = 'Allowed Users Count'
 
