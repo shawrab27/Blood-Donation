@@ -244,7 +244,8 @@ class JourneyScopingTests(TestCase):
         resp_before = self.client.get(f'/api/emergency/requests/{unaccepted_req.id}/')
         self.assertEqual(resp_before.status_code, status.HTTP_200_OK)
         masked_contact = resp_before.json().get('contact_phone_display', '')
-        self.assertIn('*', masked_contact)
+        self.assertFalse(any(c.isdigit() for c in masked_contact))
+        self.assertEqual(masked_contact, 'Hidden until accepted')
         self.assertNotEqual(masked_contact, '+8801811111111')
 
         # Part B: After accept, both sides see unmasked contacts in journey_detail_view
