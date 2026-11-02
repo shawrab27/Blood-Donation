@@ -11,6 +11,7 @@ from api.models import MediaUploadRecord, UserLocationState, District, Division
 from api.services.storage import get_media_storage, StorageProviderError
 from api.services.images import strip_image_exif
 from api.data.district_centroids import find_nearest_district
+from api.throttles import UserLocationAnonThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +133,7 @@ class UserLocationSyncView(APIView):
     }
     """
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [UserLocationAnonThrottle]
 
     def post(self, request, *args, **kwargs):
         lat = request.data.get('lat') or request.data.get('latitude')
@@ -146,15 +148,19 @@ class UserLocationSyncView(APIView):
             target_district = District.objects.filter(id=district_id).select_related('division').first()
         elif district_name:
             target_district = District.objects.filter(name__iexact=str(district_name).strip()).select_related('division').first()
-        elif lat is not None and lng is not None:
+        elif lat is not None or lng is not None:
+            if lat is None or lng is None:
+                return Response({'error': 'Both latitude and longitude are required.'}, status=status.HTTP_400_BAD_REQUEST)
             try:
                 lat_f = float(lat)
                 lng_f = float(lng)
-                canonical_name = find_nearest_district(lat_f, lng_f)
-                if canonical_name:
-                    target_district = District.objects.filter(name__iexact=canonical_name).select_related('division').first()
             except (ValueError, TypeError):
                 return Response({'error': 'Invalid latitude or longitude format.'}, status=status.HTTP_400_BAD_REQUEST)
+            if not (-90.0 <= lat_f <= 90.0) or not (-180.0 <= lng_f <= 180.0):
+                return Response({'error': 'Latitude must be between -90 and 90, and longitude between -180 and 180.'}, status=status.HTTP_400_BAD_REQUEST)
+            canonical_name = find_nearest_district(lat_f, lng_f)
+            if canonical_name:
+                target_district = District.objects.filter(name__iexact=canonical_name).select_related('division').first()
 
         # Fallback to user profile district if not resolved
         if not target_district and request.user and request.user.is_authenticated:
@@ -237,6 +243,11 @@ class MediaFileServeView(APIView):
     def get(self, request, filename):
         import os
         from django.conf import settings
+        from api.services.storage import is_persistent_remote_configured
+
+        # Disabled when remote storage (Cloudinary) is configured or in production
+        if not settings.DEBUG or is_persistent_remote_configured():
+            raise Http404("Local media file serving is disabled")
 
         # Path traversal guard: basename check + path must reside within MEDIA_ROOT
         safe_filename = os.path.basename(filename)
@@ -254,6 +265,5 @@ class MediaFileServeView(APIView):
         content_type = content_type or 'image/jpeg'
         with open(file_path, 'rb') as f:
             resp = HttpResponse(f.read(), content_type=content_type)
-            resp['Access-Control-Allow-Origin'] = '*'
             resp['Cache-Control'] = 'public, max-age=86400'
             return resp
