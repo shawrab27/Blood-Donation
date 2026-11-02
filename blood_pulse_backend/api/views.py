@@ -302,11 +302,33 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         
         user = instance.user
         
-        # Soft delete and anonymize DonorProfile PII
-        instance.phone_number = f"deleted_{instance.id}"
+        # Soft delete and scrub DonorProfile PII
+        instance.phone_number = f"+8800000{user.id}" if user else f"deleted_{instance.id}"
+        instance.nid_hash = None
+        instance.bio = ""
+        instance.address = ""
+        instance.fcm_token = None
+        instance.google_uid = None
+        instance.google_display_name = "Deleted user"
+        instance.google_photo_url = None
+        instance.firebase_uid = None
+        instance.latitude = None
+        instance.longitude = None
+        instance.last_lat = None
+        instance.last_lng = None
+        instance.public_lat = None
+        instance.public_lng = None
+        instance.is_searchable = False
         instance.is_available = False
-        instance.save(update_fields=['phone_number', 'is_available'])
-        
+        instance.show_contact = False
+        instance.public_profile = False
+        if instance.profile_picture:
+            try:
+                instance.profile_picture.delete(save=False)
+            except Exception:
+                pass
+        instance.save()
+
         if user:
             # Soft delete User
             user.is_active = False
@@ -315,7 +337,14 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             user.last_name = "User"
             user.set_unusable_password()
             user.save(update_fields=['is_active', 'email', 'first_name', 'last_name', 'password'])
-            
+
+            try:
+                from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+                for ot in OutstandingToken.objects.filter(user=user):
+                    BlacklistedToken.objects.get_or_create(token=ot)
+            except Exception:
+                pass
+
         return Response({'detail': 'Account soft-deleted and anonymized to preserve relational integrity.'}, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['post'], url_path='fcm-token', permission_classes=[IsAuthenticated])

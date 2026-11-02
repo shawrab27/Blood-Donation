@@ -8,6 +8,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from api.models import DonorProfile
 
 class W0aSecurityTests(TestCase):
     def setUp(self):
@@ -68,3 +69,48 @@ class W0aSecurityTests(TestCase):
         from django.conf import settings
         self.assertNotIn('https://blood-donation-liard.vercel.app', settings.CORS_ALLOWED_ORIGINS)
         self.assertNotIn('https://blood-donation-liard.vercel.app', settings.CSRF_TRUSTED_ORIGINS)
+
+    def test_item4_donor_profile_destroy_pii_scrub(self):
+        """DonorProfile destroy must fully scrub PII (bio, address, coordinates, fcm token, google fields)."""
+        user = User.objects.create_user(
+            username='donor_del',
+            email='donor_del@example.com',
+            password='Password123!',
+            first_name='Donor',
+            last_name='ToDelete'
+        )
+        profile = DonorProfile.objects.create(
+            user=user,
+            blood_group='B+',
+            district='Dhaka',
+            phone_number='01811223344',
+            bio='My sensitive bio',
+            address='123 Private St, Dhanmondi',
+            latitude=23.75,
+            longitude=90.38,
+            public_lat=23.751,
+            public_lng=90.381,
+            fcm_token='secret_fcm_token_123',
+            google_uid='google_uid_123',
+            is_available=True,
+            is_searchable=True,
+        )
+
+        self.client.force_authenticate(user=user)
+        resp = self.client.delete(f'/api/donors/{profile.id}/')
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+        profile.refresh_from_db()
+        user.refresh_from_db()
+
+        self.assertEqual(profile.bio, '')
+        self.assertEqual(profile.address, '')
+        self.assertIsNone(profile.latitude)
+        self.assertIsNone(profile.longitude)
+        self.assertIsNone(profile.public_lat)
+        self.assertIsNone(profile.public_lng)
+        self.assertIsNone(profile.fcm_token)
+        self.assertIsNone(profile.google_uid)
+        self.assertFalse(profile.is_available)
+        self.assertFalse(profile.is_searchable)
+        self.assertFalse(user.is_active)
