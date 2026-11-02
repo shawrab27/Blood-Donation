@@ -62,3 +62,9 @@ class W0aSecurityTests(TestCase):
         # Should have sent hint email
         mock_svc.send_email.assert_called()
         self.assertEqual(mock_svc.send_email.call_args[1]['to_email'], 'googleuser@example.com')
+
+    def test_item3_legacy_vercel_cors_removed(self):
+        """Legacy Vercel domain must not be in CORS_ALLOWED_ORIGINS or CSRF_TRUSTED_ORIGINS."""
+        from django.conf import settings
+        self.assertNotIn('https://blood-donation-liard.vercel.app', settings.CORS_ALLOWED_ORIGINS)
+        self.assertNotIn('https://blood-donation-liard.vercel.app', settings.CSRF_TRUSTED_ORIGINS)
