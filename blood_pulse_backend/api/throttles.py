@@ -59,6 +59,13 @@ class RequestCreateUserThrottle(UserRateThrottle):
         return super().allow_request(request, view)
 
 
+class UserLocationAnonThrottle(AnonRateThrottle):
+    scope = 'user_location_anon'
+
+    def get_rate(self):
+        return os.environ.get('USER_LOCATION_ANON_RATE', getattr(settings, 'USER_LOCATION_ANON_RATE', '60/hour'))
+
+
 class RequestCreateIpThrottle(SimpleRateThrottle):
     scope = 'request_create_ip'
 
