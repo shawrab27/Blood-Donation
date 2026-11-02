@@ -122,3 +122,49 @@ class W0bFoundationTests(TestCase):
         self.assertEqual(resp_stale.status_code, status.HTTP_200_OK)
         self.assertEqual(resp_stale.json(), {'wave': 'stale', 'maintenance': 'ok'})
 
+    def test_item3_tos_accepted_at_nullable_and_set_on_registration(self):
+        """
+        DonorProfile.tos_accepted_at:
+        - Nullable, default None (no auto_now_add, no backfill)
+        - Set when user accepts ToS during registration
+        """
+        from api.models import DonorProfile
+        from api.serializers import DonorProfileSerializer
+
+        # 1. Direct profile creation without ToS -> None
+        user1 = User.objects.create_user(username='tos_user_1', password='Password123!')
+        p1 = DonorProfile.objects.create(
+            user=user1,
+            blood_group='O+',
+            district='Dhaka',
+            phone_number='01700000001'
+        )
+        self.assertIsNone(p1.tos_accepted_at)
+
+        # 2. Registration via serializer with tos_accepted=True
+        user2 = User.objects.create_user(username='tos_user_2', password='Password123!')
+        serializer = DonorProfileSerializer(data={
+            'blood_group': 'A+',
+            'district': 'Dhaka',
+            'phone_number': '01700000002',
+            'tos_accepted': True,
+        })
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        p2 = serializer.save(user=user2)
+        p2.refresh_from_db()
+        self.assertIsNotNone(p2.tos_accepted_at)
+
+        # 3. Registration via API endpoint POST /api/donors/
+        reg_payload = {
+            'full_name': 'ToS Donor',
+            'phone_number': '+8801700000003',
+            'blood_group': 'B+',
+            'district': 'Dhaka',
+            'password': 'Password123!',
+            'tos_accepted': True,
+        }
+        resp = self.client.post('/api/donors/', reg_payload, format='json')
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED, resp.data if hasattr(resp, 'data') else resp.content)
+        p3 = DonorProfile.objects.get(phone_number='+8801700000003')
+        self.assertIsNotNone(p3.tos_accepted_at)
+

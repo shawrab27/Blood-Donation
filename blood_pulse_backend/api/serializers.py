@@ -91,6 +91,8 @@ class DonorProfileSerializer(serializers.ModelSerializer):
     missing_fields = serializers.SerializerMethodField()
     donor_title = serializers.CharField(read_only=True)
     position_display = serializers.CharField(read_only=True)
+    tos_accepted_at = serializers.DateTimeField(read_only=True)
+    tos_accepted = serializers.BooleanField(write_only=True, required=False)
 
     def get_missing_fields(self, obj):
         _, missing = obj.check_is_complete()
@@ -98,7 +100,18 @@ class DonorProfileSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password', None)
+        tos_accepted = validated_data.pop('tos_accepted', None)
+        if tos_accepted:
+            from django.utils import timezone
+            validated_data['tos_accepted_at'] = timezone.now()
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        tos_accepted = validated_data.pop('tos_accepted', None)
+        if tos_accepted and not instance.tos_accepted_at:
+            from django.utils import timezone
+            validated_data['tos_accepted_at'] = timezone.now()
+        return super().update(instance, validated_data)
 
     def validate(self, attrs):
         # USER RULE: blood_group is editable until registration complete, then locked
@@ -140,7 +153,7 @@ class DonorProfileSerializer(serializers.ModelSerializer):
             'recent_logs', 'global_rank', 'badge', 'donor_title', 'occupation', 'position_display', 'registration_complete', 'google_display_name', 'google_photo_url', 'auth_provider',
             'is_searchable', 'user_intent', 'missing_fields', 'alert_pause_until', 'emergency_alerts_paused_until',
             'public_profile', 'show_contact', 'notifications_enabled', 'emergency_alerts_enabled',
-            'weight_kg', 'show_in_rankings'
+            'weight_kg', 'show_in_rankings', 'tos_accepted_at', 'tos_accepted'
         ]
 
     def validate_bio(self, value):

@@ -72,6 +72,11 @@ class DonorProfile(models.Model):
     email_verified = models.BooleanField(default=False)
 
     is_guide = models.BooleanField(default=False)
+    tos_accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when donor accepted Terms of Service during registration",
+    )
 
     
 
