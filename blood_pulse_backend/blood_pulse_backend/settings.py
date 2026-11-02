@@ -600,6 +600,7 @@ _secret_audit_vars = [
     'BREVO_API_KEY',
     'GEMINI_API_KEY',
     'ADMIN_URL',
+    'EMERGENCY_TICK_TOKEN',
 ]
 _env_status = {k: ('found' if os.environ.get(k) else 'missing') for k in _secret_audit_vars}
 _env_status_str = ", ".join(f"{k}: {v}" for k, v in _env_status.items())
@@ -614,6 +615,17 @@ _startup_msg = (
 if not IS_TESTING:
     print(_startup_msg)
 _startup_logger.info(_startup_msg)
+
+# Startup check for EMERGENCY_TICK_TOKEN
+_tick_token = os.environ.get('EMERGENCY_TICK_TOKEN', '').strip()
+if not _tick_token:
+    _startup_logger.warning(
+        "WARNING: EMERGENCY_TICK_TOKEN is not set! Emergency cron tick endpoints will reject requests."
+    )
+elif len(_tick_token) < 32:
+    _startup_logger.warning(
+        f"WARNING: EMERGENCY_TICK_TOKEN is shorter than 32 characters ({len(_tick_token)} chars). Consider using a longer token."
+    )
 
 
 
