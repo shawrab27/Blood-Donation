@@ -103,6 +103,9 @@ _render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
 if _render_hostname and _render_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_render_hostname)
 
+if 'testserver' not in ALLOWED_HOSTS and (DEBUG or 'test' in sys.argv):
+    ALLOWED_HOSTS.append('testserver')
+
 
 # Application definition
 
@@ -131,6 +134,11 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ),
 }
+
+if not DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
+        'rest_framework.renderers.JSONRenderer',
+    )
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
