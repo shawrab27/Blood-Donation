@@ -46,6 +46,8 @@ from api.throttles import (
     DonationConfirmThrottle,
     DonorResponseThrottle,
     RequestCreateThrottle,
+    RequestCreateUserThrottle,
+    RequestCreateIpThrottle,
 )
 
 
@@ -54,7 +56,7 @@ class BloodRequestCreateV2APIView(APIView):
 
     def get_throttles(self):
         if self.request.method == 'POST':
-            return [RequestCreateThrottle()]
+            return [RequestCreateUserThrottle(), RequestCreateIpThrottle()]
         return super().get_throttles()
 
     def get(self, request):

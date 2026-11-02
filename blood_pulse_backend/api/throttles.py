@@ -1,7 +1,9 @@
 # Copyright (c) 2026 Nasim Uddin Shawrab. All rights reserved.
 # Part of the Blood Pulse project — unauthorized copying or distribution prohibited.
 
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+import os
+from django.conf import settings
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, SimpleRateThrottle
 
 class FirebaseAuthThrottle(AnonRateThrottle):
     scope = 'firebase_auth'
@@ -45,7 +47,38 @@ class GuestMapAnonThrottle(AnonRateThrottle):
     rate = '30/min'
 
 
-class RequestCreateThrottle(UserRateThrottle):
+class RequestCreateUserThrottle(UserRateThrottle):
+    scope = 'request_create_user'
+
+    def get_rate(self):
+        return os.environ.get('REQUEST_CREATE_USER_RATE', getattr(settings, 'REQUEST_CREATE_USER_RATE', '5/hour'))
+
+    def allow_request(self, request, view):
+        if request.method != 'POST':
+            return True
+        return super().allow_request(request, view)
+
+
+class RequestCreateIpThrottle(SimpleRateThrottle):
+    scope = 'request_create_ip'
+
+    def get_rate(self):
+        return os.environ.get('REQUEST_CREATE_IP_RATE', getattr(settings, 'REQUEST_CREATE_IP_RATE', '10/hour'))
+
+    def get_cache_key(self, request, view):
+        ident = self.get_ident(request)
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': ident
+        }
+
+    def allow_request(self, request, view):
+        if request.method != 'POST':
+            return True
+        return super().allow_request(request, view)
+
+
+class RequestCreateThrottle(RequestCreateUserThrottle):
     scope = 'request_create'
 
 
