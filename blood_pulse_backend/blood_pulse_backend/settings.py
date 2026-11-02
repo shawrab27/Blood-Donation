@@ -64,17 +64,17 @@ elif not DEBUG and not IS_TESTING:
     from django.core.exceptions import ImproperlyConfigured
     if not SECRET_KEY:
         raise ImproperlyConfigured(
-            "SECRET_KEY or DJANGO_SECRET_KEY environment variable is missing. "
+            "Refusing to start: SECRET_KEY or DJANGO_SECRET_KEY environment variable is missing. "
             "A secure key (>= 50 characters) must be configured when DEBUG=False."
         )
     if SECRET_KEY == _INSECURE_SECRET_KEY or SECRET_KEY.startswith('django-insecure'):
         raise ImproperlyConfigured(
-            "SECRET_KEY / DJANGO_SECRET_KEY cannot use an insecure default or start with 'django-insecure'. "
+            "Refusing to start: SECRET_KEY / DJANGO_SECRET_KEY cannot use an insecure code fallback or start with 'django-insecure' when DEBUG=False. "
             "Generate a cryptographically random secret key."
         )
     if len(SECRET_KEY) < 50:
         raise ImproperlyConfigured(
-            f"SECRET_KEY / DJANGO_SECRET_KEY must be at least 50 characters long (got {len(SECRET_KEY)}). "
+            f"Refusing to start: SECRET_KEY / DJANGO_SECRET_KEY must be at least 50 characters long (got {len(SECRET_KEY)}) when DEBUG=False. "
             "Provide a sufficiently long key."
         )
 elif DEBUG and not SECRET_KEY:
@@ -152,7 +152,6 @@ _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
 CORS_ALLOWED_ORIGINS = [
     'https://bloodpulse-283dc.web.app',
     'https://bloodpulse-283dc.firebaseapp.com',
-    'https://blood-donation-liard.vercel.app',
 ]
 if DEBUG:
     CORS_ALLOWED_ORIGINS.extend([
@@ -193,7 +192,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://bloodpulse-283dc.web.app',
     'https://bloodpulse-283dc.firebaseapp.com',
     'https://bloodpulse-backend.onrender.com',
-    'https://blood-donation-liard.vercel.app',
 ]
 if DEBUG:
     CSRF_TRUSTED_ORIGINS.extend([
@@ -485,12 +483,12 @@ if not DEBUG and not IS_TESTING:
     from django.core.exceptions import ImproperlyConfigured
     if not _primary_field_key:
         raise ImproperlyConfigured(
-            "FIELD_ENCRYPTION_KEY environment variable is required in production (DEBUG=False). "
-            "Generate a 32-byte url-safe base64 Fernet key."
+            "Refusing to start: FIELD_ENCRYPTION_KEY environment variable is required in production (DEBUG=False). "
+            "Cannot use code fallback. Generate a 32-byte url-safe base64 Fernet key."
         )
     if _primary_field_key == _FALLBACK_FIELD_KEY:
         raise ImproperlyConfigured(
-            "FIELD_ENCRYPTION_KEY cannot use the insecure built-in fallback key in production."
+            "Refusing to start: FIELD_ENCRYPTION_KEY cannot use the insecure built-in code fallback key in production (DEBUG=False)."
         )
     try:
         from cryptography.fernet import Fernet
