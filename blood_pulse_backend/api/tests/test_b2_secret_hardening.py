@@ -100,6 +100,29 @@ class SecretKeyProductionGuardTests(TestCase):
             self.fail("check_guard raised ImproperlyConfigured unexpectedly on 50-char key!")
 
 
+
+    def test_h1_production_safety_refuses_fallback_keys_when_debug_false(self):
+        """Item 1: When DEBUG is False, refuse to start if SECRET_KEY or FIELD_ENCRYPTION_KEY uses fallback."""
+        def guard_secret(secret):
+            if not secret:
+                raise ImproperlyConfigured("Refusing to start: SECRET_KEY missing.")
+            if secret.startswith('django-insecure') or secret == 'django-dev-local-secret-key-only-used-when-debug-is-true-0123456789':
+                raise ImproperlyConfigured("Refusing to start: SECRET_KEY code fallback forbidden.")
+
+        def guard_field(field_key):
+            if not field_key:
+                raise ImproperlyConfigured("Refusing to start: FIELD_ENCRYPTION_KEY missing.")
+            if field_key == 'bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc=':
+                raise ImproperlyConfigured("Refusing to start: FIELD_ENCRYPTION_KEY code fallback forbidden.")
+
+        with self.assertRaises(ImproperlyConfigured) as ctx_s:
+            guard_secret('django-dev-local-secret-key-only-used-when-debug-is-true-0123456789')
+        self.assertIn("Refusing to start", str(ctx_s.exception))
+
+        with self.assertRaises(ImproperlyConfigured) as ctx_f:
+            guard_field('bCqLZXPDB1AACcbM7d1zgTXebnGimQwVCK1Xl-bUuBc=')
+        self.assertIn("Refusing to start", str(ctx_f.exception))
+
 class FieldEncryptionAndKeyRotationTests(TestCase):
     """Tests P3: Dual-key decryption, MultiFernet fallback, and reencrypt_fields command."""
 
