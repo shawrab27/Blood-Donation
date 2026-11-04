@@ -18,6 +18,7 @@ from .views_leaderboard import LeaderboardAPIView
 from .views_certificates import CertificateIssueAPIView, CertificateVerifyAPIView
 from .views_feed_media import MediaUploadView, UserLocationSyncView, MediaFileServeView
 from .views_feed import FeedListCreateAPIView, FeedPostDetailAPIView, FeedPostReportAPIView
+from .views_feed_sponsored import SponsoredCardListView
 from .views_products import ProductViewSet
 from .views_profile import (
     ProfileMeView,
@@ -211,6 +212,7 @@ urlpatterns = [
     path('media/files/<str:filename>/', MediaFileServeView.as_view(), name='media-file-serve'),
     path('users/location/', UserLocationSyncView.as_view(), name='user-location-sync'),
     path('feed/', FeedListCreateAPIView.as_view(), name='feed-list-create'),
+    path('feed/sponsored/', SponsoredCardListView.as_view(), name='feed-sponsored-cards'),
     path('feed/<int:pk>/', FeedPostDetailAPIView.as_view(), name='feed-post-detail'),
     path('feed/<int:pk>/report/', FeedPostReportAPIView.as_view(), name='feed-post-report'),
 

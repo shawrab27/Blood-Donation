@@ -669,3 +669,44 @@ class ProductSerializer(serializers.ModelSerializer):
             return f"৳{int(obj.price_min)}" if obj.currency == 'BDT' else f"{obj.currency} {obj.price_min}"
         return f"৳{int(obj.price_min)} - ৳{int(obj.price_max)}" if obj.currency == 'BDT' else f"{obj.currency} {obj.price_min} - {obj.price_max}"
 
+
+from .models import SponsoredCard
+
+class SponsoredCardSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SponsoredCard
+        fields = [
+            'id',
+            'title',
+            'short_text',
+            'body',
+            'image',
+            'sponsor_name',
+            'kind',
+            'cta_type',
+            'cta_value',
+            'starts_at',
+            'ends_at',
+            'is_active',
+            'priority',
+            'created_at',
+        ]
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        img_str = str(obj.image)
+        if img_str.startswith('http://') or img_str.startswith('https://'):
+            return img_str
+        request = self.context.get('request')
+        if request:
+            try:
+                return request.build_absolute_uri(obj.image.url)
+            except Exception:
+                return obj.image.url
+        try:
+            return obj.image.url
+        except Exception:
+            return img_str
