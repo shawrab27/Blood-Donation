@@ -98,3 +98,5 @@ failures/
 
 /google-services.json
 screenshots/
+
+.agents/
