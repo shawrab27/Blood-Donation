@@ -34,24 +34,21 @@ Read this file before every task. These rules override convenience.
 
 ## E. Security Rules (see security.md)
 18. **Never commit secrets** (.env, service-account JSON, API keys, DB URLs, admin keys, passwords).
-19. Never log or print PII, tokens, OTPs or medical text.
-20. `redact.py` must run before any data reaches the router or Gemini.
-21. Default every new endpoint to authenticated; `AllowAny` needs an explicit written reason.
-22. Do not run destructive migrations or DB operations without (a) a backup and (b) explicit user approval. Test migrations on a branch/copy first.
-23. Never use `git push --force`, never rewrite history, never delete branches without asking.
+19. `redact.py` must run before any data reaches the router or Gemini.
+20. Never use `git push --force`, never rewrite history, never delete branches without asking.
 
 ## F. Product Rules (locked)
-24. Only cooldown: **90 days, from one constant only**.
-25. Wording: "Donations completed" / "Requests supported". Never "Successfully Transfused" or "Life Saved".
-26. Gender: Male / Female only.
-27. Blood group locked after save; admin-only edit.
-28. 5-tab navbar order: **Feed, Blood Hub, Communities, Health Hub, Profile**.
-29. Top Header Pattern: Logo `assets/images/launcher_icon_transparent.png` (height 32px) + `"BloodPulse"` title (Georgia, `#C30121`). Top-right: Notification Bell with active red unread badge (`#C30121`) + Profile Avatar (`CircleAvatar` 36px, circular red border `#C30121`, tap navigates to `/profile`). Do NOT use a 3-dot PopupMenuButton.
-30. Notification Screen Tabs: Clicking Notification Bell opens Notification Center with 4 tabs: Feed, Request, Messages, Profile.
-31. Design Tokens & Shapes: Primary `#C30121`, Secondary `#2B2B2B`, Tertiary `#0D68AA`, Surface `#FDF3F3` / `#FFF8F7`. Headlines in Georgia; Body/Inputs/Buttons in Inter. Full capsule / pill shape (`BorderRadius.circular(50)`) for buttons and input fields. Wrap all screens in `ResponsiveLayout`.
-32. Login has no OTP. OTP is Just-In-Time only.
-33. Brand: use locked palette, fonts, logo and slogan (see design.md). No substitutions.
-34. Do not make medical claims. Health content must come from verified sources.
+21. Only cooldown: **90 days, from one constant only**.
+22. Wording: "Donations completed" / "Requests supported". Never "Successfully Transfused" or "Life Saved".
+23. Gender: Male / Female only.
+24. Blood group locked after save; admin-only edit.
+25. 5-tab navbar order: **Feed, Blood Hub, Communities, Health Hub, Profile**.
+26. Top Header Pattern: Logo `assets/images/launcher_icon_transparent.png` (height 32px) + `"BloodPulse"` title (Georgia, `#C30121`). Top-right: Notification Bell with active red unread badge (`#C30121`) + Profile Avatar (`CircleAvatar` 36px, circular red border `#C30121`, tap navigates to `/profile`). Do NOT use a 3-dot PopupMenuButton.
+27. Notification Screen Tabs: Clicking Notification Bell opens Notification Center with 4 tabs: Feed, Request, Messages, Profile.
+28. Design Tokens & Shapes: Primary `#C30121`, Secondary `#2B2B2B`, Tertiary `#0D68AA`, Surface `#FDF3F3` / `#FFF8F7`. Headlines in Georgia; Body/Inputs/Buttons in Inter. Full capsule / pill shape (`BorderRadius.circular(50)`) for buttons and input fields. Wrap all screens in `ResponsiveLayout`.
+29. Login has no OTP. OTP is Just-In-Time only.
+30. Brand: use locked palette, fonts, logo and slogan (see design.md). No substitutions.
+31. Do not make medical claims. Health content must come from verified sources.
 
 ## G. Communication Format for Reports
 ```
@@ -72,3 +69,10 @@ NEXT: <awaiting user>
 5. NO REGRESSION: before touching shared code list its dependents; if the old behavior has no test, add one first; run the critical-flow tests (launch, request, accept, tracking, chat).
 6. TESTS: only tests that protect real flows or the new logic (attack test first for security fixes); no extra tests; stop when acceptance passes.
 7. RELEASE: CI green, tag before-<task>, small commits, rollback path stated, deploy only on request; report commit, tests, deploy, UNVERIFIED.
+
+## FEATURE GUARDRAILS v1
+- New features: Stitch draft first (max 2 screens per call) approved by me; ONE entry point on the most suitable existing page; no new tab, FAB, header icon or top-level card; Bangla + English strings; no mock data; launch flow untouched.
+- Server-side flag default OFF with a kill switch; additive migrations only; never touch the production DB; tell me before a migration deploy.
+- Every endpoint: explicit permission class, throttle, owner/participant check (404, not 403), attack test written first and shown failing; no phone/NID/exact location/medical data in public responses; no PII or secrets in logs or push; no free-text medical values.
+- Risk rules: public status links = no names/hospital/phone, unguessable token, expiry, noindex; scam/broker lists = flag + admin review, at least 2 independent reports, neutral wording, appeal path, never auto-ban; offline donation log = proof, unverified until reviewed; family data = consent, no phone; sensitive filters opt-in; medical images private/signed; invite links = expiry + usage cap + admin approval; leaderboards = verified counts only.
+- Web deploy only; never build an APK unless I say "build APK".
