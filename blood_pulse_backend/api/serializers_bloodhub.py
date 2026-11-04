@@ -303,6 +303,26 @@ class BloodRequestDetailSerializer(serializers.ModelSerializer):
                 f_lat, f_lng = fuzz_coordinates(instance.lat, instance.lng, seed_id=instance.id)
                 data['lat'] = f_lat
                 data['lng'] = f_lng
+        else:
+            from api.services.storage import get_media_storage
+            storage = get_media_storage()
+            if instance.patient_photo:
+                raw_photo = str(instance.patient_photo)
+                data['patient_photo'] = storage.generate_signed_url(
+                    raw_photo,
+                    resource_type="image",
+                    delivery_type="authenticated",
+                    expires_in_seconds=3600
+                )
+            if instance.requisition_slip:
+                raw_slip = str(instance.requisition_slip)
+                res_type = "raw" if raw_slip.lower().endswith(".pdf") else "image"
+                data['requisition_slip'] = storage.generate_signed_url(
+                    raw_slip,
+                    resource_type=res_type,
+                    delivery_type="authenticated",
+                    expires_in_seconds=3600
+                )
         return data
 
 

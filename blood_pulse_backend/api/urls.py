@@ -49,7 +49,7 @@ from .views import (
     EmergencyContactViewSet, RecoveryTimelineStepViewSet, GeminiReportAnalyzeView,
     GoogleAuthView, FirebaseAuthView, ProfileCompletionStatusView, UnreadNotificationCountView, NotificationListView,
     SendVerificationEmailView, VerifyEmailCodeView,
-    health_check, HealthCheckView, CacheHealthCheckView
+    health_check, HealthCheckView, CacheHealthCheckView, ticks_health_view
 )
 
 router = DefaultRouter()
@@ -273,6 +273,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('health/', health_check, name='health-check'),
     path('health/cache/', CacheHealthCheckView.as_view(), name='health-cache-check'),
+    path('health/ticks/', ticks_health_view, name='health-ticks-check'),
     path('verify-nid/', NIDVerificationView.as_view(), name='verify-nid'),
     path('donors-nearby/', NearbyDonorsView.as_view(), name='donors-nearby'),
     path('clubs/register/', RegisterClubView.as_view(), name='register-club'),

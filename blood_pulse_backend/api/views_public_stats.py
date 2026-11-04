@@ -110,9 +110,21 @@ def public_stats_view(request):
 def public_config_view(request):
     """
     GET /api/public/config/
-    Returns public runtime configuration for guests and logged-in users.
+    Returns public runtime configuration and feature flag booleans for the requesting user.
+    Never exposes allowed user lists.
     """
     from django.conf import settings
+    from api.models import FeatureFlag
+
+    flags = {}
+    try:
+        user = request.user if getattr(request, 'user', None) and request.user.is_authenticated else None
+        for flag in FeatureFlag.objects.all():
+            flags[flag.name] = flag.is_active_for_user(user)
+    except Exception:
+        pass
+
     return Response({
         'request_otp_required': getattr(settings, 'REQUEST_OTP_REQUIRED', True),
+        'flags': flags,
     }, status=status.HTTP_200_OK)

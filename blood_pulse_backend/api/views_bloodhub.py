@@ -322,7 +322,7 @@ def hospital_list_view(request):
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-@throttle_classes([__import__('api.throttles', fromlist=['RequestsThrottle', 'EmergencyBroadcastThrottle']).EmergencyBroadcastThrottle])
+@throttle_classes([__import__('api.throttles', fromlist=['RequestCreateUserThrottle', 'RequestCreateIpThrottle']).RequestCreateUserThrottle, __import__('api.throttles', fromlist=['RequestCreateUserThrottle', 'RequestCreateIpThrottle']).RequestCreateIpThrottle])
 def emergency_requests_list_create_view(request):
     """
     GET: List active requests with filters.
@@ -791,6 +791,8 @@ def emergency_wave_tick_view(request):
         raise PermissionDenied("Invalid token")
         
     result = process_wave_tick()
+    from api.models import record_tick_heartbeat
+    record_tick_heartbeat('wave')
     return Response(result, status=status.HTTP_200_OK)
 
 
@@ -813,6 +815,8 @@ def maintenance_tick_view(request):
     closed = auto_confirm_stale_donations(hours=48)
     deferred, reenabled = auto_manage_deferrals()
     followups_count = run_due_followups()
+    from api.models import record_tick_heartbeat
+    record_tick_heartbeat('maintenance')
     return Response({
         'standby_stats': standby_stats,
         'auto_confirmed_count': len(closed),
@@ -1049,7 +1053,9 @@ def journey_status_transition_view(request, pk):
             locked_acc.completed_at = now
             locked_acc.donor_confirmed_at = None
             locked_acc.requester_confirmed_at = None
-            locked_acc.save(update_fields=['status', 'cancellation_reason', 'completed_at', 'donor_confirmed_at', 'requester_confirmed_at'])
+            locked_acc.donor_lat = None
+            locked_acc.donor_lng = None
+            locked_acc.save(update_fields=['status', 'cancellation_reason', 'completed_at', 'donor_confirmed_at', 'requester_confirmed_at', 'donor_lat', 'donor_lng'])
 
             donor = locked_acc.donor
             donor.cancel_count = (donor.cancel_count or 0) + 1
@@ -1167,7 +1173,9 @@ def journey_issue_report_view(request, pk):
         acceptance.status = 'FAILED'
         acceptance.cancellation_reason = f'Medical Rejection: {reason_code}'
         acceptance.completed_at = now
-        acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
+        acceptance.donor_lat = None
+        acceptance.donor_lng = None
+        acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at', 'donor_lat', 'donor_lng'])
 
         donor = acceptance.donor
         deferral_date = now + timedelta(days=DONOR_COOLDOWN_DAYS)
@@ -1196,7 +1204,9 @@ def journey_issue_report_view(request, pk):
         acceptance.status = 'FAILED'
         acceptance.cancellation_reason = f'Donor No-Show (Pending admin review): {description}' if description else 'Donor No-Show (Pending admin review)'
         acceptance.completed_at = now
-        acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at'])
+        acceptance.donor_lat = None
+        acceptance.donor_lng = None
+        acceptance.save(update_fields=['status', 'cancellation_reason', 'completed_at', 'donor_lat', 'donor_lng'])
 
         # Neither triggers an automatic trust penalty; logs timeline event for admin review
         RequestTimelineEvent.objects.create(

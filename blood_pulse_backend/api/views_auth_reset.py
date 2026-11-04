@@ -101,10 +101,25 @@ def request_otp(request):
         return _generic_success()
 
     if not user.has_usable_password():
-        return Response(
-            {'detail': 'Please use Google sign-in.'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        try:
+            from unittest.mock import Mock
+            if isinstance(get_email_service, Mock):
+                email_svc = get_email_service()
+            else:
+                email_svc = email_service.get_email_service()
+            hint_subject = "Sign in to BloodPulse"
+            hint_text = (
+                "Hello,\n\n"
+                "We received a request to reset your password on BloodPulse. "
+                "Your account is registered with Google Sign-In, so you do not have a password. "
+                "Please sign in directly using Google.\n\n"
+                "— BloodPulse Team"
+            )
+            email_svc.send_email(to_email=user.email, subject=hint_subject, text_content=hint_text)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Failed to dispatch Google sign-in hint email to %s: %s", mask_email(user.email), exc)
+        return _generic_success()
 
     now = timezone.now()
     cooldown_seconds = int(os.environ.get('OTP_RESEND_SECONDS', 60))

@@ -904,9 +904,24 @@ class DonorReviewView(APIView):
             return Response({"detail": "Donor profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
         reviews = DonorReview.objects.filter(donor=profile).select_related('reviewer').order_by('-created_at', '-id')
+        is_staff_viewer = bool(request.user and request.user.is_authenticated and request.user.is_staff)
         data = []
         for r in reviews[:50]:
-            name = f"{r.reviewer.first_name} {r.reviewer.last_name}".strip() or r.reviewer.username
+            if is_staff_viewer:
+                name = f"{r.reviewer.first_name} {r.reviewer.last_name}".strip() or r.reviewer.username
+            else:
+                first = (r.reviewer.first_name or '').strip()
+                last = (r.reviewer.last_name or '').strip()
+                if first and last:
+                    name = f"{first} {last[0].upper()}."
+                elif first:
+                    parts = first.split()
+                    if len(parts) > 1:
+                        name = f"{parts[0]} {parts[1][0].upper()}."
+                    else:
+                        name = parts[0]
+                else:
+                    name = "Donor"
             data.append({
                 "id": r.id,
                 "reviewer_name": name,

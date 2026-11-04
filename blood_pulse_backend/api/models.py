@@ -72,6 +72,11 @@ class DonorProfile(models.Model):
     email_verified = models.BooleanField(default=False)
 
     is_guide = models.BooleanField(default=False)
+    tos_accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when donor accepted Terms of Service during registration",
+    )
 
     
 
@@ -754,6 +759,15 @@ class RequestAcceptance(models.Model):
     eta_minutes = models.IntegerField(null=True, blank=True)
 
     distance_km = models.FloatField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.status in ('COMPLETED', 'CONFIRMED', 'CANCELLED', 'FAILED'):
+            self.donor_lat = None
+            self.donor_lng = None
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None:
+                kwargs['update_fields'] = list(set(update_fields) | {'donor_lat', 'donor_lng'})
+        super().save(*args, **kwargs)
 
 
 
@@ -2996,5 +3010,65 @@ class DirectMessage(models.Model):
     def __str__(self):
         return f"Msg {self.id} from {self.sender.username} to {self.recipient.username} ({self.status})"
 
+class FeatureFlag(models.Model):
+    name = models.CharField(max_length=100, unique=True, db_index=True)
+    description = models.CharField(max_length=255, blank=True, default='')
+    enabled = models.BooleanField(
+        default=False,
+        help_text="Master switch. If False, flag is completely disabled for everyone overriding allowlist.",
+    )
+    allowed_user_ids = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of user IDs who have access when enabled=True. If empty and enabled=True, flag is enabled for everyone.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    def is_active_for_user(self, user=None):
+        if not self.enabled:
+            return False
+        if not self.allowed_user_ids:
+            return True
+        if user and getattr(user, 'is_authenticated', False):
+            uid = user.id
+            return (uid in self.allowed_user_ids) or (str(uid) in [str(x) for x in self.allowed_user_ids])
+        return False
+
+    def __str__(self):
+        return f"{self.name} (enabled={self.enabled})"
+
+
+def flag_enabled(name: str, user=None) -> bool:
+    """
+    Checks if a feature flag is enabled for the given user.
+    Kill switch: enabled=False overrides the allowlist (returns False).
+    Returns False safely if flag doesn't exist or on any exception.
+    """
+    try:
+        flag = FeatureFlag.objects.filter(name=name).first()
+        if not flag:
+            return False
+        return flag.is_active_for_user(user)
+    except Exception:
+        return False
+
+class TickHeartbeat(models.Model):
+    tick_name = models.CharField(max_length=50, unique=True, db_index=True)
+    last_success_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tick_name} @ {self.last_success_at}"
+
+
+def record_tick_heartbeat(tick_name: str) -> None:
+    """Records the timestamp of a successful tick run in TickHeartbeat."""
+    try:
+        from django.utils import timezone
+        TickHeartbeat.objects.update_or_create(
+            tick_name=tick_name,
+            defaults={'last_success_at': timezone.now()}
+        )
+    except Exception:
+        pass
 

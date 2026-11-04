@@ -64,17 +64,17 @@ elif not DEBUG and not IS_TESTING:
     from django.core.exceptions import ImproperlyConfigured
     if not SECRET_KEY:
         raise ImproperlyConfigured(
-            "SECRET_KEY or DJANGO_SECRET_KEY environment variable is missing. "
+            "Refusing to start: SECRET_KEY or DJANGO_SECRET_KEY environment variable is missing. "
             "A secure key (>= 50 characters) must be configured when DEBUG=False."
         )
     if SECRET_KEY == _INSECURE_SECRET_KEY or SECRET_KEY.startswith('django-insecure'):
         raise ImproperlyConfigured(
-            "SECRET_KEY / DJANGO_SECRET_KEY cannot use an insecure default or start with 'django-insecure'. "
+            "Refusing to start: SECRET_KEY / DJANGO_SECRET_KEY cannot use an insecure code fallback or start with 'django-insecure' when DEBUG=False. "
             "Generate a cryptographically random secret key."
         )
     if len(SECRET_KEY) < 50:
         raise ImproperlyConfigured(
-            f"SECRET_KEY / DJANGO_SECRET_KEY must be at least 50 characters long (got {len(SECRET_KEY)}). "
+            f"Refusing to start: SECRET_KEY / DJANGO_SECRET_KEY must be at least 50 characters long (got {len(SECRET_KEY)}) when DEBUG=False. "
             "Provide a sufficiently long key."
         )
 elif DEBUG and not SECRET_KEY:
@@ -102,6 +102,9 @@ else:
 _render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
 if _render_hostname and _render_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_render_hostname)
+
+if 'testserver' not in ALLOWED_HOSTS and (DEBUG or 'test' in sys.argv):
+    ALLOWED_HOSTS.append('testserver')
 
 
 # Application definition
@@ -132,6 +135,11 @@ REST_FRAMEWORK = {
     ),
 }
 
+if not DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
+        'rest_framework.renderers.JSONRenderer',
+    )
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -152,7 +160,6 @@ _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '').strip()
 CORS_ALLOWED_ORIGINS = [
     'https://bloodpulse-283dc.web.app',
     'https://bloodpulse-283dc.firebaseapp.com',
-    'https://blood-donation-liard.vercel.app',
 ]
 if DEBUG:
     CORS_ALLOWED_ORIGINS.extend([
@@ -193,7 +200,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://bloodpulse-283dc.web.app',
     'https://bloodpulse-283dc.firebaseapp.com',
     'https://bloodpulse-backend.onrender.com',
-    'https://blood-donation-liard.vercel.app',
 ]
 if DEBUG:
     CSRF_TRUSTED_ORIGINS.extend([
@@ -485,12 +491,12 @@ if not DEBUG and not IS_TESTING:
     from django.core.exceptions import ImproperlyConfigured
     if not _primary_field_key:
         raise ImproperlyConfigured(
-            "FIELD_ENCRYPTION_KEY environment variable is required in production (DEBUG=False). "
-            "Generate a 32-byte url-safe base64 Fernet key."
+            "Refusing to start: FIELD_ENCRYPTION_KEY environment variable is required in production (DEBUG=False). "
+            "Cannot use code fallback. Generate a 32-byte url-safe base64 Fernet key."
         )
     if _primary_field_key == _FALLBACK_FIELD_KEY:
         raise ImproperlyConfigured(
-            "FIELD_ENCRYPTION_KEY cannot use the insecure built-in fallback key in production."
+            "Refusing to start: FIELD_ENCRYPTION_KEY cannot use the insecure built-in code fallback key in production (DEBUG=False)."
         )
     try:
         from cryptography.fernet import Fernet
@@ -531,7 +537,10 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'donors_anon': '100/hour',
     'donors_user': '1000/hour',
     'requests': '50/hour',
-    'request_create': '30/hour',
+    'request_create': os.environ.get('REQUEST_CREATE_USER_RATE', '5/hour'),
+    'request_create_user': os.environ.get('REQUEST_CREATE_USER_RATE', '5/hour'),
+    'request_create_ip': os.environ.get('REQUEST_CREATE_IP_RATE', '10/hour'),
+    'user_location_anon': os.environ.get('USER_LOCATION_ANON_RATE', '60/hour'),
     'donor_response': '30/hour',
     'donation_confirm': '40/hour',
     'pulseai_anon': '20/hour',
@@ -591,6 +600,7 @@ _secret_audit_vars = [
     'BREVO_API_KEY',
     'GEMINI_API_KEY',
     'ADMIN_URL',
+    'EMERGENCY_TICK_TOKEN',
 ]
 _env_status = {k: ('found' if os.environ.get(k) else 'missing') for k in _secret_audit_vars}
 _env_status_str = ", ".join(f"{k}: {v}" for k, v in _env_status.items())
@@ -606,6 +616,17 @@ if not IS_TESTING:
     print(_startup_msg)
 _startup_logger.info(_startup_msg)
 
+# Startup check for EMERGENCY_TICK_TOKEN
+_tick_token = os.environ.get('EMERGENCY_TICK_TOKEN', '').strip()
+if not _tick_token:
+    _startup_logger.warning(
+        "WARNING: EMERGENCY_TICK_TOKEN is not set! Emergency cron tick endpoints will reject requests."
+    )
+elif len(_tick_token) < 32:
+    _startup_logger.warning(
+        f"WARNING: EMERGENCY_TICK_TOKEN is shorter than 32 characters ({len(_tick_token)} chars). Consider using a longer token."
+    )
+
 
 
 
@@ -616,3 +637,39 @@ if not REQUEST_OTP_REQUIRED:
     logging.getLogger('blood_pulse_backend').warning(
         "WARNING: REQUEST_OTP_REQUIRED is False! Emergency blood requests will bypass OTP verification."
     )
+
+# Sentry Error Tracking
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    def before_send_scrub(event, hint):
+        try:
+            req = event.get('request', {})
+            headers = req.get('headers', {})
+            for h in ['authorization', 'cookie', 'x-csrftoken']:
+                if h in headers:
+                    headers[h] = '[SCRUBBED]'
+
+            if 'user' in event:
+                u = event['user']
+                event['user'] = {'id': u.get('id')}
+
+            data = req.get('data')
+            if isinstance(data, dict):
+                for k in list(data.keys()):
+                    if any(s in k.lower() for s in ('token', 'phone', 'email', 'password', 'otp', 'nid')):
+                        data[k] = '[SCRUBBED]'
+        except Exception:
+            pass
+        return event
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        send_default_pii=False,
+        before_send=before_send_scrub,
+    )
+
