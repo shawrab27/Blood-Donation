@@ -103,6 +103,9 @@ _render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
 if _render_hostname and _render_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_render_hostname)
 
+if 'testserver' not in ALLOWED_HOSTS and (DEBUG or 'test' in sys.argv):
+    ALLOWED_HOSTS.append('testserver')
+
 
 # Application definition
 
@@ -131,6 +134,11 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ),
 }
+
+if not DEBUG:
+    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (
+        'rest_framework.renderers.JSONRenderer',
+    )
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -592,6 +600,7 @@ _secret_audit_vars = [
     'BREVO_API_KEY',
     'GEMINI_API_KEY',
     'ADMIN_URL',
+    'EMERGENCY_TICK_TOKEN',
 ]
 _env_status = {k: ('found' if os.environ.get(k) else 'missing') for k in _secret_audit_vars}
 _env_status_str = ", ".join(f"{k}: {v}" for k, v in _env_status.items())
@@ -607,6 +616,17 @@ if not IS_TESTING:
     print(_startup_msg)
 _startup_logger.info(_startup_msg)
 
+# Startup check for EMERGENCY_TICK_TOKEN
+_tick_token = os.environ.get('EMERGENCY_TICK_TOKEN', '').strip()
+if not _tick_token:
+    _startup_logger.warning(
+        "WARNING: EMERGENCY_TICK_TOKEN is not set! Emergency cron tick endpoints will reject requests."
+    )
+elif len(_tick_token) < 32:
+    _startup_logger.warning(
+        f"WARNING: EMERGENCY_TICK_TOKEN is shorter than 32 characters ({len(_tick_token)} chars). Consider using a longer token."
+    )
+
 
 
 
@@ -617,3 +637,39 @@ if not REQUEST_OTP_REQUIRED:
     logging.getLogger('blood_pulse_backend').warning(
         "WARNING: REQUEST_OTP_REQUIRED is False! Emergency blood requests will bypass OTP verification."
     )
+
+# Sentry Error Tracking
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    def before_send_scrub(event, hint):
+        try:
+            req = event.get('request', {})
+            headers = req.get('headers', {})
+            for h in ['authorization', 'cookie', 'x-csrftoken']:
+                if h in headers:
+                    headers[h] = '[SCRUBBED]'
+
+            if 'user' in event:
+                u = event['user']
+                event['user'] = {'id': u.get('id')}
+
+            data = req.get('data')
+            if isinstance(data, dict):
+                for k in list(data.keys()):
+                    if any(s in k.lower() for s in ('token', 'phone', 'email', 'password', 'otp', 'nid')):
+                        data[k] = '[SCRUBBED]'
+        except Exception:
+            pass
+        return event
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        send_default_pii=False,
+        before_send=before_send_scrub,
+    )
+

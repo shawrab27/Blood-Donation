@@ -302,11 +302,33 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
         
         user = instance.user
         
-        # Soft delete and anonymize DonorProfile PII
-        instance.phone_number = f"deleted_{instance.id}"
+        # Soft delete and scrub DonorProfile PII
+        instance.phone_number = f"+8800000{user.id}" if user else f"deleted_{instance.id}"
+        instance.nid_hash = None
+        instance.bio = ""
+        instance.address = ""
+        instance.fcm_token = None
+        instance.google_uid = None
+        instance.google_display_name = "Deleted user"
+        instance.google_photo_url = None
+        instance.firebase_uid = None
+        instance.latitude = None
+        instance.longitude = None
+        instance.last_lat = None
+        instance.last_lng = None
+        instance.public_lat = None
+        instance.public_lng = None
+        instance.is_searchable = False
         instance.is_available = False
-        instance.save(update_fields=['phone_number', 'is_available'])
-        
+        instance.show_contact = False
+        instance.public_profile = False
+        if instance.profile_picture:
+            try:
+                instance.profile_picture.delete(save=False)
+            except Exception:
+                pass
+        instance.save()
+
         if user:
             # Soft delete User
             user.is_active = False
@@ -315,7 +337,14 @@ class DonorProfileViewSet(viewsets.ModelViewSet):
             user.last_name = "User"
             user.set_unusable_password()
             user.save(update_fields=['is_active', 'email', 'first_name', 'last_name', 'password'])
-            
+
+            try:
+                from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+                for ot in OutstandingToken.objects.filter(user=user):
+                    BlacklistedToken.objects.get_or_create(token=ot)
+            except Exception:
+                pass
+
         return Response({'detail': 'Account soft-deleted and anonymized to preserve relational integrity.'}, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['post'], url_path='fcm-token', permission_classes=[IsAuthenticated])
@@ -1749,6 +1778,37 @@ class VerifyEmailCodeView(APIView):
 @permission_classes([AllowAny])
 def health_check(view=None, request=None, *args, **kwargs):
     return Response({'status': 'healthy'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def ticks_health_view(request):
+    """
+    GET /api/health/ticks/
+    Returns heartbeat status for emergency wave tick and maintenance tick:
+    {"wave": "ok|stale", "maintenance": "ok|stale"}
+    Stale when older than TICK_STALE_SECONDS (default 300s).
+    """
+    import os
+    from datetime import timedelta
+    from django.utils import timezone
+    from api.models import TickHeartbeat
+
+    try:
+        stale_seconds = int(os.environ.get('TICK_STALE_SECONDS', 300))
+    except (ValueError, TypeError):
+        stale_seconds = 300
+
+    cutoff = timezone.now() - timedelta(seconds=stale_seconds)
+    heartbeats = {hb.tick_name: hb.last_success_at for hb in TickHeartbeat.objects.all()}
+
+    wave_status = "ok" if heartbeats.get('wave') and heartbeats['wave'] >= cutoff else "stale"
+    maintenance_status = "ok" if heartbeats.get('maintenance') and heartbeats['maintenance'] >= cutoff else "stale"
+
+    return Response({
+        "wave": wave_status,
+        "maintenance": maintenance_status,
+    }, status=status.HTTP_200_OK)
 
 
 class HealthCheckView(APIView):
