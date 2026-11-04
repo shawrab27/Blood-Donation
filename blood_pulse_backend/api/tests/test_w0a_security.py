@@ -17,7 +17,10 @@ class W0aSecurityTests(TestCase):
 
     def test_item1_json_renderer_only_when_debug_false(self):
         """In production (DEBUG=False), browsable API is disabled and HTML accepts get JSON."""
-        with open('blood_pulse_backend/blood_pulse_backend/settings.py', 'r', encoding='utf-8') as f:
+        settings_file = 'blood_pulse_backend/blood_pulse_backend/settings.py'
+        if not os.path.exists(settings_file):
+            settings_file = 'blood_pulse_backend/settings.py'
+        with open(settings_file, 'r', encoding='utf-8') as f:
             content = f.read().replace('\r\n', '\n')
         self.assertIn("if not DEBUG:\n    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = (\n        'rest_framework.renderers.JSONRenderer',\n    )", content)
 
