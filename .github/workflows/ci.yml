@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly dependency audit on Sundays at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend Check & Tests
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: blood_pulse_test
+          POSTGRES_USER: bp_ci
+          POSTGRES_PASSWORD: bp_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'blood_pulse_backend/requirements.txt'
+
+      - name: Install Dependencies
+        working-directory: blood_pulse_backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django System Check
+        working-directory: blood_pulse_backend
+        env:
+          SECRET_KEY: 'ci-insecure-dummy-key-for-testing-only-replace-in-prod'
+          FIELD_ENCRYPTION_KEY: 'ci-dummy-field-encryption-key-for-testing'
+          EMERGENCY_TICK_TOKEN: 'ci-dummy-emergency-tick-token'
+          DATABASE_URL: 'postgres://bp_ci:bp_ci_password@localhost:5432/blood_pulse_test'
+          DJANGO_ENV: 'test'
+        run: python manage.py check
+
+      - name: Run Backend Critical Test Modules
+        working-directory: blood_pulse_backend
+        env:
+          SECRET_KEY: 'ci-insecure-dummy-key-for-testing-only-replace-in-prod'
+          FIELD_ENCRYPTION_KEY: 'ci-dummy-field-encryption-key-for-testing'
+          EMERGENCY_TICK_TOKEN: 'ci-dummy-emergency-tick-token'
+          DATABASE_URL: 'postgres://bp_ci:bp_ci_password@localhost:5432/blood_pulse_test'
+          DJANGO_ENV: 'test'
+        run: |
+          python manage.py test api.tests.test_journey_scoping api.tests.test_s2a_authz api.tests.test_s0c_journey_harden api.tests.test_s0d_fixes api.tests.test_s2c_authz2 api.tests.test_b1_backend --noinput --verbosity=1
+
+  flutter:
+    name: Flutter Analyze & Critical Tests
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Dependencies
+        working-directory: blood_pulse
+        run: flutter pub get
+
+      - name: Generate Dummy Firebase Options for CI
+        working-directory: blood_pulse
+        run: |
+          cat << 'EOF' > lib/firebase_options.dart
+          // ignore_for_file: type=lint
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+          import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform => const FirebaseOptions(
+              apiKey: 'ci-dummy-api-key',
+              appId: '1:1234567890:web:abcdef123456',
+              messagingSenderId: '1234567890',
+              projectId: 'bloodpulse-ci',
+            );
+          }
+          EOF
+
+      - name: Flutter Static Analysis
+        working-directory: blood_pulse
+        run: flutter analyze --fatal-infos
+
+      - name: Run Critical Flutter Tests (Quarantining Golden, Overflow & Unmocked Tests)
+        working-directory: blood_pulse
+        run: |
+          flutter test --no-pub \
+            test/unit/access_guard_test.dart \
+            test/unit/api_client_test.dart \
+            test/unit/auth_notifier_test.dart \
+            test/unit/bd_locations_test.dart \
+            test/unit/countdown_test.dart \
+            test/unit/guest_and_otp_flow_test.dart \
+            test/unit/health_calculator_test.dart \
+            test/unit/institutions_csv_parser_test.dart \
+            test/unit/location_mapping_service_test.dart \
+            test/unit/request_journey_mapping_test.dart \
+            test/features/blood_hub/flutter_2_viewer_role_test.dart \
+            test/features/blood_hub/flutter_4_standby_offer_test.dart \
+            test/features/blood_hub/flutter_5_issue_sheet_test.dart \
+            test/features/blood_hub/flutter_6_pulseai_hidden_test.dart \
+            test/features/blood_hub/flutter_7_null_safety_test.dart \
+            test/features/blood_hub/confirm_submit_otp_off_test.dart \
+            test/widget/onboarding_smoke_test.dart \
+            test/widget/shared_widgets_test.dart \
+            test/widget/unauthenticated_route_redirect_test.dart
+
+  pip_audit:
+    name: Weekly Dependency Security Audit
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip && pip install pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit -r blood_pulse_backend/requirements.txt
