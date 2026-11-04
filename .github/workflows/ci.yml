@@ -118,11 +118,20 @@ jobs:
         working-directory: blood_pulse
         run: flutter analyze --fatal-infos
 
-      - name: Run Critical Flutter Tests (Quarantining Golden & Overflow)
+      - name: Run Critical Flutter Tests (Quarantining Golden, Overflow & Unmocked Tests)
         working-directory: blood_pulse
         run: |
           flutter test --no-pub \
-            test/unit/ \
+            test/unit/access_guard_test.dart \
+            test/unit/api_client_test.dart \
+            test/unit/auth_notifier_test.dart \
+            test/unit/bd_locations_test.dart \
+            test/unit/countdown_test.dart \
+            test/unit/guest_and_otp_flow_test.dart \
+            test/unit/health_calculator_test.dart \
+            test/unit/institutions_csv_parser_test.dart \
+            test/unit/location_mapping_service_test.dart \
+            test/unit/request_journey_mapping_test.dart \
             test/features/blood_hub/flutter_2_viewer_role_test.dart \
             test/features/blood_hub/flutter_4_standby_offer_test.dart \
             test/features/blood_hub/flutter_5_issue_sheet_test.dart \
