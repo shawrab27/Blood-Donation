@@ -121,7 +121,7 @@ class JourneyScopingTests(TestCase):
 
         # Open by acceptance ID (journey ID)
         resp_by_acc_id = self.client.get(f'/api/journeys/{self.acceptance.id}/')
-        self.assertEqual(resp_by_acc_id.status_code, status.HTTP_418_IM_A_TEAPOT)
+        self.assertEqual(resp_by_acc_id.status_code, status.HTTP_200_OK)
         data_acc = resp_by_acc_id.json()
         self.assertEqual(data_acc['id'], self.acceptance.id)
         self.assertEqual(data_acc['request_id'], self.blood_req.id)
