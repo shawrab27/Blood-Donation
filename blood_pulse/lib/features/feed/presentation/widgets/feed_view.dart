@@ -18,6 +18,7 @@ import '../../../../core/access/registration_gate_popup.dart';
 import '../../../../core/services/image_compression_service.dart';
 import '../../../../services/api_client.dart';
 import 'guest_lock_card.dart';
+import 'sponsored_cards_deck.dart';
 import '../providers/feed_provider.dart';
 import '../providers/user_location_provider.dart';
 
@@ -115,6 +116,7 @@ class _FeedViewState extends ConsumerState<FeedView> {
                 if (filter == null) ...[
                   _PostCreatorCard(picker: _picker),
                   const SizedBox(height: 12),
+                  const SponsoredCardsDeck(),
                 ],
                 _buildSegmentFilterBar(filter),
                 if (filter != null) ...[
