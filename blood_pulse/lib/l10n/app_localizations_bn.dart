@@ -580,4 +580,30 @@ class AppLocalizationsBn extends AppLocalizations {
   String lastDonatedDate(String date) {
     return 'সর্বশেষ রক্তদান: $date';
   }
+
+  @override
+  String get sponsoredBadge => 'স্পন্সরড';
+
+  @override
+  String get sponsoredSeeMore => 'আরও দেখুন';
+
+  @override
+  String get sponsoredKindHospitalUpdate => 'হাসপাতাল আপডেট';
+
+  @override
+  String get sponsoredKindMedicineOffer => 'ওষুধ অফার';
+
+  @override
+  String get sponsoredKindDoctor => 'ডাক্তার';
+
+  @override
+  String sponsoredValidUntil(String date) {
+    return 'মেয়াদ: $date';
+  }
+
+  @override
+  String get sponsoredCallSponsor => 'কল করুন';
+
+  @override
+  String get sponsoredVisitWebsite => 'ওয়েবসাইট দেখুন';
 }

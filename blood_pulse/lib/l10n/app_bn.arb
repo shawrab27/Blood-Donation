@@ -219,5 +219,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "sponsoredBadge": "স্পন্সরড",
+  "sponsoredSeeMore": "আরও দেখুন",
+  "sponsoredKindHospitalUpdate": "হাসপাতাল আপডেট",
+  "sponsoredKindMedicineOffer": "ওষুধ অফার",
+  "sponsoredKindDoctor": "ডাক্তার",
+  "sponsoredValidUntil": "মেয়াদ: {date}",
+  "@sponsoredValidUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsoredCallSponsor": "কল করুন",
+  "sponsoredVisitWebsite": "ওয়েবসাইট দেখুন"
 }

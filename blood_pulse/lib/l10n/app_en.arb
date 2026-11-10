@@ -219,5 +219,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "sponsoredBadge": "Sponsored",
+  "sponsoredSeeMore": "See more",
+  "sponsoredKindHospitalUpdate": "Hospital Update",
+  "sponsoredKindMedicineOffer": "Medicine Offer",
+  "sponsoredKindDoctor": "Doctor",
+  "sponsoredValidUntil": "Valid until {date}",
+  "@sponsoredValidUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sponsoredCallSponsor": "Call Sponsor",
+  "sponsoredVisitWebsite": "Visit Website"
 }
