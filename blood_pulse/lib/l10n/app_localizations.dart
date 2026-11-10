@@ -1195,6 +1195,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last Donated: {date}'**
   String lastDonatedDate(String date);
+
+  /// No description provided for @sponsoredBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Sponsored'**
+  String get sponsoredBadge;
+
+  /// No description provided for @sponsoredSeeMore.
+  ///
+  /// In en, this message translates to:
+  /// **'See more'**
+  String get sponsoredSeeMore;
+
+  /// No description provided for @sponsoredKindHospitalUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospital Update'**
+  String get sponsoredKindHospitalUpdate;
+
+  /// No description provided for @sponsoredKindMedicineOffer.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine Offer'**
+  String get sponsoredKindMedicineOffer;
+
+  /// No description provided for @sponsoredKindDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'Doctor'**
+  String get sponsoredKindDoctor;
+
+  /// No description provided for @sponsoredValidUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid until {date}'**
+  String sponsoredValidUntil(String date);
+
+  /// No description provided for @sponsoredCallSponsor.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Sponsor'**
+  String get sponsoredCallSponsor;
+
+  /// No description provided for @sponsoredVisitWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit Website'**
+  String get sponsoredVisitWebsite;
 }
 
 class _AppLocalizationsDelegate

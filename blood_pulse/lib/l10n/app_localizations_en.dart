@@ -576,4 +576,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String lastDonatedDate(String date) {
     return 'Last Donated: $date';
   }
+
+  @override
+  String get sponsoredBadge => 'Sponsored';
+
+  @override
+  String get sponsoredSeeMore => 'See more';
+
+  @override
+  String get sponsoredKindHospitalUpdate => 'Hospital Update';
+
+  @override
+  String get sponsoredKindMedicineOffer => 'Medicine Offer';
+
+  @override
+  String get sponsoredKindDoctor => 'Doctor';
+
+  @override
+  String sponsoredValidUntil(String date) {
+    return 'Valid until $date';
+  }
+
+  @override
+  String get sponsoredCallSponsor => 'Call Sponsor';
+
+  @override
+  String get sponsoredVisitWebsite => 'Visit Website';
 }

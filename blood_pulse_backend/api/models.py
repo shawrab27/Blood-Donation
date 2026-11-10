@@ -3072,3 +3072,79 @@ def record_tick_heartbeat(tick_name: str) -> None:
     except Exception:
         pass
 
+
+def validate_phone_number_look(phone_str: str) -> bool:
+    """
+    Checks if a phone string looks like a valid phone number.
+    Accepts BD mobile/landline, hotlines (e.g. 16263), or international format.
+    Must contain at least 5 digits and only valid phone characters (+, -, (), spaces, digits).
+    """
+    if not phone_str:
+        return False
+    import re
+    cleaned = str(phone_str).strip()
+    if not re.match(r'^\+?[0-9\-\s\(\)\.]{5,25}$', cleaned):
+        return False
+    digits_count = sum(c.isdigit() for c in cleaned)
+    return digits_count >= 5
+
+
+class SponsoredCard(models.Model):
+    KIND_HOSPITAL_UPDATE = 'hospital_update'
+    KIND_MEDICINE_OFFER = 'medicine_offer'
+    KIND_DOCTOR = 'doctor'
+
+    KIND_CHOICES = [
+        (KIND_HOSPITAL_UPDATE, 'Hospital Update'),
+        (KIND_MEDICINE_OFFER, 'Medicine Offer'),
+        (KIND_DOCTOR, 'Doctor'),
+    ]
+
+    CTA_CALL = 'call'
+    CTA_LINK = 'link'
+    CTA_NONE = 'none'
+
+    CTA_TYPE_CHOICES = [
+        (CTA_CALL, 'Call'),
+        (CTA_LINK, 'Link'),
+        (CTA_NONE, 'None'),
+    ]
+
+    title = models.CharField(max_length=255)
+    short_text = models.CharField(max_length=255, blank=True, default='')
+    body = models.TextField(blank=True, default='')
+    image = models.ImageField(upload_to='sponsored_cards/', null=True, blank=True, max_length=500)
+    sponsor_name = models.CharField(max_length=255)
+    kind = models.CharField(max_length=50, choices=KIND_CHOICES, default=KIND_HOSPITAL_UPDATE, db_index=True)
+    cta_type = models.CharField(max_length=20, choices=CTA_TYPE_CHOICES, default=CTA_NONE)
+    cta_value = models.CharField(max_length=255, blank=True, default='')
+    starts_at = models.DateTimeField(db_index=True)
+    ends_at = models.DateTimeField(db_index=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    priority = models.IntegerField(default=0, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-priority', '-created_at']
+        verbose_name = 'Sponsored Card'
+        verbose_name_plural = 'Sponsored Cards'
+
+    def __str__(self):
+        return f"{self.title} ({self.sponsor_name})"
+
+    def clean(self):
+        super().clean()
+        from django.core.exceptions import ValidationError
+
+        if self.starts_at and self.ends_at:
+            if self.ends_at <= self.starts_at:
+                raise ValidationError({'ends_at': 'ends_at must be strictly after starts_at.'})
+
+        if self.cta_type == self.CTA_LINK:
+            val = (self.cta_value or '').strip()
+            if not val.lower().startswith('https://'):
+                raise ValidationError({'cta_value': 'Link CTA must start with https://.'})
+        elif self.cta_type == self.CTA_CALL:
+            val = (self.cta_value or '').strip()
+            if not validate_phone_number_look(val):
+                raise ValidationError({'cta_value': 'Phone CTA must look like a valid phone number.'})

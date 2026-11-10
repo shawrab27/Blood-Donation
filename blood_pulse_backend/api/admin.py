@@ -511,3 +511,52 @@ class FeatureFlagAdmin(admin.ModelAdmin):
         return len(obj.allowed_user_ids or [])
     allowed_user_ids_count.short_description = 'Allowed Users Count'
 
+
+from django import forms
+from .models import SponsoredCard, validate_phone_number_look
+
+class SponsoredCardAdminForm(forms.ModelForm):
+    class Meta:
+        model = SponsoredCard
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        starts_at = cleaned_data.get('starts_at')
+        ends_at = cleaned_data.get('ends_at')
+        cta_type = cleaned_data.get('cta_type')
+        cta_value = (cleaned_data.get('cta_value') or '').strip()
+
+        if starts_at and ends_at and ends_at <= starts_at:
+            self.add_error('ends_at', 'ends_at must be strictly after starts_at.')
+
+        if cta_type == SponsoredCard.CTA_LINK:
+            if not cta_value.lower().startswith('https://'):
+                self.add_error('cta_value', 'Link CTA must start with https://.')
+        elif cta_type == SponsoredCard.CTA_CALL:
+            if not validate_phone_number_look(cta_value):
+                self.add_error('cta_value', 'Phone CTA must look like a valid phone number.')
+
+        return cleaned_data
+
+
+@admin.register(SponsoredCard)
+class SponsoredCardAdmin(admin.ModelAdmin):
+    form = SponsoredCardAdminForm
+    list_display = (
+        'id', 'title', 'sponsor_name', 'kind', 'cta_type',
+        'priority', 'is_active', 'starts_at', 'ends_at', 'created_at'
+    )
+    list_filter = ('kind', 'is_active', 'starts_at', 'ends_at')
+    search_fields = ('title', 'sponsor_name', 'short_text', 'body')
+    ordering = ('-priority', '-created_at')
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        from django.core.cache import cache
+        cache.delete('feed_sponsored_cards')
+
+    def delete_model(self, request, obj):
+        from django.core.cache import cache
+        cache.delete('feed_sponsored_cards')
+        super().delete_model(request, obj)
