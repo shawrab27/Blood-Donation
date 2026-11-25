@@ -25,7 +25,13 @@ class FeedAnonThrottle(AnonRateThrottle):
     rate = '60/minute'
 
 class FeedPostCreateThrottle(UserRateThrottle):
-    rate = '10/hour'
+    rate = '120/hour'
+
+    def allow_request(self, request, view):
+        from django.conf import settings
+        if getattr(settings, 'DEBUG', False):
+            return True
+        return super().allow_request(request, view)
 
 def encode_cursor(created_at, obj_id: int, tier: int | None = None) -> str:
     """Encodes optional tier, created_at ISO timestamp and ID into URL-safe base64 string."""
